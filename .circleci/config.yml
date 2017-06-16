@@ -1,0 +1,18 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/ldap2pg
+    docker:
+    - image: circleci/python:3.5
+    steps:
+    - checkout
+    - run:
+        command: |
+          sudo pip install wheel virtualenv
+          virtualenv .venv/
+          . .venv/bin/activate
+          pip install -U -r requirements-ci.txt -e .
+          flake8 .
+          python setup.py --long-description | rst2html.py --strict >/dev/null
+          pytest tests/unit/
