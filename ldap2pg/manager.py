@@ -53,12 +53,27 @@ class RoleManager(object):
         )
         self.pgconn.commit()
 
+    def drop(self, role):
+        logger.warn("Dropping existing role %s.", role)
+        self.pgcursor.execute(
+            sql.SQL('DROP ROLE {name}').format(
+                name=psycopg2.sql.Identifier(role),
+            )
+        )
+        self.pgconn.commit()
+
     def sync(self, base, query):
         with self:
             pgroles = self.fetch_pg_roles()
             pgroles = set(self.blacklist(pgroles))
             ldaproles = self.fetch_ldap_roles(base=base, query=query)
+
             missing = ldaproles - pgroles
             for role in missing:
                 self.create(role)
+
+            spurious = pgroles - ldaproles
+            for role in spurious:
+                self.drop(role)
+
         logger.info("Synchronization complete.")

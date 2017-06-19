@@ -59,12 +59,22 @@ def test_create(mocker):
     assert manager.pgconn.commit.called is True
 
 
+def test_drop(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    manager.pgcursor = mocker.Mock()
+    manager.drop('alice')
+
+    assert manager.pgcursor.execute.called is True
+    assert manager.pgconn.commit.called is True
+
+
 def test_sync(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.fetch_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.fetch_ldap_roles')
-    mocker.patch('ldap2pg.manager.RoleManager.create', autospec=True)
 
-    p.return_value = set()
+    p.return_value = set('spurious')
     l.return_value = {'alice', 'bob'}
 
     from ldap2pg.manager import RoleManager
