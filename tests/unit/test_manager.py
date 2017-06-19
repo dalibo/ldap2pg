@@ -51,7 +51,7 @@ def test_create(mocker):
 def test_sync(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.fetch_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.fetch_ldap_roles')
-    mocker.patch('ldap2pg.manager.RoleManager.create')
+    mocker.patch('ldap2pg.manager.RoleManager.create', autospec=True)
 
     p.return_value = set()
     l.return_value = {'alice', 'bob'}

@@ -48,5 +48,5 @@ class RoleManager(object):
             ldaproles = self.fetch_ldap_roles(base=base, query=query)
             missing = ldaproles - pgroles
             for role in missing:
-                self.create(*role)
+                self.create(role)
         logger.info("Synchronization complete.")
