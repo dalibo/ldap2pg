@@ -1,0 +1,24 @@
+version: '2'
+
+volumes:
+  ldapetc:
+  ldapvar:
+
+services:
+  admin:
+    image: dinkel/phpldapadmin
+    environment:
+      LDAP_SERVER_HOST: ldap
+
+  ldap:
+    image: dinkel/openldap
+    environment:
+      SLAPD_DOMAIN: ldap2pg.local
+      SLAPD_PASSWORD: integral
+    volumes:
+    - ldapetc:/etc/ldap
+    - ldapvar:/var/lib/ldap
+    - ./dev-fixture.ldif:/etc/ldap.dist/prepopulate/dev-fixture.ldif
+
+  postgres:
+    image: postgres:9.6
