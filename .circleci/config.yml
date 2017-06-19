@@ -7,12 +7,23 @@ jobs:
     - image: circleci/python:3.5
     steps:
     - checkout
+    - restore_cache:
+        keys:
+          - ldap2pg
     - run:
         command: |
           sudo pip install wheel virtualenv
           virtualenv .venv/
           . .venv/bin/activate
           pip install -U -r requirements-ci.txt -e .
+    - save_cache:
+        key: ldap2pg
+        paths:
+        - "~/.cache/pip/"
+        - ".venv"
+    - run:
+        command: |
+          . .venv/bin/activate
           flake8 .
           python setup.py --long-description | rst2html.py --strict >/dev/null
           pytest tests/unit/
