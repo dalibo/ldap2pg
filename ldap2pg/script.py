@@ -51,5 +51,5 @@ def main():
         exit(1)
 
 
-if '__main__' == __name__:
+if '__main__' == __name__:  # pragma: no cover
     main()
