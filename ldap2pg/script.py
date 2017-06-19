@@ -33,6 +33,7 @@ def main():
     )
     logger.debug("Starting ldap2pg %s.", __version__)
 
+    blacklist = ['pg_*', 'postgres']
     try:
         ldapconn = create_ldap_connection(
             host=os.environ['LDAP_HOST'],
@@ -44,7 +45,9 @@ def main():
         ldap_base = os.environ['LDAP_BASE']
         ldap_query = '(objectClass=organizationalRole)'
 
-        manager = RoleManager(ldapconn=ldapconn, pgconn=pgconn)
+        manager = RoleManager(
+            ldapconn=ldapconn, pgconn=pgconn, blacklist=blacklist,
+        )
         manager.sync(base=ldap_base, query=ldap_query)
     except Exception:
         logger.exception('Unhandled error:')

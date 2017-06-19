@@ -6,6 +6,17 @@ def test_context_manager(mocker):
         assert manager.pgcursor
 
 
+def test_blacklist():
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(
+        pgconn=None, ldapconn=None, blacklist=['pg_*', 'postgres'],
+    )
+    roles = ['postgres', 'pg_signal_backend', 'alice', 'bob']
+    filtered = list(manager.blacklist(roles))
+    assert ['alice', 'bob'] == filtered
+
+
 def test_fetch_existing_roles(mocker):
     from ldap2pg.manager import RoleManager
 
