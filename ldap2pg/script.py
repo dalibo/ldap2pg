@@ -47,7 +47,7 @@ def main():
         manager = RoleManager(ldapconn=ldapconn, pgconn=pgconn)
         manager.sync(base=ldap_base, query=ldap_query)
     except Exception:
-        logger.exception('/o\\')
+        logger.exception('Unhandled error:')
         exit(1)
 
 
