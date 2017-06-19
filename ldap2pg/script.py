@@ -21,15 +21,16 @@ def main():
     logger.debug("Starting ldap2pg %s.", __version__)
 
     try:
-        logger.debug("Connecting to PostgreSQL from env vars.")
-        psycopg2.connect("")
-
         logger.debug("Connecting to LDAP.")
         server = ldap3.Server(os.environ['LDAP_HOST'], get_info=ldap3.ALL)
         conn = ldap3.Connection(
             server, os.environ['LDAP_BIND'], os.environ['LDAP_PASSWORD'],
             auto_bind=True,
         )
+
+        logger.debug("Connecting to PostgreSQL from env vars.")
+        psycopg2.connect(os.environ.get('PGDSN', ''))
+
         logger.debug("Searching LDAP.")
         conn.search(os.environ['LDAP_BASE'], '(objectClass=*)')
     except Exception:
