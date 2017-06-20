@@ -22,3 +22,7 @@ $ export PGUSER=postgres PGPASSWORD=postgres PGHOST=...
 $ export LDAP_BIND=cn=admin,dc=ldap2pg,dc=local LDAP_PASSWORD=integral
 $ ldap2pg
 ```
+
+Enable debug mode by exporting `DEBUG` envvar to either `1`, `y` or `Y`. Debug
+mode enable full logs and, if stdout is a TTY, drop in a PDB on unhandled
+exception.
