@@ -53,6 +53,14 @@ def test_create(mocker):
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
     manager.pgcursor = mocker.Mock()
+
+    manager.dry = True
+    manager.create('bob')
+
+    assert manager.pgcursor.execute.called is False
+    assert manager.pgconn.commit.called is False
+
+    manager.dry = False
     manager.create('bob')
 
     assert manager.pgcursor.execute.called is True
@@ -64,6 +72,14 @@ def test_drop(mocker):
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
     manager.pgcursor = mocker.Mock()
+
+    manager.dry = True
+    manager.drop('alice')
+
+    assert manager.pgcursor.execute.called is False
+    assert manager.pgconn.commit.called is False
+
+    manager.dry = False
     manager.drop('alice')
 
     assert manager.pgcursor.execute.called is True

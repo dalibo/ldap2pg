@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 
 class RoleManager(object):
 
-    def __init__(self, ldapconn, pgconn, blacklist=[]):
+    def __init__(self, ldapconn, pgconn, blacklist=[], dry=False):
         self.ldapconn = ldapconn
         self.pgconn = pgconn
         self.pgcursor = None
         self._blacklist = blacklist
+        self.dry = dry
 
     def __enter__(self):
         self.pgcursor = self.pgconn.cursor()
@@ -45,6 +46,9 @@ class RoleManager(object):
         return {getattr(r, attribute).value for r in self.ldapconn.entries}
 
     def create(self, role):
+        if self.dry:
+            return logger.info("Would create role %s.", role)
+
         logger.info("Creating new role %s.", role)
         self.pgcursor.execute(
             sql.SQL('CREATE ROLE {name} WITH LOGIN').format(
@@ -54,6 +58,9 @@ class RoleManager(object):
         self.pgconn.commit()
 
     def drop(self, role):
+        if self.dry:
+            return logger.warn("Would create role %s.", role)
+
         logger.warn("Dropping existing role %s.", role)
         self.pgcursor.execute(
             sql.SQL('DROP ROLE {name}').format(

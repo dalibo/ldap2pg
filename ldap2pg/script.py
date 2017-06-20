@@ -39,6 +39,7 @@ def wrapped_main():
     manager = RoleManager(
         ldapconn=ldapconn, pgconn=pgconn,
         blacklist=config['postgres']['blacklist'],
+        dry=config['dry'],
     )
     manager.sync(
         base=config['ldap']['base'],

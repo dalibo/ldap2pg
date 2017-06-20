@@ -60,6 +60,7 @@ class Mapping(object):
 
 class Configuration(dict):
     DEFAULTS = {
+        'dry': False,
         'ldap': {
             'host': '',
             'port': 389,
@@ -75,6 +76,7 @@ class Configuration(dict):
     }
 
     MAPPINGS = [
+        Mapping('dry'),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
         Mapping('ldap:bind'),
