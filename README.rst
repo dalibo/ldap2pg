@@ -4,11 +4,19 @@
 
 | |CircleCI| |Codecov|
 
-Create and drop PostgreSQL roles from LDAP query::
+
+Features
+========
+
+- Create and drop PostgreSQL roles from LDAP query
+- Reads settings from YAML config file
+
+::
 
     $ ldap2pg
      INFO Synchronization complete.
     $
+
 
 Installation
 ============

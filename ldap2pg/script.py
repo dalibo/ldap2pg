@@ -11,15 +11,16 @@ import sys
 import ldap3
 import psycopg2
 
+from .config import Configuration
 from .manager import RoleManager
 
 
 logger = logging.getLogger(__name__)
 
 
-def create_ldap_connection(host, bind, password):
-    logger.debug("Connecting to LDAP server %s.", host)
-    server = ldap3.Server(host, get_info=ldap3.ALL)
+def create_ldap_connection(host, port, bind, password, **kw):
+    logger.debug("Connecting to LDAP server %s:%s.", host, port)
+    server = ldap3.Server(host, port, get_info=ldap3.ALL)
     return ldap3.Connection(server, bind, password, auto_bind=True)
 
 
@@ -29,20 +30,19 @@ def create_pg_connection(dsn):
 
 
 def wrapped_main():
-    ldapconn = create_ldap_connection(
-        host=os.environ['LDAP_HOST'],
-        bind=os.environ['LDAP_BIND'],
-        password=os.environ['LDAP_PASSWORD'],
-    )
-    pgconn = create_pg_connection(dsn=os.environ.get('PGDSN', ''))
+    config = Configuration()
+    config.load()
+
+    ldapconn = create_ldap_connection(**config['ldap'])
+    pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
 
     manager = RoleManager(
         ldapconn=ldapconn, pgconn=pgconn,
-        blacklist=['pg_*', 'postgres'],
+        blacklist=config['postgres']['blacklist'],
     )
     manager.sync(
-        base=os.environ['LDAP_BASE'],
-        query='(objectClass=organizationalRole)',
+        base=config['ldap']['base'],
+        query=config['ldap']['filter'],
     )
 
 
@@ -52,7 +52,7 @@ def main():
         level=logging.DEBUG if debug else logging.INFO,
         format='%(levelname)5.5s %(message)s'
     )
-    logger.debug("Starting ldap2pg %s.", __version__)
+    logger.info("Starting ldap2pg %s.", __version__)
 
     try:
         wrapped_main()
