@@ -5,6 +5,8 @@ from . import __version__
 
 import logging
 import os
+import pdb
+import sys
 
 import ldap3
 import psycopg2
@@ -26,32 +28,43 @@ def create_pg_connection(dsn):
     return psycopg2.connect(dsn)
 
 
+def wrapped_main():
+    ldapconn = create_ldap_connection(
+        host=os.environ['LDAP_HOST'],
+        bind=os.environ['LDAP_BIND'],
+        password=os.environ['LDAP_PASSWORD'],
+    )
+    pgconn = create_pg_connection(dsn=os.environ.get('PGDSN', ''))
+
+    manager = RoleManager(
+        ldapconn=ldapconn, pgconn=pgconn,
+        blacklist=['pg_*', 'postgres'],
+    )
+    manager.sync(
+        base=os.environ['LDAP_BASE'],
+        query='(objectClass=organizationalRole)',
+    )
+
+
 def main():
+    debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.DEBUG if debug else logging.INFO,
         format='%(levelname)5.5s %(message)s'
     )
     logger.debug("Starting ldap2pg %s.", __version__)
 
-    blacklist = ['pg_*', 'postgres']
     try:
-        ldapconn = create_ldap_connection(
-            host=os.environ['LDAP_HOST'],
-            bind=os.environ['LDAP_BIND'],
-            password=os.environ['LDAP_PASSWORD'],
-        )
-        pgconn = create_pg_connection(dsn=os.environ.get('PGDSN', ''))
-
-        ldap_base = os.environ['LDAP_BASE']
-        ldap_query = '(objectClass=organizationalRole)'
-
-        manager = RoleManager(
-            ldapconn=ldapconn, pgconn=pgconn, blacklist=blacklist,
-        )
-        manager.sync(base=ldap_base, query=ldap_query)
+        wrapped_main()
+        exit(0)
+    except pdb.bdb.BdbQuit:
+        logger.info("Graceful exit from debugger.")
     except Exception:
         logger.exception('Unhandled error:')
-        exit(1)
+        if debug and sys.stdout.isatty():
+            logger.debug("Dropping in debugger.")
+            pdb.post_mortem(sys.exc_info()[2])
+    exit(1)
 
 
 if '__main__' == __name__:  # pragma: no cover
