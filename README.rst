@@ -4,12 +4,11 @@
 
 | |Codecov|
 
-No features yet.
-
-::
+Create and drop PostgreSQL roles from LDAP query::
 
     $ ldap2pg
-
+     INFO Synchronization complete.
+    $
 
 Installation
 ============
