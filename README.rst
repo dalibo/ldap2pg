@@ -8,12 +8,15 @@
 Features
 ========
 
-- Create and drop PostgreSQL roles from LDAP query
+- Creates and drops PostgreSQL roles from LDAP query
 - Reads settings from YAML config file
 
 ::
 
     $ ldap2pg
+     INFO Starting ldap2pg 0.1.
+     INFO Creating new role alice.
+    WARNI Dropping existing role toto.
      INFO Synchronization complete.
     $
 
