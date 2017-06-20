@@ -1,3 +1,5 @@
+dry: no
+
 ldap:
   # env: LDAP_HOST
   host: openldap.docker
