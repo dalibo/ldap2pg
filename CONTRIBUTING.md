@@ -1,5 +1,8 @@
 # Contributing to `ldap2pg`
 
+We're happy to merge contributions! Create a fork a open a pull request!
+
+## Development environment
 
 A `docker-compose.yml` file is provided to setup an OpenLDAP and a PostgreSQL
 instances as well as a phpLDAPAdmin to help you manage OpenLDAP.
@@ -21,4 +24,18 @@ $ pip install -e .
 $ export PGUSER=postgres PGPASSWORD=postgres PGHOST=...
 $ export LDAP_BIND=cn=admin,dc=ldap2pg,dc=local LDAP_PASSWORD=integral
 $ ldap2pg
+```
+
+Enable debug mode by exporting `DEBUG` envvar to either `1`, `y` or `Y`. Debug
+mode enable full logs and, if stdout is a TTY, drop in a PDB on unhandled
+exception.
+
+
+## Unit tests
+
+`pytest` run unit tests stored in `tests/unit/`.
+
+``` console
+$ pip install -Ur requirements-ci.txt
+$ pytest
 ```

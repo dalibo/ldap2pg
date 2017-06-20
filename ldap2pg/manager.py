@@ -39,10 +39,10 @@ class RoleManager(object):
         payload = self.pgcursor.fetchall()
         return {r[0] for r in payload}
 
-    def fetch_ldap_roles(self, base, query):
+    def fetch_ldap_roles(self, base, query, attribute='cn'):
         logger.debug("Querying LDAP for wanted roles.")
-        self.ldapconn.search(base, query, attributes=['*'])
-        return {r.cn.value for r in self.ldapconn.entries}
+        self.ldapconn.search(base, query, attributes=[attribute])
+        return {getattr(r, attribute).value for r in self.ldapconn.entries}
 
     def create(self, role):
         logger.info("Creating new role %s.", role)
