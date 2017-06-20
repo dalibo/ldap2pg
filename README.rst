@@ -2,7 +2,7 @@
  ``ldap2pg`` -- Synchronize PostgresQL roles from LDAP
 =======================================================
 
-| |Codecov|
+| |CircleCI| |Codecov|
 
 Create and drop PostgreSQL roles from LDAP query::
 
@@ -22,4 +22,9 @@ Install it from GitHub tarball::
 <https://opensource.org/licenses/postgresql>`_.
 
 .. |Codecov| image:: https://codecov.io/gh/dalibo/ldap2pg/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/dalibo/ldap2pg
+   :target: https://codecov.io/gh/dalibo/ldap2pg
+   :alt: Code coverage report
+
+.. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=svg
+   :target: https://circleci.com/gh/dalibo/ldap2pg
+   :alt: Continuous Integration report
