@@ -30,6 +30,7 @@ version: 2
       flake8 .
       python setup.py --long-description | rst2html.py --strict >/dev/null
       pytest tests/unit/
+      ls -al
       codecov --flags ${CIRCLE_JOB//-/} --required
 
 .build_tpl: &build_tpl
