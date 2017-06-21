@@ -1,0 +1,4 @@
+[paths]
+source =
+    ${VIRTUAL_ENV}/lib/python2.7/site-packages
+    ${VIRTUAL_ENV}/lib/python3.4/site-packages

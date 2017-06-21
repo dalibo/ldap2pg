@@ -28,6 +28,7 @@ version: 2
       V=$(python -V 2>&1)
       . .venv-py${V:7:1}/bin/activate
       flake8 .
+      coverage erase
       python setup.py --long-description | rst2html.py --strict >/dev/null
       pytest tests/unit/
       ls -al
