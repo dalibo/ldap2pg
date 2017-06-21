@@ -1,41 +1,64 @@
 version: 2
 
-.unit: &unit
-    working_directory: ~/ldap2pg
-    docker:
-    - image: circleci/python:3.4
-    steps:
-    - checkout
-    - restore_cache:
-        keys:
-          - ldap2pg
-    - run:
-        command: |
-          sudo pip install wheel virtualenv
-          virtualenv .venv/
-          . .venv/bin/activate
-          pip install -U -r requirements-ci.txt -e .
-    - save_cache:
-        key: ldap2pg
-        paths:
-        - "~/.cache/pip/"
-        - ".venv"
-    - run:
-        command: |
-          . .venv/bin/activate
-          flake8 .
-          python setup.py --long-description | rst2html.py --strict >/dev/null
-          pytest tests/unit/
-          codecov
+.unit_tpl: &unit_tpl
+  working_directory: ~/ldap2pg
+  docker:
+  - image: circleci/python:3.4
+  steps:
+  - checkout
+  - attach_workspace:
+      at: /home/circleci/ldap2pg/
+  - restore_cache:
+      keys: [ldap2pg]
+  - run: |
+      V=$(python -V 2>&1)
+      PYV=py${V:7:1}
+      sudo pip install wheel virtualenv
+      virtualenv .venv-$PYV/
+      . .venv-$PYV/bin/activate
+      pip install -U -r requirements-ci.txt dist/*${PYV}*.whl
+  - save_cache:
+      key: ldap2pg
+      paths:
+      - "~/.cache/pip/"
+      - ".venv-py2"
+      - ".venv-py3"
+
+  - run: |
+      V=$(python -V 2>&1)
+      . .venv-py${V:7:1}/bin/activate
+      flake8 .
+      python setup.py --long-description | rst2html.py --strict >/dev/null
+      pytest tests/unit/
+      codecov
+
+.build_tpl: &build_tpl
+  working_directory: ~/ldap2pg
+  steps:
+  - checkout
+  - run: |
+      sudo pip install wheel
+      python setup.py bdist_wheel
+  - persist_to_workspace:
+      root: /home/circleci/ldap2pg
+      paths: ["dist/"]
 
 jobs:
-  unit-py27:
-    <<: *unit
+  0-build27:
+    <<: *build_tpl
+    docker: [{image: "circleci/python:2.7"}]
+
+  0-build34:
+    <<: *build_tpl
+    docker: [{image: "circleci/python:3.4"}]
+
+  1-unit27:
+    <<: *unit_tpl
     docker:
     - image: circleci/python:2.7
 
-  unit-py34:
-    <<: *unit
+  1-unit34:
+    <<: *unit_tpl
     docker:
     - image: circleci/python:3.4
 
@@ -43,5 +66,9 @@ workflows:
   version: 2
   pipeline:
     jobs:
-    - unit-py27
-    - unit-py34
+    - 0-build27
+    - 0-build34
+    - 1-unit27:
+        requires: [0-build27]
+    - 1-unit34:
+        requires: [0-build34]
