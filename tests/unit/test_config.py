@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import pytest
 
 
@@ -54,14 +56,19 @@ def test_mapping():
 def test_find_filename(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
-    from ldap2pg.config import Configuration
+    from ldap2pg.config import Configuration, NoConfigurationError
 
     config = Configuration()
 
+    def mk_oserror(errno=None):
+        e = OSError()
+        e.errno = errno
+        return e
+
     # Search default path
     stat.side_effect = [
-        FileNotFoundError(),
-        PermissionError(),
+        mk_oserror(),
+        mk_oserror(13),
         mocker.Mock(st_mode=0o600),
     ]
     filename, mode = config.find_filename(environ=dict())
@@ -71,10 +78,10 @@ def test_find_filename(mocker):
     # Read from env var LDAP2PG_CONFIG
     stat.reset_mock()
     stat.side_effect = [
-        PermissionError(),
+        OSError(),
         AssertionError("Not reached."),
     ]
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(NoConfigurationError):
         config.find_filename(environ=dict(LDAP2PG_CONFIG='my.yml'))
 
 
@@ -149,11 +156,11 @@ def test_load(mocker):
     read = mocker.patch('ldap2pg.config.Configuration.read')
     mocker.patch('ldap2pg.config.open', create=True)
 
-    from ldap2pg.config import Configuration
+    from ldap2pg.config import Configuration, NoConfigurationError
 
     config = Configuration()
 
-    ff.side_effect = FileNotFoundError()
+    ff.side_effect = NoConfigurationError()
     # Noop: just use defaults
     config.load()
 
