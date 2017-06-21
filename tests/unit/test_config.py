@@ -147,7 +147,7 @@ def test_load(mocker):
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
     read = mocker.patch('ldap2pg.config.Configuration.read')
-    mocker.patch('ldap2pg.config.open')
+    mocker.patch('ldap2pg.config.open', create=True)
 
     from ldap2pg.config import Configuration
 
