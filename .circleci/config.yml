@@ -4,7 +4,7 @@ jobs:
   build:
     working_directory: ~/ldap2pg
     docker:
-    - image: circleci/python:3.5
+    - image: circleci/python:3.4
     steps:
     - checkout
     - restore_cache:
