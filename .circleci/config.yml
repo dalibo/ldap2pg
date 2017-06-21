@@ -30,7 +30,7 @@ version: 2
       flake8 .
       python setup.py --long-description | rst2html.py --strict >/dev/null
       pytest tests/unit/
-      codecov
+      codecov --flags ${CIRCLE_JOB//-/}
 
 .build_tpl: &build_tpl
   working_directory: ~/ldap2pg
