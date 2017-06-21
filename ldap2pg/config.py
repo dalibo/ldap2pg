@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
+import errno
 import logging
 import os
 from os import stat
 import re
 
+from six import string_types
 import yaml
 
 from .utils import (
@@ -28,7 +30,7 @@ class Mapping(object):
         if env == _auto_env:
             env = path.upper().replace(':', '_')
         self.env = env
-        if isinstance(secret, str):
+        if isinstance(secret, string_types):
             secret = re.compile(secret)
         self.secret = secret
 
@@ -56,6 +58,10 @@ class Mapping(object):
                     )
 
         return value
+
+
+class NoConfigurationError(Exception):
+    pass
 
 
 class Configuration(dict):
@@ -112,17 +118,16 @@ class Configuration(dict):
                 logger.debug("Trying %s.", candidate)
                 stat_ = stat(candidate)
                 return candidate, stat_.st_mode
-            except PermissionError as e:
-                logger.warn("Can't try %s: permission denied.", candidate)
-            except FileNotFoundError as e:
-                continue
-        raise FileNotFoundError("No configuration file found")
+            except OSError as e:
+                if e.errno == errno.EACCES:
+                    logger.warn("Can't try %s: permission denied.", candidate)
+        raise NoConfigurationError("No configuration file found")
 
     def load(self):
         # Main entry point for config loading. Most io should be done here.
         try:
             filename, mode = self.find_filename(environ=os.environ)
-        except FileNotFoundError:
+        except NoConfigurationError:
             logger.debug("No configuration file found.")
             file_config = {}
         else:

@@ -1,7 +1,6 @@
 version: 2
 
-jobs:
-  build:
+.unit: &unit
     working_directory: ~/ldap2pg
     docker:
     - image: circleci/python:3.4
@@ -28,3 +27,21 @@ jobs:
           python setup.py --long-description | rst2html.py --strict >/dev/null
           pytest tests/unit/
           codecov
+
+jobs:
+  unit-py27:
+    <<: *unit
+    docker:
+    - image: circleci/python:2.7
+
+  unit-py34:
+    <<: *unit
+    docker:
+    - image: circleci/python:3.4
+
+workflows:
+  version: 2
+  pipeline:
+    jobs:
+    - unit-py27
+    - unit-py34
