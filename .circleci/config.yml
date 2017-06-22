@@ -24,15 +24,15 @@ version: 2
       codecov
 
 jobs:
-  unit-py27:
+  0-unit-py27:
     <<: *unit_tpl
     docker: [{image: "circleci/python:2.7"}]
 
-  unit-py34:
+  0-unit-py34:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.4"}]
 
-  rpm:
+  0-rpm:
     docker: [{image: "centos:7"}]
     working_directory: /tmp/ldap2pg
     steps:
@@ -42,10 +42,34 @@ jobs:
         root: /tmp/ldap2pg
         paths: ["dist/"]
 
+  1-func-centos7:
+    working_directory: /tmp/ldap2pg
+    docker:
+      - image: centos:7
+      - image: dinkel/openldap:latest
+        environment:
+          SLAPD_PASSWORD: communication
+          SLAPD_DOMAIN: ldap2pg.local
+      - image: postgres:9.6
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: communication
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/ldap2pg/
+    - run: |
+        export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
+        export LDAP_BASE=dc=ldap2pg,dc=local
+        export LDAP_HOST=localhost LDAP_BIND=cn=admin,$LDAP_BASE LDAP_PASSWORD=communication
+        tests/func/entrypoint.sh
+
 workflows:
   version: 2
   pipeline:
     jobs:
-    - unit-py27
-    - unit-py34
-    - rpm
+    - 0-unit-py27
+    - 0-unit-py34
+    - 0-rpm
+    - 1-func-centos7:
+        requires: [0-unit-py27, 0-rpm]
