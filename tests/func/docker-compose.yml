@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+  ldap:
+    image: dinkel/openldap
+    environment:
+      SLAPD_DOMAIN: ldap2pg.local
+      SLAPD_PASSWORD: fonctionnel
+
+  postgres:
+    image: postgres:9.6
+    environment:
+      POSTGRES_PASSWORD: fonctionnel
+
+  runner:
+    image: centos:7
+    links: [ldap, postgres]
+    volumes:
+    - ../../:/workspace
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: fonctionnel
+      LDAP_HOST: ldap
+      LDAP_BIND: cn=admin,dc=ldap2pg,dc=local
+      LDAP_PASSWORD: fonctionnel
+      LDAP_BASE: dc=ldap2pg,dc=local
+    entrypoint: /workspace/tests/func/entrypoint.sh

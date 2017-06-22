@@ -1,7 +1,10 @@
 default:
 
+distclean:
+	rm -rf ../dist/
+
 rpm:
 	docker-compose up rpm
 
-trash:
+clean:
 	docker-compose down -v

@@ -4,7 +4,6 @@ from fnmatch import fnmatch
 import logging
 
 import psycopg2
-from psycopg2 import sql
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +49,7 @@ class RoleManager(object):
             return logger.info("Would create role %s.", role)
 
         logger.info("Creating new role %s.", role)
-        self.pgcursor.execute(
-            sql.SQL('CREATE ROLE {name} WITH LOGIN').format(
-                name=psycopg2.sql.Identifier(role),
-            )
-        )
+        self.pgcursor.execute('CREATE ROLE %s WITH LOGIN' % (role,))
         self.pgconn.commit()
 
     def drop(self, role):
@@ -62,11 +57,7 @@ class RoleManager(object):
             return logger.warn("Would create role %s.", role)
 
         logger.warn("Dropping existing role %s.", role)
-        self.pgcursor.execute(
-            sql.SQL('DROP ROLE {name}').format(
-                name=psycopg2.sql.Identifier(role),
-            )
-        )
+        self.pgcursor.execute('DROP ROLE %s' % (role,))
         self.pgconn.commit()
 
     def sync(self, base, query):
