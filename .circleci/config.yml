@@ -32,9 +32,20 @@ jobs:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.4"}]
 
+  rpm:
+    docker: [{image: "centos:7"}]
+    working_directory: /tmp/ldap2pg
+    steps:
+    - checkout
+    - run: ./packaging/build_rpm.sh
+    - persist_to_workspace:
+        root: /tmp/ldap2pg
+        paths: ["dist/"]
+
 workflows:
   version: 2
   pipeline:
     jobs:
     - unit-py27
     - unit-py34
+    - rpm
