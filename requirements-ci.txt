@@ -4,3 +4,4 @@ flake8
 pytest
 pytest-cov
 pytest-mock
+psycopg2==2.5.1
