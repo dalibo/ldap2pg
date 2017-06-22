@@ -1,43 +1,46 @@
 version: 2
 
-.unit: &unit
-    working_directory: ~/ldap2pg
-    docker:
-    - image: circleci/python:3.4
-    steps:
-    - checkout
-    - restore_cache:
-        keys:
-          - ldap2pg
-    - run:
-        command: |
-          sudo pip install wheel virtualenv
-          virtualenv .venv/
-          . .venv/bin/activate
-          pip install -U -r requirements-ci.txt -e .
-    - save_cache:
-        key: ldap2pg
-        paths:
-        - "~/.cache/pip/"
-        - ".venv"
-    - run:
-        command: |
-          . .venv/bin/activate
-          flake8 .
-          python setup.py --long-description | rst2html.py --strict >/dev/null
-          pytest tests/unit/
-          codecov
+.unit_tpl: &unit_tpl
+  working_directory: ~/ldap2pg
+  steps:
+  - checkout
+  - restore_cache:
+      keys: [ldap2pg]
+  - run: |
+      sudo pip install wheel virtualenv
+      virtualenv .venv/
+      . .venv/bin/activate
+      pip install -U -r requirements-ci.txt -e .
+  - save_cache:
+      key: ldap2pg
+      paths:
+      - "~/.cache/pip/"
+      - ".venv"
+  - run: |
+      . .venv/bin/activate
+      flake8 .
+      python setup.py --long-description | rst2html.py --strict >/dev/null
+      pytest tests/unit/
+      codecov
 
 jobs:
   unit-py27:
-    <<: *unit
-    docker:
-    - image: circleci/python:2.7
+    <<: *unit_tpl
+    docker: [{image: "circleci/python:2.7"}]
 
   unit-py34:
-    <<: *unit
-    docker:
-    - image: circleci/python:3.4
+    <<: *unit_tpl
+    docker: [{image: "circleci/python:3.4"}]
+
+  rpm:
+    docker: [{image: "centos:7"}]
+    working_directory: /tmp/ldap2pg
+    steps:
+    - checkout
+    - run: ./packaging/build_rpm.sh
+    - persist_to_workspace:
+        root: /tmp/ldap2pg
+        paths: ["dist/"]
 
 workflows:
   version: 2
@@ -45,3 +48,4 @@ workflows:
     jobs:
     - unit-py27
     - unit-py34
+    - rpm
