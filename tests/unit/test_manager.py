@@ -57,6 +57,19 @@ def test_process_entry(mocker):
     entry = mocker.Mock(entry_attributes_as_dict=dict(cn=['alice', 'bob']))
 
     roles = manager.process_ldap_entry(entry, name_attribute='cn')
+    roles = list(roles)
+
+    assert 2 == len(roles)
+    assert 'alice' in roles
+    assert 'bob' in roles
+
+    entry = mocker.Mock(
+        entry_attributes_as_dict=dict(
+            member=['cn=alice,dc=unit', 'cn=bob,dc=unit']),
+    )
+
+    roles = manager.process_ldap_entry(entry, name_attribute='member.cn')
+    roles = list(roles)
 
     assert 2 == len(roles)
     assert 'alice' in roles
