@@ -36,12 +36,12 @@ yum install -y dist/ldap2pg*.noarch.rpm
 rpm --query --queryformat= ldap2pg
 
 # Case dry run
-DRY=1 ldap2pg
+DEBUG=1 DRY=1 ldap2pg
 # Assert nothing is done
 psql -c 'SELECT rolname FROM pg_roles;' | grep -q spurious
 
 # Case real run
-ldap2pg
+DEBUG=1 ldap2pg
 
 # Assert spurious role is dropped
 ! psql -c 'SELECT rolname FROM pg_roles;' | grep -q spurious
