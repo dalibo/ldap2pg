@@ -39,6 +39,7 @@ class Mapping(object):
         try:
             if self.env:
                 value = environ[self.env]
+                logger.debug("Loaded %s from %s.", self.path, self.env)
             else:
                 raise KeyError()
         except KeyError:
