@@ -58,6 +58,7 @@ def test_pdb(mocker):
 
 
 def test_wrapped_main(mocker):
+    c = mocker.patch('ldap2pg.script.Configuration', autospec=True)
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
     cpc = mocker.patch('ldap2pg.script.create_pg_connection')
     rm = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
@@ -66,6 +67,7 @@ def test_wrapped_main(mocker):
 
     wrapped_main()
 
+    assert c.called is True
     assert clc.called is True
     assert cpc.called is True
     assert rm.called is True
