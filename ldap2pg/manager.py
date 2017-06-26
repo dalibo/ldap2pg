@@ -54,7 +54,7 @@ class RoleManager(object):
 
     def drop(self, role):
         if self.dry:
-            return logger.warn("Would create role %s.", role)
+            return logger.warn("Would drop role %s.", role)
 
         logger.warn("Dropping existing role %s.", role)
         self.pgcursor.execute('DROP ROLE %s' % (role,))
