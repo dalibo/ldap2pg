@@ -6,6 +6,10 @@ import pytest
 def test_mapping():
     from ldap2pg.config import Mapping
 
+    m = Mapping('sync_map', env=None)
+    v = m.process(default='defval', file_config=dict(), environ=dict())
+    assert 'defval' == v
+
     m = Mapping('ldap:password', secret=True)
     assert 'LDAP_PASSWORD' == m.env
 
