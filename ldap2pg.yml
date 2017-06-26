@@ -3,8 +3,8 @@ ldap:
 
 sync_map:
 - ldap:
-    base: ou=people,dc=ldap2pg,dc=local
-    filter: "(objectClass=organizationalRole)"
-    attribute: cn
+    base: ou=groups,dc=ldap2pg,dc=local
+    filter: "(objectClass=groupOfNames)"
+    attributes: [cn, member]
   role:
-    name_attribute: cn
+    name_attribute: member.cn

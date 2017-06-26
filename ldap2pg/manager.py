@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
+from ldap3.utils.dn import parse_dn
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,11 +42,29 @@ class RoleManager(object):
 
     def query_ldap(self, base, filter, attributes):
         logger.debug("Querying LDAP...")
-        self.ldapconn.search(base, filter, attributes=attributes)
+        self.ldapconn.search(
+            base, filter, attributes=attributes,
+        )
         return self.ldapconn.entries[:]
 
     def process_ldap_entry(self, entry, name_attribute):
-        return entry.entry_attributes_as_dict[name_attribute]
+        path = name_attribute.split('.')
+        values = entry.entry_attributes_as_dict[path[0]]
+        path = path[1:]
+        for value in values:
+            if path:
+                dn = parse_dn(value)
+                value = dict()
+                for type_, name, _ in dn:
+                    names = value.setdefault(type_, [])
+                    names.append(name)
+                logger.debug("Parsed DN: %s", value)
+                value = value[path[0]][0]
+            logger.debug(
+                "Yielding role %s from %s %s",
+                value, entry.entry_dn, name_attribute,
+            )
+            yield value
 
     def create(self, role):
         if self.dry:
