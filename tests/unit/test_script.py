@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 
@@ -23,7 +25,7 @@ def test_bdb_quit(mocker):
     with pytest.raises(SystemExit) as ei:
         main()
 
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
 
 
 def test_unhandled_error(mocker):
@@ -36,7 +38,20 @@ def test_unhandled_error(mocker):
     with pytest.raises(SystemExit) as ei:
         main()
 
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
+
+
+def test_user_error(mocker):
+    w = mocker.patch('ldap2pg.script.wrapped_main')
+
+    from ldap2pg.script import main, UserError
+
+    w.side_effect = UserError("Test message.", exit_code=0xCAFE)
+
+    with pytest.raises(SystemExit) as ei:
+        main()
+
+    assert 0xCAFE == ei.value.code
 
 
 def test_pdb(mocker):
@@ -54,7 +69,7 @@ def test_pdb(mocker):
         main()
 
     assert pm.called is True
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
 
 
 def test_wrapped_main(mocker):

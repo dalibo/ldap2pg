@@ -13,6 +13,7 @@ import psycopg2
 
 from .config import Configuration
 from .manager import RoleManager
+from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,9 @@ def main():
         exit(0)
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")
+    except UserError as e:
+        logger.critical("%s", e)
+        exit(e.exit_code)
     except Exception:
         logger.exception('Unhandled error:')
         if debug and sys.stdout.isatty():
@@ -67,7 +71,7 @@ def main():
                 "Please file an issue at "
                 "https://github.com/dalibo/ldap2pg/issues with full log.",
             )
-    exit(1)
+    exit(os.EX_SOFTWARE)
 
 
 if '__main__' == __name__:  # pragma: no cover
