@@ -23,6 +23,31 @@ def raw(v):
     return v
 
 
+def syncmap(value):
+    if isinstance(value, dict):
+        value = [value]
+
+    if not value:
+        raise ValueError("Empty mapping.")
+
+    for item in value:
+        item['ldap'] = dict(
+            Configuration.DEFAULTS['ldap']['default_query'],
+            **item['ldap']
+        )
+        ldap = item['ldap']
+        if 'attribute' in ldap:
+            ldap['attributes'] = ldap['attribute']
+            del ldap['attribute']
+        if isinstance(ldap['attributes'], str):
+            ldap['attributes'] = [ldap['attributes']]
+
+        if 'role' not in item:
+            raise ValueError("Missing role entry.")
+
+    return value
+
+
 _auto_env = object()
 
 
@@ -78,13 +103,17 @@ class Configuration(dict):
             'port': 389,
             'bind': None,
             'password': None,
-            'base': '',
-            'filter': '(objectClass=organizationalRole)',
+            'default_query': {
+                'base': '',
+                'filter': '(objectClass=organizationalRole)',
+                'attributes': ['cn'],
+            },
         },
         'postgres': {
             'dsn': '',
             'blacklist': ['pg_*', 'postgres'],
         },
+        'sync_map': [],
     }
 
     MAPPINGS = [
@@ -93,13 +122,12 @@ class Configuration(dict):
         Mapping('ldap:port'),
         Mapping('ldap:bind'),
         Mapping('ldap:password', secret=True),
-        Mapping('ldap:base'),
-        Mapping('ldap:filter'),
         Mapping(
             'postgres:dsn', env='PGDSN',
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:blacklist', env=None),
+        Mapping('sync_map', env=None, processor=syncmap)
     ]
 
     def __init__(self):

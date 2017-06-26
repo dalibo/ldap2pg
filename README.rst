@@ -13,6 +13,14 @@ Features
 
 ::
 
+    $ cat ldap2pg.yml
+    sync_map:
+      ldap:
+        base: ou=people,dc=ldap2pg,dc=local
+        filter: "(objectClass=organizationalRole)"
+        attribute: cn
+      role:
+        name_attribute: cn
     $ ldap2pg
      INFO Starting ldap2pg 0.1.
      INFO Creating new role alice.

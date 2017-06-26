@@ -37,10 +37,13 @@ class RoleManager(object):
         payload = self.pgcursor.fetchall()
         return {r[0] for r in payload}
 
-    def fetch_ldap_roles(self, base, query, attribute='cn'):
-        logger.debug("Querying LDAP for wanted roles.")
-        self.ldapconn.search(base, query, attributes=[attribute])
-        return {getattr(r, attribute).value for r in self.ldapconn.entries}
+    def query_ldap(self, base, filter, attributes):
+        logger.debug("Querying LDAP...")
+        self.ldapconn.search(base, filter, attributes=attributes)
+        return self.ldapconn.entries[:]
+
+    def process_ldap_entry(self, entry, name_attribute):
+        return entry.entry_attributes_as_dict[name_attribute]
 
     def create(self, role):
         if self.dry:
@@ -58,11 +61,17 @@ class RoleManager(object):
         self.pgcursor.execute('DROP ROLE %s' % (role,))
         self.pgconn.commit()
 
-    def sync(self, base, query):
+    def sync(self, map_):
         with self:
             pgroles = self.fetch_pg_roles()
             pgroles = set(self.blacklist(pgroles))
-            ldaproles = self.fetch_ldap_roles(base=base, query=query)
+            ldaproles = set()
+            for mapping in map_:
+                for entry in self.query_ldap(**mapping['ldap']):
+                    roles = self.process_ldap_entry(
+                        entry=entry, **mapping['role']
+                    )
+                    ldaproles |= set(roles)
 
             missing = ldaproles - pgroles
             for role in missing:

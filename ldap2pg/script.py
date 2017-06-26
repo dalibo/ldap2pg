@@ -41,10 +41,7 @@ def wrapped_main():
         blacklist=config['postgres']['blacklist'],
         dry=config['dry'],
     )
-    manager.sync(
-        base=config['ldap']['base'],
-        query=config['ldap']['filter'],
-    )
+    manager.sync(map_=config['sync_map'])
 
 
 def main():

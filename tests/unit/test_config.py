@@ -66,6 +66,31 @@ def test_processor():
     assert v is False
 
 
+def test_process_syncmap():
+    from ldap2pg.config import syncmap
+
+    raw = dict(
+        ldap=dict(
+            base='dc=unit',
+            attribute='cn',
+        ),
+        role=dict(),
+    )
+
+    v = syncmap(raw)
+
+    assert isinstance(v, list)
+    assert 1 == len(v)
+    assert 'attributes' in v[0]['ldap']
+    assert 'attribute' not in v[0]['ldap']
+    assert 'filter' in v[0]['ldap']
+
+    del raw['role']
+
+    with pytest.raises(ValueError):
+        syncmap(raw)
+
+
 def test_find_filename(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
@@ -103,10 +128,16 @@ def test_merge_and_mappings():
 
     # Noop
     config = Configuration()
-    config.merge(file_config={}, environ={})
+    with pytest.raises(ValueError):
+        config.merge(file_config={}, environ={})
 
+    # Minimal configuration
+    minimal_config = dict(
+        ldap=dict(host='confighost'),
+        sync_map=dict(ldap=dict(), role=dict()),
+    )
     config.merge(
-        file_config=dict(ldap=dict(host='confighost')),
+        file_config=minimal_config,
         environ=dict(LDAP_PASSWORD='envpass', PGDSN='envdsn'),
     )
     assert 'confighost' == config['ldap']['host']
@@ -115,26 +146,35 @@ def test_merge_and_mappings():
 
     with pytest.raises(ValueError):
         config.merge(
-            file_config=dict(ldap=dict(password='unsecure')),
+            file_config=dict(minimal_config, ldap=dict(password='unsecure')),
             environ=dict(),
         )
 
     with pytest.raises(ValueError):
         # Refuse world readable postgres URI with password
         config.merge(
-            file_config=dict(postgres=dict(dsn='password=unsecure')),
+            file_config=dict(
+                minimal_config,
+                postgres=dict(dsn='password=unsecure'),
+            ),
             environ=dict(),
         )
 
     with pytest.raises(ValueError):
         # Refuse world readable postgres URI with password
         config.merge(
-            file_config=dict(postgres=dict(dsn='postgres://u:unsecure@h')),
+            file_config=dict(
+                minimal_config,
+                postgres=dict(dsn='postgres://u:unsecure@h'),
+            ),
             environ=dict(),
         )
 
     config.merge(
-        file_config=dict(postgres=dict(dsn='postgres://u@h')),
+        file_config=dict(
+            minimal_config,
+            postgres=dict(dsn='postgres://u@h'),
+        ),
         environ=dict(),
     )
 
@@ -174,18 +214,20 @@ def test_load(mocker):
     config = Configuration()
 
     ff.side_effect = NoConfigurationError()
-    # Noop: just use defaults
-    config.load()
+    # Missing sync_map
+    with pytest.raises(ValueError):
+        config.load()
 
     ff.side_effect = None
     # Find `filename.yml`
     ff.return_value = ['filename.yml', 0o0]
-    # ...containing LDAP host
-    read.return_value = dict(ldap=dict(host='cfghost'))
+    # ...containing mapping
+    read.return_value = dict(sync_map=dict(ldap=dict(), role=dict()))
     # send one env var for LDAP bind
     environ.update(dict(LDAP_BIND='envbind'))
 
     config.load()
 
-    assert 'cfghost' == config['ldap']['host']
     assert 'envbind' == config['ldap']['bind']
+    assert 1 == len(config['sync_map'])
+    assert 'ldap' in config['sync_map'][0]
