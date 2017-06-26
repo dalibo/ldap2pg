@@ -138,57 +138,63 @@ def test_merge_and_mappings():
     )
     config.merge(
         file_config=minimal_config,
+        environ=dict(),
+    )
+    config.merge(
+        file_config=minimal_config,
         environ=dict(LDAP_PASSWORD='envpass', PGDSN='envdsn'),
     )
     assert 'confighost' == config['ldap']['host']
     assert 'envpass' == config['ldap']['password']
     assert 'envdsn' == config['postgres']['dsn']
 
-    with pytest.raises(ValueError):
-        config.merge(
-            file_config=dict(minimal_config, ldap=dict(password='unsecure')),
-            environ=dict(),
-        )
 
-    with pytest.raises(ValueError):
-        # Refuse world readable postgres URI with password
-        config.merge(
-            file_config=dict(
-                minimal_config,
-                postgres=dict(dsn='password=unsecure'),
-            ),
-            environ=dict(),
-        )
+def test_security():
+    from ldap2pg.config import Configuration
 
-    with pytest.raises(ValueError):
-        # Refuse world readable postgres URI with password
-        config.merge(
-            file_config=dict(
-                minimal_config,
-                postgres=dict(dsn='postgres://u:unsecure@h'),
-            ),
-            environ=dict(),
-        )
+    config = Configuration()
 
-    config.merge(
-        file_config=dict(
-            minimal_config,
-            postgres=dict(dsn='postgres://u@h'),
-        ),
-        environ=dict(),
+    minimal_config = dict(
+        ldap=dict(host='confighost'),
+        sync_map=dict(ldap=dict(), role=dict()),
     )
+
+    with pytest.raises(ValueError):
+        config.merge(environ=dict(), file_config=dict(
+            minimal_config,
+            ldap=dict(password='unsecure'),
+        ))
+
+    with pytest.raises(ValueError):
+        # Refuse world readable postgres URI with password
+        config.merge(environ=dict(), file_config=dict(
+            minimal_config,
+            postgres=dict(dsn='password=unsecure'),
+        ))
+
+    with pytest.raises(ValueError):
+        # Refuse world readable postgres URI with password
+        config.merge(environ=dict(), file_config=dict(
+            minimal_config,
+            postgres=dict(dsn='postgres://u:unsecure@h'),
+        ))
+
+    config.merge(environ=dict(), file_config=dict(
+        minimal_config,
+        postgres=dict(dsn='postgres://u@h'),
+    ))
 
 
 def test_read_yml():
     from io import StringIO
 
-    from ldap2pg.config import Configuration
+    from ldap2pg.config import Configuration, ConfigurationError
 
     config = Configuration()
 
     # Deny list file
     fo = StringIO("- listentry")
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         config.read(fo, mode=0o0)
 
     fo = StringIO("entry: value")
@@ -209,13 +215,17 @@ def test_load(mocker):
     read = mocker.patch('ldap2pg.config.Configuration.read')
     mocker.patch('ldap2pg.config.open', create=True)
 
-    from ldap2pg.config import Configuration, NoConfigurationError
+    from ldap2pg.config import (
+        Configuration,
+        ConfigurationError,
+        NoConfigurationError,
+    )
 
     config = Configuration()
 
     ff.side_effect = NoConfigurationError()
     # Missing sync_map
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         config.load()
 
     ff.side_effect = None

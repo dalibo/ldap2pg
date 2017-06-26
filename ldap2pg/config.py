@@ -12,6 +12,7 @@ import yaml
 from .utils import (
     deepget,
     deepset,
+    UserError,
 )
 
 
@@ -88,6 +89,13 @@ class Mapping(object):
                     )
 
         return self.processor(value)
+
+
+class ConfigurationError(UserError):
+    def __init__(self, message):
+        super(ConfigurationError, self).__init__(
+            message, exit_code=os.EX_CONFIG,
+        )
 
 
 class NoConfigurationError(Exception):
@@ -168,7 +176,11 @@ class Configuration(dict):
             with open(filename) as fo:
                 file_config = self.read(fo, mode)
 
-        self.merge(file_config=file_config, environ=os.environ)
+        try:
+            self.merge(file_config=file_config, environ=os.environ)
+        except ValueError as e:
+            raise ConfigurationError("Failed to load configuration: %s" % (e,))
+
         logger.debug("Configuration loaded.")
 
     def merge(self, file_config, environ=os.environ):
@@ -183,6 +195,6 @@ class Configuration(dict):
     def read(self, fo, mode):
         payload = yaml.load(fo) or {}
         if not isinstance(payload, dict):
-            raise ValueError("Configuration file must be a mapping")
+            raise ConfigurationError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
