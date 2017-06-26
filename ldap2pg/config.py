@@ -19,17 +19,22 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
+def raw(v):
+    return v
+
+
 _auto_env = object()
 
 
 class Mapping(object):
     """Fetch value from either file or env var."""
 
-    def __init__(self, path, env=_auto_env, secret=False):
+    def __init__(self, path, env=_auto_env, secret=False, processor=raw):
         self.path = path
         if env == _auto_env:
             env = path.upper().replace(':', '_')
         self.env = env
+        self.processor = processor
         if isinstance(secret, string_types):
             secret = re.compile(secret)
         self.secret = secret
@@ -46,7 +51,7 @@ class Mapping(object):
             try:
                 value = deepget(file_config, self.path)
             except KeyError:
-                return default
+                value = default
             else:
                 if hasattr(self.secret, 'search'):
                     secret = self.secret.search(value)
@@ -58,7 +63,7 @@ class Mapping(object):
                         "Refuse to load secret from world readable file."
                     )
 
-        return value
+        return self.processor(value)
 
 
 class NoConfigurationError(Exception):

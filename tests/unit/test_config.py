@@ -57,6 +57,15 @@ def test_mapping():
         )
 
 
+def test_processor():
+    from ldap2pg.config import Mapping
+
+    m = Mapping('dry', processor=bool)
+    v = m.process(default=True, file_config=dict(dry=0), environ=dict())
+
+    assert v is False
+
+
 def test_find_filename(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
