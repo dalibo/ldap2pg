@@ -2,7 +2,7 @@
 
 teardown() {
     # If not on CI, wait for user interrupt on exit
-    if [ -z "${CI-}" -a $? -gt 0 ] ; then
+    if [ -z "${CI-}" -a $? -gt 0 -a $$ = 1 ] ; then
         tailf /dev/null
     fi
 }
