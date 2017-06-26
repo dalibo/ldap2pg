@@ -2,11 +2,8 @@ import pytest
 
 
 def test_main(mocker):
-    mocker.patch('ldap2pg.script.logging.basicConfig')
-    mocker.patch('ldap2pg.script.Configuration')
-    mocker.patch('ldap2pg.script.create_ldap_connection')
-    mocker.patch('ldap2pg.script.create_pg_connection')
-    mocker.patch('ldap2pg.script.RoleManager')
+    mocker.patch('ldap2pg.script.logging.basicConfig', autospec=True)
+    mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
 
     from ldap2pg.script import main
 
@@ -58,6 +55,22 @@ def test_pdb(mocker):
 
     assert pm.called is True
     assert 1 == ei.value.code
+
+
+def test_wrapped_main(mocker):
+    c = mocker.patch('ldap2pg.script.Configuration', autospec=True)
+    clc = mocker.patch('ldap2pg.script.create_ldap_connection')
+    cpc = mocker.patch('ldap2pg.script.create_pg_connection')
+    rm = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
+
+    from ldap2pg.script import wrapped_main
+
+    wrapped_main()
+
+    assert c.called is True
+    assert clc.called is True
+    assert cpc.called is True
+    assert rm.called is True
 
 
 def test_create_ldap(mocker):

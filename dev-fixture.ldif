@@ -1,14 +1,53 @@
+#
+# Dév fixture provides two UO: people and groups. Groups has a `member`
+# attribute referencing people.
+#
+
 dn: ou=people,dc=ldap2pg,dc=local
 objectclass: organizationalUnit
 objectclass: top
 ou: people
+
+dn: cn=alice,ou=people,dc=ldap2pg,dc=local
+cn: alice
+objectclass: organizationalRole
+objectclass: top
 
 dn: cn=bob,ou=people,dc=ldap2pg,dc=local
 cn: bob
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=alice,ou=people,dc=ldap2pg,dc=local
-cn: alice
+dn: cn=foo,ou=people,dc=ldap2pg,dc=local
+cn: foo
 objectclass: organizationalRole
 objectclass: top
+
+dn: cn=bar,ou=people,dc=ldap2pg,dc=local
+cn: bar
+objectclass: organizationalRole
+objectclass: top
+
+dn: ou=groups,dc=ldap2pg,dc=local
+objectclass: organizationalUnit
+objectclass: top
+ou: people
+
+dn: cn=dba,ou=groups,dc=ldap2pg,dc=local
+objectClass: groupOfNames
+objectClass: top
+cn: dba
+member: cn=alice,ou=people,dc=ldap2pg,dc=local
+member: cn=bob,ou=people,dc=ldap2pg,dc=local
+
+dn: cn=app0,ou=groups,dc=ldap2pg,dc=local
+objectClass: groupOfNames
+objectClass: top
+cn: app0
+member: cn=foo,ou=people,dc=ldap2pg,dc=local
+
+dn: cn=app1,ou=groups,dc=ldap2pg,dc=local
+objectClass: groupOfNames
+objectClass: top
+cn: app1
+member: cn=bar,ou=people,dc=ldap2pg,dc=local

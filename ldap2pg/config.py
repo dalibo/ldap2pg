@@ -12,11 +12,39 @@ import yaml
 from .utils import (
     deepget,
     deepset,
-    deepupdate,
 )
 
 
 logger = logging.getLogger(__name__)
+
+
+def raw(v):
+    return v
+
+
+def syncmap(value):
+    if isinstance(value, dict):
+        value = [value]
+
+    if not value:
+        raise ValueError("Empty mapping.")
+
+    for item in value:
+        item['ldap'] = dict(
+            Configuration.DEFAULTS['ldap']['default_query'],
+            **item['ldap']
+        )
+        ldap = item['ldap']
+        if 'attribute' in ldap:
+            ldap['attributes'] = ldap['attribute']
+            del ldap['attribute']
+        if isinstance(ldap['attributes'], str):
+            ldap['attributes'] = [ldap['attributes']]
+
+        if 'role' not in item:
+            raise ValueError("Missing role entry.")
+
+    return value
 
 
 _auto_env = object()
@@ -25,11 +53,12 @@ _auto_env = object()
 class Mapping(object):
     """Fetch value from either file or env var."""
 
-    def __init__(self, path, env=_auto_env, secret=False):
+    def __init__(self, path, env=_auto_env, secret=False, processor=raw):
         self.path = path
         if env == _auto_env:
             env = path.upper().replace(':', '_')
         self.env = env
+        self.processor = processor
         if isinstance(secret, string_types):
             secret = re.compile(secret)
         self.secret = secret
@@ -46,7 +75,7 @@ class Mapping(object):
             try:
                 value = deepget(file_config, self.path)
             except KeyError:
-                return default
+                value = default
             else:
                 if hasattr(self.secret, 'search'):
                     secret = self.secret.search(value)
@@ -58,7 +87,7 @@ class Mapping(object):
                         "Refuse to load secret from world readable file."
                     )
 
-        return value
+        return self.processor(value)
 
 
 class NoConfigurationError(Exception):
@@ -73,13 +102,17 @@ class Configuration(dict):
             'port': 389,
             'bind': None,
             'password': None,
-            'base': '',
-            'filter': '(objectClass=organizationalRole)',
+            'default_query': {
+                'base': '',
+                'filter': '(objectClass=organizationalRole)',
+                'attributes': ['cn'],
+            },
         },
         'postgres': {
             'dsn': '',
             'blacklist': ['pg_*', 'postgres'],
         },
+        'sync_map': [],
     }
 
     MAPPINGS = [
@@ -88,13 +121,12 @@ class Configuration(dict):
         Mapping('ldap:port'),
         Mapping('ldap:bind'),
         Mapping('ldap:password', secret=True),
-        Mapping('ldap:base'),
-        Mapping('ldap:filter'),
         Mapping(
             'postgres:dsn', env='PGDSN',
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:blacklist', env=None),
+        Mapping('sync_map', env=None, processor=syncmap)
     ]
 
     def __init__(self):
@@ -140,8 +172,6 @@ class Configuration(dict):
         logger.debug("Configuration loaded.")
 
     def merge(self, file_config, environ=os.environ):
-        self.update(file_config)
-
         for mapping in self.MAPPINGS:
             value = mapping.process(
                 default=deepget(self.DEFAULTS, mapping.path),
@@ -156,6 +186,3 @@ class Configuration(dict):
             raise ValueError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
-
-    def update(self, other):
-        deepupdate(self, other)

@@ -1,0 +1,10 @@
+ldap:
+  bind: cn=admin,dc=ldap2pg,dc=local
+
+sync_map:
+- ldap:
+    base: ou=people,dc=ldap2pg,dc=local
+    filter: "(objectClass=organizationalRole)"
+    attribute: cn
+  role:
+    name_attribute: cn
