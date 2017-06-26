@@ -18,6 +18,7 @@ version: 2
       - ".venv"
   - run: |
       . .venv/bin/activate
+      sort --check .gitignore
       flake8 .
       python setup.py --long-description | rst2html.py --strict >/dev/null
       pytest tests/unit/
