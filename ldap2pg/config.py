@@ -12,7 +12,6 @@ import yaml
 from .utils import (
     deepget,
     deepset,
-    deepupdate,
 )
 
 
@@ -173,8 +172,6 @@ class Configuration(dict):
         logger.debug("Configuration loaded.")
 
     def merge(self, file_config, environ=os.environ):
-        self.update(file_config)
-
         for mapping in self.MAPPINGS:
             value = mapping.process(
                 default=deepget(self.DEFAULTS, mapping.path),
@@ -189,6 +186,3 @@ class Configuration(dict):
             raise ValueError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
-
-    def update(self, other):
-        deepupdate(self, other)
