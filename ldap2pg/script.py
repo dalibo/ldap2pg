@@ -62,6 +62,11 @@ def main():
         if debug and sys.stdout.isatty():
             logger.debug("Dropping in debugger.")
             pdb.post_mortem(sys.exc_info()[2])
+        else:
+            logger.error(
+                "Please file an issue at "
+                "https://github.com/dalibo/ldap2pg/issues with full log.",
+            )
     exit(1)
 
 
