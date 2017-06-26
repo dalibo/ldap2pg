@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
-import psycopg2
-
 logger = logging.getLogger(__name__)
 
 
