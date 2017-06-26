@@ -11,7 +11,7 @@ import sys
 import ldap3
 import psycopg2
 
-from .config import Configuration
+from .config import Configuration, ConfigurationError
 from .manager import RoleManager
 from .utils import UserError
 
@@ -34,8 +34,15 @@ def wrapped_main():
     config = Configuration()
     config.load()
 
-    ldapconn = create_ldap_connection(**config['ldap'])
-    pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
+    try:
+        ldapconn = create_ldap_connection(**config['ldap'])
+        pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
+    except ldap3.core.exceptions.LDAPExceptionError as e:
+        message = "Failed to connect to LDAP: %s" % (e,)
+        raise ConfigurationError(message)
+    except psycopg2.OperationalError as e:
+        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
+        raise ConfigurationError(message)
 
     manager = RoleManager(
         ldapconn=ldapconn, pgconn=pgconn,

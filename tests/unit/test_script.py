@@ -88,6 +88,26 @@ def test_wrapped_main(mocker):
     assert rm.called is True
 
 
+def test_conn_errors(mocker):
+    mocker.patch('ldap2pg.script.Configuration', autospec=True)
+    clc = mocker.patch('ldap2pg.script.create_ldap_connection')
+    cpc = mocker.patch('ldap2pg.script.create_pg_connection')
+
+    from ldap2pg.script import (
+        wrapped_main, ConfigurationError,
+        ldap3, psycopg2,
+    )
+
+    clc.side_effect = ldap3.core.exceptions.LDAPExceptionError("pouet")
+    with pytest.raises(ConfigurationError):
+        wrapped_main()
+
+    clc.side_effect = None
+    cpc.side_effect = psycopg2.OperationalError()
+    with pytest.raises(ConfigurationError):
+        wrapped_main()
+
+
 def test_create_ldap(mocker):
     mocker.patch('ldap2pg.script.ldap3.Connection', autospec=True)
     from ldap2pg.script import create_ldap_connection
