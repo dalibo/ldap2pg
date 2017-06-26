@@ -19,6 +19,7 @@ services:
     - ldapetc:/etc/ldap
     - ldapvar:/var/lib/ldap
     - ./dev-fixture.ldif:/etc/ldap.dist/prepopulate/dev-fixture.ldif
+    command: ["slapd", "-d", "33768", "-u", "openldap", "-g", "openldap"]
 
   postgres:
     image: postgres:9.6
