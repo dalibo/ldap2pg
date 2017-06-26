@@ -17,6 +17,7 @@ services:
     links: [ldap, postgres]
     volumes:
     - ../../:/workspace
+    - ./bash_history:/root/.bash_history
     environment:
       PGHOST: postgres
       PGUSER: postgres
