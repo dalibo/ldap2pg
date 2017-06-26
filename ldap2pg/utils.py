@@ -1,3 +1,9 @@
+class UserError(Exception):
+    def __init__(self, message, exit_code=1):
+        super(UserError, self).__init__(message)
+        self.exit_code = exit_code
+
+
 def deepget(mapping, path):
     """Access deep dict entry."""
     if ':' not in path:

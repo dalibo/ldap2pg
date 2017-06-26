@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 
@@ -23,7 +25,7 @@ def test_bdb_quit(mocker):
     with pytest.raises(SystemExit) as ei:
         main()
 
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
 
 
 def test_unhandled_error(mocker):
@@ -36,7 +38,20 @@ def test_unhandled_error(mocker):
     with pytest.raises(SystemExit) as ei:
         main()
 
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
+
+
+def test_user_error(mocker):
+    w = mocker.patch('ldap2pg.script.wrapped_main')
+
+    from ldap2pg.script import main, UserError
+
+    w.side_effect = UserError("Test message.", exit_code=0xCAFE)
+
+    with pytest.raises(SystemExit) as ei:
+        main()
+
+    assert 0xCAFE == ei.value.code
 
 
 def test_pdb(mocker):
@@ -54,7 +69,7 @@ def test_pdb(mocker):
         main()
 
     assert pm.called is True
-    assert 1 == ei.value.code
+    assert os.EX_SOFTWARE == ei.value.code
 
 
 def test_wrapped_main(mocker):
@@ -71,6 +86,26 @@ def test_wrapped_main(mocker):
     assert clc.called is True
     assert cpc.called is True
     assert rm.called is True
+
+
+def test_conn_errors(mocker):
+    mocker.patch('ldap2pg.script.Configuration', autospec=True)
+    clc = mocker.patch('ldap2pg.script.create_ldap_connection')
+    cpc = mocker.patch('ldap2pg.script.create_pg_connection')
+
+    from ldap2pg.script import (
+        wrapped_main, ConfigurationError,
+        ldap3, psycopg2,
+    )
+
+    clc.side_effect = ldap3.core.exceptions.LDAPExceptionError("pouet")
+    with pytest.raises(ConfigurationError):
+        wrapped_main()
+
+    clc.side_effect = None
+    cpc.side_effect = psycopg2.OperationalError()
+    with pytest.raises(ConfigurationError):
+        wrapped_main()
 
 
 def test_create_ldap(mocker):
