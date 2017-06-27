@@ -1,4 +1,16 @@
+from __future__ import unicode_literals
+
 import pytest
+
+
+def test_role():
+    from ldap2pg.manager import Role
+
+    role = Role(name='toto')
+
+    assert 'toto' == role.name
+    assert 'toto' == str(role)
+    assert 'toto' in repr(role)
 
 
 def test_context_manager(mocker):
@@ -32,7 +44,7 @@ def test_fetch_existing_roles(mocker):
     ]
     existing_roles = manager.fetch_pg_roles()
 
-    assert {'alice', 'bob'} == existing_roles
+    assert {'alice', 'bob'} == {r.name for r in existing_roles}
 
 
 def test_fetch_wanted_roles(mocker):
@@ -73,10 +85,11 @@ def test_process_entry(mocker):
 
     roles = manager.process_ldap_entry(entry, name_attribute='member.cn')
     roles = list(roles)
+    names = {r.name for r in roles}
 
     assert 2 == len(roles)
-    assert 'alice' in roles
-    assert 'bob' in roles
+    assert 'alice' in names
+    assert 'bob' in names
 
 
 def test_create(mocker):

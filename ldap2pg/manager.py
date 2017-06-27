@@ -12,6 +12,23 @@ from .utils import UserError
 logger = logging.getLogger(__name__)
 
 
+class Role(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return self.name == str(other)
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return self.name
+
+
 class RoleManager(object):
 
     def __init__(self, ldapconn, pgconn, blacklist=[], dry=False):
@@ -30,7 +47,7 @@ class RoleManager(object):
     def blacklist(self, items):
         for i in items:
             for pattern in self._blacklist:
-                if fnmatch(i, pattern):
+                if fnmatch(str(i), pattern):
                     logger.debug("Ignoring role %s. Matches %r.", i, pattern)
                     break
             else:
@@ -42,7 +59,7 @@ class RoleManager(object):
             "SELECT rolname FROM pg_catalog.pg_roles",
         )
         payload = self.pgcursor.fetchall()
-        return {r[0] for r in payload}
+        return {Role(name=r[0]) for r in payload}
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -71,7 +88,7 @@ class RoleManager(object):
                 "Yielding role %s from %s %s",
                 value, entry.entry_dn, name_attribute,
             )
-            yield value
+            yield Role(name=value)
 
     def create(self, role):
         if self.dry:
