@@ -57,15 +57,17 @@ def syncmap(value):
         if 'attribute' in ldap:
             ldap['attributes'] = ldap['attribute']
             del ldap['attribute']
+        if isinstance(ldap['attributes'], string_types):
+            ldap['attributes'] = [ldap['attributes']]
 
         if 'role' in item:
-            item['roles'] = [item['role']]
-
+            item['roles'] = item['role']
         if 'roles' not in item:
             raise ValueError("Missing roles entry.")
+        if isinstance(item['roles'], dict):
+            item['roles'] = [item['roles']]
 
-        for i, rule in enumerate(item['roles']):
-            item['roles'][i] = rolerule(rule)
+        item['roles'] = [rolerule(r) for r in item['roles']]
 
     return value
 
