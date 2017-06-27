@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_context_manager(mocker):
     from ldap2pg.manager import RoleManager
 
@@ -112,6 +115,27 @@ def test_drop(mocker):
 
     assert manager.pgcursor.execute.called is True
     assert manager.pgconn.commit.called is True
+
+
+def test_sync_bad_filter(mocker):
+    mocker.patch('ldap2pg.manager.RoleManager.fetch_pg_roles')
+    l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
+    r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
+
+    from ldap2pg.manager import RoleManager, LDAPObjectClassError, UserError
+
+    l.side_effect = LDAPObjectClassError()
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    map_ = [dict(ldap=dict(
+        base='ou=people,dc=global', filter='(objectClass=*)',
+        attributes=['cn'],
+    ))]
+
+    with pytest.raises(UserError):
+        manager.sync(map_=map_)
+
+    assert r.called is False
 
 
 def test_sync(mocker):
