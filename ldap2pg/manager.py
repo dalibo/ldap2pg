@@ -128,6 +128,8 @@ class RoleManager(object):
                     continue
 
                 self.psql(query)
+            else:
+                logger.info("Nothing to do.")
 
         logger.info("Synchronization complete.")
         return ldaproles
