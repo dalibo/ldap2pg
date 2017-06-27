@@ -33,6 +33,7 @@ class RoleOptions(dict):
         ('LOGIN', 'rolcanlogin'),
         ('CREATEDB', 'rolcreatedb'),
         ('CREATEROLE', 'rolcreaterole'),
+        ('INHERIT', 'rolinherit'),
         ('REPLICATION', 'rolreplication'),
         ('SUPERUSER', 'rolsuper'),
     ])
@@ -43,6 +44,7 @@ class RoleOptions(dict):
             LOGIN=False,
             CREATEDB=False,
             CREATEROLE=False,
+            INHERIT=True,
             REPLICATION=False,
             SUPERUSER=False,
         )
