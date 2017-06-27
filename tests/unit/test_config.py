@@ -93,6 +93,22 @@ def test_process_syncmap():
         syncmap(raw)
 
 
+def test_process_rolerule():
+    from ldap2pg.config import rolerule
+
+    rule = rolerule(dict(options='LOGIN SUPERUSER'))
+    assert rule['options']['LOGIN'] is True
+    assert rule['options']['SUPERUSER'] is True
+
+    rule = rolerule(dict(options=['LOGIN', 'SUPERUSER']))
+    assert rule['options']['LOGIN'] is True
+    assert rule['options']['SUPERUSER'] is True
+
+    rule = rolerule(dict(options=['NOLOGIN', 'SUPERUSER']))
+    assert rule['options']['LOGIN'] is False
+    assert rule['options']['SUPERUSER'] is True
+
+
 def test_find_filename(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 

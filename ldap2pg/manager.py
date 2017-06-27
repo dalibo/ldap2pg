@@ -6,6 +6,11 @@ import logging
 from ldap3.core.exceptions import LDAPObjectClassError
 from ldap3.utils.dn import parse_dn
 
+from .role import (
+    Role,
+    RoleOptions,
+    RoleSet,
+)
 from .utils import UserError
 
 
@@ -27,30 +32,43 @@ class RoleManager(object):
     def __exit__(self, *a):
         self.pgcursor.close()
 
-    def blacklist(self, items):
-        for i in items:
+    def fetch_pg_roles(self):
+        self.psql(
+            "SELECT rolname, %(cols)s FROM pg_catalog.pg_roles ORDER BY 1;"
+            % dict(
+                cols=', '.join(RoleOptions.COLUMNS_MAP.values()),
+            )
+        )
+        for row in self.pgcursor:
+            yield row
+
+    def process_pg_roles(self, rows):
+        for row in rows:
+            name = row[0]
             for pattern in self._blacklist:
-                if fnmatch(i, pattern):
+                if fnmatch(name, pattern):
+                    logger.debug(
+                        "Ignoring role %s. Matches %r.", name, pattern,
+                    )
                     break
             else:
-                yield i
-
-    def fetch_pg_roles(self):
-        logger.debug("Querying PostgreSQL for existing roles.")
-        self.pgcursor.execute(
-            "SELECT rolname FROM pg_catalog.pg_roles",
-        )
-        payload = self.pgcursor.fetchall()
-        return {r[0] for r in payload}
+                role = Role.from_row(*row)
+                logger.debug(
+                    "Found role %r %s.", role.name, role.options,
+                )
+                yield role
 
     def query_ldap(self, base, filter, attributes):
-        logger.debug("Querying LDAP...")
-        self.ldapconn.search(
-            base, filter, attributes=attributes,
+        logger.debug(
+            "Doing: ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
+            self.ldapconn.server.host, self.ldapconn.server.port,
+            self.ldapconn.user,
+            base, filter, ' '.join(attributes or []),
         )
+        self.ldapconn.search(base, filter, attributes=attributes)
         return self.ldapconn.entries[:]
 
-    def process_ldap_entry(self, entry, name_attribute):
+    def process_ldap_entry(self, entry, name_attribute, options=None, **kw):
         path = name_attribute.split('.')
         values = entry.entry_attributes_as_dict[path[0]]
         path = path[1:]
@@ -64,34 +82,28 @@ class RoleManager(object):
                 logger.debug("Parsed DN: %s", value)
                 value = value[path[0]][0]
             logger.debug(
-                "Yielding role %s from %s %s",
+                "Found role %s from %s %s",
                 value, entry.entry_dn, name_attribute,
             )
-            yield value
+            role = Role(name=value)
+            if options:
+                role.options.update(options)
+            yield role
 
-    def create(self, role):
-        if self.dry:
-            return logger.info("Would create role %s.", role)
-
-        logger.info("Creating new role %s.", role)
-        self.pgcursor.execute('CREATE ROLE %s WITH LOGIN' % (role,))
-        self.pgconn.commit()
-
-    def drop(self, role):
-        if self.dry:
-            return logger.warn("Would drop role %s.", role)
-
-        logger.warn("Dropping existing role %s.", role)
-        self.pgcursor.execute('DROP ROLE %s' % (role,))
+    def psql(self, query):
+        logger.debug("Doing: %s", query)
+        self.pgcursor.execute(query)
         self.pgconn.commit()
 
     def sync(self, map_):
         with self:
-            pgroles = self.fetch_pg_roles()
-            pgroles = set(self.blacklist(pgroles))
-            ldaproles = set()
+            logger.info("Inspecting Postgres...")
+            rows = self.fetch_pg_roles()
+            pgroles = RoleSet(self.process_pg_roles(rows))
+            ldaproles = RoleSet()
             for mapping in map_:
                 try:
+                    logger.info("Querying LDAP...")
                     entries = self.query_ldap(**mapping['ldap'])
                 except LDAPObjectClassError as e:
                     raise UserError("Failed to query LDAP: %s." % (e,))
@@ -102,13 +114,14 @@ class RoleManager(object):
                         )
                         ldaproles |= set(roles)
 
-            missing = ldaproles - pgroles
-            for role in missing:
-                self.create(role)
+            for query in pgroles.diff(ldaproles):
+                logger.info("%s: %s", 'Would' if self.dry else 'Doing', query)
+                if self.dry:
+                    continue
 
-            spurious = pgroles - ldaproles
-            for role in spurious:
-                self.drop(role)
+                self.psql(query)
+            else:
+                logger.info("Nothing to do.")
 
         logger.info("Synchronization complete.")
         return ldaproles

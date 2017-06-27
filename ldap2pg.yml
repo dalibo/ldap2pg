@@ -1,10 +1,77 @@
-ldap:
-  bind: cn=admin,dc=ldap2pg,dc=local
+#
+# **LDAP2PG CONFIGURATION**
+#
+# ldap2pg file is a regular YAML file. File mode must be 0600 if you store a
+# password in it.
+#
+# This file is tested under CI with real OpenLDAP and Postgres services. To test
+# it: clone the repository, run pip install -e ., run docker-compose -d then
+# just run ldap2pg. See dev-fixture.ldif and dev-fixture.sql for details on data
+# migrated.
+#
+# ldap2pg accepts a special env vars: DEBUG with values 1, y or Y. This enable
+# verbose logging. If ldap2pg is executed from a terminal, a debugger is
+# triggered on unhandled error.
 
+# Dry mode. env var: DRY=[1yY]
+dry: no
+
+#
+# **LDAP connection**
+#
+ldap:
+  # env vars: LDAP_HOST
+  host: ldap2pg.local
+  # env vars: LDAP_PORT
+  port: 389
+  # env vars: LDAP_BIND
+  bind: cn=admin,dc=ldap2pg,dc=local
+  # env vars: LDAP_PASSWORD
+  password: SECRET
+
+#
+# **Postgres connection**
+#
+# Standard libpq env vars are supported: PGHOST, PGPORT, PGUSER, PGPASSWORD,
+# .pgpass, etc.
+#
+# PGDSN env var is supported as well.
+#
+# postgres:
+#   dsn: postgres://user:SECRET@host:port/dbname
+#   dsn: postgres://user@%2Fvar%2Frun%2Fpostgresql:port/dbname
+#   dsn: host=host port=port user=postgres password=secret dbname=postgres
+
+#
+# **Synchronization map**
+#
+# SyncMap is an ordered list of mapping. Each mapping describes an LDAP query
+# and a set of rules to generate roles from entries returned by LDAP.
 sync_map:
 - ldap:
-    base: ou=groups,dc=ldap2pg,dc=local
+    base: cn=dba,ou=groups,dc=ldap2pg,dc=local
     filter: "(objectClass=groupOfNames)"
-    attributes: [cn, member]
+    attribute: member
+  # A signe rule to generate roles for each entries.
   role:
+    # *_attribute means the value is the name of an attribute in the entry. A
+    # role is generated for each value of the attribute. If the attribute is a
+    # distinguishedName, you can specify which part of the DN to read instead of
+    # all the attribute value.
+    #
+    #
+    # e.g. `member: cn=alice,dc=company,dc=com` generates `CREATE ROLE alice;`
+    #
     name_attribute: member.cn
+    # Postgres role options: Can be a regular SQL snippet, a list or a dict.
+    options: LOGIN SUPERUSER NOBYPASSRLS
+- ldap:
+    base: ou=groups,dc=ldap2pg,dc=local
+    filter: "(&(objectClass=groupOfNames)(cn=app*))"
+    attributes: [member]
+  # A list of rules to generate roles. Each rules is applied on each LDAP
+  # entries.
+  roles:
+  - name_attribute: member.cn
+    options:
+      LOGIN: yes
