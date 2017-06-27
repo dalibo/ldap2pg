@@ -44,10 +44,13 @@ class RoleManager(object):
         return {r[0] for r in payload}
 
     def query_ldap(self, base, filter, attributes):
-        logger.debug("Querying LDAP...")
-        self.ldapconn.search(
-            base, filter, attributes=attributes,
+        logger.debug(
+            "ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
+            self.ldapconn.server.host, self.ldapconn.server.port,
+            self.ldapconn.user,
+            base, filter, ' '.join(attributes or []),
         )
+        self.ldapconn.search(base, filter, attributes=attributes)
         return self.ldapconn.entries[:]
 
     def process_ldap_entry(self, entry, name_attribute):
