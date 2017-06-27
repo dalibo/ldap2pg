@@ -3,7 +3,10 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
+from ldap3.core.exceptions import LDAPObjectClassError
 from ldap3.utils.dn import parse_dn
+
+from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
@@ -88,11 +91,16 @@ class RoleManager(object):
             pgroles = set(self.blacklist(pgroles))
             ldaproles = set()
             for mapping in map_:
-                for entry in self.query_ldap(**mapping['ldap']):
-                    roles = self.process_ldap_entry(
-                        entry=entry, **mapping['role']
-                    )
-                    ldaproles |= set(roles)
+                try:
+                    entries = self.query_ldap(**mapping['ldap'])
+                except LDAPObjectClassError as e:
+                    raise UserError("Failed to query LDAP: %s." % (e,))
+                for entry in entries:
+                    for rolmap in mapping['roles']:
+                        roles = self.process_ldap_entry(
+                            entry=entry, **rolmap
+                        )
+                        ldaproles |= set(roles)
 
             missing = ldaproles - pgroles
             for role in missing:
@@ -103,3 +111,4 @@ class RoleManager(object):
                 self.drop(role)
 
         logger.info("Synchronization complete.")
+        return ldaproles
