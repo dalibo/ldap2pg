@@ -4,12 +4,17 @@
 
 | |CircleCI| |Codecov|
 
+Swiss-army knife to synchronize Postgres roles from any LDAP directory.
 
 Features
 ========
 
-- Creates and drops PostgreSQL roles from LDAP query
-- Reads settings from YAML config file
+- Creates and drops PostgreSQL roles from LDAP queries.
+- Manage role options (``CREATE`` and ``ALTER``).
+- Dry run.
+- logs LDAP queries as ``ldapsearch`` commands.
+- logs **every** SQL queries.
+- Reads settings from YAML config file.
 
 ::
 
@@ -27,6 +32,10 @@ Features
     WARNI Dropping existing role toto.
      INFO Synchronization complete.
     $
+
+See versionned `ldap2pg.yml
+<https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml>`_ for further
+options.
 
 
 Installation
