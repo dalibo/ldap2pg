@@ -31,6 +31,7 @@ class RoleManager(object):
         for i in items:
             for pattern in self._blacklist:
                 if fnmatch(i, pattern):
+                    logger.debug("Ignoring role %s. Matches %r.", i, pattern)
                     break
             else:
                 yield i
