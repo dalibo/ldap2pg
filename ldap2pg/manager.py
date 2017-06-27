@@ -29,6 +29,17 @@ class Role(object):
         return self.name
 
 
+class RoleSet(set):
+    def diff(self, other):
+        # Yields SQL queries to synchronize self with other.
+        spurious = self - other
+        for role in spurious:
+            yield 'DROP ROLE %s;' % (role.name)
+        missing = other - self
+        for role in missing:
+            yield 'CREATE ROLE %s;' % (role.name,)
+
+
 class RoleManager(object):
 
     def __init__(self, ldapconn, pgconn, blacklist=[], dry=False):
@@ -54,16 +65,13 @@ class RoleManager(object):
                 yield i
 
     def fetch_pg_roles(self):
-        logger.debug("Querying PostgreSQL for existing roles.")
-        self.pgcursor.execute(
-            "SELECT rolname FROM pg_catalog.pg_roles",
-        )
+        self.psql("SELECT rolname FROM pg_catalog.pg_roles;")
         payload = self.pgcursor.fetchall()
         return {Role(name=r[0]) for r in payload}
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
-            "ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
+            "Doing: ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
             self.ldapconn.server.host, self.ldapconn.server.port,
             self.ldapconn.user,
             base, filter, ' '.join(attributes or []),
@@ -90,29 +98,20 @@ class RoleManager(object):
             )
             yield Role(name=value)
 
-    def create(self, role):
-        if self.dry:
-            return logger.info("Would create role %s.", role)
-
-        logger.info("Creating new role %s.", role)
-        self.pgcursor.execute('CREATE ROLE %s WITH LOGIN' % (role,))
-        self.pgconn.commit()
-
-    def drop(self, role):
-        if self.dry:
-            return logger.warn("Would drop role %s.", role)
-
-        logger.warn("Dropping existing role %s.", role)
-        self.pgcursor.execute('DROP ROLE %s' % (role,))
+    def psql(self, query):
+        logger.debug("Doing: %s", query)
+        self.pgcursor.execute(query)
         self.pgconn.commit()
 
     def sync(self, map_):
         with self:
+            logger.info("Inspecting Postgres...")
             pgroles = self.fetch_pg_roles()
-            pgroles = set(self.blacklist(pgroles))
-            ldaproles = set()
+            pgroles = RoleSet(self.blacklist(pgroles))
+            ldaproles = RoleSet()
             for mapping in map_:
                 try:
+                    logger.info("Querying LDAP...")
                     entries = self.query_ldap(**mapping['ldap'])
                 except LDAPObjectClassError as e:
                     raise UserError("Failed to query LDAP: %s." % (e,))
@@ -123,13 +122,12 @@ class RoleManager(object):
                         )
                         ldaproles |= set(roles)
 
-            missing = ldaproles - pgroles
-            for role in missing:
-                self.create(role)
+            for query in pgroles.diff(ldaproles):
+                logger.info("%s: %s", 'Would' if self.dry else 'Doing', query)
+                if self.dry:
+                    continue
 
-            spurious = pgroles - ldaproles
-            for role in spurious:
-                self.drop(role)
+                self.psql(query)
 
         logger.info("Synchronization complete.")
         return ldaproles
