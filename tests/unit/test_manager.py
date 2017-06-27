@@ -159,4 +159,8 @@ def test_sync(mocker):
             role=dict(name_attribute='cn')
         ),
     ]
-    manager.sync(map_=map_)
+
+    roles = manager.sync(map_=map_)
+
+    assert 'alice' in roles
+    assert 'bob' in roles

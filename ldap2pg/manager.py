@@ -110,3 +110,4 @@ class RoleManager(object):
                 self.drop(role)
 
         logger.info("Synchronization complete.")
+        return ldaproles
