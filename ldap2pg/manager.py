@@ -53,7 +53,7 @@ class RoleManager(object):
         self.ldapconn.search(base, filter, attributes=attributes)
         return self.ldapconn.entries[:]
 
-    def process_ldap_entry(self, entry, name_attribute):
+    def process_ldap_entry(self, entry, name_attribute, **kw):
         path = name_attribute.split('.')
         values = entry.entry_attributes_as_dict[path[0]]
         path = path[1:]
