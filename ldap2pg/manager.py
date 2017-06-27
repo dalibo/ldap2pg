@@ -114,13 +114,16 @@ class RoleManager(object):
                         )
                         ldaproles |= set(roles)
 
+            count = 0
             for query in pgroles.diff(ldaproles):
+                count += 1
                 logger.info("%s: %s", 'Would' if self.dry else 'Doing', query)
                 if self.dry:
                     continue
 
                 self.psql(query)
-            else:
+
+            if not count:
                 logger.info("Nothing to do.")
 
         logger.info("Synchronization complete.")
