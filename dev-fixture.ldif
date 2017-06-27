@@ -28,6 +28,11 @@ cn: bar
 objectclass: organizationalRole
 objectclass: top
 
+dn: cn=baz,ou=people,dc=ldap2pg,dc=local
+cn: baz
+objectclass: organizationalRole
+objectclass: top
+
 dn: ou=groups,dc=ldap2pg,dc=local
 objectclass: organizationalUnit
 objectclass: top
@@ -51,3 +56,4 @@ objectClass: groupOfNames
 objectClass: top
 cn: app1
 member: cn=bar,ou=people,dc=ldap2pg,dc=local
+member: cn=baz,ou=people,dc=ldap2pg,dc=local

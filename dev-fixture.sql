@@ -1,9 +1,9 @@
-DROP ROLE IF EXISTS spurious;
-DROP ROLE IF EXISTS alice;
-DROP ROLE IF EXISTS bob;
-DROP ROLE IF EXISTS foo;
-DROP ROLE IF EXISTS bar;
+DELETE FROM pg_catalog.pg_auth_members;
+DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
+-- Create role as it should be. for NOOP
+CREATE ROLE app0 NOLOGIN;
 -- Create a spurious user, for DROP.
-CREATE ROLE spurious WITH LOGIN;
+CREATE ROLE spurious_group WITH NOLOGIN;
+CREATE ROLE spurious WITH LOGIN IN ROLE spurious_group;
 -- Create alice superuser without login, for ALTER.
-CREATE ROLE alice WITH SUPERUSER NOLOGIN;
+CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE app0;
