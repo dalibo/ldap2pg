@@ -6,38 +6,15 @@ import logging
 from ldap3.core.exceptions import LDAPObjectClassError
 from ldap3.utils.dn import parse_dn
 
+from .role import (
+    Role,
+    RoleOptions,
+    RoleSet,
+)
 from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
-
-
-class Role(object):
-    def __init__(self, name):
-        self.name = name
-
-    def __eq__(self, other):
-        return self.name == str(other)
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.name)
-
-    def __str__(self):
-        return self.name
-
-
-class RoleSet(set):
-    def diff(self, other):
-        # Yields SQL queries to synchronize self with other.
-        spurious = self - other
-        for role in spurious:
-            yield 'DROP ROLE %s;' % (role.name)
-        missing = other - self
-        for role in missing:
-            yield 'CREATE ROLE %s;' % (role.name,)
 
 
 class RoleManager(object):
@@ -55,19 +32,31 @@ class RoleManager(object):
     def __exit__(self, *a):
         self.pgcursor.close()
 
-    def blacklist(self, items):
-        for i in items:
+    def fetch_pg_roles(self):
+        self.psql(
+            "SELECT rolname, %(cols)s FROM pg_catalog.pg_roles ORDER BY 1;"
+            % dict(
+                cols=', '.join(RoleOptions.COLUMNS_MAP.values()),
+            )
+        )
+        for row in self.pgcursor:
+            yield row
+
+    def process_pg_roles(self, rows):
+        for row in rows:
+            name = row[0]
             for pattern in self._blacklist:
-                if fnmatch(str(i), pattern):
-                    logger.debug("Ignoring role %s. Matches %r.", i, pattern)
+                if fnmatch(name, pattern):
+                    logger.debug(
+                        "Ignoring role %s. Matches %r.", name, pattern,
+                    )
                     break
             else:
-                yield i
-
-    def fetch_pg_roles(self):
-        self.psql("SELECT rolname FROM pg_catalog.pg_roles;")
-        payload = self.pgcursor.fetchall()
-        return {Role(name=r[0]) for r in payload}
+                role = Role.from_row(*row)
+                logger.debug(
+                    "Found role %r %s.", role.name, role.options,
+                )
+                yield role
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -79,7 +68,7 @@ class RoleManager(object):
         self.ldapconn.search(base, filter, attributes=attributes)
         return self.ldapconn.entries[:]
 
-    def process_ldap_entry(self, entry, name_attribute, **kw):
+    def process_ldap_entry(self, entry, name_attribute, options=None, **kw):
         path = name_attribute.split('.')
         values = entry.entry_attributes_as_dict[path[0]]
         path = path[1:]
@@ -93,10 +82,13 @@ class RoleManager(object):
                 logger.debug("Parsed DN: %s", value)
                 value = value[path[0]][0]
             logger.debug(
-                "Yielding role %s from %s %s",
+                "Found role %s from %s %s",
                 value, entry.entry_dn, name_attribute,
             )
-            yield Role(name=value)
+            role = Role(name=value)
+            if options:
+                role.options.update(options)
+            yield role
 
     def psql(self, query):
         logger.debug("Doing: %s", query)
@@ -106,8 +98,8 @@ class RoleManager(object):
     def sync(self, map_):
         with self:
             logger.info("Inspecting Postgres...")
-            pgroles = self.fetch_pg_roles()
-            pgroles = RoleSet(self.blacklist(pgroles))
+            rows = self.fetch_pg_roles()
+            pgroles = RoleSet(self.process_pg_roles(rows))
             ldaproles = RoleSet()
             for mapping in map_:
                 try:

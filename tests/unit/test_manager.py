@@ -3,33 +3,6 @@ from __future__ import unicode_literals
 import pytest
 
 
-def test_role():
-    from ldap2pg.manager import Role
-
-    role = Role(name='toto')
-
-    assert 'toto' == role.name
-    assert 'toto' == str(role)
-    assert 'toto' in repr(role)
-
-
-def test_roles_diff_queries():
-    from ldap2pg.manager import Role, RoleSet
-
-    a = RoleSet([
-        Role('spurious'),
-    ])
-    b = RoleSet([
-        Role('alice'),
-        Role('bob'),
-    ])
-    queries = list(a.diff(b))
-
-    assert 'CREATE ROLE alice;' in queries
-    assert 'CREATE ROLE bob;' in queries
-    assert 'DROP ROLE spurious;' in queries
-
-
 def test_context_manager(mocker):
     from ldap2pg.manager import RoleManager
 
@@ -38,33 +11,37 @@ def test_context_manager(mocker):
         assert manager.pgcursor
 
 
-def test_blacklist():
+def test_fetch_rows(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    manager.pgcursor = mocker.MagicMock()
+    manager.pgcursor.__iter__.return_value = r = [mocker.Mock()]
+
+    rows = manager.fetch_pg_roles()
+    rows = list(rows)
+
+    assert r == rows
+
+
+def test_process_rows():
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(
         pgconn=None, ldapconn=None, blacklist=['pg_*', 'postgres'],
     )
-    roles = ['postgres', 'pg_signal_backend', 'alice', 'bob']
-    filtered = list(manager.blacklist(roles))
-    assert ['alice', 'bob'] == filtered
-
-
-def test_fetch_existing_roles(mocker):
-    from ldap2pg.manager import RoleManager
-
-    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    manager.pgcursor = mocker.Mock()
-
-    manager.pgcursor.fetchall.return_value = [
+    rows = [
+        ('postgres',),
+        ('pg_signal_backend',),
         ('alice',),
-        ('bob',),
     ]
-    existing_roles = manager.fetch_pg_roles()
+    roles = list(manager.process_pg_roles(rows))
 
-    assert {'alice', 'bob'} == {r.name for r in existing_roles}
+    assert 1 == len(roles)
+    assert 'alice' == roles[0].name
 
 
-def test_fetch_wanted_roles(mocker):
+def test_fetch_entries(mocker):
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
@@ -88,12 +65,16 @@ def test_process_entry(mocker):
 
     entry = mocker.Mock(entry_attributes_as_dict=dict(cn=['alice', 'bob']))
 
-    roles = manager.process_ldap_entry(entry, name_attribute='cn')
+    roles = manager.process_ldap_entry(
+        entry, name_attribute='cn',
+        options=dict(LOGIN=True),
+    )
     roles = list(roles)
 
     assert 2 == len(roles)
     assert 'alice' in roles
     assert 'bob' in roles
+    assert roles[0].options['LOGIN'] is True
 
     entry = mocker.Mock(
         entry_attributes_as_dict=dict(
@@ -143,7 +124,7 @@ def test_sync_bad_filter(mocker):
 
 
 def test_sync(mocker):
-    p = mocker.patch('ldap2pg.manager.RoleManager.fetch_pg_roles')
+    p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
     psql = mocker.patch('ldap2pg.manager.RoleManager.psql')

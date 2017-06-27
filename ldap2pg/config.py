@@ -14,6 +14,7 @@ from .utils import (
     deepset,
     UserError,
 )
+from .role import RoleOptions
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,23 @@ logger = logging.getLogger(__name__)
 
 def raw(v):
     return v
+
+
+def rolerule(value):
+    rule = value
+    options = rule.setdefault('options', {})
+
+    if isinstance(options, string_types):
+        options = options.split()
+
+    if isinstance(options, list):
+        options = {
+            o.lstrip('NO'): not o.startswith('NO')
+            for o in options
+        }
+
+    rule['options'] = RoleOptions(**options)
+    return rule
 
 
 def syncmap(value):
@@ -45,6 +63,9 @@ def syncmap(value):
 
         if 'roles' not in item:
             raise ValueError("Missing roles entry.")
+
+        for i, rule in enumerate(item['roles']):
+            item['roles'][i] = rolerule(rule)
 
     return value
 
