@@ -39,8 +39,6 @@ def syncmap(value):
         if 'attribute' in ldap:
             ldap['attributes'] = ldap['attribute']
             del ldap['attribute']
-        if isinstance(ldap['attributes'], str):
-            ldap['attributes'] = [ldap['attributes']]
 
         if 'role' in item:
             item['roles'] = [item['role']]
