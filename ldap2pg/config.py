@@ -42,8 +42,11 @@ def syncmap(value):
         if isinstance(ldap['attributes'], str):
             ldap['attributes'] = [ldap['attributes']]
 
-        if 'role' not in item:
-            raise ValueError("Missing role entry.")
+        if 'role' in item:
+            item['roles'] = [item['role']]
+
+        if 'roles' not in item:
+            raise ValueError("Missing roles entry.")
 
     return value
 

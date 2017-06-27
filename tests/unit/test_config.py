@@ -69,6 +69,7 @@ def test_processor():
 def test_process_syncmap():
     from ldap2pg.config import syncmap
 
+    # Canonical case.
     raw = dict(
         ldap=dict(
             base='dc=unit',
@@ -84,9 +85,10 @@ def test_process_syncmap():
     assert 'attributes' in v[0]['ldap']
     assert 'attribute' not in v[0]['ldap']
     assert 'filter' in v[0]['ldap']
+    assert 'roles' in v[0]
 
-    del raw['role']
-
+    # Missing rules
+    raw = dict(ldap=dict(base='dc=unit', attribute='cn'))
     with pytest.raises(ValueError):
         syncmap(raw)
 

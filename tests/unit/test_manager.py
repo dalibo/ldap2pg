@@ -143,24 +143,26 @@ def test_sync(mocker):
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
 
-    p.return_value = set('spurious')
+    p.return_value = {'spurious'}
     l.return_value = [mocker.Mock(name='entry')]
-    r.return_value = {'alice', 'bob'}
+    r.side_effect = [{'alice'}, {'bob'}]
 
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    map_ = [
-        dict(
-            ldap=dict(
-                base='ou=people,dc=global', filter='(objectClass=*)',
-                attributes=['cn'],
-            ),
-            role=dict(name_attribute='cn')
+    map_ = [dict(
+        ldap=dict(
+            base='ou=people,dc=global', filter='(objectClass=*)',
+            attributes=['cn'],
         ),
-    ]
+        roles=[
+            dict(name_attribute='cn'),
+            dict(name_attribute='pouet'),
+        ],
+    )]
 
     roles = manager.sync(map_=map_)
 
+    assert 2 is r.call_count, "sync did not iterate over each rules."
     assert 'alice' in roles
     assert 'bob' in roles

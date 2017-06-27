@@ -96,10 +96,11 @@ class RoleManager(object):
                 except LDAPObjectClassError as e:
                     raise UserError("Failed to query LDAP: %s." % (e,))
                 for entry in entries:
-                    roles = self.process_ldap_entry(
-                        entry=entry, **mapping['role']
-                    )
-                    ldaproles |= set(roles)
+                    for rolmap in mapping['roles']:
+                        roles = self.process_ldap_entry(
+                            entry=entry, **rolmap
+                        )
+                        ldaproles |= set(roles)
 
             missing = ldaproles - pgroles
             for role in missing:
