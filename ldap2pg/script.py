@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from . import __version__
 
-import logging
+import logging.config
 import os
 import pdb
 import sys
@@ -52,12 +52,35 @@ def wrapped_main():
     manager.sync(map_=config['sync_map'])
 
 
+def logging_dict(debug=False):
+    return {
+        'version': 1,
+        'formatters': {
+            'debug': {
+                'format': '[%(name)-16s %(levelname)8s] %(message)s'},
+            'info': {
+                'format': '%(message)s',
+            },
+        },
+        'handlers': {'stderr': {
+            '()': 'logging.StreamHandler',
+            'formatter': 'debug' if debug else 'info',
+        }},
+        'root': {
+            'level': 'WARNING',
+            'handlers': ['stderr'],
+        },
+        'loggers': {
+            'ldap2pg': {
+                'level': 'DEBUG' if debug else 'INFO',
+            },
+        },
+    }
+
+
 def main():
     debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
-    logging.basicConfig(
-        level=logging.DEBUG if debug else logging.INFO,
-        format='%(levelname)5.5s %(message)s'
-    )
+    logging.config.dictConfig(logging_dict(debug))
     logger.info("Starting ldap2pg %s.", __version__)
 
     try:
