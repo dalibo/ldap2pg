@@ -97,6 +97,11 @@ class RoleManager(object):
 
     def sync(self, map_):
         with self:
+            if self.dry:
+                logger.warn("Running in dry mode. Postgres will be untouched.")
+            else:
+                logger.warn("Running in real mode.")
+
             logger.info("Inspecting Postgres...")
             rows = self.fetch_pg_roles()
             pgroles = RoleSet(self.process_pg_roles(rows))
