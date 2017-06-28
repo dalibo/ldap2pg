@@ -42,11 +42,11 @@ def rolerule(value):
 
 
 def syncmap(value):
-    if isinstance(value, dict):
-        value = [value]
-
     if not value:
         raise ValueError("Empty mapping.")
+
+    if isinstance(value, dict):
+        value = [value]
 
     for item in value:
         item['ldap'] = dict(
@@ -63,7 +63,7 @@ def syncmap(value):
         if 'role' in item:
             item['roles'] = item['role']
         if 'roles' not in item:
-            raise ValueError("Missing roles entry.")
+            raise ValueError("Missing role rules.")
         if isinstance(item['roles'], dict):
             item['roles'] = [item['roles']]
 
