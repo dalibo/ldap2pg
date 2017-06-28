@@ -123,39 +123,60 @@ def test_sync_bad_filter(mocker):
     assert r.called is False
 
 
-def test_sync(mocker):
+def test_sync_map_loop(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
     psql = mocker.patch('ldap2pg.manager.RoleManager.psql')
+    RoleSet = mocker.patch('ldap2pg.manager.RoleSet')
+
     from ldap2pg.manager import RoleManager, Role
 
     p.return_value = {Role(name='spurious')}
     l.return_value = [mocker.Mock(name='entry')]
-    r.side_effect = rse = [{Role(name='alice')}, {Role(name='bob')}]
+    r.side_effect = [{Role(name='alice')}, {Role(name='bob')}]
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    map_ = [dict(
-        ldap=dict(
-            base='ou=people,dc=global', filter='(objectClass=*)',
-            attributes=['cn'],
-        ),
-        roles=[
-            dict(name_attribute='cn'),
-            dict(name_attribute='pouet'),
-        ],
+    # Minimal effective syncmap
+    syncmap = [dict(
+        ldap=dict(base='ou=users,dc=global', filter='*', attributes=['cn']),
+        roles=[dict(), dict()],
     )]
 
+    # No queries to run, we're just testing mapping loop
+    RoleSet.return_value.diff.return_value = []
+
+    manager.dry = False
+    roles = manager.sync(map_=syncmap)
+
+    assert 2 is r.call_count, "sync did not iterate over each rules."
+    assert roles
+    assert psql.called is False
+
+
+def test_sync_query_loop(mocker):
+    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
+    psql = mocker.patch('ldap2pg.manager.RoleManager.psql')
+    RoleSet = mocker.patch('ldap2pg.manager.RoleSet')
+
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    manager.pgconn.cursor.return_value.rowcount = -1
+
+    # Simple diff with one query
+    pgroles = RoleSet.return_value
+    pgroles.diff.return_value = ["SELECT true;"]
+
+    # Dry run
     manager.dry = True
-    roles = manager.sync(map_=map_)
+    # No mapping, we're juste testing query loop
+    roles = manager.sync(map_=[])
 
     assert psql.called is False
 
-    r.reset_mock()
-    r.side_effect = rse
+    # Real mode
     manager.dry = False
-    roles = manager.sync(map_=map_)
-
-    assert 2 is r.call_count, "sync did not iterate over each rules."
-    assert 'alice' in roles
-    assert 'bob' in roles
+    roles = manager.sync(map_=[])
+    assert roles
+    assert psql.called is True
