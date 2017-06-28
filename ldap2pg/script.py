@@ -68,16 +68,36 @@ class MultilineFormatter(logging.Formatter):
         return '\n'.join(lines)
 
 
-def logging_dict(debug=False):
+class ColorFormatter(MultilineFormatter):
+
+    _color_map = {
+        logging.DEBUG: '37',
+        logging.INFO: '1;39',
+        logging.WARN: '96',
+        logging.ERROR: '91',
+        logging.CRITICAL: '1;91',
+    }
+
+    def format(self, record):
+        lines = super(ColorFormatter, self).format(record)
+        color = self._color_map.get(record.levelno, '39')
+        lines = ''.join([
+            '\033[0;%sm%s\033[0m' % (color, line)
+            for line in lines.splitlines(True)
+        ])
+        return lines
+
+
+def logging_dict(tty=True, debug=False):
+    formatter_kwargs = {'class': __name__ + '.ColorFormatter'} if tty else {}
     return {
         'version': 1,
         'formatters': {
-            'debug': {
-                'class': __name__ + '.MultilineFormatter',
-                'format': '[%(name)-16s %(levelname)8s] %(message)s'},
-            'info': {
-                'format': '%(message)s',
-            },
+            'debug': dict(
+                format='[%(name)-16s %(levelname)8s] %(message)s',
+                **formatter_kwargs
+            ),
+            'info': dict(format='%(message)s', **formatter_kwargs),
         },
         'handlers': {'stderr': {
             '()': 'logging.StreamHandler',
@@ -97,7 +117,8 @@ def logging_dict(debug=False):
 
 def main():
     debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
-    logging.config.dictConfig(logging_dict(debug))
+    logging_config = logging_dict(debug=debug, tty=sys.stderr.isatty())
+    logging.config.dictConfig(logging_config)
     logger.info("Starting ldap2pg %s.", __version__)
 
     try:

@@ -29,6 +29,19 @@ def test_multiline_formatter():
     assert wanted == payload
 
 
+def test_color_formatter():
+    import logging
+    from ldap2pg.script import ColorFormatter
+
+    formatter = ColorFormatter("%(message)s")
+    record = logging.makeLogRecord(dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", msg="Message",
+        lno=0, args=(), exc_info=None,
+    ))
+    payload = formatter.format(record)
+    assert "\033[0" in payload
+
+
 def test_logging_config():
     from ldap2pg.script import logging_dict
 
