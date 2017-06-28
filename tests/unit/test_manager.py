@@ -31,14 +31,16 @@ def test_process_rows():
         pgconn=None, ldapconn=None, blacklist=['pg_*', 'postgres'],
     )
     rows = [
-        ('postgres',),
-        ('pg_signal_backend',),
-        ('alice',),
+        ('postgres', []),
+        ('pg_signal_backend', []),
+        ('dba', ['alice']),
+        ('alice', []),
     ]
     roles = list(manager.process_pg_roles(rows))
 
-    assert 1 == len(roles)
-    assert 'alice' == roles[0].name
+    assert 2 == len(roles)
+    assert 'dba' == roles[0].name
+    assert 'alice' == roles[1].name
 
 
 def test_fetch_entries(mocker):
@@ -58,7 +60,7 @@ def test_fetch_entries(mocker):
     assert 2 == len(entries)
 
 
-def test_process_entry(mocker):
+def test_process_entry_user(mocker):
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
@@ -76,6 +78,12 @@ def test_process_entry(mocker):
     assert 'bob' in roles
     assert roles[0].options['LOGIN'] is True
 
+
+def test_process_entry_dn(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+
     entry = mocker.Mock(
         entry_attributes_as_dict=dict(
             member=['cn=alice,dc=unit', 'cn=bob,dc=unit']),
@@ -90,13 +98,36 @@ def test_process_entry(mocker):
     assert 'bob' in names
 
 
+def test_process_entry_members(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+
+    entry = mocker.Mock(
+        entry_attributes_as_dict=dict(
+            cn=['group'],
+            member=['cn=alice,dc=unit', 'cn=bob,dc=unit'],
+        ),
+    )
+
+    roles = manager.process_ldap_entry(
+        entry, name_attribute='cn', members_attribute='member.cn',
+    )
+    roles = list(roles)
+
+    assert 1 == len(roles)
+    role = roles[0]
+    assert 'alice' in role.members
+    assert 'bob' in role.members
+
+
 def test_psql(mocker):
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
     manager.pgcursor = mocker.Mock()
 
-    manager.psql('SELECT 1')
+    manager.psql('SELECT %s', ('arg',))
 
     assert manager.pgcursor.execute.called is True
     assert manager.pgconn.commit.called is True
@@ -166,11 +197,11 @@ def test_sync_query_loop(mocker):
 
     # Simple diff with one query
     pgroles = RoleSet.return_value
-    pgroles.diff.return_value = ["SELECT true;"]
+    pgroles.diff.return_value = [mocker.Mock(name='qry', args=(), rowcount=-1)]
 
     # Dry run
     manager.dry = True
-    # No mapping, we're juste testing query loop
+    # No mapping, we're just testing query loop
     roles = manager.sync(map_=[])
 
     assert psql.called is False
@@ -179,4 +210,27 @@ def test_sync_query_loop(mocker):
     manager.dry = False
     roles = manager.sync(map_=[])
     assert roles
+    assert psql.called is True
+
+
+def test_sync_integrity(mocker):
+    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles', autospec=True)
+    psql = mocker.patch('ldap2pg.manager.RoleManager.psql', autospec=True)
+    RoleSet = mocker.patch('ldap2pg.manager.RoleSet', autospec=True)
+
+    from ldap2pg.manager import RoleManager
+
+    pgroles = RoleSet.return_value
+    # Tells we want one delete.
+    pgroles.diff.return_value = [mocker.Mock(args=('DELETE'), rowcount=1)]
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    # Here, effective rowcount is 0 instead of 1
+    manager.pgconn.cursor.return_value.rowcount = 0
+
+    # Trigger an integrity check
+    manager.dry = False
+    with pytest.raises(Exception):
+        manager.sync(map_=[])
+
     assert psql.called is True

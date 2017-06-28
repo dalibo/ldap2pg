@@ -1,3 +1,13 @@
+class Query(object):
+    def __init__(self, message, rowcount=-1, *args):
+        self.message = message
+        self.args = args
+        self.rowcount = rowcount
+
+    def __str__(self):
+        return self.message
+
+
 class UserError(Exception):
     def __init__(self, message, exit_code=1):
         super(UserError, self).__init__(message)

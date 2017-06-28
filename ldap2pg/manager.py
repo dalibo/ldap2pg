@@ -17,6 +17,22 @@ from .utils import UserError
 logger = logging.getLogger(__name__)
 
 
+def get_ldap_attribute(entry, attribute):
+    path = attribute.split('.')
+    values = entry.entry_attributes_as_dict[path[0]]
+    path = path[1:]
+    for value in values:
+        if path:
+            dn = parse_dn(value)
+            value = dict()
+            for type_, name, _ in dn:
+                names = value.setdefault(type_, [])
+                names.append(name)
+            logger.debug("Parsed DN: %s", value)
+            value = value[path[0]][0]
+        yield value
+
+
 class RoleManager(object):
 
     def __init__(self, ldapconn, pgconn, blacklist=[], dry=False):
@@ -32,13 +48,23 @@ class RoleManager(object):
     def __exit__(self, *a):
         self.pgcursor.close()
 
+    # See https://www.postgresql.org/docs/current/static/view-pg-roles.html and
+    # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
+    _roles_query = """
+    SELECT
+        role.rolname, array_agg(members.rolname) AS members, %(options)s
+    FROM
+        pg_catalog.pg_roles AS role
+    LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
+    LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
+    GROUP BY role.rolname, %(options)s
+    ORDER BY 1;
+    """.replace("\n    ", "\n").strip()
+
     def fetch_pg_roles(self):
-        self.psql(
-            "SELECT rolname, %(cols)s FROM pg_catalog.pg_roles ORDER BY 1;"
-            % dict(
-                cols=', '.join(RoleOptions.COLUMNS_MAP.values()),
-            )
-        )
+        row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
+        row_cols = ['role.%s' % (r,) for r in row_cols]
+        self.psql(self._roles_query % dict(options=', '.join(row_cols[1:])))
         for row in self.pgcursor:
             yield row
 
@@ -53,9 +79,12 @@ class RoleManager(object):
                     break
             else:
                 role = Role.from_row(*row)
-                logger.debug(
-                    "Found role %r %s.", role.name, role.options,
-                )
+                logger.debug("Found role %r %s.", role.name, role.options)
+                if role.members:
+                    logger.debug(
+                        "Role %s has members %s.",
+                        role.name, ','.join(role.members),
+                    )
                 yield role
 
     def query_ldap(self, base, filter, attributes):
@@ -68,32 +97,35 @@ class RoleManager(object):
         self.ldapconn.search(base, filter, attributes=attributes)
         return self.ldapconn.entries[:]
 
-    def process_ldap_entry(self, entry, name_attribute, options=None, **kw):
-        path = name_attribute.split('.')
-        values = entry.entry_attributes_as_dict[path[0]]
-        path = path[1:]
-        for value in values:
-            if path:
-                dn = parse_dn(value)
-                value = dict()
-                for type_, name, _ in dn:
-                    names = value.setdefault(type_, [])
-                    names.append(name)
-                logger.debug("Parsed DN: %s", value)
-                value = value[path[0]][0]
+    def process_ldap_entry(self, entry, **kw):
+        name_attribute = kw['name_attribute']
+        for name in get_ldap_attribute(entry, name_attribute):
             logger.debug(
                 "Found role %s from %s %s",
-                value, entry.entry_dn, name_attribute,
+                name, entry.entry_dn, name_attribute,
             )
-            role = Role(name=value)
-            if options:
-                role.options.update(options)
+            if kw.get('members_attribute'):
+                members = get_ldap_attribute(entry, kw['members_attribute'])
+                members = list(members)
+                logger.debug(
+                    "Role %s must have members %s.", name, ', '.join(members),
+                )
+            else:
+                members = []
+
+            role = Role(name=name, members=members)
+
+            if kw.get('options'):
+                role.options.update(kw['options'])
+
             yield role
 
-    def psql(self, query):
-        logger.debug("Doing: %s", query)
-        self.pgcursor.execute(query)
+    def psql(self, *args):
+        sql = self.pgcursor.mogrify(*args)
+        logger.debug("Doing: %s", sql.decode('utf-8'))
+        self.pgcursor.execute(sql)
         self.pgconn.commit()
+        logger.debug("rowcount: %s", self.pgcursor.rowcount)
 
     def sync(self, map_):
         with self:
@@ -108,7 +140,7 @@ class RoleManager(object):
             ldaproles = RoleSet()
             for mapping in map_:
                 try:
-                    logger.info("Querying LDAP...")
+                    logger.info("Querying LDAP %s...", mapping['ldap']['base'])
                     entries = self.query_ldap(**mapping['ldap'])
                 except LDAPObjectClassError as e:
                     raise UserError("Failed to query LDAP: %s." % (e,))
@@ -122,11 +154,23 @@ class RoleManager(object):
             count = 0
             for query in pgroles.diff(ldaproles):
                 count += 1
-                logger.info("%s: %s", 'Would' if self.dry else 'Doing', query)
+                logger.info(
+                    "%s%s",
+                    'Would ' if self.dry else '',
+                    query if self.dry else query.message.capitalize(),
+                )
                 if self.dry:
+                    sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
+                    logger.debug("Would execute: %s", sql)
                     continue
 
-                self.psql(query)
+                self.psql(*query.args)
+
+                # Integrity check
+                if query.rowcount != self.pgcursor.rowcount:
+                    raise Exception("rowcount is not as expected: %s != %s" % (
+                        query.rowcount, self.pgcursor.rowcount,
+                    ))
 
             if not count:
                 logger.info("Nothing to do.")

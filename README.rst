@@ -11,6 +11,7 @@ Features
 
 - Creates and drops PostgreSQL roles from LDAP queries.
 - Manage role options (``CREATE`` and ``ALTER``).
+- Manage role members (alias *groups*).
 - Dry run.
 - logs LDAP queries as ``ldapsearch`` commands.
 - logs **every** SQL queries.

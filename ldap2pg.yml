@@ -68,10 +68,15 @@ sync_map:
 - ldap:
     base: ou=groups,dc=ldap2pg,dc=local
     filter: "(&(objectClass=groupOfNames)(cn=app*))"
-    attributes: [member]
+    attributes: [cn, member]
   # A list of rules to generate roles. Each rules is applied on each LDAP
   # entries.
   roles:
+  # Creates a *group* role with cn for role name, and member.cn as member list.
+  - name_attribute: cn
+    members_attribute: member.cn
+    options: [NOLOGIN]
+  # Creates a role for each member.cn
   - name_attribute: member.cn
     options:
       LOGIN: yes
