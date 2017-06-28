@@ -120,6 +120,7 @@ def main():
     logging_config = logging_dict(debug=debug, tty=sys.stderr.isatty())
     logging.config.dictConfig(logging_config)
     logger.info("Starting ldap2pg %s.", __version__)
+    logger.debug("Debug mode enabled.")
 
     try:
         wrapped_main()
