@@ -3,6 +3,32 @@ import os
 import pytest
 
 
+def test_multiline_formatter():
+    import logging
+    from ldap2pg.script import MultilineFormatter
+
+    formatter = MultilineFormatter("prefix: %(message)s")
+
+    base_record = dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", lno=0, args=(),
+        exc_info=None,
+    )
+    record = logging.makeLogRecord(dict(base_record, msg="single line"))
+    payload = formatter.format(record)
+    assert "prefix: single line" == payload
+
+    record = logging.makeLogRecord(dict(base_record, msg="Uno\nDos\nTres"))
+
+    payload = formatter.format(record)
+    wanted = """\
+    prefix: Uno
+    prefix: Dos
+    prefix: Tres\
+    """.replace('    ', '')
+
+    assert wanted == payload
+
+
 def test_logging_config():
     from ldap2pg.script import logging_dict
 

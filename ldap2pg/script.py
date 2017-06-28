@@ -52,11 +52,28 @@ def wrapped_main():
     manager.sync(map_=config['sync_map'])
 
 
+class MultilineFormatter(logging.Formatter):
+    def format(self, record):
+        s = super(MultilineFormatter, self).format(record)
+        if '\n' not in s:
+            return s
+
+        lines = s.splitlines()
+        d = record.__dict__.copy()
+        for i, line in enumerate(lines[1:]):
+            record.message = line
+            lines[1+i] = self._fmt % record.__dict__
+        record.__dict__ = d
+
+        return '\n'.join(lines)
+
+
 def logging_dict(debug=False):
     return {
         'version': 1,
         'formatters': {
             'debug': {
+                'class': __name__ + '.MultilineFormatter',
                 'format': '[%(name)-16s %(levelname)8s] %(message)s'},
             'info': {
                 'format': '%(message)s',
