@@ -3,8 +3,57 @@ import os
 import pytest
 
 
+def test_multiline_formatter():
+    import logging
+    from ldap2pg.script import MultilineFormatter
+
+    formatter = MultilineFormatter("prefix: %(message)s")
+
+    base_record = dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", lno=0, args=(),
+        exc_info=None,
+    )
+    record = logging.makeLogRecord(dict(base_record, msg="single line"))
+    payload = formatter.format(record)
+    assert "prefix: single line" == payload
+
+    record = logging.makeLogRecord(dict(base_record, msg="Uno\nDos\nTres"))
+
+    payload = formatter.format(record)
+    wanted = """\
+    prefix: Uno
+    prefix: Dos
+    prefix: Tres\
+    """.replace('    ', '')
+
+    assert wanted == payload
+
+
+def test_color_formatter():
+    import logging
+    from ldap2pg.script import ColorFormatter
+
+    formatter = ColorFormatter("%(message)s")
+    record = logging.makeLogRecord(dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", msg="Message",
+        lno=0, args=(), exc_info=None,
+    ))
+    payload = formatter.format(record)
+    assert "\033[0" in payload
+
+
+def test_logging_config():
+    from ldap2pg.script import logging_dict
+
+    cfg = logging_dict(debug=True)
+    assert 'DEBUG' == cfg['loggers']['ldap2pg']['level']
+
+    cfg = logging_dict(debug=False)
+    assert 'INFO' == cfg['loggers']['ldap2pg']['level']
+
+
 def test_main(mocker):
-    mocker.patch('ldap2pg.script.logging.basicConfig', autospec=True)
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
 
     from ldap2pg.script import main
@@ -16,6 +65,7 @@ def test_main(mocker):
 
 
 def test_bdb_quit(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, pdb
@@ -29,6 +79,7 @@ def test_bdb_quit(mocker):
 
 
 def test_unhandled_error(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main
@@ -42,6 +93,7 @@ def test_unhandled_error(mocker):
 
 
 def test_user_error(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, UserError
@@ -55,6 +107,7 @@ def test_user_error(mocker):
 
 
 def test_pdb(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.os.environ', {'DEBUG': '1'})
     isatty = mocker.patch('ldap2pg.script.sys.stdout.isatty')
     isatty.return_value = True
