@@ -13,6 +13,7 @@ list_members() {
 SELECT m.rolname FROM pg_roles AS m
 JOIN pg_auth_members a ON a.member = m.oid
 JOIN pg_roles AS r ON r.oid = a.roleid
+WHERE r.rolname = '$1'
 ORDER BY 1;
 EOSQL
 }
