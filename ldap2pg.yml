@@ -17,10 +17,10 @@
 color: yes
 
 # Verbose messages. Includes SQL and LDAP queries. env var: VERBOSE
-verbose: yes
+verbose: no
 
 # Dry mode. env var: DRY=[1yY]
-dry: no
+dry: yes
 
 #
 # **LDAP connection**

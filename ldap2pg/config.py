@@ -391,10 +391,14 @@ class Configuration(dict):
         return {
             'version': 1,
             'formatters': {
+                'info': {
+                    '()': __name__ + '.MultilineFormatter',
+                    'format': '%(message)s',
+                },
                 'verbose': {
+                    '()': __name__ + '.MultilineFormatter',
                     'format': '[%(name)-16s %(levelname)8s] %(message)s',
                 },
-                'info': {'format': '%(message)s'},
             },
             'handlers': {
                 'raw': {
