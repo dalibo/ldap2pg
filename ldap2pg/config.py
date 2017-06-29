@@ -123,6 +123,11 @@ def define_arguments(parser):
         help="don't touch Postgres, just print what to do"
     )
     parser.add_argument(
+        '-N', '--real',
+        action='store_false', dest='dry',
+        help="real mode, apply changes to Postgres"
+    )
+    parser.add_argument(
         '-v', '--verbose',
         action='store_true', dest='verbose',
         help="add debug messages including SQL and LDAP queries"

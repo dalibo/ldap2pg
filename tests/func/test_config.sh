@@ -34,4 +34,4 @@ sandbox="env ${var_bl[@]/#/--unset }"
 chmod 0600 ${LDAP2PG_CONFIG}
 
 # Now it's ok :)
-$sandbox ldap2pg
+$sandbox ldap2pg -N
