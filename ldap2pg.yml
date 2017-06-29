@@ -55,13 +55,17 @@ ldap:
 # and a set of rules to generate roles from entries returned by LDAP.
 sync_map:
 - role:
+    # Static rule to create an extra roles not in LDAP. Here we create a
+    # ldap_users role in which all roles defined here will belong to. See below.
+    # Note that role names are lowercase in Postgres. ldap2pg takes care of
+    # lowering inputs.
     name: LDAP_USERS
     options: NOLOGIN
 - ldap:
     base: cn=dba,ou=groups,dc=ldap2pg,dc=local
     filter: "(objectClass=groupOfNames)"
     attribute: member
-  # A signe rule to generate roles for each entries.
+  # A single rule to generate roles for each entries.
   role:
     # *_attribute means the value is the name of an attribute in the entry. A
     # role is generated for each value of the attribute. If the attribute is a
