@@ -63,8 +63,32 @@ def raw(v):
     return v
 
 
+def ldapquery(value):
+    query = dict(Configuration.DEFAULTS['ldap']['default_query'], **value)
+
+    if 'attribute' in query:
+        query['attributes'] = query['attribute']
+        del query['attribute']
+    if isinstance(query['attributes'], string_types):
+        query['attributes'] = [query['attributes']]
+
+    return query
+
+
 def rolerule(value):
     rule = value
+
+    if 'name' in rule:
+        rule['names'] = rule.pop('name')
+    if 'names' in rule and isinstance(rule['names'], string_types):
+        rule['names'] = [rule['names']]
+
+    if 'parent' in rule:
+        rule['parents'] = rule.pop('parent')
+    rule.setdefault('parents', [])
+    if isinstance(rule['parents'], string_types):
+        rule['parents'] = [rule['parents']]
+
     options = rule.setdefault('options', {})
 
     if isinstance(options, string_types):
@@ -88,16 +112,8 @@ def syncmap(value):
         value = [value]
 
     for item in value:
-        item['ldap'] = dict(
-            Configuration.DEFAULTS['ldap']['default_query'],
-            **item['ldap']
-        )
-        ldap = item['ldap']
-        if 'attribute' in ldap:
-            ldap['attributes'] = ldap['attribute']
-            del ldap['attribute']
-        if isinstance(ldap['attributes'], string_types):
-            ldap['attributes'] = [ldap['attributes']]
+        if 'ldap' in item:
+            item['ldap'] = ldapquery(item['ldap'])
 
         if 'role' in item:
             item['roles'] = item['role']

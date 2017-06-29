@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class Role(object):
-    def __init__(self, name, options=None, members=None):
+    def __init__(self, name, options=None, members=None, parents=None):
         self.name = name
         self.members = members or []
         self.options = RoleOptions(options or {})
+        self.parents = parents or []
 
     def __eq__(self, other):
         return self.name == str(other)
@@ -185,6 +186,16 @@ class RoleSet(set):
     def __init__(self, *a, **kw):
         super(RoleSet, self).__init__(*a, **kw)
 
+    def resolve_membership(self):
+        index_ = self.reindex()
+        for role in self:
+            for parent_name in role.parents:
+                parent = index_[parent_name]
+                if role.name in parent.members:
+                    continue
+                logger.debug("Add %s as member of %s.", role.name, parent.name)
+                parent.members.append(role.name)
+
     def reindex(self):
         return {
             role.name: role
@@ -222,7 +233,13 @@ class RoleSet(set):
         def walk(name):
             if name in seen:
                 return
-            role = index[name]
+            try:
+                role = index[name]
+            except KeyError:
+                # We are trying to walk a member out of set. This is the case
+                # where a role is missing but not one of its member.
+                return
+
             for member in role.members:
                 for i in walk(member):
                     yield i

@@ -60,6 +60,22 @@ def test_fetch_entries(mocker):
     assert 2 == len(entries)
 
 
+def test_process_entry_static(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+
+    roles = manager.process_ldap_entry(
+        entry=None, names=['ALICE'], parents=['postgres'],
+        options=dict(LOGIN=True),
+    )
+    roles = list(roles)
+
+    assert 1 == len(roles)
+    assert 'alice' in roles
+    assert 'postgres' in roles[0].parents
+
+
 def test_process_entry_user(mocker):
     from ldap2pg.manager import RoleManager
 
@@ -169,10 +185,13 @@ def test_sync_map_loop(mocker):
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
     # Minimal effective syncmap
-    syncmap = [dict(
-        ldap=dict(base='ou=users,dc=global', filter='*', attributes=['cn']),
-        roles=[dict(), dict()],
-    )]
+    syncmap = [
+        dict(roles=[]),
+        dict(
+            ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
+            roles=[dict(), dict()],
+        ),
+    ]
 
     # No queries to run, we're just testing mapping loop
     RoleSet.return_value.diff.return_value = []

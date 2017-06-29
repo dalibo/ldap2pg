@@ -38,3 +38,4 @@ list_superusers | grep -q alice
 list_roles | grep -q bob
 list_members app0 | grep -q foo
 list_members app1 | grep -q bar
+list_members ldap_users | grep -q alice

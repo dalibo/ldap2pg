@@ -180,9 +180,6 @@ def test_process_syncmap():
 
     assert isinstance(v, list)
     assert 1 == len(v)
-    assert 'attributes' in v[0]['ldap']
-    assert 'attribute' not in v[0]['ldap']
-    assert 'filter' in v[0]['ldap']
     assert 'roles' in v[0]
 
     # Missing rules
@@ -191,12 +188,29 @@ def test_process_syncmap():
         syncmap(raw)
 
 
+def test_process_ldapquery():
+    from ldap2pg.config import ldapquery
+
+    raw = dict(base='dc=unit', attribute='cn')
+
+    v = ldapquery(raw)
+
+    assert 'attributes' in v
+    assert 'attribute' not in v
+    assert 'filter' in v
+
+
 def test_process_rolerule():
     from ldap2pg.config import rolerule
+
+    rule = rolerule(dict(name='rolname', parent='parent'))
+    assert ['rolname'] == rule['names']
+    assert ['parent'] == rule['parents']
 
     rule = rolerule(dict(options='LOGIN SUPERUSER'))
     assert rule['options']['LOGIN'] is True
     assert rule['options']['SUPERUSER'] is True
+    assert 'names' not in rule
 
     rule = rolerule(dict(options=['LOGIN', 'SUPERUSER']))
     assert rule['options']['LOGIN'] is True

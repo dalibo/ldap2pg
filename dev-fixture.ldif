@@ -8,13 +8,13 @@ objectclass: organizationalUnit
 objectclass: top
 ou: people
 
-dn: cn=alice,ou=people,dc=ldap2pg,dc=local
-cn: alice
+dn: cn=ALICE,ou=people,dc=ldap2pg,dc=local
+cn: ALICE
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=bob,ou=people,dc=ldap2pg,dc=local
-cn: bob
+dn: cn=BOB,ou=people,dc=ldap2pg,dc=local
+cn: BOB
 objectclass: organizationalRole
 objectclass: top
 
@@ -42,8 +42,8 @@ dn: cn=dba,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames
 objectClass: top
 cn: dba
-member: cn=alice,ou=people,dc=ldap2pg,dc=local
-member: cn=bob,ou=people,dc=ldap2pg,dc=local
+member: cn=ALICE,ou=people,dc=ldap2pg,dc=local
+member: cn=BOB,ou=people,dc=ldap2pg,dc=local
 
 dn: cn=app0,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames

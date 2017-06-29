@@ -35,3 +35,5 @@ fi
 psql -tc "SELECT version();"
 
 ./tests/func/runner.sh
+# Run twice te check side effects
+./tests/func/runner.sh
