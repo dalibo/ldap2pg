@@ -11,6 +11,7 @@ import sys
 from six import string_types
 import yaml
 
+from . import __version__
 from .utils import (
     deepget,
     deepset,
@@ -130,6 +131,12 @@ def define_arguments(parser):
         '-?', '--help',
         action='help',
         help='show this help message and exit')
+    parser.add_argument(
+        '-V', '--version',
+        action='version',
+        help='show version and exit',
+        version=__package__ + ' ' + __version__,
+    )
 
 
 class Mapping(object):
