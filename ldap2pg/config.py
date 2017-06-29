@@ -112,10 +112,6 @@ def syncmap(value):
 
 def define_arguments(parser):
     parser.add_argument(
-        '-?', '--help',
-        action='help',
-        help='show this help message and exit')
-    parser.add_argument(
         '-c', '--config',
         action='store', dest='config',
         help='path to YAML configuration file'
@@ -130,6 +126,10 @@ def define_arguments(parser):
         action='store_true', dest='verbose',
         help="add debug messages including SQL and LDAP queries"
     )
+    parser.add_argument(
+        '-?', '--help',
+        action='help',
+        help='show this help message and exit')
 
 
 class Mapping(object):
