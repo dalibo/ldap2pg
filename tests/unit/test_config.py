@@ -3,6 +3,14 @@ from __future__ import unicode_literals
 import pytest
 
 
+class MockArgs(dict):
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+
 def test_multiline_formatter():
     import logging
     from ldap2pg.config import MultilineFormatter
@@ -58,13 +66,6 @@ def test_logging_config():
 
 def test_mapping():
     from ldap2pg.config import Mapping
-
-    class MockArgs(dict):
-        def __getattr__(self, name):
-            try:
-                return self[name]
-            except KeyError:
-                raise AttributeError(name)
 
     m = Mapping('my:option', env=None)
     assert 'my_option' == m.arg
@@ -236,6 +237,15 @@ def test_find_filename(mocker):
     ]
     with pytest.raises(NoConfigurationError):
         config.find_filename(environ=dict(LDAP2PG_CONFIG='my.yml'))
+
+    # Read from args
+    stat.reset_mock()
+    stat.side_effect = [
+        OSError(),
+        AssertionError("Not reached."),
+    ]
+    with pytest.raises(NoConfigurationError):
+        config.find_filename(environ=dict(), args=MockArgs(config='my.yml'))
 
 
 def test_merge_and_mappings():

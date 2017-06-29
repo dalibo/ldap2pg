@@ -116,6 +116,11 @@ def define_arguments(parser):
         action='help',
         help='show this help message and exit')
     parser.add_argument(
+        '-c', '--config',
+        action='store', dest='config',
+        help='path to YAML configuration file'
+    )
+    parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
         help="don't touch Postgres, just print what to do"
@@ -262,10 +267,10 @@ class Configuration(dict):
         '/etc/ldap2pg.yml',
     ]
 
-    def find_filename(self, environ=os.environ):
-        envval = environ.get('LDAP2PG_CONFIG')
-        if envval:
-            candidates = [envval]
+    def find_filename(self, environ=os.environ, args=None):
+        custom = getattr(args, 'config', environ.get('LDAP2PG_CONFIG'))
+        if custom:
+            candidates = [custom]
         else:
             candidates = self._file_candidates
 
@@ -306,7 +311,7 @@ class Configuration(dict):
 
         # File loading.
         try:
-            filename, mode = self.find_filename(environ=os.environ)
+            filename, mode = self.find_filename(environ=os.environ, args=args)
         except NoConfigurationError:
             logger.debug("No configuration file found.")
             file_config = {}
