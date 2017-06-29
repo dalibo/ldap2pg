@@ -115,22 +115,22 @@ def define_arguments(parser):
     parser.add_argument(
         '-c', '--config',
         action='store', dest='config',
-        help='path to YAML configuration file'
+        help='path to YAML configuration file (env: LDAP2PG_CONFIG)'
     )
     parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
-        help="don't touch Postgres, just print what to do"
+        help="don't touch Postgres, just print what to do (env: DRY)"
     )
     parser.add_argument(
         '-N', '--real',
         action='store_false', dest='dry',
-        help="real mode, apply changes to Postgres"
+        help="real mode, apply changes to Postgres (env: DRY)"
     )
     parser.add_argument(
         '-v', '--verbose',
         action='store_true', dest='verbose',
-        help="add debug messages including SQL and LDAP queries"
+        help="add debug messages including SQL and LDAP queries (env: VERBOSE)"
     )
     parser.add_argument(
         '-?', '--help',
