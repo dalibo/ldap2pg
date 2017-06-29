@@ -122,6 +122,7 @@ class RoleManager(object):
                 name=name,
                 members=members,
                 options=kw.get('options', {}),
+                parents=kw.get('parents', []),
             )
 
             yield role
@@ -162,6 +163,7 @@ class RoleManager(object):
                         ldaproles |= set(roles)
 
             count = 0
+            ldaproles.resolve_membership()
             for query in pgroles.diff(ldaproles):
                 count += 1
                 logger.info(

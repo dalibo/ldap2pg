@@ -74,6 +74,8 @@ sync_map:
     name_attribute: member.cn
     # Postgres role options: Can be a regular SQL snippet, a list or a dict.
     options: LOGIN SUPERUSER NOBYPASSRLS
+    # Define static parents
+    parent: LDAP_USERS
 - ldap:
     base: ou=groups,dc=ldap2pg,dc=local
     filter: "(&(objectClass=groupOfNames)(cn=app*))"
@@ -89,3 +91,4 @@ sync_map:
   - name_attribute: member.cn
     options:
       LOGIN: yes
+    parents: [LDAP_USERS]

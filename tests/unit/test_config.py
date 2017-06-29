@@ -203,8 +203,9 @@ def test_process_ldapquery():
 def test_process_rolerule():
     from ldap2pg.config import rolerule
 
-    rule = rolerule(dict(name='rolname'))
+    rule = rolerule(dict(name='rolname', parent='parent'))
     assert ['rolname'] == rule['names']
+    assert ['parent'] == rule['parents']
 
     rule = rolerule(dict(options='LOGIN SUPERUSER'))
     assert rule['options']['LOGIN'] is True

@@ -83,6 +83,12 @@ def rolerule(value):
     if 'names' in rule and isinstance(rule['names'], string_types):
         rule['names'] = [rule['names']]
 
+    if 'parent' in rule:
+        rule['parents'] = rule.pop('parent')
+    rule.setdefault('parents', [])
+    if isinstance(rule['parents'], string_types):
+        rule['parents'] = [rule['parents']]
+
     options = rule.setdefault('options', {})
 
     if isinstance(options, string_types):

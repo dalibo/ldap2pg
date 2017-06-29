@@ -101,7 +101,7 @@ def test_flatten():
     roles.add(Role('parent2', members=['child4']))
     roles.add(Role('child0', members=['subchild0']))
     roles.add(Role('child1', members=['subchild1', 'subchild2']))
-    roles.add(Role('child2'))
+    roles.add(Role('child2', members=['outer0']))
     roles.add(Role('child3'))
     roles.add(Role('child4'))
     roles.add(Role('subchild0'))
@@ -125,3 +125,17 @@ def test_flatten():
     ]
 
     assert wanted == order
+
+
+def test_resolve_membership():
+    from ldap2pg.role import RoleSet, Role
+
+    alice = Role('alice', parents=['bob', 'oscar'])
+    bob = Role('bob')
+    oscar = Role('oscar', members=['alice'])
+    roles = RoleSet([alice, bob, oscar])
+
+    roles.resolve_membership()
+
+    assert [] == alice.parents
+    assert 'alice' in bob.members
