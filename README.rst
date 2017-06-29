@@ -51,9 +51,9 @@ options.
 Installation
 ============
 
-Install it from GitHub tarball::
+Install it from PypI tarball::
 
-    pip install https://github.com/dalibo/ldap2pg/archive/master.zip
+    pip install ldap2pg
 
 
 ``ldap2pg`` is licensed under `PostgreSQL license
