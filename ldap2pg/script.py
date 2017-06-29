@@ -1,10 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from . import __version__
-
-from argparse import ArgumentParser
-import logging.config
+import logging
 import os
 import pdb
 import sys
@@ -12,79 +9,12 @@ import sys
 import ldap3
 import psycopg2
 
-from .config import (
-    Configuration,
-    ConfigurationError,
-    define_arguments,
- )
+from .config import Configuration, ConfigurationError
 from .manager import RoleManager
 from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
-
-
-class MultilineFormatter(logging.Formatter):
-    def format(self, record):
-        s = super(MultilineFormatter, self).format(record)
-        if '\n' not in s:
-            return s
-
-        lines = s.splitlines()
-        d = record.__dict__.copy()
-        for i, line in enumerate(lines[1:]):
-            record.message = line
-            lines[1+i] = self._fmt % record.__dict__
-        record.__dict__ = d
-
-        return '\n'.join(lines)
-
-
-class ColorFormatter(MultilineFormatter):
-
-    _color_map = {
-        logging.DEBUG: '37',
-        logging.INFO: '1;39',
-        logging.WARN: '96',
-        logging.ERROR: '91',
-        logging.CRITICAL: '1;91',
-    }
-
-    def format(self, record):
-        lines = super(ColorFormatter, self).format(record)
-        color = self._color_map.get(record.levelno, '39')
-        lines = ''.join([
-            '\033[0;%sm%s\033[0m' % (color, line)
-            for line in lines.splitlines(True)
-        ])
-        return lines
-
-
-def logging_dict(tty=True, debug=False):
-    formatter_kwargs = {'class': __name__ + '.ColorFormatter'} if tty else {}
-    return {
-        'version': 1,
-        'formatters': {
-            'debug': dict(
-                format='[%(name)-16s %(levelname)8s] %(message)s',
-                **formatter_kwargs
-            ),
-            'info': dict(format='%(message)s', **formatter_kwargs),
-        },
-        'handlers': {'stderr': {
-            '()': 'logging.StreamHandler',
-            'formatter': 'debug' if debug else 'info',
-        }},
-        'root': {
-            'level': 'WARNING',
-            'handlers': ['stderr'],
-        },
-        'loggers': {
-            'ldap2pg': {
-                'level': 'DEBUG' if debug else 'INFO',
-            },
-        },
-    }
 
 
 def create_ldap_connection(host, port, bind, password, **kw):
@@ -99,27 +29,8 @@ def create_pg_connection(dsn):
 
 
 def wrapped_main(debug=False):
-    parser = ArgumentParser(
-        add_help=False,
-        description="Swiss-army knife to synchronise Postgres ACL from LDAP.",
-        epilog="""\
-
-        ldap2pg requires a configuration file to describe LDAP queries and role
-        mappings. See project home for further details.
-        """.replace(8*' ', '')
-    )
-    define_arguments(parser)
-    parser.set_defaults(debug=debug)
-    args = parser.parse_args()
-
-    logging_config = logging_dict(debug=args.debug, tty=sys.stderr.isatty())
-    logging.config.dictConfig(logging_config)
-
-    logger.info("Starting ldap2pg %s.", __version__)
-    logger.debug("Debug mode enabled.")
-
     config = Configuration()
-    config.load()
+    config.load(debug=debug)
 
     try:
         ldapconn = create_ldap_connection(**config['ldap'])

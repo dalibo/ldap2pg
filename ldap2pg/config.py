@@ -1,15 +1,17 @@
 from __future__ import unicode_literals
 
-import argparse
+from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
 import errno
-import logging
+import logging.config
 import os
 from os import stat
 import re
+import sys
 
 from six import string_types
 import yaml
 
+from . import __version__
 from .utils import (
     deepget,
     deepset,
@@ -19,6 +21,69 @@ from .role import RoleOptions
 
 
 logger = logging.getLogger(__name__)
+
+
+class MultilineFormatter(logging.Formatter):
+    def format(self, record):
+        s = super(MultilineFormatter, self).format(record)
+        if '\n' not in s:
+            return s
+
+        lines = s.splitlines()
+        d = record.__dict__.copy()
+        for i, line in enumerate(lines[1:]):
+            record.message = line
+            lines[1+i] = self._fmt % record.__dict__
+        record.__dict__ = d
+
+        return '\n'.join(lines)
+
+
+class ColorFormatter(MultilineFormatter):
+
+    _color_map = {
+        logging.DEBUG: '37',
+        logging.INFO: '1;39',
+        logging.WARN: '96',
+        logging.ERROR: '91',
+        logging.CRITICAL: '1;91',
+    }
+
+    def format(self, record):
+        lines = super(ColorFormatter, self).format(record)
+        color = self._color_map.get(record.levelno, '39')
+        lines = ''.join([
+            '\033[0;%sm%s\033[0m' % (color, line)
+            for line in lines.splitlines(True)
+        ])
+        return lines
+
+
+def logging_dict(tty=True, debug=False):
+    formatter_kwargs = {'class': __name__ + '.ColorFormatter'} if tty else {}
+    return {
+        'version': 1,
+        'formatters': {
+            'debug': dict(
+                format='[%(name)-16s %(levelname)8s] %(message)s',
+                **formatter_kwargs
+            ),
+            'info': dict(format='%(message)s', **formatter_kwargs),
+        },
+        'handlers': {'stderr': {
+            '()': 'logging.StreamHandler',
+            'formatter': 'debug' if debug else 'info',
+        }},
+        'root': {
+            'level': 'WARNING',
+            'handlers': ['stderr'],
+        },
+        'loggers': {
+            'ldap2pg': {
+                'level': 'DEBUG' if debug else 'INFO',
+            },
+        },
+    }
 
 
 def raw(v):
@@ -73,45 +138,82 @@ def syncmap(value):
     return value
 
 
-_auto_env = object()
+def define_arguments(parser):
+    parser.add_argument(
+        '-?', '--help',
+        action='help',
+        help='show this help message and exit')
+    parser.add_argument(
+        '-d', '--debug',
+        action='store_true', dest='debug',
+        help="increase verbosity and enable debugger"
+    )
 
 
 class Mapping(object):
     """Fetch value from either file or env var."""
 
+    _auto_env = object()
+
     def __init__(self, path, env=_auto_env, secret=False, processor=raw):
         self.path = path
-        if env == _auto_env:
-            env = path.upper().replace(':', '_')
+        self.arg = path.replace(':', '_')
+        if env == self._auto_env:
+            env = self.arg.upper()
         self.env = env
         self.processor = processor
         if isinstance(secret, string_types):
             secret = re.compile(secret)
         self.secret = secret
 
-    def process(self, default, file_config, environ):
-        deny_secret = file_config.get('world_readable', True)
-        try:
-            if self.env:
-                value = environ[self.env]
-                logger.debug("Loaded %s from %s.", self.path, self.env)
-            else:
-                raise KeyError()
-        except KeyError:
-            try:
-                value = deepget(file_config, self.path)
-            except KeyError:
-                value = default
-            else:
-                if hasattr(self.secret, 'search'):
-                    secret = self.secret.search(value)
-                else:
-                    secret = self.secret
+    def process_env(self, environ):
+        # Get value from env var
+        if self.env:
+            value = environ[self.env]
+            logger.debug("Loaded %s from %s.", self.path, self.env)
+        else:
+            raise KeyError()
+        return value
 
-                if secret and deny_secret:
-                    raise ValueError(
-                        "Refuse to load secret from world readable file."
-                    )
+    def process_file(self, file_config):
+        # Get value from parsed YAML file.
+        unsecured_file = file_config.get('world_readable', True)
+
+        value = deepget(file_config, self.path)
+
+        # Check whether this value is secret.
+        if hasattr(self.secret, 'search'):
+            secret = self.secret.search(value)
+        else:
+            secret = self.secret
+
+        if secret and unsecured_file:
+            raise ValueError("Refuse to load secret from world readable file.")
+
+        return value
+
+    def process_arg(self, args):
+        # Get value from argparse result.
+        return getattr(args, self.arg)
+
+    def process(self, default, file_config={}, environ={}, args=object()):
+        # This is the sources of configuration, ordered by priority desc. If a
+        # process_* function raises KeyError or AttributeError, it is ignored.
+        sources = [
+            (self.process_arg, args),
+            (self.process_env, environ),
+            (self.process_file, file_config),
+        ]
+
+        for source in sources:
+            callable_, args = source[0], source[1:]
+            try:
+                value = callable_(*args)
+                break
+            except (AttributeError, KeyError):
+                continue
+        else:
+            value = default
 
         return self.processor(value)
 
@@ -189,8 +291,37 @@ class Configuration(dict):
                     logger.warn("Can't try %s: permission denied.", candidate)
         raise NoConfigurationError("No configuration file found")
 
-    def load(self):
-        # Main entry point for config loading. Most io should be done here.
+    EPILOG = """\
+
+    ldap2pg requires a configuration file to describe LDAP queries and
+    role mappings. See project home for further details.
+    """.replace(4 * ' ', '')
+
+    def load(self, debug=False):
+        # argv processing.
+        parser = ArgumentParser(
+            add_help=False,
+            # Only store value from argv. Defaults are managed by
+            # Configuration.
+            argument_default=SUPPRESS_ARG,
+            description="Swiss-army knife to sync Postgres ACL from LDAP.",
+            epilog=self.EPILOG,
+        )
+        define_arguments(parser)
+        parser.set_defaults(debug=debug)
+        args = parser.parse_args()
+
+        # Fast logging config. We don't support logging config from file.
+        logging_config = logging_dict(
+            debug=args.debug,
+            tty=sys.stderr.isatty(),
+        )
+        logging.config.dictConfig(logging_config)
+
+        logger.info("Starting ldap2pg %s.", __version__)
+        logger.debug("Debug mode enabled.")
+
+        # File loading.
         try:
             filename, mode = self.find_filename(environ=os.environ)
         except NoConfigurationError:
@@ -201,19 +332,21 @@ class Configuration(dict):
             with open(filename) as fo:
                 file_config = self.read(fo, mode)
 
+        # Now merge all config sources.
         try:
-            self.merge(file_config=file_config, environ=os.environ)
+            self.merge(file_config=file_config, environ=os.environ, args=args)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 
         logger.debug("Configuration loaded.")
 
-    def merge(self, file_config, environ=os.environ):
+    def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
             value = mapping.process(
                 default=deepget(self.DEFAULTS, mapping.path),
                 file_config=file_config,
                 environ=environ,
+                args=args,
             )
             deepset(self, mapping.path, value)
 
@@ -223,15 +356,3 @@ class Configuration(dict):
             raise ConfigurationError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
-
-
-def define_arguments(parser):
-    parser.add_argument(
-        '-?', '--help',
-        action='help', default=argparse.SUPPRESS,
-        help='show this help message and exit')
-    parser.add_argument(
-        '-d', '--debug',
-        action='store_true', dest='debug',
-        help="increase verbosity and enable debugger"
-    )

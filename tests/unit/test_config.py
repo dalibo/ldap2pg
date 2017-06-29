@@ -3,20 +3,113 @@ from __future__ import unicode_literals
 import pytest
 
 
+def test_multiline_formatter():
+    import logging
+    from ldap2pg.config import MultilineFormatter
+
+    formatter = MultilineFormatter("prefix: %(message)s")
+
+    base_record = dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", lno=0, args=(),
+        exc_info=None,
+    )
+    record = logging.makeLogRecord(dict(base_record, msg="single line"))
+    payload = formatter.format(record)
+    assert "prefix: single line" == payload
+
+    record = logging.makeLogRecord(dict(base_record, msg="Uno\nDos\nTres"))
+
+    payload = formatter.format(record)
+    wanted = """\
+    prefix: Uno
+    prefix: Dos
+    prefix: Tres\
+    """.replace('    ', '')
+
+    assert wanted == payload
+
+
+def test_color_formatter():
+    import logging
+    from ldap2pg.config import ColorFormatter
+
+    formatter = ColorFormatter("%(message)s")
+    record = logging.makeLogRecord(dict(
+        name='pouet', level=logging.DEBUG, fn="(unknown file)", msg="Message",
+        lno=0, args=(), exc_info=None,
+    ))
+    payload = formatter.format(record)
+    assert "\033[0" in payload
+
+
+def test_logging_config():
+    from ldap2pg.config import logging_dict
+
+    cfg = logging_dict(debug=True)
+    assert 'DEBUG' == cfg['loggers']['ldap2pg']['level']
+
+    cfg = logging_dict(debug=False)
+    assert 'INFO' == cfg['loggers']['ldap2pg']['level']
+
+
 def test_mapping():
     from ldap2pg.config import Mapping
 
-    m = Mapping('sync_map', env=None)
+    class MockArgs(dict):
+        def __getattr__(self, name):
+            try:
+                return self[name]
+            except KeyError:
+                raise AttributeError(name)
+
+    m = Mapping('my:option', env=None)
+    assert 'my_option' == m.arg
+
+    # Fallback to default
     v = m.process(default='defval', file_config=dict(), environ=dict())
     assert 'defval' == v
 
+    # Read file
+    v = m.process(
+        default='defval',
+        file_config=dict(my=dict(option='fileval')),
+        environ=dict(),
+    )
+    assert 'fileval' == v
+
+    # Ignore env
+    v = m.process(
+        default='defval',
+        file_config=dict(my=dict(option='fileval')),
+        environ=dict(MY_OPTION='envval'),
+    )
+    assert 'fileval' == v
+
+    m = Mapping('my:option')
+    assert 'MY_OPTION' == m.env
+
+    # Prefer env over file
+    v = m.process(
+        default='defval',
+        file_config=dict(my=dict(option='fileval')),
+        environ=dict(MY_OPTION='envval'),
+    )
+    assert 'envval' == v
+
+    # Prefer argv over env
+    v = m.process(
+        default='defval',
+        file_config=dict(my=dict(option='fileval')),
+        environ=dict(MY_OPTION='envval'),
+        args=MockArgs(my_option='argval')
+    )
+    assert 'argval' == v
+
+
+def test_mapping_security():
+    from ldap2pg.config import Mapping
+
     m = Mapping('ldap:password', secret=True)
-    assert 'LDAP_PASSWORD' == m.env
-
-    # Nothing in either file or env -> default
-    v = m.process(default='DEFAULT', file_config=dict(), environ=dict())
-    assert 'DEFAULT' == v
-
     with pytest.raises(ValueError):
         # Something in file but it's not secure
         m.process(
@@ -227,6 +320,8 @@ def test_read_yml():
 
 
 def test_load(mocker):
+    argv = ['ldap2pg']
+    mocker.patch('ldap2pg.config.sys.argv', argv)
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
