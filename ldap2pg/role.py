@@ -196,7 +196,6 @@ class RoleSet(set):
                     continue
                 logger.debug("Add %s as member of %s.", role.name, parent.name)
                 parent.members.append(role.name)
-            role.parents[:] = []
 
     def reindex(self):
         return {

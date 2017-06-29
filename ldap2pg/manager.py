@@ -108,11 +108,14 @@ class RoleManager(object):
 
         if kw.get('members_attribute'):
             members = get_ldap_attribute(entry, kw['members_attribute'])
-            members = list(members)
+            members = [m.lower() for m in members]
         else:
             members = []
 
+        parents = [p.lower() for p in kw.get('parents', [])]
+
         for name in names:
+            name = name.lower()
             logger.debug("Found role %s%s", name, log_source)
             if members:
                 logger.debug(
@@ -122,7 +125,7 @@ class RoleManager(object):
                 name=name,
                 members=members,
                 options=kw.get('options', {}),
-                parents=kw.get('parents', []),
+                parents=parents[:],
             )
 
             yield role
