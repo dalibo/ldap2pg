@@ -2,7 +2,7 @@
 
 ldap2pg --help
 ldap2pg -?
-ldap2pg -dn
+ldap2pg -vn
 
 export LDAP2PG_CONFIG=my-test-ldap2pg.yml
 rm -f $LDAP2PG_CONFIG

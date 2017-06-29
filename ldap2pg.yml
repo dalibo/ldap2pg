@@ -13,8 +13,15 @@
 # verbose logging. If ldap2pg is executed from a terminal, a debugger is
 # triggered on unhandled error.
 
+# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSE
+verbose: yes
+
 # Dry mode. env var: DRY=[1yY]
 dry: no
+
+# Increase messages verbosity. Logs every SQL queries. logs each LDAP searches
+# as ldapsearch commands. env var: VERBOSE=[1yY]
+verbose: no
 
 #
 # **LDAP connection**

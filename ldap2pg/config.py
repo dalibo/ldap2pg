@@ -11,7 +11,6 @@ import sys
 from six import string_types
 import yaml
 
-from . import __version__
 from .utils import (
     deepget,
     deepset,
@@ -57,33 +56,6 @@ class ColorFormatter(MultilineFormatter):
             for line in lines.splitlines(True)
         ])
         return lines
-
-
-def logging_dict(tty=True, debug=False):
-    formatter_kwargs = {'class': __name__ + '.ColorFormatter'} if tty else {}
-    return {
-        'version': 1,
-        'formatters': {
-            'debug': dict(
-                format='[%(name)-16s %(levelname)8s] %(message)s',
-                **formatter_kwargs
-            ),
-            'info': dict(format='%(message)s', **formatter_kwargs),
-        },
-        'handlers': {'stderr': {
-            '()': 'logging.StreamHandler',
-            'formatter': 'debug' if debug else 'info',
-        }},
-        'root': {
-            'level': 'WARNING',
-            'handlers': ['stderr'],
-        },
-        'loggers': {
-            'ldap2pg': {
-                'level': 'DEBUG' if debug else 'INFO',
-            },
-        },
-    }
 
 
 def raw(v):
@@ -144,14 +116,14 @@ def define_arguments(parser):
         action='help',
         help='show this help message and exit')
     parser.add_argument(
-        '-d', '--debug',
-        action='store_true', dest='debug',
-        help="increase verbosity and enable debugger"
-    )
-    parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
         help="don't touch Postgres, just print what to do"
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true', dest='verbose',
+        help="add debug messages including SQL and LDAP queries"
     )
 
 
@@ -163,9 +135,14 @@ class Mapping(object):
     def __init__(self, path, env=_auto_env, secret=False, processor=raw):
         self.path = path
         self.arg = path.replace(':', '_')
+
+        env = env or []
         if env == self._auto_env:
             env = self.arg.upper()
         self.env = env
+        if isinstance(self.env, string_types):
+            self.env = [self.env]
+
         self.processor = processor
         if isinstance(secret, string_types):
             secret = re.compile(secret)
@@ -173,11 +150,16 @@ class Mapping(object):
 
     def process_env(self, environ):
         # Get value from env var
-        if self.env:
-            value = environ[self.env]
-            logger.debug("Loaded %s from %s.", self.path, self.env)
+        for env in self.env:
+            try:
+                value = environ[env]
+                logger.debug("Loaded %s from %s.", self.path, env)
+                break
+            except KeyError:
+                continue
         else:
             raise KeyError()
+
         return value
 
     def process_file(self, file_config):
@@ -237,6 +219,7 @@ class NoConfigurationError(Exception):
 class Configuration(dict):
     DEFAULTS = {
         'dry': False,
+        'verbose': False,
         'ldap': {
             'host': '',
             'port': 389,
@@ -257,6 +240,7 @@ class Configuration(dict):
 
     MAPPINGS = [
         Mapping('dry'),
+        Mapping('verbose', env=['VERBOSE', 'DEBUG']),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
         Mapping('ldap:bind'),
@@ -302,7 +286,7 @@ class Configuration(dict):
     role mappings. See project home for further details.
     """.replace(4 * ' ', '')
 
-    def load(self, debug=False):
+    def load(self, argv=None):
         # argv processing.
         parser = ArgumentParser(
             add_help=False,
@@ -313,18 +297,7 @@ class Configuration(dict):
             epilog=self.EPILOG,
         )
         define_arguments(parser)
-        parser.set_defaults(debug=debug)
-        args = parser.parse_args()
-
-        # Fast logging config. We don't support logging config from file.
-        logging_config = logging_dict(
-            debug=args.debug,
-            tty=sys.stderr.isatty(),
-        )
-        logging.config.dictConfig(logging_config)
-
-        logger.info("Starting ldap2pg %s.", __version__)
-        logger.debug("Debug mode enabled.")
+        args = parser.parse_args(sys.argv if argv is None else argv)
 
         # File loading.
         try:
@@ -361,3 +334,32 @@ class Configuration(dict):
             raise ConfigurationError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
+
+    def logging_dict(self, tty=True):
+        formatter_kwargs = {}
+        if tty:
+            formatter_kwargs['class'] = __name__ + '.ColorFormatter'
+
+        return {
+            'version': 1,
+            'formatters': {
+                'verbose': dict(
+                    format='[%(name)-16s %(levelname)8s] %(message)s',
+                    **formatter_kwargs
+                ),
+                'info': dict(format='%(message)s', **formatter_kwargs),
+            },
+            'handlers': {'stderr': {
+                '()': 'logging.StreamHandler',
+                'formatter': 'verbose' if self['verbose'] else 'info',
+            }},
+            'root': {
+                'level': 'WARNING',
+                'handlers': ['stderr'],
+            },
+            'loggers': {
+                __package__: {
+                    'level': 'DEBUG' if self['verbose'] else 'INFO',
+                },
+            },
+        }

@@ -43,13 +43,17 @@ def test_color_formatter():
 
 
 def test_logging_config():
-    from ldap2pg.config import logging_dict
+    from ldap2pg.config import Configuration
 
-    cfg = logging_dict(debug=True)
-    assert 'DEBUG' == cfg['loggers']['ldap2pg']['level']
+    config = Configuration()
 
-    cfg = logging_dict(debug=False)
-    assert 'INFO' == cfg['loggers']['ldap2pg']['level']
+    config['verbose'] = True
+    l = config.logging_dict()
+    assert 'DEBUG' == l['loggers']['ldap2pg']['level']
+
+    config['verbose'] = False
+    l = config.logging_dict()
+    assert 'INFO' == l['loggers']['ldap2pg']['level']
 
 
 def test_mapping():
@@ -86,7 +90,7 @@ def test_mapping():
     assert 'fileval' == v
 
     m = Mapping('my:option')
-    assert 'MY_OPTION' == m.env
+    assert ['MY_OPTION'] == m.env
 
     # Prefer env over file
     v = m.process(
@@ -320,8 +324,6 @@ def test_read_yml():
 
 
 def test_load(mocker):
-    argv = ['ldap2pg']
-    mocker.patch('ldap2pg.config.sys.argv', argv)
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
@@ -339,7 +341,7 @@ def test_load(mocker):
     ff.side_effect = NoConfigurationError()
     # Missing sync_map
     with pytest.raises(ConfigurationError):
-        config.load()
+        config.load(argv=[])
 
     ff.side_effect = None
     # Find `filename.yml`
@@ -349,8 +351,9 @@ def test_load(mocker):
     # send one env var for LDAP bind
     environ.update(dict(LDAP_BIND='envbind'))
 
-    config.load()
+    config.load(argv=['--verbose'])
 
     assert 'envbind' == config['ldap']['bind']
     assert 1 == len(config['sync_map'])
     assert 'ldap' in config['sync_map'][0]
+    assert config['verbose'] is True

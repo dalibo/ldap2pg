@@ -9,6 +9,7 @@ import sys
 import ldap3
 import psycopg2
 
+from . import __version__
 from .config import Configuration, ConfigurationError
 from .manager import RoleManager
 from .utils import UserError
@@ -28,9 +29,15 @@ def create_pg_connection(dsn):
     return psycopg2.connect(dsn)
 
 
-def wrapped_main(debug=False):
+def wrapped_main():
     config = Configuration()
-    config.load(debug=debug)
+    config.load()
+
+    logging_config = config.logging_dict(tty=sys.stderr.isatty())
+    logging.config.dictConfig(logging_config)
+
+    logger.info("Starting ldap2pg %s.", __version__)
+    logger.debug("Debug mode enabled.")
 
     try:
         ldapconn = create_ldap_connection(**config['ldap'])
@@ -54,7 +61,7 @@ def main():
     debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
 
     try:
-        wrapped_main(debug=debug)
+        wrapped_main()
         exit(0)
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")
