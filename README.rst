@@ -27,11 +27,20 @@ Features
         attribute: cn
       role:
         name_attribute: cn
-    $ ldap2pg
-     INFO Starting ldap2pg 0.1.
-     INFO Creating new role alice.
-    WARNI Dropping existing role toto.
-     INFO Synchronization complete.
+        options: LOGIN
+    $ ldap2pg --real
+    Using ./ldap2pg.yml.
+    Starting ldap2pg 1.0a2.
+    Running in real mode.
+    Inspecting Postgres...
+    Querying LDAP cn=people,dc=ldap2pg,dc=local...
+    Create bar.
+    Create baz.
+    Create bob.
+    Create foo.
+    Update options of alice.
+    Drop spurious.
+    Synchronization complete.
     $
 
 See versionned `ldap2pg.yml
