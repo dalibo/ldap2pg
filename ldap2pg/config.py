@@ -282,7 +282,7 @@ class Configuration(dict):
                 return candidate, stat_.st_mode
             except OSError as e:
                 if e.errno == errno.EACCES:
-                    logger.warn("Can't try %s: permission denied.", candidate)
+                    logger.warn("Can't read %s: permission denied.", candidate)
 
         if custom:
             message = "Can't access configuration file %s." % (custom,)
@@ -322,8 +322,12 @@ class Configuration(dict):
             file_config = {}
         else:
             logger.debug("Opening configuration file %s.", filename)
-            with open(filename) as fo:
-                file_config = self.read(fo, mode)
+            try:
+                with open(filename) as fo:
+                    file_config = self.read(fo, mode)
+            except OSError as e:
+                msg = "Failed to read configuration: %s" % (e,)
+                raise UserError(msg)
 
         # Now merge all config sources.
         try:

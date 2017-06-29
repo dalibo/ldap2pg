@@ -355,12 +355,13 @@ def test_load(mocker):
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
     read = mocker.patch('ldap2pg.config.Configuration.read')
-    mocker.patch('ldap2pg.config.open', create=True)
+    o = mocker.patch('ldap2pg.config.open', create=True)
 
     from ldap2pg.config import (
         Configuration,
         ConfigurationError,
         NoConfigurationError,
+        UserError,
     )
 
     config = Configuration()
@@ -373,6 +374,14 @@ def test_load(mocker):
     ff.side_effect = None
     # Find `filename.yml`
     ff.return_value = ['filename.yml', 0o0]
+
+    # Not readable.
+    o.side_effect = OSError("failed to open")
+    with pytest.raises(UserError):
+        config.load(argv=[])
+
+    # Readable..
+    o.side_effect = None
     # ...containing mapping
     read.return_value = dict(sync_map=dict(ldap=dict(), role=dict()))
     # send one env var for LDAP bind
