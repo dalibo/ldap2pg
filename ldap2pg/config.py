@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
 import errno
 import logging.config
-import os
+import os.path
 from os import stat
 import re
 import sys
@@ -322,7 +322,7 @@ class Configuration(dict):
             try:
                 logger.debug("Trying %s.", candidate)
                 stat_ = stat(candidate)
-                return candidate, stat_.st_mode
+                return os.path.realpath(candidate), stat_.st_mode
             except OSError as e:
                 if e.errno == errno.EACCES:
                     logger.warn("Can't read %s: permission denied.", candidate)
@@ -368,7 +368,7 @@ class Configuration(dict):
             logger.debug("No configuration file found.")
             file_config = {}
         else:
-            logger.debug("Opening configuration file %s.", filename)
+            logger.info("Using %s.", filename)
             try:
                 with open(filename) as fo:
                     file_config = self.read(fo, mode)
