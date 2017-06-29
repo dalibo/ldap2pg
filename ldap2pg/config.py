@@ -235,7 +235,7 @@ class NoConfigurationError(Exception):
 
 class Configuration(dict):
     DEFAULTS = {
-        'dry': False,
+        'dry': True,
         'verbose': False,
         'ldap': {
             'host': '',
@@ -306,6 +306,8 @@ class Configuration(dict):
 
     ldap2pg requires a configuration file to describe LDAP queries and
     role mappings. See project home for further details.
+
+    By default, ldap2pg runs in dry mode.
     """.replace(4 * ' ', '')
 
     def load(self, argv=None):
