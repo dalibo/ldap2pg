@@ -276,7 +276,7 @@ def test_find_filename_custom(mocker):
         args=MockArgs(config='argv.yml'),
     )
 
-    assert 'argv.yml' == filename
+    assert filename.endswith('argv.yml')
 
 
 def test_merge_and_mappings():
