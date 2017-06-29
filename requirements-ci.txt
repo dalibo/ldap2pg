@@ -1,6 +1,7 @@
 codecov
 docutils
 flake8
+mkdocs
 pytest
 pytest-cov
 pytest-mock
