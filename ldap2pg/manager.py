@@ -169,11 +169,12 @@ class RoleManager(object):
             ldaproles.resolve_membership()
             for query in pgroles.diff(ldaproles):
                 count += 1
-                logger.info(
-                    "%s%s",
-                    'Would ' if self.dry else '',
-                    query if self.dry else query.message.capitalize(),
-                )
+
+                message = str(query)
+                if not self.dry:
+                    message = message[0].upper() + message[1:]
+                logger.info("%s%s", 'Would ' if self.dry else '', message)
+
                 if self.dry:
                     sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
                     logger.debug("Would execute: %s", sql)

@@ -125,17 +125,3 @@ def test_flatten():
     ]
 
     assert wanted == order
-
-
-def test_resolve_membership():
-    from ldap2pg.role import RoleSet, Role
-
-    alice = Role('alice', parents=['bob', 'oscar'])
-    bob = Role('bob')
-    oscar = Role('oscar', members=['alice'])
-    roles = RoleSet([alice, bob, oscar])
-
-    roles.resolve_membership()
-
-    assert [] == alice.parents
-    assert 'alice' in bob.members
