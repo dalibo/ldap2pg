@@ -207,7 +207,7 @@ def test_process_rolerule():
     assert rule['options']['SUPERUSER'] is True
 
 
-def test_find_filename(mocker):
+def test_find_filename_default(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
     from ldap2pg.config import Configuration, NoConfigurationError
@@ -229,23 +229,40 @@ def test_find_filename(mocker):
     assert config._file_candidates[2] == filename
     assert 0o600 == mode
 
+    # No files at all
+    stat.side_effect = OSError()
+    with pytest.raises(NoConfigurationError):
+        config.find_filename(environ=dict())
+
+
+def test_find_filename_custom(mocker):
+    stat = mocker.patch('ldap2pg.config.stat')
+
+    from ldap2pg.config import Configuration, UserError
+
+    config = Configuration()
+
     # Read from env var LDAP2PG_CONFIG
     stat.reset_mock()
     stat.side_effect = [
         OSError(),
         AssertionError("Not reached."),
     ]
-    with pytest.raises(NoConfigurationError):
+    with pytest.raises(UserError):
         config.find_filename(environ=dict(LDAP2PG_CONFIG='my.yml'))
 
     # Read from args
     stat.reset_mock()
     stat.side_effect = [
-        OSError(),
+        mocker.Mock(st_mode=0o600),
         AssertionError("Not reached."),
     ]
-    with pytest.raises(NoConfigurationError):
-        config.find_filename(environ=dict(), args=MockArgs(config='my.yml'))
+    filename, mode = config.find_filename(
+        environ=dict(LDAP2PG_CONFIG='env.yml'),
+        args=MockArgs(config='argv.yml'),
+    )
+
+    assert 'argv.yml' == filename
 
 
 def test_merge_and_mappings():

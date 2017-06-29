@@ -283,7 +283,12 @@ class Configuration(dict):
             except OSError as e:
                 if e.errno == errno.EACCES:
                     logger.warn("Can't try %s: permission denied.", candidate)
-        raise NoConfigurationError("No configuration file found")
+
+        if custom:
+            message = "Can't access configuration file %s." % (custom,)
+            raise UserError(message, exit_code=os.EX_NOINPUT)
+        else:
+            raise NoConfigurationError("No configuration file found")
 
     EPILOG = """\
 
