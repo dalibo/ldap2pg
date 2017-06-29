@@ -39,7 +39,7 @@ class MultilineFormatter(logging.Formatter):
         return '\n'.join(lines)
 
 
-class ColorFormatter(MultilineFormatter):
+class ColoredStreamHandler(logging.StreamHandler):
 
     _color_map = {
         logging.DEBUG: '37',
@@ -50,40 +50,13 @@ class ColorFormatter(MultilineFormatter):
     }
 
     def format(self, record):
-        lines = super(ColorFormatter, self).format(record)
+        lines = super(ColoredStreamHandler, self).format(record)
         color = self._color_map.get(record.levelno, '39')
         lines = ''.join([
             '\033[0;%sm%s\033[0m' % (color, line)
             for line in lines.splitlines(True)
         ])
         return lines
-
-
-def logging_dict(tty=True, debug=False):
-    formatter_kwargs = {'class': __name__ + '.ColorFormatter'} if tty else {}
-    return {
-        'version': 1,
-        'formatters': {
-            'debug': dict(
-                format='[%(name)-16s %(levelname)8s] %(message)s',
-                **formatter_kwargs
-            ),
-            'info': dict(format='%(message)s', **formatter_kwargs),
-        },
-        'handlers': {'stderr': {
-            '()': 'logging.StreamHandler',
-            'formatter': 'debug' if debug else 'info',
-        }},
-        'root': {
-            'level': 'WARNING',
-            'handlers': ['stderr'],
-        },
-        'loggers': {
-            'ldap2pg': {
-                'level': 'DEBUG' if debug else 'INFO',
-            },
-        },
-    }
 
 
 def raw(v):
@@ -140,18 +113,44 @@ def syncmap(value):
 
 def define_arguments(parser):
     parser.add_argument(
-        '-?', '--help',
-        action='help',
-        help='show this help message and exit')
-    parser.add_argument(
-        '-d', '--debug',
-        action='store_true', dest='debug',
-        help="increase verbosity and enable debugger"
+        '-c', '--config',
+        action='store', dest='config',
+        help='path to YAML configuration file (env: LDAP2PG_CONFIG)'
     )
     parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
-        help="don't touch Postgres, just print what to do"
+        help="don't touch Postgres, just print what to do (env: DRY)"
+    )
+    parser.add_argument(
+        '-N', '--real',
+        action='store_false', dest='dry',
+        help="real mode, apply changes to Postgres (env: DRY)"
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true', dest='verbose',
+        help="add debug messages including SQL and LDAP queries (env: VERBOSE)"
+    )
+    parser.add_argument(
+        '--color',
+        action='store_true', dest='color',
+        help="force color output (env: COLOR)"
+    )
+    parser.add_argument(
+        '--no-color',
+        action='store_false', dest='color',
+        help="force plain text output (env: COLOR)"
+    )
+    parser.add_argument(
+        '-?', '--help',
+        action='help',
+        help='show this help message and exit')
+    parser.add_argument(
+        '-V', '--version',
+        action='version',
+        help='show version and exit',
+        version=__package__ + ' ' + __version__,
     )
 
 
@@ -163,9 +162,14 @@ class Mapping(object):
     def __init__(self, path, env=_auto_env, secret=False, processor=raw):
         self.path = path
         self.arg = path.replace(':', '_')
+
+        env = env or []
         if env == self._auto_env:
             env = self.arg.upper()
         self.env = env
+        if isinstance(self.env, string_types):
+            self.env = [self.env]
+
         self.processor = processor
         if isinstance(secret, string_types):
             secret = re.compile(secret)
@@ -173,11 +177,16 @@ class Mapping(object):
 
     def process_env(self, environ):
         # Get value from env var
-        if self.env:
-            value = environ[self.env]
-            logger.debug("Loaded %s from %s.", self.path, self.env)
+        for env in self.env:
+            try:
+                value = environ[env]
+                logger.debug("Read %s from %s.", self.path, env)
+                break
+            except KeyError:
+                continue
         else:
             raise KeyError()
+
         return value
 
     def process_file(self, file_config):
@@ -195,11 +204,14 @@ class Mapping(object):
         if secret and unsecured_file:
             raise ValueError("Refuse to load secret from world readable file.")
 
+        logger.debug("Read %s from YAML.", self.path)
         return value
 
     def process_arg(self, args):
         # Get value from argparse result.
-        return getattr(args, self.arg)
+        value = getattr(args, self.arg)
+        logger.debug("Read %s from argv.", self.path)
+        return value
 
     def process(self, default, file_config={}, environ={}, args=object()):
         # This is the sources of configuration, ordered by priority desc. If a
@@ -236,7 +248,9 @@ class NoConfigurationError(Exception):
 
 class Configuration(dict):
     DEFAULTS = {
-        'dry': False,
+        'dry': True,
+        'verbose': False,
+        'color': False,
         'ldap': {
             'host': '',
             'port': 389,
@@ -256,7 +270,9 @@ class Configuration(dict):
     }
 
     MAPPINGS = [
+        Mapping('color'),
         Mapping('dry'),
+        Mapping('verbose', env=['VERBOSE', 'DEBUG']),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
         Mapping('ldap:bind'),
@@ -278,10 +294,10 @@ class Configuration(dict):
         '/etc/ldap2pg.yml',
     ]
 
-    def find_filename(self, environ=os.environ):
-        envval = environ.get('LDAP2PG_CONFIG')
-        if envval:
-            candidates = [envval]
+    def find_filename(self, environ=os.environ, args=None):
+        custom = getattr(args, 'config', environ.get('LDAP2PG_CONFIG'))
+        if custom:
+            candidates = [custom]
         else:
             candidates = self._file_candidates
 
@@ -293,17 +309,25 @@ class Configuration(dict):
                 return candidate, stat_.st_mode
             except OSError as e:
                 if e.errno == errno.EACCES:
-                    logger.warn("Can't try %s: permission denied.", candidate)
-        raise NoConfigurationError("No configuration file found")
+                    logger.warn("Can't read %s: permission denied.", candidate)
+
+        if custom:
+            message = "Can't access configuration file %s." % (custom,)
+            raise UserError(message, exit_code=os.EX_NOINPUT)
+        else:
+            raise NoConfigurationError("No configuration file found")
 
     EPILOG = """\
 
     ldap2pg requires a configuration file to describe LDAP queries and
     role mappings. See project home for further details.
+
+    By default, ldap2pg runs in dry mode.
     """.replace(4 * ' ', '')
 
-    def load(self, debug=False):
+    def load(self, argv=None):
         # argv processing.
+        logger.debug("Processing CLI arguments.")
         parser = ArgumentParser(
             add_help=False,
             # Only store value from argv. Defaults are managed by
@@ -313,29 +337,28 @@ class Configuration(dict):
             epilog=self.EPILOG,
         )
         define_arguments(parser)
-        parser.set_defaults(debug=debug)
-        args = parser.parse_args()
+        args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
-        # Fast logging config. We don't support logging config from file.
-        logging_config = logging_dict(
-            debug=args.debug,
-            tty=sys.stderr.isatty(),
-        )
-        logging.config.dictConfig(logging_config)
-
-        logger.info("Starting ldap2pg %s.", __version__)
-        logger.debug("Debug mode enabled.")
+        if hasattr(args, 'verbose') or hasattr(args, 'color'):
+            # Switch to verbose before loading file.
+            self['verbose'] = getattr(args, 'verbose', self['verbose'])
+            self['color'] = getattr(args, 'color', self['color'])
+            logging.config.dictConfig(self.logging_dict())
 
         # File loading.
         try:
-            filename, mode = self.find_filename(environ=os.environ)
+            filename, mode = self.find_filename(environ=os.environ, args=args)
         except NoConfigurationError:
             logger.debug("No configuration file found.")
             file_config = {}
         else:
             logger.debug("Opening configuration file %s.", filename)
-            with open(filename) as fo:
-                file_config = self.read(fo, mode)
+            try:
+                with open(filename) as fo:
+                    file_config = self.read(fo, mode)
+            except OSError as e:
+                msg = "Failed to read configuration: %s" % (e,)
+                raise UserError(msg)
 
         # Now merge all config sources.
         try:
@@ -348,7 +371,7 @@ class Configuration(dict):
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
             value = mapping.process(
-                default=deepget(self.DEFAULTS, mapping.path),
+                default=deepget(self, mapping.path),
                 file_config=file_config,
                 environ=environ,
                 args=args,
@@ -361,3 +384,35 @@ class Configuration(dict):
             raise ConfigurationError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
+
+    def logging_dict(self):
+        formatter = 'verbose' if self['verbose'] else 'info'
+
+        return {
+            'version': 1,
+            'formatters': {
+                'verbose': {
+                    'format': '[%(name)-16s %(levelname)8s] %(message)s',
+                },
+                'info': {'format': '%(message)s'},
+            },
+            'handlers': {
+                'raw': {
+                    '()': 'logging.StreamHandler',
+                    'formatter': formatter,
+                },
+                'colored': {
+                    '()': __name__ + '.ColoredStreamHandler',
+                    'formatter': formatter,
+                },
+            },
+            'root': {
+                'level': 'WARNING',
+                'handlers': ['colored' if self['color'] else 'raw'],
+            },
+            'loggers': {
+                __package__: {
+                    'level': 'DEBUG' if self['verbose'] else 'INFO',
+                },
+            },
+        }

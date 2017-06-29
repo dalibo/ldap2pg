@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import logging
+import logging.config
 import os
 import pdb
 import sys
@@ -9,6 +9,7 @@ import sys
 import ldap3
 import psycopg2
 
+from . import __version__
 from .config import Configuration, ConfigurationError
 from .manager import RoleManager
 from .utils import UserError
@@ -28,9 +29,15 @@ def create_pg_connection(dsn):
     return psycopg2.connect(dsn)
 
 
-def wrapped_main(debug=False):
-    config = Configuration()
-    config.load(debug=debug)
+def wrapped_main(config=None):
+    config = config or Configuration()
+    config.load()
+
+    logging_config = config.logging_dict()
+    logging.config.dictConfig(logging_config)
+
+    logger.info("Starting ldap2pg %s.", __version__)
+    logger.debug("Debug mode enabled.")
 
     try:
         ldapconn = create_ldap_connection(**config['ldap'])
@@ -52,9 +59,15 @@ def wrapped_main(debug=False):
 
 def main():
     debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
+    verbose = os.environ.get('VERBOSE', '').lower() in {'1', 'y'}
+
+    config = Configuration()
+    config['verbose'] = debug or verbose
+    config['color'] = sys.stderr.isatty()
+    logging.config.dictConfig(config.logging_dict())
 
     try:
-        wrapped_main(debug=debug)
+        wrapped_main(config)
         exit(0)
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")

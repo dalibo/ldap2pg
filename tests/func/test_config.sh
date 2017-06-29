@@ -2,7 +2,7 @@
 
 ldap2pg --help
 ldap2pg -?
-ldap2pg -dn
+ldap2pg -vn --color
 
 export LDAP2PG_CONFIG=my-test-ldap2pg.yml
 rm -f $LDAP2PG_CONFIG
@@ -34,4 +34,4 @@ sandbox="env ${var_bl[@]/#/--unset }"
 chmod 0600 ${LDAP2PG_CONFIG}
 
 # Now it's ok :)
-$sandbox ldap2pg
+$sandbox ldap2pg -N

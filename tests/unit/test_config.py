@@ -3,6 +3,14 @@ from __future__ import unicode_literals
 import pytest
 
 
+class MockArgs(dict):
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+
 def test_multiline_formatter():
     import logging
     from ldap2pg.config import MultilineFormatter
@@ -29,38 +37,35 @@ def test_multiline_formatter():
     assert wanted == payload
 
 
-def test_color_formatter():
+def test_color_handler():
     import logging
-    from ldap2pg.config import ColorFormatter
+    from ldap2pg.config import ColoredStreamHandler
 
-    formatter = ColorFormatter("%(message)s")
+    handler = ColoredStreamHandler()
     record = logging.makeLogRecord(dict(
         name='pouet', level=logging.DEBUG, fn="(unknown file)", msg="Message",
         lno=0, args=(), exc_info=None,
     ))
-    payload = formatter.format(record)
+    payload = handler.format(record)
     assert "\033[0" in payload
 
 
 def test_logging_config():
-    from ldap2pg.config import logging_dict
+    from ldap2pg.config import Configuration
 
-    cfg = logging_dict(debug=True)
-    assert 'DEBUG' == cfg['loggers']['ldap2pg']['level']
+    config = Configuration()
 
-    cfg = logging_dict(debug=False)
-    assert 'INFO' == cfg['loggers']['ldap2pg']['level']
+    config['verbose'] = True
+    l = config.logging_dict()
+    assert 'DEBUG' == l['loggers']['ldap2pg']['level']
+
+    config['verbose'] = False
+    l = config.logging_dict()
+    assert 'INFO' == l['loggers']['ldap2pg']['level']
 
 
 def test_mapping():
     from ldap2pg.config import Mapping
-
-    class MockArgs(dict):
-        def __getattr__(self, name):
-            try:
-                return self[name]
-            except KeyError:
-                raise AttributeError(name)
 
     m = Mapping('my:option', env=None)
     assert 'my_option' == m.arg
@@ -86,7 +91,7 @@ def test_mapping():
     assert 'fileval' == v
 
     m = Mapping('my:option')
-    assert 'MY_OPTION' == m.env
+    assert ['MY_OPTION'] == m.env
 
     # Prefer env over file
     v = m.process(
@@ -202,7 +207,7 @@ def test_process_rolerule():
     assert rule['options']['SUPERUSER'] is True
 
 
-def test_find_filename(mocker):
+def test_find_filename_default(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
     from ldap2pg.config import Configuration, NoConfigurationError
@@ -224,14 +229,40 @@ def test_find_filename(mocker):
     assert config._file_candidates[2] == filename
     assert 0o600 == mode
 
+    # No files at all
+    stat.side_effect = OSError()
+    with pytest.raises(NoConfigurationError):
+        config.find_filename(environ=dict())
+
+
+def test_find_filename_custom(mocker):
+    stat = mocker.patch('ldap2pg.config.stat')
+
+    from ldap2pg.config import Configuration, UserError
+
+    config = Configuration()
+
     # Read from env var LDAP2PG_CONFIG
     stat.reset_mock()
     stat.side_effect = [
         OSError(),
         AssertionError("Not reached."),
     ]
-    with pytest.raises(NoConfigurationError):
+    with pytest.raises(UserError):
         config.find_filename(environ=dict(LDAP2PG_CONFIG='my.yml'))
+
+    # Read from args
+    stat.reset_mock()
+    stat.side_effect = [
+        mocker.Mock(st_mode=0o600),
+        AssertionError("Not reached."),
+    ]
+    filename, mode = config.find_filename(
+        environ=dict(LDAP2PG_CONFIG='env.yml'),
+        args=MockArgs(config='argv.yml'),
+    )
+
+    assert 'argv.yml' == filename
 
 
 def test_merge_and_mappings():
@@ -320,18 +351,17 @@ def test_read_yml():
 
 
 def test_load(mocker):
-    argv = ['ldap2pg']
-    mocker.patch('ldap2pg.config.sys.argv', argv)
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
     read = mocker.patch('ldap2pg.config.Configuration.read')
-    mocker.patch('ldap2pg.config.open', create=True)
+    o = mocker.patch('ldap2pg.config.open', create=True)
 
     from ldap2pg.config import (
         Configuration,
         ConfigurationError,
         NoConfigurationError,
+        UserError,
     )
 
     config = Configuration()
@@ -339,18 +369,27 @@ def test_load(mocker):
     ff.side_effect = NoConfigurationError()
     # Missing sync_map
     with pytest.raises(ConfigurationError):
-        config.load()
+        config.load(argv=[])
 
     ff.side_effect = None
     # Find `filename.yml`
     ff.return_value = ['filename.yml', 0o0]
+
+    # Not readable.
+    o.side_effect = OSError("failed to open")
+    with pytest.raises(UserError):
+        config.load(argv=[])
+
+    # Readable..
+    o.side_effect = None
     # ...containing mapping
     read.return_value = dict(sync_map=dict(ldap=dict(), role=dict()))
     # send one env var for LDAP bind
     environ.update(dict(LDAP_BIND='envbind'))
 
-    config.load()
+    config.load(argv=['--verbose'])
 
     assert 'envbind' == config['ldap']['bind']
     assert 1 == len(config['sync_map'])
     assert 'ldap' in config['sync_map'][0]
+    assert config['verbose'] is True
