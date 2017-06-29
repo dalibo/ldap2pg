@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from . import __version__
 
+from argparse import ArgumentParser
 import logging.config
 import os
 import pdb
@@ -11,45 +12,16 @@ import sys
 import ldap3
 import psycopg2
 
-from .config import Configuration, ConfigurationError
+from .config import (
+    Configuration,
+    ConfigurationError,
+    define_arguments,
+ )
 from .manager import RoleManager
 from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
-
-
-def create_ldap_connection(host, port, bind, password, **kw):
-    logger.debug("Connecting to LDAP server %s:%s.", host, port)
-    server = ldap3.Server(host, port, get_info=ldap3.ALL)
-    return ldap3.Connection(server, bind, password, auto_bind=True)
-
-
-def create_pg_connection(dsn):
-    logger.debug("Connecting to PostgreSQL.")
-    return psycopg2.connect(dsn)
-
-
-def wrapped_main():
-    config = Configuration()
-    config.load()
-
-    try:
-        ldapconn = create_ldap_connection(**config['ldap'])
-        pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
-    except ldap3.core.exceptions.LDAPExceptionError as e:
-        message = "Failed to connect to LDAP: %s" % (e,)
-        raise ConfigurationError(message)
-    except psycopg2.OperationalError as e:
-        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
-        raise ConfigurationError(message)
-
-    manager = RoleManager(
-        ldapconn=ldapconn, pgconn=pgconn,
-        blacklist=config['postgres']['blacklist'],
-        dry=config['dry'],
-    )
-    manager.sync(map_=config['sync_map'])
 
 
 class MultilineFormatter(logging.Formatter):
@@ -115,15 +87,63 @@ def logging_dict(tty=True, debug=False):
     }
 
 
-def main():
-    debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
-    logging_config = logging_dict(debug=debug, tty=sys.stderr.isatty())
+def create_ldap_connection(host, port, bind, password, **kw):
+    logger.debug("Connecting to LDAP server %s:%s.", host, port)
+    server = ldap3.Server(host, port, get_info=ldap3.ALL)
+    return ldap3.Connection(server, bind, password, auto_bind=True)
+
+
+def create_pg_connection(dsn):
+    logger.debug("Connecting to PostgreSQL.")
+    return psycopg2.connect(dsn)
+
+
+def wrapped_main(debug=False):
+    parser = ArgumentParser(
+        add_help=False,
+        description="Swiss-army knife to synchronise Postgres ACL from LDAP.",
+        epilog="""\
+
+        ldap2pg requires a configuration file to describe LDAP queries and role
+        mappings. See project home for further details.
+        """.replace(8*' ', '')
+    )
+    define_arguments(parser)
+    parser.set_defaults(debug=debug)
+    args = parser.parse_args()
+
+    logging_config = logging_dict(debug=args.debug, tty=sys.stderr.isatty())
     logging.config.dictConfig(logging_config)
+
     logger.info("Starting ldap2pg %s.", __version__)
     logger.debug("Debug mode enabled.")
 
+    config = Configuration()
+    config.load()
+
     try:
-        wrapped_main()
+        ldapconn = create_ldap_connection(**config['ldap'])
+        pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
+    except ldap3.core.exceptions.LDAPExceptionError as e:
+        message = "Failed to connect to LDAP: %s" % (e,)
+        raise ConfigurationError(message)
+    except psycopg2.OperationalError as e:
+        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
+        raise ConfigurationError(message)
+
+    manager = RoleManager(
+        ldapconn=ldapconn, pgconn=pgconn,
+        blacklist=config['postgres']['blacklist'],
+        dry=config['dry'],
+    )
+    manager.sync(map_=config['sync_map'])
+
+
+def main():
+    debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
+
+    try:
+        wrapped_main(debug=debug)
         exit(0)
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")

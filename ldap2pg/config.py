@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import argparse
 import errno
 import logging
 import os
@@ -222,3 +223,15 @@ class Configuration(dict):
             raise ConfigurationError("Configuration file must be a mapping")
         payload['world_readable'] = bool(mode & 0o044)
         return payload
+
+
+def define_arguments(parser):
+    parser.add_argument(
+        '-?', '--help',
+        action='help', default=argparse.SUPPRESS,
+        help='show this help message and exit')
+    parser.add_argument(
+        '-d', '--debug',
+        action='store_true', dest='debug',
+        help="increase verbosity and enable debugger"
+    )
