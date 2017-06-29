@@ -368,7 +368,7 @@ class Configuration(dict):
             logger.debug("No configuration file found.")
             file_config = {}
         else:
-            logger.debug("Opening configuration file %s.", filename)
+            logger.info("Using %s.", filename)
             try:
                 with open(filename) as fo:
                     file_config = self.read(fo, mode)
