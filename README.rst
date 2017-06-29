@@ -63,7 +63,7 @@ Install it from PypI tarball::
    :target: https://codecov.io/gh/dalibo/ldap2pg
    :alt: Code coverage report
 
-.. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=svg
+.. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
 
