@@ -19,10 +19,6 @@ verbose: yes
 # Dry mode. env var: DRY=[1yY]
 dry: no
 
-# Increase messages verbosity. Logs every SQL queries. logs each LDAP searches
-# as ldapsearch commands. env var: VERBOSE=[1yY]
-verbose: no
-
 #
 # **LDAP connection**
 #

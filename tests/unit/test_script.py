@@ -4,6 +4,7 @@ import pytest
 
 
 def test_main(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
 
     from ldap2pg.script import main
@@ -15,6 +16,7 @@ def test_main(mocker):
 
 
 def test_bdb_quit(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, pdb
@@ -28,6 +30,7 @@ def test_bdb_quit(mocker):
 
 
 def test_unhandled_error(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main
@@ -41,6 +44,7 @@ def test_unhandled_error(mocker):
 
 
 def test_user_error(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, UserError
@@ -54,6 +58,7 @@ def test_user_error(mocker):
 
 
 def test_pdb(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.os.environ', {'DEBUG': '1'})
     isatty = mocker.patch('ldap2pg.script.sys.stdout.isatty')
     isatty.return_value = True
@@ -71,6 +76,7 @@ def test_pdb(mocker):
 
 
 def test_wrapped_main(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     c = mocker.patch('ldap2pg.script.Configuration', autospec=True)
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
     cpc = mocker.patch('ldap2pg.script.create_pg_connection')
@@ -87,6 +93,7 @@ def test_wrapped_main(mocker):
 
 
 def test_conn_errors(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.Configuration', autospec=True)
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
     cpc = mocker.patch('ldap2pg.script.create_pg_connection')
@@ -107,6 +114,7 @@ def test_conn_errors(mocker):
 
 
 def test_create_ldap(mocker):
+    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.ldap3.Connection', autospec=True)
     from ldap2pg.script import create_ldap_connection
 

@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import logging
+import logging.config
 import os
 import pdb
 import sys
@@ -29,8 +29,8 @@ def create_pg_connection(dsn):
     return psycopg2.connect(dsn)
 
 
-def wrapped_main():
-    config = Configuration()
+def wrapped_main(config=None):
+    config = config or Configuration()
     config.load()
 
     logging_config = config.logging_dict(tty=sys.stderr.isatty())
@@ -59,9 +59,14 @@ def wrapped_main():
 
 def main():
     debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
+    verbose = os.environ.get('VERBOSE', '').lower() in {'1', 'y'}
+
+    config = Configuration()
+    config['verbose'] = debug or verbose
+    logging.config.dictConfig(config.logging_dict())
 
     try:
-        wrapped_main()
+        wrapped_main(config)
         exit(0)
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")

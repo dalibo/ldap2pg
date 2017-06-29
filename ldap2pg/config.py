@@ -288,6 +288,7 @@ class Configuration(dict):
 
     def load(self, argv=None):
         # argv processing.
+        logger.debug("Processing CLI arguments.")
         parser = ArgumentParser(
             add_help=False,
             # Only store value from argv. Defaults are managed by
@@ -298,6 +299,10 @@ class Configuration(dict):
         )
         define_arguments(parser)
         args = parser.parse_args(sys.argv if argv is None else argv)
+
+        if hasattr(args, 'verbose'):
+            self['verbose'] = args.verbose
+            logging.config.dictConfig(self.logging_dict())
 
         # File loading.
         try:
