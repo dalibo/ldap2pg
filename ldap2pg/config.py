@@ -170,7 +170,7 @@ class Mapping(object):
         for env in self.env:
             try:
                 value = environ[env]
-                logger.debug("Loaded %s from %s.", self.path, env)
+                logger.debug("Read %s from %s.", self.path, env)
                 break
             except KeyError:
                 continue
@@ -194,11 +194,14 @@ class Mapping(object):
         if secret and unsecured_file:
             raise ValueError("Refuse to load secret from world readable file.")
 
+        logger.debug("Read %s from YAML.", self.path)
         return value
 
     def process_arg(self, args):
         # Get value from argparse result.
-        return getattr(args, self.arg)
+        value = getattr(args, self.arg)
+        logger.debug("Read %s from argv.", self.path)
+        return value
 
     def process(self, default, file_config={}, environ={}, args=object()):
         # This is the sources of configuration, ordered by priority desc. If a
