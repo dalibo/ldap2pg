@@ -24,13 +24,13 @@ list_roles() {
 # Case dry run
 DEBUG=1 DRY=1 ldap2pg
 # Assert nothing is done
-list_users | grep -q spurious
+list_roles | grep -q spurious
 
 # Case real run
-DEBUG=1 DRY=0 ldap2pg
+DEBUG=1 DRY= ldap2pg
 
 # Assert spurious role is dropped
-! list_users | grep -q spurious
+! list_roles | grep -q spurious
 test ${PIPESTATUS[0]} -eq 0
 
 list_superusers | grep -q alice
