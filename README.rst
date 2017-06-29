@@ -2,7 +2,7 @@
  ``ldap2pg`` -- Synchronize Postgres roles from LDAP
 =====================================================
 
-| |CircleCI| |Codecov|
+| |CircleCI| |Codecov| |PyPI|
 
 Swiss-army knife to synchronize Postgres roles from any LDAP directory.
 
@@ -66,3 +66,7 @@ Install it from PypI tarball::
 .. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=svg
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
+
+.. |PyPI| image:: https://img.shields.io/pypi/v/ldap2pg.svg
+   :target: https://pypi.python.org/pypi/ldap2pg
+   :alt: Version on PyPI
