@@ -98,25 +98,31 @@ class RoleManager(object):
         return self.ldapconn.entries[:]
 
     def process_ldap_entry(self, entry, **kw):
-        name_attribute = kw['name_attribute']
-        for name in get_ldap_attribute(entry, name_attribute):
-            logger.debug(
-                "Found role %s from %s %s",
-                name, entry.entry_dn, name_attribute,
-            )
-            if kw.get('members_attribute'):
-                members = get_ldap_attribute(entry, kw['members_attribute'])
-                members = list(members)
+        if 'names' in kw:
+            names = kw['names']
+            log_source = " from YAML"
+        else:
+            name_attribute = kw['name_attribute']
+            names = get_ldap_attribute(entry, name_attribute)
+            log_source = " from %s %s" % (entry.entry_dn, name_attribute)
+
+        if kw.get('members_attribute'):
+            members = get_ldap_attribute(entry, kw['members_attribute'])
+            members = list(members)
+        else:
+            members = []
+
+        for name in names:
+            logger.debug("Found role %s%s", name, log_source)
+            if members:
                 logger.debug(
                     "Role %s must have members %s.", name, ', '.join(members),
                 )
-            else:
-                members = []
-
-            role = Role(name=name, members=members)
-
-            if kw.get('options'):
-                role.options.update(kw['options'])
+            role = Role(
+                name=name,
+                members=members,
+                options=kw.get('options', {}),
+            )
 
             yield role
 
@@ -139,11 +145,15 @@ class RoleManager(object):
             pgroles = RoleSet(self.process_pg_roles(rows))
             ldaproles = RoleSet()
             for mapping in map_:
-                try:
+                if 'ldap' in mapping:
                     logger.info("Querying LDAP %s...", mapping['ldap']['base'])
-                    entries = self.query_ldap(**mapping['ldap'])
-                except LDAPObjectClassError as e:
-                    raise UserError("Failed to query LDAP: %s." % (e,))
+                    try:
+                        entries = self.query_ldap(**mapping['ldap'])
+                    except LDAPObjectClassError as e:
+                        raise UserError("Failed to query LDAP: %s." % (e,))
+                else:
+                    entries = [None]
+
                 for entry in entries:
                     for rolmap in mapping['roles']:
                         roles = self.process_ldap_entry(

@@ -54,6 +54,9 @@ ldap:
 # SyncMap is an ordered list of mapping. Each mapping describes an LDAP query
 # and a set of rules to generate roles from entries returned by LDAP.
 sync_map:
+- role:
+    name: LDAP_USERS
+    options: NOLOGIN
 - ldap:
     base: cn=dba,ou=groups,dc=ldap2pg,dc=local
     filter: "(objectClass=groupOfNames)"
