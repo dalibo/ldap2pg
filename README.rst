@@ -9,12 +9,12 @@ Swiss-army knife to synchronize Postgres roles from any LDAP directory.
 Features
 ========
 
-- Creates and drops PostgreSQL roles from LDAP queries.
-- Manage role options (``CREATE`` and ``ALTER``).
+- Creates, alter and drops PostgreSQL roles from LDAP queries.
+- Creates static roles from YAML to complete LDAP entries.
 - Manage role members (alias *groups*).
 - Dry run.
-- logs LDAP queries as ``ldapsearch`` commands.
-- logs **every** SQL queries.
+- Logs LDAP queries as ``ldapsearch`` commands.
+- Logs **every** SQL queries.
 - Reads settings from YAML config file.
 
 ::
