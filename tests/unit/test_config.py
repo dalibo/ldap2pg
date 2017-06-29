@@ -37,16 +37,16 @@ def test_multiline_formatter():
     assert wanted == payload
 
 
-def test_color_formatter():
+def test_color_handler():
     import logging
-    from ldap2pg.config import ColorFormatter
+    from ldap2pg.config import ColoredStreamHandler
 
-    formatter = ColorFormatter("%(message)s")
+    handler = ColoredStreamHandler()
     record = logging.makeLogRecord(dict(
         name='pouet', level=logging.DEBUG, fn="(unknown file)", msg="Message",
         lno=0, args=(), exc_info=None,
     ))
-    payload = formatter.format(record)
+    payload = handler.format(record)
     assert "\033[0" in payload
 
 

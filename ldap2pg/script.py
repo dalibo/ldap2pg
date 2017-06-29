@@ -33,7 +33,7 @@ def wrapped_main(config=None):
     config = config or Configuration()
     config.load()
 
-    logging_config = config.logging_dict(tty=sys.stderr.isatty())
+    logging_config = config.logging_dict()
     logging.config.dictConfig(logging_config)
 
     logger.info("Starting ldap2pg %s.", __version__)
@@ -63,6 +63,7 @@ def main():
 
     config = Configuration()
     config['verbose'] = debug or verbose
+    config['color'] = sys.stderr.isatty()
     logging.config.dictConfig(config.logging_dict())
 
     try:

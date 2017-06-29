@@ -39,7 +39,7 @@ class MultilineFormatter(logging.Formatter):
         return '\n'.join(lines)
 
 
-class ColorFormatter(MultilineFormatter):
+class ColoredStreamHandler(logging.StreamHandler):
 
     _color_map = {
         logging.DEBUG: '37',
@@ -50,7 +50,7 @@ class ColorFormatter(MultilineFormatter):
     }
 
     def format(self, record):
-        lines = super(ColorFormatter, self).format(record)
+        lines = super(ColoredStreamHandler, self).format(record)
         color = self._color_map.get(record.levelno, '39')
         lines = ''.join([
             '\033[0;%sm%s\033[0m' % (color, line)
@@ -131,6 +131,16 @@ def define_arguments(parser):
         '-v', '--verbose',
         action='store_true', dest='verbose',
         help="add debug messages including SQL and LDAP queries (env: VERBOSE)"
+    )
+    parser.add_argument(
+        '--color',
+        action='store_true', dest='color',
+        help="force color output (env: COLOR)"
+    )
+    parser.add_argument(
+        '--no-color',
+        action='store_false', dest='color',
+        help="force plain text output (env: COLOR)"
     )
     parser.add_argument(
         '-?', '--help',
@@ -240,6 +250,7 @@ class Configuration(dict):
     DEFAULTS = {
         'dry': True,
         'verbose': False,
+        'color': False,
         'ldap': {
             'host': '',
             'port': 389,
@@ -259,6 +270,7 @@ class Configuration(dict):
     }
 
     MAPPINGS = [
+        Mapping('color'),
         Mapping('dry'),
         Mapping('verbose', env=['VERBOSE', 'DEBUG']),
         Mapping('ldap:host'),
@@ -325,10 +337,12 @@ class Configuration(dict):
             epilog=self.EPILOG,
         )
         define_arguments(parser)
-        args = parser.parse_args(sys.argv if argv is None else argv)
+        args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
-        if hasattr(args, 'verbose'):
-            self['verbose'] = args.verbose
+        if hasattr(args, 'verbose') or hasattr(args, 'color'):
+            # Switch to verbose before loading file.
+            self['verbose'] = getattr(args, 'verbose', self['verbose'])
+            self['color'] = getattr(args, 'color', self['color'])
             logging.config.dictConfig(self.logging_dict())
 
         # File loading.
@@ -357,7 +371,7 @@ class Configuration(dict):
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
             value = mapping.process(
-                default=deepget(self.DEFAULTS, mapping.path),
+                default=deepget(self, mapping.path),
                 file_config=file_config,
                 environ=environ,
                 args=args,
@@ -371,27 +385,30 @@ class Configuration(dict):
         payload['world_readable'] = bool(mode & 0o044)
         return payload
 
-    def logging_dict(self, tty=True):
-        formatter_kwargs = {}
-        if tty:
-            formatter_kwargs['class'] = __name__ + '.ColorFormatter'
+    def logging_dict(self):
+        formatter = 'verbose' if self['verbose'] else 'info'
 
         return {
             'version': 1,
             'formatters': {
-                'verbose': dict(
-                    format='[%(name)-16s %(levelname)8s] %(message)s',
-                    **formatter_kwargs
-                ),
-                'info': dict(format='%(message)s', **formatter_kwargs),
+                'verbose': {
+                    'format': '[%(name)-16s %(levelname)8s] %(message)s',
+                },
+                'info': {'format': '%(message)s'},
             },
-            'handlers': {'stderr': {
-                '()': 'logging.StreamHandler',
-                'formatter': 'verbose' if self['verbose'] else 'info',
-            }},
+            'handlers': {
+                'raw': {
+                    '()': 'logging.StreamHandler',
+                    'formatter': formatter,
+                },
+                'colored': {
+                    '()': __name__ + '.ColoredStreamHandler',
+                    'formatter': formatter,
+                },
+            },
             'root': {
                 'level': 'WARNING',
-                'handlers': ['stderr'],
+                'handlers': ['colored' if self['color'] else 'raw'],
             },
             'loggers': {
                 __package__: {

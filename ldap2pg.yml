@@ -13,6 +13,9 @@
 # verbose logging. If ldap2pg is executed from a terminal, a debugger is
 # triggered on unhandled error.
 
+# Colorization. env var: COLOR=<anything>
+color: yes
+
 # Verbose messages. Includes SQL and LDAP queries. env var: VERBOSE
 verbose: yes
 
