@@ -148,6 +148,11 @@ def define_arguments(parser):
         action='store_true', dest='debug',
         help="increase verbosity and enable debugger"
     )
+    parser.add_argument(
+        '-n', '--dry',
+        action='store_true', dest='dry',
+        help="don't touch Postgres, just print what to do"
+    )
 
 
 class Mapping(object):
