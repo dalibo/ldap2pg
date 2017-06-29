@@ -189,7 +189,8 @@ class RoleSet(set):
     def resolve_membership(self):
         index_ = self.reindex()
         for role in self:
-            for parent_name in role.parents:
+            while role.parents:
+                parent_name = role.parents.pop()
                 parent = index_[parent_name]
                 if role.name in parent.members:
                     continue
