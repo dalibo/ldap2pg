@@ -5,11 +5,10 @@ site_author: Dalibo Labs
 copyright: © Dalibo 2017
 repo_name: ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg
-edit_uri: edit/master/docs/
 
 pages:
 - Home: index.md
-#- Installation: install.md
+- Installation: install.md
 - Configuration: config.md
 #- Cookbook: cookbook.md
 - Changelog: changelog.md

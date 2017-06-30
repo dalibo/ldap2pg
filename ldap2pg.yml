@@ -26,13 +26,13 @@ dry: yes
 # **LDAP connection**
 #
 ldap:
-  # env vars: LDAP_HOST
+  # env var: LDAP_HOST
   host: ldap2pg.local
-  # env vars: LDAP_PORT
+  # env var: LDAP_PORT
   port: 389
-  # env vars: LDAP_BIND
+  # env var: LDAP_BIND
   bind: cn=admin,dc=ldap2pg,dc=local
-  # env vars: LDAP_PASSWORD
+  # env var: LDAP_PASSWORD
   password: SECRET
 
 #
@@ -41,12 +41,15 @@ ldap:
 # Standard libpq env vars are supported: PGHOST, PGPORT, PGUSER, PGPASSWORD,
 # .pgpass, etc.
 #
-# PGDSN env var is supported as well.
-#
-# postgres:
-#   dsn: postgres://user:SECRET@host:port/dbname
-#   dsn: postgres://user@%2Fvar%2Frun%2Fpostgresql:port/dbname
-#   dsn: host=host port=port user=postgres password=secret dbname=postgres
+postgres:
+  # libpq connection string. env var: PGDSN
+  dsn: ""
+  # dsn: postgres://user:SECRET@host:port/dbname
+  # dsn: postgres://user@%2Fvar%2Frun%2Fpostgresql:port/dbname
+  # dsn: host=host port=port user=postgres password=secret dbname=postgres
+
+  # List of glob patterns to exclude external roles.
+  blacklist: [postgres, pg_*]
 
 #
 # **Synchronization map**
