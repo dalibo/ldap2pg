@@ -1,3 +1,7 @@
+def lower1(string):
+    return string[0].lower() + string[1:]
+
+
 class Query(object):
     def __init__(self, message, rowcount=-1, *args):
         self.message = message

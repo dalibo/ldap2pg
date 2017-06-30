@@ -11,7 +11,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError
+from .utils import UserError, lower1
 
 
 logger = logging.getLogger(__name__)
@@ -176,10 +176,8 @@ class RoleManager(object):
             ldaproles.resolve_membership()
             count = 0
             for count, query in enumerate(pgroles.diff(ldaproles)):
-                message = str(query)
-                if not self.dry:
-                    message = message[0].upper() + message[1:]
-                logger.info("%s%s", 'Would ' if self.dry else '', message)
+                msg = str(query)
+                logger.info('Would ' + lower1(msg) if self.dry else msg)
 
                 if self.dry:
                     sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
