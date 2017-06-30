@@ -12,7 +12,7 @@ pages:
 #- Installation: install.md
 - Configuration: config.md
 #- Cookbook: cookbook.md
-#- Changelog: changelog.md
+- Changelog: changelog.md
 #- Develop: contribute.md
 
 theme: readthedocs
