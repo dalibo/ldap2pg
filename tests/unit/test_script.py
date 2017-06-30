@@ -77,16 +77,19 @@ def test_pdb(mocker):
 
 def test_wrapped_main(mocker):
     mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
-    c = mocker.patch('ldap2pg.script.Configuration', autospec=True)
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
     cpc = mocker.patch('ldap2pg.script.create_pg_connection')
     rm = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
 
     from ldap2pg.script import wrapped_main
 
-    wrapped_main()
+    config = mocker.MagicMock(name='config')
+    config.get.return_value = True
+    wrapped_main(config=config)
 
-    assert c.called is True
+    config.get.return_value = False
+    wrapped_main(config=config)
+
     assert clc.called is True
     assert cpc.called is True
     assert rm.called is True

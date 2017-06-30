@@ -87,6 +87,13 @@ class RoleManager(object):
                     )
                 yield role
 
+    def psql(self, *args):
+        sql = self.pgcursor.mogrify(*args)
+        logger.debug("Doing: %s", sql.decode('utf-8'))
+        self.pgcursor.execute(sql)
+        self.pgconn.commit()
+        logger.debug("rowcount: %s", self.pgcursor.rowcount)
+
     def query_ldap(self, base, filter, attributes):
         logger.debug(
             "Doing: ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
@@ -94,7 +101,13 @@ class RoleManager(object):
             self.ldapconn.user,
             base, filter, ' '.join(attributes or []),
         )
-        self.ldapconn.search(base, filter, attributes=attributes)
+
+        try:
+            self.ldapconn.search(base, filter, attributes=attributes)
+        except LDAPObjectClassError as e:
+            message = "Failed to query LDAP: %s." % (e,)
+            raise UserError(message)
+
         return self.ldapconn.entries[:]
 
     def process_ldap_entry(self, entry, **kw):
@@ -130,69 +143,54 @@ class RoleManager(object):
 
             yield role
 
-    def psql(self, *args):
-        sql = self.pgcursor.mogrify(*args)
-        logger.debug("Doing: %s", sql.decode('utf-8'))
-        self.pgcursor.execute(sql)
-        self.pgconn.commit()
-        logger.debug("rowcount: %s", self.pgcursor.rowcount)
-
     def itermappings(self, syncmap):
         for dbname, schemas in syncmap.items():
             for schema, mappings in schemas.items():
                 for mapping in mappings:
                     yield dbname, schema, mapping
 
+    def apply_role_rules(self, rules, entries):
+        for rule in rules:
+            for entry in entries:
+                for role in self.process_ldap_entry(entry=entry, **rule):
+                    yield role
+
+    def check_last_rowcount(self, rowcount):
+        if rowcount != self.pgcursor.rowcount:
+            msg = "rowcount is not as expected: expects %s, got %s." % (
+                rowcount, self.pgcursor.rowcount,
+            )
+            raise Exception(msg)
+
     def sync(self, map_):
-        with self:
-            if self.dry:
-                logger.warn("Running in dry mode. Postgres will be untouched.")
+        logger.info("Inspecting Postgres...")
+        rows = self.fetch_pg_roles()
+        pgroles = RoleSet(self.process_pg_roles(rows))
+
+        # Gather wanted roles
+        ldaproles = RoleSet()
+        for dbname, schema, mapping in self.itermappings(map_):
+            logger.debug("Working on schema %s.%s.", dbname, schema)
+            if 'ldap' in mapping:
+                logger.info("Querying LDAP %s...", mapping['ldap']['base'])
+                entries = self.query_ldap(**mapping['ldap'])
             else:
-                logger.warn("Running in real mode.")
+                entries = [None]
 
-            logger.info("Inspecting Postgres...")
-            rows = self.fetch_pg_roles()
-            pgroles = RoleSet(self.process_pg_roles(rows))
-            ldaproles = RoleSet()
-            for dbname, schema, mapping in self.itermappings(map_):
-                logger.debug("Working on schema %s.%s.", dbname, schema)
-                if 'ldap' in mapping:
-                    logger.info("Querying LDAP %s...", mapping['ldap']['base'])
-                    try:
-                        entries = self.query_ldap(**mapping['ldap'])
-                    except LDAPObjectClassError as e:
-                        message = "Failed to query LDAP: %s." % (e,)
-                        raise UserError(message)
-                else:
-                    entries = [None]
+            roles = self.apply_role_rules(mapping['roles'], entries)
+            ldaproles |= set(roles)
+        ldaproles.resolve_membership()
 
-                for entry in entries:
-                    for rolmap in mapping['roles']:
-                        roles = self.process_ldap_entry(
-                            entry=entry, **rolmap
-                        )
-                        ldaproles |= set(roles)
+        # Apply roles to Postgres
+        count = 0
+        for count, query in enumerate(pgroles.diff(ldaproles)):
+            msg = str(query)
+            logger.info('Would ' + lower1(msg) if self.dry else msg)
 
-            ldaproles.resolve_membership()
-            count = 0
-            for count, query in enumerate(pgroles.diff(ldaproles)):
-                msg = str(query)
-                logger.info('Would ' + lower1(msg) if self.dry else msg)
-
-                if self.dry:
-                    sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
-                    logger.debug("Would execute: %s", sql)
-                    continue
-
-                self.psql(*query.args)
-
-                # Integrity check
-                if query.rowcount != self.pgcursor.rowcount:
-                    raise Exception("rowcount is not as expected: %s != %s" % (
-                        query.rowcount, self.pgcursor.rowcount,
-                    ))
-
-            count or logger.info("Nothing to do.")
-
-        logger.info("Synchronization complete.")
-        return ldaproles
+            sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
+            if self.dry:
+                logger.debug("Would execute: %s", sql)
+            else:
+                self.psql(sql)
+                self.check_last_rowcount(query.rowcount)
+        count or logger.info("Nothing to do.")

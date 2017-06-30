@@ -49,12 +49,19 @@ def wrapped_main(config=None):
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
 
+    if config.get('dry', True):
+        logger.warn("Running in dry mode. Postgres will be untouched.")
+    else:
+        logger.warn("Running in real mode.")
+
     manager = RoleManager(
         ldapconn=ldapconn, pgconn=pgconn,
         blacklist=config['postgres']['blacklist'],
         dry=config['dry'],
     )
-    manager.sync(map_=config['sync_map'])
+    with manager:
+        manager.sync(map_=config['sync_map'])
+    logger.info("Synchronization complete.")
 
 
 def main():

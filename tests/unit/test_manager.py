@@ -43,7 +43,7 @@ def test_process_rows():
     assert 'alice' == roles[1].name
 
 
-def test_fetch_entries(mocker):
+def test_query_ldap(mocker):
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
@@ -58,6 +58,18 @@ def test_fetch_entries(mocker):
     )
 
     assert 2 == len(entries)
+
+
+def test_query_ldap_bad_filter(mocker):
+    from ldap2pg.manager import RoleManager, LDAPObjectClassError, UserError
+
+    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
+    manager.ldapconn.search.side_effect = LDAPObjectClassError()
+
+    with pytest.raises(UserError):
+        manager.query_ldap(base='dc=unit', filter='(broken', attributes=[])
+
+    assert manager.ldapconn.search.called is True
 
 
 def test_process_entry_static(mocker):
@@ -149,27 +161,6 @@ def test_psql(mocker):
     assert manager.pgconn.commit.called is True
 
 
-def test_sync_bad_filter(mocker):
-    mocker.patch('ldap2pg.manager.RoleManager.fetch_pg_roles')
-    l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
-    r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
-
-    from ldap2pg.manager import RoleManager, LDAPObjectClassError, UserError
-
-    l.side_effect = LDAPObjectClassError()
-
-    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    map_ = dict(db=dict(s=[dict(ldap=dict(
-        base='ou=people,dc=global', filter='(objectClass=*)',
-        attributes=['cn'],
-    ))]))
-
-    with pytest.raises(UserError):
-        manager.sync(map_=map_)
-
-    assert r.called is False
-
-
 def test_sync_map_loop(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
@@ -197,10 +188,10 @@ def test_sync_map_loop(mocker):
     RoleSet.return_value.diff.return_value = []
 
     manager.dry = False
-    roles = manager.sync(map_=syncmap)
+    with manager:
+        manager.sync(map_=syncmap)
 
     assert 2 is r.call_count, "sync did not iterate over each rules."
-    assert roles
     assert psql.called is False
 
 
@@ -221,14 +212,14 @@ def test_sync_query_loop(mocker):
     # Dry run
     manager.dry = True
     # No mapping, we're just testing query loop
-    roles = manager.sync(map_=dict())
+    with manager:
+        manager.sync(map_=dict())
 
     assert psql.called is False
 
     # Real mode
     manager.dry = False
-    roles = manager.sync(map_=dict())
-    assert roles
+    manager.sync(map_=dict())
     assert psql.called is True
 
 
@@ -250,6 +241,7 @@ def test_sync_integrity(mocker):
     # Trigger an integrity check
     manager.dry = False
     with pytest.raises(Exception):
-        manager.sync(map_=dict())
+        with manager:
+            manager.sync(map_=dict())
 
     assert psql.called is True
