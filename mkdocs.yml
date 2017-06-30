@@ -9,7 +9,7 @@ edit_uri: edit/master/docs/
 
 pages:
 - Home: index.md
-#- Installation: install.md
+- Installation: install.md
 - Configuration: config.md
 #- Cookbook: cookbook.md
 - Changelog: changelog.md
