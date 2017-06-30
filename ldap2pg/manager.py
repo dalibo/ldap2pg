@@ -173,11 +173,9 @@ class RoleManager(object):
                         )
                         ldaproles |= set(roles)
 
-            count = 0
             ldaproles.resolve_membership()
-            for query in pgroles.diff(ldaproles):
-                count += 1
-
+            count = 0
+            for count, query in enumerate(pgroles.diff(ldaproles)):
                 message = str(query)
                 if not self.dry:
                     message = message[0].upper() + message[1:]
@@ -196,8 +194,7 @@ class RoleManager(object):
                         query.rowcount, self.pgcursor.rowcount,
                     ))
 
-            if not count:
-                logger.info("Nothing to do.")
+            count or logger.info("Nothing to do.")
 
         logger.info("Synchronization complete.")
         return ldaproles
