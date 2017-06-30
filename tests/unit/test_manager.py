@@ -159,10 +159,10 @@ def test_sync_bad_filter(mocker):
     l.side_effect = LDAPObjectClassError()
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    map_ = [dict(ldap=dict(
+    map_ = dict(db=dict(s=[dict(ldap=dict(
         base='ou=people,dc=global', filter='(objectClass=*)',
         attributes=['cn'],
-    ))]
+    ))]))
 
     with pytest.raises(UserError):
         manager.sync(map_=map_)
@@ -185,13 +185,13 @@ def test_sync_map_loop(mocker):
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
     # Minimal effective syncmap
-    syncmap = [
+    syncmap = dict(db=dict(s=[
         dict(roles=[]),
         dict(
             ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
             roles=[dict(), dict()],
         ),
-    ]
+    ]))
 
     # No queries to run, we're just testing mapping loop
     RoleSet.return_value.diff.return_value = []
@@ -221,13 +221,13 @@ def test_sync_query_loop(mocker):
     # Dry run
     manager.dry = True
     # No mapping, we're just testing query loop
-    roles = manager.sync(map_=[])
+    roles = manager.sync(map_=dict())
 
     assert psql.called is False
 
     # Real mode
     manager.dry = False
-    roles = manager.sync(map_=[])
+    roles = manager.sync(map_=dict())
     assert roles
     assert psql.called is True
 
@@ -250,6 +250,6 @@ def test_sync_integrity(mocker):
     # Trigger an integrity check
     manager.dry = False
     with pytest.raises(Exception):
-        manager.sync(map_=[])
+        manager.sync(map_=dict())
 
     assert psql.called is True

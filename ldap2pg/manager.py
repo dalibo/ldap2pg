@@ -137,6 +137,12 @@ class RoleManager(object):
         self.pgconn.commit()
         logger.debug("rowcount: %s", self.pgcursor.rowcount)
 
+    def itermappings(self, syncmap):
+        for dbname, schemas in syncmap.items():
+            for schema, mappings in schemas.items():
+                for mapping in mappings:
+                    yield dbname, schema, mapping
+
     def sync(self, map_):
         with self:
             if self.dry:
@@ -148,13 +154,15 @@ class RoleManager(object):
             rows = self.fetch_pg_roles()
             pgroles = RoleSet(self.process_pg_roles(rows))
             ldaproles = RoleSet()
-            for mapping in map_:
+            for dbname, schema, mapping in self.itermappings(map_):
+                logger.debug("Working on schema %s.%s.", dbname, schema)
                 if 'ldap' in mapping:
                     logger.info("Querying LDAP %s...", mapping['ldap']['base'])
                     try:
                         entries = self.query_ldap(**mapping['ldap'])
                     except LDAPObjectClassError as e:
-                        raise UserError("Failed to query LDAP: %s." % (e,))
+                        message = "Failed to query LDAP: %s." % (e,)
+                        raise UserError(message)
                 else:
                     entries = [None]
 
