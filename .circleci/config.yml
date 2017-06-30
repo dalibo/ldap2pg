@@ -44,7 +44,7 @@ jobs:
         - ".venv"
     - run: |
         . .venv/bin/activate
-        mkdocs build
+        mkdocs build --clean --strict
 
   0-unit-py27:
     <<: *unit_tpl
