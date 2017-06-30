@@ -220,6 +220,10 @@ def test_process_rolerule():
     assert rule['options']['LOGIN'] is False
     assert rule['options']['SUPERUSER'] is True
 
+    with pytest.raises(ValueError) as ei:
+        rolerule(dict(options='OLOLOL'))
+    assert 'OLOLOL' in str(ei.value)
+
 
 def test_find_filename_default(mocker):
     stat = mocker.patch('ldap2pg.config.stat')

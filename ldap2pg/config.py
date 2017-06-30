@@ -96,7 +96,7 @@ def rolerule(value):
 
     if isinstance(options, list):
         options = {
-            o.lstrip('NO'): not o.startswith('NO')
+            o[2:] if o.startswith('NO') else o: not o.startswith('NO')
             for o in options
         }
 
