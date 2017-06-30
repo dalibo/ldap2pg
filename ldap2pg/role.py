@@ -75,13 +75,13 @@ class Role(object):
 
     def create(self):
         yield Query(
-            'create %s.' % (self.name,),
+            'Create %s.' % (self.name,),
             -1,  # rowcount
             'CREATE ROLE %s WITH %s;' % (self.name, self.options)
         )
         if self.members:
             yield Query(
-                'add %s members.' % (self.name,),
+                'Add %s members.' % (self.name,),
                 len(self.members),  # rowcount
                 self._members_insert,
                 (self.members, self.name,)
@@ -92,7 +92,7 @@ class Role(object):
 
         if self.options != other.options:
             yield Query(
-                'update options of %s.' % (self.name,),
+                'Update options of %s.' % (self.name,),
                 -1,  # rowcount
                 'ALTER ROLE %s WITH %s;' % (self.name, other.options),
             )
@@ -105,7 +105,7 @@ class Role(object):
                     self.name, ', '.join(missing)
                 )
                 yield Query(
-                    'add missing %s members.' % (self.name,),
+                    'Add missing %s members.' % (self.name,),
                     len(missing),  # rowcount
                     self._members_insert,
                     (list(missing), self.name,)
@@ -117,7 +117,7 @@ class Role(object):
                     self.name, ', '.join(spurious)
                 )
                 yield Query(
-                    'delete spurious %s members.' % (self.name,),
+                    'Delete spurious %s members.' % (self.name,),
                     len(spurious),  # rowcount
                     self._members_delete,
                     (list(spurious), self.name,)
@@ -126,13 +126,13 @@ class Role(object):
     def drop(self):
         if self.members:
             yield Query(
-                'remove members from %s.' % (self.name,),
+                'Remove members from %s.' % (self.name,),
                 len(self.members),  # rowcount
                 self._members_delete_all,
                 (self.name,),
             )
         yield Query(
-            'drop %s.' % (self.name,),
+            'Drop %s.' % (self.name,),
             -1,  # rowcount
             'DROP ROLE %s;' % (self.name),
         )

@@ -164,23 +164,51 @@ def test_processor():
     assert v is False
 
 
+def test_ismapping():
+    from ldap2pg.config import ismapping
+
+    assert ismapping(dict(ldap=dict()))
+    assert ismapping(dict(roles=[]))
+    assert ismapping(dict(role=dict()))
+    assert not ismapping([])
+    assert not ismapping(dict(__common__=[]))
+
+
 def test_process_syncmap():
     from ldap2pg.config import syncmap
 
-    # Canonical case.
-    raw = dict(
-        ldap=dict(
-            base='dc=unit',
-            attribute='cn',
+    fixtures = [
+        # Canonical case.
+        dict(
+            __common__=dict(
+                __common__=[
+                    dict(role=dict(name='alice')),
+                ]
+            ),
         ),
-        role=dict(),
-    )
+        # Squeeze list.
+        dict(
+            __common__=dict(
+                __common__=dict(role=dict(name='alice')),
+            ),
+        ),
+        # Squeeze also schema.
+        dict(__common__=dict(role=dict(name='alice'))),
+        # Squeeze also database.
+        dict(role=dict(name='alice')),
+        # Direct list (this is 1.0 format).
+        [dict(role=dict(name='alice'))],
+    ]
 
-    v = syncmap(raw)
+    for raw in fixtures:
+        v = syncmap(raw)
 
-    assert isinstance(v, list)
-    assert 1 == len(v)
-    assert 'roles' in v[0]
+        assert isinstance(v, dict)
+        assert '__common__' in v
+        assert '__common__' in v['__common__']
+        maplist = v['__common__']['__common__']
+        assert 1 == len(maplist)
+        assert 'roles' in maplist[0]
 
     # Missing rules
     raw = dict(ldap=dict(base='dc=unit', attribute='cn'))
@@ -219,6 +247,10 @@ def test_process_rolerule():
     rule = rolerule(dict(options=['NOLOGIN', 'SUPERUSER']))
     assert rule['options']['LOGIN'] is False
     assert rule['options']['SUPERUSER'] is True
+
+    with pytest.raises(ValueError) as ei:
+        rolerule(dict(options='OLOLOL'))
+    assert 'OLOLOL' in str(ei.value)
 
 
 def test_find_filename_default(mocker):
@@ -404,6 +436,7 @@ def test_load(mocker):
     config.load(argv=['--verbose'])
 
     assert 'envbind' == config['ldap']['bind']
-    assert 1 == len(config['sync_map'])
-    assert 'ldap' in config['sync_map'][0]
+    maplist = config['sync_map']['__common__']['__common__']
+    assert 1 == len(maplist)
+    assert 'ldap' in maplist[0]
     assert config['verbose'] is True

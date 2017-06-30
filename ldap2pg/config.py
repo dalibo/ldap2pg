@@ -96,7 +96,7 @@ def rolerule(value):
 
     if isinstance(options, list):
         options = {
-            o.lstrip('NO'): not o.startswith('NO')
+            o[2:] if o.startswith('NO') else o: not o.startswith('NO')
             for o in options
         }
 
@@ -104,25 +104,98 @@ def rolerule(value):
     return rule
 
 
+def ismapping(value):
+    # Check whether a YAML value is supposed to be a single mapping.
+    if not isinstance(value, dict):
+        return False
+    return bool({'ldap', 'role', 'roles'} >= set(value.keys()))
+
+
+def mapping(value):
+    # A single mapping from a query to a set of role rules. This function
+    # translate random YAML to cannonical schema.
+
+    if 'ldap' in value:
+        value['ldap'] = ldapquery(value['ldap'])
+
+    if 'role' in value:
+        value['roles'] = value['role']
+    if 'roles' not in value:
+        raise ValueError("Missing role rules.")
+    if isinstance(value['roles'], dict):
+        value['roles'] = [value['roles']]
+
+    value['roles'] = [rolerule(r) for r in value['roles']]
+
+    return value
+
+
 def syncmap(value):
+    # Validate and translate raw YAML value to cannonical form used internally.
+    #
+    # A sync map has the following canonical schema:
+    #
+    # <__common__|dbname>:
+    #   <__common__|schema>:
+    #   - ldap: <ldapquery>
+    #     roles:
+    #     - <rolerule>
+    #     - ...
+    #   ...
+    # ...
+    #
+    # But we accept a wide variety of shorthand schemas:
+    #
+    # Single mapping:
+    #
+    # roles: [<rolerule>]
+    #
+    # List of mapping:
+    #
+    # - roles: [<rolerule>]
+    # - ...
+    #
+    # dict of dbname->single mapping
+    #
+    # appdb:
+    #   roles: <rolerule>
+    #
+    # dict of dbname-> list of mapping
+    #
+    # appdb:
+    # - roles: <rolerule>
+    #
+    # dict of dbname->schema->single mapping
+    #
+    # appdb:
+    # - roles: <rolerule>
+    # dict of dbname->schema->single mapping
+    #
+    # appdb:
+    #   appschema:
+    #     roles: <rolerule>
+
     if not value:
         raise ValueError("Empty mapping.")
 
-    if isinstance(value, dict):
-        value = [value]
+    if isinstance(value, list):
+        value = dict(__common__=value)
 
-    for item in value:
-        if 'ldap' in item:
-            item['ldap'] = ldapquery(item['ldap'])
+    if ismapping(value):
+        value = dict(__common__=[value])
 
-        if 'role' in item:
-            item['roles'] = item['role']
-        if 'roles' not in item:
-            raise ValueError("Missing role rules.")
-        if isinstance(item['roles'], dict):
-            item['roles'] = [item['roles']]
+    for dbname, ivalue in value.items():
+        if isinstance(ivalue, list):
+            value[dbname] = ivalue = dict(__common__=ivalue)
 
-        item['roles'] = [rolerule(r) for r in item['roles']]
+        if ismapping(ivalue):
+            value[dbname] = ivalue = dict(__common__=[ivalue])
+
+        for schema, maplist in ivalue.items():
+            if isinstance(maplist, dict):
+                ivalue[schema] = maplist = [maplist]
+
+            maplist[:] = [mapping(m) for m in maplist]
 
     return value
 
