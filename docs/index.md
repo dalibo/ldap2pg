@@ -34,7 +34,7 @@ The
 a good way to start.
 
 ``` console
-# curl -O https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml
+# curl -LO https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml
 # editor ldap2pg.yml
 ```
 
