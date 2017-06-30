@@ -1,0 +1,32 @@
+# metadata
+site_name: ldap2pg documentation
+site_description: Synchronise Postgres roles from LDAP directory
+site_author: Dalibo Labs
+copyright: © Dalibo 2017
+repo_name: ldap2pg
+repo_url: https://github.com/dalibo/ldap2pg
+edit_uri: edit/master/docs/
+
+pages:
+- Home: index.md
+#- Installation: install.md
+- Configuration: config.md
+#- Cookbook: cookbook.md
+- Changelog: changelog.md
+#- Develop: contribute.md
+
+theme: readthedocs
+site_dir: build/docs/
+
+# Markdown settings
+strict: yes
+markdown_extensions:
+- admonition
+- fenced_code
+- headerid
+- sane_lists
+- smarty
+- toc:
+    baselevel: 2
+    permalink: yes
+- wikilinks

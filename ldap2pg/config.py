@@ -130,7 +130,7 @@ def syncmap(value):
 def define_arguments(parser):
     parser.add_argument(
         '-c', '--config',
-        action='store', dest='config',
+        action='store', dest='config', metavar='PATH',
         help='path to YAML configuration file (env: LDAP2PG_CONFIG)'
     )
     parser.add_argument(
@@ -398,7 +398,7 @@ class Configuration(dict):
         payload = yaml.load(fo) or {}
         if not isinstance(payload, dict):
             raise ConfigurationError("Configuration file must be a mapping")
-        payload['world_readable'] = bool(mode & 0o044)
+        payload['world_readable'] = bool(mode & 0o077)
         return payload
 
     def logging_dict(self):

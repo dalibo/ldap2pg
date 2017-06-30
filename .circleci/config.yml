@@ -25,6 +25,27 @@ version: 2
       codecov
 
 jobs:
+  0-docs:
+    docker: [{image: "circleci/python:3.4"}]
+    working_directory: ~/ldap2pg
+    steps:
+    - checkout
+    - restore_cache:
+        keys: [ldap2pg]
+    - run: |
+        sudo pip install wheel virtualenv
+        virtualenv .venv/
+        . .venv/bin/activate
+        pip install -U -r requirements-ci.txt -e .
+    - save_cache:
+        key: ldap2pg
+        paths:
+        - "~/.cache/pip/"
+        - ".venv"
+    - run: |
+        . .venv/bin/activate
+        mkdocs build
+
   0-unit-py27:
     <<: *unit_tpl
     docker: [{image: "circleci/python:2.7"}]
@@ -74,6 +95,7 @@ workflows:
   version: 2
   pipeline:
     jobs:
+    - 0-docs
     - 0-unit-py27
     - 0-unit-py34
     - 0-rpm
