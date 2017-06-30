@@ -398,7 +398,7 @@ class Configuration(dict):
         payload = yaml.load(fo) or {}
         if not isinstance(payload, dict):
             raise ConfigurationError("Configuration file must be a mapping")
-        payload['world_readable'] = bool(mode & 0o044)
+        payload['world_readable'] = bool(mode & 0o077)
         return payload
 
     def logging_dict(self):
