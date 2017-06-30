@@ -5,7 +5,6 @@ site_author: Dalibo Labs
 copyright: © Dalibo 2017
 repo_name: ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg
-edit_uri: edit/master/docs/
 
 pages:
 - Home: index.md
