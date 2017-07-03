@@ -43,7 +43,7 @@ def test_alter():
 
     assert fnfilter(queries, "ALTER ROLE toto *;")
     assert fnfilter(queries, "GRANT toto TO tata;")
-    assert fnfilter(queries, "*DELETE FROM pg_catalog.pg_auth_members*")
+    assert fnfilter(queries, "REVOKE toto FROM titi;")
 
 
 def test_drop():

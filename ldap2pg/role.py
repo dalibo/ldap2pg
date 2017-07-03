@@ -37,29 +37,6 @@ class Role(object):
         self.options.update_from_row(row)
         return self
 
-    _members_delete = """
-    WITH spurious AS (
-        SELECT r.oid AS roleid, m.oid AS member
-        FROM pg_roles AS r
-        JOIN pg_roles AS m ON m.rolname = ANY(%s)
-        WHERE r.rolname = %s
-    )
-    DELETE FROM pg_catalog.pg_auth_members AS a
-    USING spurious
-    WHERE a.roleid = spurious.roleid AND a.member = spurious.member;
-    """.replace('\n    ', '\n').strip()
-
-    _members_delete_all = """
-    WITH roleids AS (
-        SELECT r.oid AS roleid
-        FROM pg_roles AS r
-        WHERE r.rolname = %s
-    )
-    DELETE FROM pg_catalog.pg_auth_members AS a
-    USING roleids
-    WHERE a.roleid = roleids.roleid;
-    """.replace('\n    ', '\n').strip()
-
     def create(self):
         yield Query(
             'Create %s.' % (self.name,),
@@ -109,9 +86,11 @@ class Role(object):
                 )
                 yield Query(
                     'Delete spurious %s members.' % (self.name,),
-                    len(spurious),  # rowcount
-                    self._members_delete,
-                    (list(spurious), self.name,)
+                    -1,  # rowcount
+                    "REVOKE %(role)s FROM %(members)s;" % dict(
+                        members=", ".join(spurious),
+                        role=self.name,
+                    ),
                 )
 
     def drop(self):
