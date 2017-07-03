@@ -203,11 +203,10 @@ def test_sync_query_loop(mocker):
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    manager.pgconn.cursor.return_value.rowcount = -1
 
     # Simple diff with one query
     pgroles = RoleSet.return_value
-    pgroles.diff.return_value = [mocker.Mock(name='qry', args=(), rowcount=-1)]
+    pgroles.diff.return_value = [mocker.Mock(name='qry', args=())]
 
     # Dry run
     manager.dry = True
@@ -220,28 +219,4 @@ def test_sync_query_loop(mocker):
     # Real mode
     manager.dry = False
     manager.sync(map_=dict())
-    assert psql.called is True
-
-
-def test_sync_integrity(mocker):
-    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles', autospec=True)
-    psql = mocker.patch('ldap2pg.manager.RoleManager.psql', autospec=True)
-    RoleSet = mocker.patch('ldap2pg.manager.RoleSet', autospec=True)
-
-    from ldap2pg.manager import RoleManager
-
-    pgroles = RoleSet.return_value
-    # Tells we want one delete.
-    pgroles.diff.return_value = [mocker.Mock(args=('DELETE'), rowcount=1)]
-
-    manager = RoleManager(pgconn=mocker.Mock(), ldapconn=mocker.Mock())
-    # Here, effective rowcount is 0 instead of 1
-    manager.pgconn.cursor.return_value.rowcount = 0
-
-    # Trigger an integrity check
-    manager.dry = False
-    with pytest.raises(Exception):
-        with manager:
-            manager.sync(map_=dict())
-
     assert psql.called is True
