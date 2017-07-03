@@ -40,11 +40,13 @@ class Role(object):
     def create(self):
         yield Query(
             'Create %s.' % (self.name,),
+            'postgres',
             'CREATE ROLE %s WITH %s;' % (self.name, self.options)
         )
         if self.members:
             yield Query(
                 'Add %s members.' % (self.name,),
+                'postgres',
                 "GRANT %(role)s TO %(members)s;" % dict(
                     members=", ".join(self.members),
                     role=self.name,
@@ -57,6 +59,7 @@ class Role(object):
         if self.options != other.options:
             yield Query(
                 'Update options of %s.' % (self.name,),
+                'postgres',
                 'ALTER ROLE %s WITH %s;' % (self.name, other.options),
             )
 
@@ -69,6 +72,7 @@ class Role(object):
                 )
                 yield Query(
                     'Add missing %s members.' % (self.name,),
+                    'postgres',
                     "GRANT %(role)s TO %(members)s;" % dict(
                         members=", ".join(missing),
                         role=self.name,
@@ -82,6 +86,7 @@ class Role(object):
                 )
                 yield Query(
                     'Delete spurious %s members.' % (self.name,),
+                    'postgres',
                     "REVOKE %(role)s FROM %(members)s;" % dict(
                         members=", ".join(spurious),
                         role=self.name,
@@ -91,6 +96,7 @@ class Role(object):
     def drop(self):
         yield Query(
             'Drop %s.' % (self.name,),
+            'postgres',
             'DROP ROLE %s;' % (self.name),
         )
 
