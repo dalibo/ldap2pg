@@ -3,10 +3,9 @@ def lower1(string):
 
 
 class Query(object):
-    def __init__(self, message, rowcount=-1, *args):
+    def __init__(self, message, *args):
         self.message = message
         self.args = args
-        self.rowcount = rowcount
 
     def __str__(self):
         return self.message

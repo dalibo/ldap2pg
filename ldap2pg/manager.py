@@ -92,7 +92,6 @@ class RoleManager(object):
         logger.debug("Doing: %s", sql.decode('utf-8'))
         self.pgcursor.execute(sql)
         self.pgconn.commit()
-        logger.debug("rowcount: %s", self.pgcursor.rowcount)
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -155,13 +154,6 @@ class RoleManager(object):
                 for role in self.process_ldap_entry(entry=entry, **rule):
                     yield role
 
-    def check_last_rowcount(self, rowcount):
-        if rowcount != self.pgcursor.rowcount:
-            msg = "rowcount is not as expected: expects %s, got %s." % (
-                rowcount, self.pgcursor.rowcount,
-            )
-            raise Exception(msg)
-
     def sync(self, map_):
         logger.info("Inspecting Postgres...")
         rows = self.fetch_pg_roles()
@@ -192,7 +184,6 @@ class RoleManager(object):
                 logger.debug("Would execute: %s", sql)
             else:
                 self.psql(sql)
-                self.check_last_rowcount(query.rowcount)
         count = count + 1
         logger.debug("Executed %d querie(s).", count)
 

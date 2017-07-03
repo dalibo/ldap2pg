@@ -6,9 +6,8 @@ import pytest
 def test_query():
     from ldap2pg.utils import Query
 
-    qry = Query('message', 1, 'SELECT %s;', ('args',))
+    qry = Query('message', 'SELECT %s;', ('args',))
 
-    assert 1 == qry.rowcount
     assert 2 == len(qry.args)
     assert 'message' == str(qry)
 
