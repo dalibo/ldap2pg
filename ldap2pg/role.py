@@ -37,19 +37,6 @@ class Role(object):
         self.options.update_from_row(row)
         return self
 
-    _members_insert = """
-    INSERT INTO pg_catalog.pg_auth_members
-    SELECT
-        r.oid AS roleid,
-        m.oid AS member,
-        g.oid AS grantor,
-        FALSE AS admin_option
-    FROM pg_roles AS r
-    JOIN pg_roles AS m ON m.rolname = ANY(%s)
-    JOIN pg_roles g ON g.rolname = session_user
-    WHERE r.rolname = %s;
-    """.replace('\n    ', '\n').strip()
-
     _members_delete = """
     WITH spurious AS (
         SELECT r.oid AS roleid, m.oid AS member
@@ -82,9 +69,11 @@ class Role(object):
         if self.members:
             yield Query(
                 'Add %s members.' % (self.name,),
-                len(self.members),  # rowcount
-                self._members_insert,
-                (self.members, self.name,)
+                -1,  # rowcount
+                "GRANT %(role)s TO %(members)s;" % dict(
+                    members=", ".join(self.members),
+                    role=self.name,
+                ),
             )
 
     def alter(self, other):
@@ -106,9 +95,11 @@ class Role(object):
                 )
                 yield Query(
                     'Add missing %s members.' % (self.name,),
-                    len(missing),  # rowcount
-                    self._members_insert,
-                    (list(missing), self.name,)
+                    -1,  # rowcount
+                    "GRANT %(role)s TO %(members)s;" % dict(
+                        members=", ".join(missing),
+                        role=self.name,
+                    ),
                 )
             spurious = set(self.members) - set(other.members)
             if spurious:
