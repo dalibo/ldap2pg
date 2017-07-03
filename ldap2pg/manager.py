@@ -182,7 +182,7 @@ class RoleManager(object):
         ldaproles.resolve_membership()
 
         # Apply roles to Postgres
-        count = 0
+        count = -1
         for count, query in enumerate(pgroles.diff(ldaproles)):
             msg = str(query)
             logger.info('Would ' + lower1(msg) if self.dry else msg)
@@ -193,4 +193,8 @@ class RoleManager(object):
             else:
                 self.psql(sql)
                 self.check_last_rowcount(query.rowcount)
-        count or logger.info("Nothing to do.")
+        count = count + 1
+        logger.debug("Executed %d querie(s).", count)
+
+        if not count:
+            logger.info("Nothing to do.")
