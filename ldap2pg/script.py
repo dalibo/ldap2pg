@@ -12,6 +12,7 @@ import psycopg2
 from . import __version__
 from .config import Configuration, ConfigurationError
 from .manager import RoleManager
+from .psql import PSQL
 from .utils import UserError
 
 
@@ -22,11 +23,6 @@ def create_ldap_connection(host, port, bind, password, **kw):
     logger.debug("Connecting to LDAP server %s:%s.", host, port)
     server = ldap3.Server(host, port, get_info=ldap3.ALL)
     return ldap3.Connection(server, bind, password, auto_bind=True)
-
-
-def create_pg_connection(dsn):
-    logger.debug("Connecting to PostgreSQL.")
-    return psycopg2.connect(dsn)
 
 
 def wrapped_main(config=None):
@@ -41,12 +37,8 @@ def wrapped_main(config=None):
 
     try:
         ldapconn = create_ldap_connection(**config['ldap'])
-        pgconn = create_pg_connection(dsn=config['postgres']['dsn'])
     except ldap3.core.exceptions.LDAPExceptionError as e:
         message = "Failed to connect to LDAP: %s" % (e,)
-        raise ConfigurationError(message)
-    except psycopg2.OperationalError as e:
-        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
 
     if config.get('dry', True):
@@ -54,13 +46,18 @@ def wrapped_main(config=None):
     else:
         logger.warn("Running in real mode.")
 
+    psql = PSQL(connstring=config['postgres']['dsn'])
     manager = RoleManager(
-        ldapconn=ldapconn, pgconn=pgconn,
+        ldapconn=ldapconn, psql=psql,
         blacklist=config['postgres']['blacklist'],
         dry=config['dry'],
     )
-    with manager:
+    try:
         manager.sync(map_=config['sync_map'])
+    except psycopg2.OperationalError as e:
+        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
+        raise ConfigurationError(message)
+
     logger.info("Synchronization complete.")
 
 
