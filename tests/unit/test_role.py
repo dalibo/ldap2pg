@@ -54,7 +54,6 @@ def test_drop():
     queries = [q.args[0] for q in role.drop()]
 
     assert fnfilter(queries, "DROP ROLE toto;")
-    assert fnfilter(queries, "*DELETE FROM pg_catalog.pg_auth_members*")
 
 
 def test_options():

@@ -115,13 +115,6 @@ class Role(object):
                 )
 
     def drop(self):
-        if self.members:
-            yield Query(
-                'Remove members from %s.' % (self.name,),
-                len(self.members),  # rowcount
-                self._members_delete_all,
-                (self.name,),
-            )
         yield Query(
             'Drop %s.' % (self.name,),
             -1,  # rowcount
