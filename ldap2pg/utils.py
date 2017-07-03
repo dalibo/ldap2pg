@@ -3,8 +3,9 @@ def lower1(string):
 
 
 class Query(object):
-    def __init__(self, message, *args):
+    def __init__(self, message, dbname, *args):
         self.message = message
+        self.dbname = dbname
         self.args = args
 
     def __str__(self):

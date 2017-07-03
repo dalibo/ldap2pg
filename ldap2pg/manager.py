@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from fnmatch import fnmatch
+from itertools import groupby
 import logging
 
 from ldap3.core.exceptions import LDAPObjectClassError
@@ -35,18 +36,11 @@ def get_ldap_attribute(entry, attribute):
 
 class RoleManager(object):
 
-    def __init__(self, ldapconn, pgconn, blacklist=[], dry=False):
+    def __init__(self, ldapconn=None, psql=None, blacklist=[], dry=False):
         self.ldapconn = ldapconn
-        self.pgconn = pgconn
-        self.pgcursor = None
+        self.psql = psql
         self._blacklist = blacklist
         self.dry = dry
-
-    def __enter__(self):
-        self.pgcursor = self.pgconn.cursor()
-
-    def __exit__(self, *a):
-        self.pgcursor.close()
 
     # See https://www.postgresql.org/docs/current/static/view-pg-roles.html and
     # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
@@ -61,11 +55,11 @@ class RoleManager(object):
     ORDER BY 1;
     """.replace("\n    ", "\n").strip()
 
-    def fetch_pg_roles(self):
+    def fetch_pg_roles(self, psql):
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
-        self.psql(self._roles_query % dict(options=', '.join(row_cols[1:])))
-        for row in self.pgcursor:
+        qry = self._roles_query % dict(options=', '.join(row_cols[1:]))
+        for row in psql(qry):
             yield row
 
     def process_pg_roles(self, rows):
@@ -86,12 +80,6 @@ class RoleManager(object):
                         role.name, ','.join(role.members),
                     )
                 yield role
-
-    def psql(self, *args):
-        sql = self.pgcursor.mogrify(*args)
-        logger.debug("Doing: %s", sql.decode('utf-8'))
-        self.pgcursor.execute(sql)
-        self.pgconn.commit()
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -156,8 +144,9 @@ class RoleManager(object):
 
     def sync(self, map_):
         logger.info("Inspecting Postgres...")
-        rows = self.fetch_pg_roles()
-        pgroles = RoleSet(self.process_pg_roles(rows))
+        with self.psql('postgres') as psql:
+            rows = self.fetch_pg_roles(psql)
+            pgroles = RoleSet(self.process_pg_roles(rows))
 
         # Gather wanted roles
         ldaproles = RoleSet()
@@ -174,17 +163,21 @@ class RoleManager(object):
         ldaproles.resolve_membership()
 
         # Apply roles to Postgres
-        count = -1
-        for count, query in enumerate(pgroles.diff(ldaproles)):
-            msg = str(query)
-            logger.info('Would ' + lower1(msg) if self.dry else msg)
+        queries = groupby(pgroles.diff(ldaproles), lambda q: q.dbname)
+        count = 0
+        for dbname, dbqueries in queries:
+            with self.psql(dbname) as psql:
+                logger.info("Synchronizing database %s.", dbname)
+                for dbcount, query in enumerate(dbqueries):
+                    count += 1
+                    msg = str(query)
+                    logger.info('Would ' + lower1(msg) if self.dry else msg)
 
-            sql = self.pgcursor.mogrify(*query.args).decode('UTF-8')
-            if self.dry:
-                logger.debug("Would execute: %s", sql)
-            else:
-                self.psql(sql)
-        count = count + 1
+                    sql = psql.mogrify(*query.args).decode('UTF-8')
+                    if self.dry:
+                        logger.debug("Would execute: %s", sql)
+                    else:
+                        psql(sql)
         logger.debug("Executed %d querie(s).", count)
 
         if not count:

@@ -6,10 +6,11 @@ import pytest
 def test_query():
     from ldap2pg.utils import Query
 
-    qry = Query('message', 'SELECT %s;', ('args',))
+    qry = Query('Message.', 'postgres', 'SELECT %s;', ('args',))
 
     assert 2 == len(qry.args)
-    assert 'message' == str(qry)
+    assert 'postgres' == qry.dbname
+    assert 'Message.' == str(qry)
 
 
 def test_deep_getset():
