@@ -27,7 +27,7 @@ def test_create():
     queries = [q.args[0] for q in role.create()]
 
     assert fnfilter(queries, "CREATE ROLE toto *;")
-    assert fnfilter(queries, "INSERT INTO pg_catalog.pg_auth_members*")
+    assert fnfilter(queries, "GRANT toto TO titi;")
 
 
 def test_alter():
@@ -42,8 +42,8 @@ def test_alter():
     queries = [q.args[0] for q in a.alter(b)]
 
     assert fnfilter(queries, "ALTER ROLE toto *;")
-    assert fnfilter(queries, "INSERT INTO pg_catalog.pg_auth_members*")
-    assert fnfilter(queries, "*DELETE FROM pg_catalog.pg_auth_members*")
+    assert fnfilter(queries, "GRANT toto TO tata;")
+    assert fnfilter(queries, "REVOKE toto FROM titi;")
 
 
 def test_drop():
@@ -54,7 +54,6 @@ def test_drop():
     queries = [q.args[0] for q in role.drop()]
 
     assert fnfilter(queries, "DROP ROLE toto;")
-    assert fnfilter(queries, "*DELETE FROM pg_catalog.pg_auth_members*")
 
 
 def test_options():

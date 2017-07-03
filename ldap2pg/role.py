@@ -37,42 +37,6 @@ class Role(object):
         self.options.update_from_row(row)
         return self
 
-    _members_insert = """
-    INSERT INTO pg_catalog.pg_auth_members
-    SELECT
-        r.oid AS roleid,
-        m.oid AS member,
-        g.oid AS grantor,
-        FALSE AS admin_option
-    FROM pg_roles AS r
-    JOIN pg_roles AS m ON m.rolname = ANY(%s)
-    JOIN pg_roles g ON g.rolname = session_user
-    WHERE r.rolname = %s;
-    """.replace('\n    ', '\n').strip()
-
-    _members_delete = """
-    WITH spurious AS (
-        SELECT r.oid AS roleid, m.oid AS member
-        FROM pg_roles AS r
-        JOIN pg_roles AS m ON m.rolname = ANY(%s)
-        WHERE r.rolname = %s
-    )
-    DELETE FROM pg_catalog.pg_auth_members AS a
-    USING spurious
-    WHERE a.roleid = spurious.roleid AND a.member = spurious.member;
-    """.replace('\n    ', '\n').strip()
-
-    _members_delete_all = """
-    WITH roleids AS (
-        SELECT r.oid AS roleid
-        FROM pg_roles AS r
-        WHERE r.rolname = %s
-    )
-    DELETE FROM pg_catalog.pg_auth_members AS a
-    USING roleids
-    WHERE a.roleid = roleids.roleid;
-    """.replace('\n    ', '\n').strip()
-
     def create(self):
         yield Query(
             'Create %s.' % (self.name,),
@@ -82,9 +46,11 @@ class Role(object):
         if self.members:
             yield Query(
                 'Add %s members.' % (self.name,),
-                len(self.members),  # rowcount
-                self._members_insert,
-                (self.members, self.name,)
+                -1,  # rowcount
+                "GRANT %(role)s TO %(members)s;" % dict(
+                    members=", ".join(self.members),
+                    role=self.name,
+                ),
             )
 
     def alter(self, other):
@@ -106,9 +72,11 @@ class Role(object):
                 )
                 yield Query(
                     'Add missing %s members.' % (self.name,),
-                    len(missing),  # rowcount
-                    self._members_insert,
-                    (list(missing), self.name,)
+                    -1,  # rowcount
+                    "GRANT %(role)s TO %(members)s;" % dict(
+                        members=", ".join(missing),
+                        role=self.name,
+                    ),
                 )
             spurious = set(self.members) - set(other.members)
             if spurious:
@@ -118,19 +86,14 @@ class Role(object):
                 )
                 yield Query(
                     'Delete spurious %s members.' % (self.name,),
-                    len(spurious),  # rowcount
-                    self._members_delete,
-                    (list(spurious), self.name,)
+                    -1,  # rowcount
+                    "REVOKE %(role)s FROM %(members)s;" % dict(
+                        members=", ".join(spurious),
+                        role=self.name,
+                    ),
                 )
 
     def drop(self):
-        if self.members:
-            yield Query(
-                'Remove members from %s.' % (self.name,),
-                len(self.members),  # rowcount
-                self._members_delete_all,
-                (self.name,),
-            )
         yield Query(
             'Drop %s.' % (self.name,),
             -1,  # rowcount
