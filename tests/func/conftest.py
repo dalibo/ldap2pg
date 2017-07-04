@@ -14,8 +14,6 @@ class PSQL(object):
         return self.psql(*a, **kw)
 
     def select1(self, select, *a, **kw):
-        if a or kw:
-            import pdb; pdb.set_trace()
         # Execute a SELECT and yield each line as a single value.
         return filter(None, (
             l.strip()
@@ -100,10 +98,10 @@ def ldap():
 
 
 @pytest.fixture(scope='module')
-def dev(ldap, psql):
-    # Load dev fixtures, to test them too !
-    with open('dev-fixture.sql') as fo:
-        psql(_in=fo)
+def dev(ldap):
+    from sh import Command
+
+    Command('./dev-fixture.sh')()
     ldap.add('-f', 'dev-fixture.ldif')
 
 

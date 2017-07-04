@@ -6,8 +6,8 @@ DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIK
 CREATE ROLE app0 NOLOGIN;
 -- Create a spurious user, for DROP.
 CREATE ROLE spurious_group WITH NOLOGIN;
-CREATE ROLE spurious WITH LOGIN IN ROLE spurious_group;
+CREATE ROLE spurious WITH LOGIN IN ROLE spurious_group, app0;
 -- Create alice superuser without login, for ALTER.
 CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE app0;
-CREATE DATABASE app0;
+CREATE DATABASE app0 WITH OWNER app0;
 CREATE DATABASE app1;

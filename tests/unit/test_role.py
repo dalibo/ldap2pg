@@ -53,8 +53,8 @@ def test_drop():
 
     queries = [q.args[0] for q in role.drop()]
 
-    assert fnfilter(queries, "DROP OWNED BY toto;*")
-    assert fnfilter(queries, "*DROP ROLE toto;")
+    assert fnfilter(queries, "*REASSIGN OWNED*DROP OWNED BY toto;*")
+    assert fnfilter(queries, "DROP ROLE toto;")
 
 
 def test_options():

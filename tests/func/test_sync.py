@@ -27,4 +27,5 @@ def test_real_mode(dev, ldap, psql):
     assert 'bar' in psql.members('app1')
     assert 'alice' in psql.members('ldap_users')
 
+    # Assert that table keepme owned by deleted user spurious is not dropped!
     assert 'keepme' in psql.tables(dbname='app0')

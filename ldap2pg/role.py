@@ -93,17 +93,21 @@ class Role(object):
                     ),
                 )
 
+    _drop_objects_sql = """
+    DO $$BEGIN EXECUTE 'REASSIGN OWNED BY %(role)s TO ' || session_user; END$$;
+    DROP OWNED BY %(role)s;
+    """.strip().replace(4 * ' ', '')
+
     def drop(self):
         yield Query(
-            'Purge %s objects.' % (self.name,),
+            'Reassign %s objects and purge ACL.' % (self.name,),
             Query.ALL_DATABASES,
-            "DROP OWNED BY %(role)s;" % dict(role=self.name)
+            self._drop_objects_sql % dict(role=self.name),
         )
         yield Query(
             'Drop %s.' % (self.name,),
             'postgres',
-            "DROP OWNED BY %(role)s; DROP ROLE %(role)s;"
-            % dict(role=self.name),
+            "DROP ROLE %(role)s;" % dict(role=self.name),
         )
 
 
