@@ -5,4 +5,6 @@ mkdocs==0.15  # Map to RTD version
 pytest
 pytest-cov
 pytest-mock
-psycopg2==2.5.1
+psycopg2==2.5.1  # From CentOS7
+pyyaml==3.10  # From CentOS7
+sh
