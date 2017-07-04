@@ -124,7 +124,7 @@ class RoleManager(object):
 
         for name in names:
             name = name.lower()
-            logger.debug("Found role %s%s", name, log_source)
+            logger.debug("Found role %s%s.", name, log_source)
             if members:
                 logger.debug(
                     "Role %s must have members %s.", name, ', '.join(members),
