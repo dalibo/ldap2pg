@@ -78,7 +78,9 @@ def test_pdb(mocker):
 def test_wrapped_main(mocker):
     mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
-    rm = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
+    RM = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
+    rm = RM.return_value
+    rm.inspect.return_value = [mocker.Mock()] * 3
 
     from ldap2pg.script import wrapped_main
 
@@ -90,13 +92,15 @@ def test_wrapped_main(mocker):
     wrapped_main(config=config)
 
     assert clc.called is True
-    assert rm.called is True
+    assert rm.inspect.called is True
+    assert rm.sync.called is True
 
 
 def test_conn_errors(mocker):
     mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.Configuration', autospec=True)
     RoleManager = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
+    RoleManager.return_value.inspect.return_value = [mocker.Mock()] * 3
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
 
     from ldap2pg.script import (
@@ -110,7 +114,7 @@ def test_conn_errors(mocker):
 
     clc.side_effect = None
     manager = RoleManager.return_value
-    manager.sync.side_effect = psycopg2.OperationalError()
+    manager.inspect.side_effect = psycopg2.OperationalError()
     with pytest.raises(ConfigurationError):
         wrapped_main()
 

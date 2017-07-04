@@ -2,16 +2,6 @@ def lower1(string):
     return string[0].lower() + string[1:]
 
 
-class Query(object):
-    def __init__(self, message, dbname, *args):
-        self.message = message
-        self.dbname = dbname
-        self.args = args
-
-    def __str__(self):
-        return self.message
-
-
 class UserError(Exception):
     def __init__(self, message, exit_code=1):
         super(UserError, self).__init__(message)

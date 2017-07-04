@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import logging
 
-from .utils import Query
+from .psql import Query
 
 
 logger = logging.getLogger(__name__)
@@ -95,9 +95,15 @@ class Role(object):
 
     def drop(self):
         yield Query(
+            'Purge %s objects.' % (self.name,),
+            Query.ALL_DATABASES,
+            "DROP OWNED BY %(role)s;" % dict(role=self.name)
+        )
+        yield Query(
             'Drop %s.' % (self.name,),
             'postgres',
-            'DROP ROLE %s;' % (self.name),
+            "DROP OWNED BY %(role)s; DROP ROLE %(role)s;"
+            % dict(role=self.name),
         )
 
 

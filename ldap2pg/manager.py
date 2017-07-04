@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from fnmatch import fnmatch
-from itertools import groupby
 import logging
 
 from ldap3.core.exceptions import LDAPObjectClassError
@@ -13,6 +12,7 @@ from .role import (
     RoleSet,
 )
 from .utils import UserError, lower1
+from .psql import expandqueries
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,14 @@ class RoleManager(object):
     GROUP BY role.rolname, %(options)s
     ORDER BY 1;
     """.replace("\n    ", "\n").strip()
+
+    def fetch_database_list(self, psql):
+        select = """
+        SELECT datname FROM pg_catalog.pg_database
+        WHERE datallowconn IS TRUE ORDER BY 1;
+        """.strip().replace(8 * ' ', '')
+        for row in psql(select):
+            yield row[0]
 
     def fetch_pg_roles(self, psql):
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
@@ -116,7 +124,7 @@ class RoleManager(object):
 
         for name in names:
             name = name.lower()
-            logger.debug("Found role %s%s", name, log_source)
+            logger.debug("Found role %s%s.", name, log_source)
             if members:
                 logger.debug(
                     "Role %s must have members %s.", name, ', '.join(members),
@@ -142,15 +150,16 @@ class RoleManager(object):
                 for role in self.process_ldap_entry(entry=entry, **rule):
                     yield role
 
-    def sync(self, map_):
+    def inspect(self, syncmap):
         logger.info("Inspecting Postgres...")
         with self.psql('postgres') as psql:
+            databases = list(self.fetch_database_list(psql))
             rows = self.fetch_pg_roles(psql)
             pgroles = RoleSet(self.process_pg_roles(rows))
 
         # Gather wanted roles
         ldaproles = RoleSet()
-        for dbname, schema, mapping in self.itermappings(map_):
+        for dbname, schema, mapping in self.itermappings(syncmap):
             logger.debug("Working on schema %s.%s.", dbname, schema)
             if 'ldap' in mapping:
                 logger.info("Querying LDAP %s...", mapping['ldap']['base'])
@@ -160,24 +169,26 @@ class RoleManager(object):
 
             roles = self.apply_role_rules(mapping['roles'], entries)
             ldaproles |= set(roles)
+
+        logger.debug("LDAP inspection completing. Resolving memberships.")
         ldaproles.resolve_membership()
 
-        # Apply roles to Postgres
-        queries = groupby(pgroles.diff(ldaproles), lambda q: q.dbname)
-        count = 0
-        for dbname, dbqueries in queries:
-            with self.psql(dbname) as psql:
-                logger.info("Synchronizing database %s.", dbname)
-                for dbcount, query in enumerate(dbqueries):
-                    count += 1
-                    msg = str(query)
-                    logger.info('Would ' + lower1(msg) if self.dry else msg)
+        return databases, pgroles, ldaproles
 
-                    sql = psql.mogrify(*query.args).decode('UTF-8')
-                    if self.dry:
-                        logger.debug("Would execute: %s", sql)
-                    else:
-                        psql(sql)
+    def sync(self, databases, pgroles, ldaproles):
+        count = 0
+        queries = pgroles.diff(ldaproles)
+        for query in expandqueries(queries, databases):
+            with self.psql(query.dbname) as psql:
+                count += 1
+                msg = str(query)
+                logger.info('Would ' + lower1(msg) if self.dry else msg)
+
+                sql = psql.mogrify(*query.args).decode('UTF-8')
+                if self.dry:
+                    logger.debug("Would execute: %s", sql)
+                else:
+                    psql(sql)
         logger.debug("Executed %d querie(s).", count)
 
         if not count:
