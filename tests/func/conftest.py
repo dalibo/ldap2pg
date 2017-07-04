@@ -13,11 +13,13 @@ class PSQL(object):
     def __call__(self, *a, **kw):
         return self.psql(*a, **kw)
 
-    def select1(self, select):
+    def select1(self, select, *a, **kw):
+        if a or kw:
+            import pdb; pdb.set_trace()
         # Execute a SELECT and yield each line as a single value.
         return filter(None, (
             l.strip()
-            for l in self('-tc', select, _iter=True)
+            for l in self('-tc', select, *a, _iter=True, **kw)
         ))
 
     def members(self, role):
@@ -39,6 +41,20 @@ class PSQL(object):
         # List superusers
         return self.select1(
             "SELECT rolname FROM pg_roles WHERE rolsuper IS TRUE;"
+        )
+
+    def tables(self, *a, **kw):
+        # List tables
+        return self.select1(
+            "SELECT relname "
+            "FROM pg_catalog.pg_class c "
+            "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE "
+            "    c.relkind = 'r' "
+            "    AND n.nspname !~ '^pg_' "
+            "    AND n.nspname <> 'information_schema' "
+            "ORDER BY 1;",
+            *a, **kw
         )
 
 
@@ -93,8 +109,11 @@ def dev(ldap, psql):
 
 @pytest.fixture(scope='module', autouse=True)
 def flushall(ldap, psql):
-    # Flush PostgreSQL and OpenLDAP from any data.
+    from sh import dropdb
 
+    # Flush PostgreSQL and OpenLDAP from any data.
+    dropdb('--if-exists', 'app0')
+    dropdb('--if-exists', 'app1')
     psql('-tc', "DELETE FROM pg_catalog.pg_auth_members;")
     psql(
         '-tc',

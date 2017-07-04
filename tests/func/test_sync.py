@@ -14,6 +14,8 @@ def test_dry_run(dev, ldap, psql):
 def test_real_mode(dev, ldap, psql):
     from sh import ldap2pg
 
+    assert 'keepme' in psql.tables(dbname='app0')
+
     ldap2pg('-vN')
     roles = list(psql.roles())
     superusers = list(psql.superusers())
@@ -24,3 +26,5 @@ def test_real_mode(dev, ldap, psql):
     assert 'foo' in psql.members('app0')
     assert 'bar' in psql.members('app1')
     assert 'alice' in psql.members('ldap_users')
+
+    assert 'keepme' in psql.tables(dbname='app0')
