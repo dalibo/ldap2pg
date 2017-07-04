@@ -53,10 +53,13 @@ def wrapped_main(config=None):
         dry=config['dry'],
     )
     try:
-        manager.sync(map_=config['sync_map'])
+        databases, pgroles, ldaproles = manager.inspect(
+            syncmap=config['sync_map'])
     except psycopg2.OperationalError as e:
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
+
+    manager.sync(databases, pgroles, ldaproles)
 
     logger.info("Synchronization complete.")
 

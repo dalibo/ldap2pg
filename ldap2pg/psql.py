@@ -4,17 +4,31 @@ import logging
 
 import psycopg2
 
+from .utils import UserError
+
 
 logger = logging.getLogger(__name__)
 
 
 class PSQL(object):
-    def __init__(self, connstring=None):
+    # For now, ldap2pg self limit it's connexion pool to 32 session. Later if
+    # we hit the limit, we'll see how to managed this better.
+    def __init__(self, connstring=None, max_pool_size=32):
         self.connstring = connstring or ''
+        self.pool = {}
+        self.max_pool_size = max_pool_size
 
     def __call__(self, dbname):
+        if dbname not in self.pool and len(self.pool) >= self.max_pool_size:
+            msg = (
+                "Database limit exceeded.\n"
+                "ldap2pg doesn't support cluster with more than %d databases."
+            ) % (self.max_pool_size)
+            raise UserError(msg)
+
         connstring = self.connstring + " dbname=%s" % (dbname,)
-        return PSQLSession(connstring.strip())
+        session = self.pool.setdefault(dbname, PSQLSession(connstring.strip()))
+        return session
 
 
 class PSQLSession(object):
@@ -23,17 +37,24 @@ class PSQLSession(object):
         self.conn = None
         self.cursor = None
 
+    def __del__(self):
+        if self.cursor:
+            logger.debug("Closing Postgres cursor to %s.", self.connstring)
+            self.cursor.close()
+            self.cursor = None
+        if self.conn:
+            logger.debug("Closing Postgres connexion to %s.", self.connstring)
+            self.conn.close()
+            self.conn = None
+
     def __enter__(self):
-        logger.debug("Connecting to Postgres.")
+        logger.debug("Connecting to Postgres %s.", self.connstring)
         self.conn = psycopg2.connect(self.connstring)
         self.cursor = self.conn.cursor()
         return self
 
     def __exit__(self, *a):
-        self.cursor.close()
-        self.cursor = None
-        self.conn.close()
-        self.conn = None
+        pass
 
     def __call__(self, query, *args):
         logger.debug("Doing: %s", query)
@@ -44,3 +65,39 @@ class PSQLSession(object):
     @property
     def mogrify(self):
         return self.cursor.mogrify
+
+
+class Query(object):
+    class AllDatabases(object):
+        def __repr__(self):
+            return '__ALL_DATABASES__'
+
+    ALL_DATABASES = AllDatabases()
+
+    def __init__(self, message, dbname, *args):
+        self.message = message
+        self.dbname = dbname
+        self.args = args
+
+    def __repr__(self):
+        return "<%s on %s: %r>" % (
+            self.__class__.__name__,
+            self.dbname,
+            self.args[0][:50] + '...',
+        )
+
+    def __str__(self):
+        return self.message
+
+    def expand(self, databases):
+        if self.dbname is self.ALL_DATABASES:
+            for dbname in databases:
+                yield Query(self.message, dbname, *self.args)
+        else:
+            yield self
+
+
+def expandqueries(queries, databases):
+    for query in queries:
+        for single_query in query.expand(databases):
+            yield single_query

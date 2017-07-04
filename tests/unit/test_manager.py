@@ -3,6 +3,24 @@ from __future__ import unicode_literals
 import pytest
 
 
+def test_fetch_databases(mocker):
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager()
+    psql = mocker.Mock(name='psql')
+    psql.return_value = mocker.MagicMock()
+    psql.return_value.__iter__.return_value = [
+        ('postgres',), ('template1',),
+    ]
+
+    rows = manager.fetch_database_list(psql)
+    rows = list(rows)
+
+    assert 2 == len(rows)
+    assert 'postgres' in rows
+    assert 'template1' in rows
+
+
 def test_fetch_roles(mocker):
     from ldap2pg.manager import RoleManager
 
@@ -140,12 +158,11 @@ def test_process_entry_members(mocker):
     assert 'bob' in role.members
 
 
-def test_sync_map_loop(mocker):
+def test_inspect(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
     psql = mocker.MagicMock()
-    RoleSet = mocker.patch('ldap2pg.manager.RoleSet')
 
     from ldap2pg.manager import RoleManager, Role
 
@@ -163,18 +180,13 @@ def test_sync_map_loop(mocker):
         ),
     ]))
 
-    # No queries to run, we're just testing mapping loop
-    RoleSet.return_value.diff.return_value = []
-
-    manager.dry = False
-    manager.sync(map_=syncmap)
+    manager.inspect(syncmap=syncmap)
 
     assert 2 is r.call_count, "sync did not iterate over each rules."
 
 
-def test_sync_query_loop(mocker):
+def test_sync(mocker):
     mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
-    RoleSet = mocker.patch('ldap2pg.manager.RoleSet')
 
     from ldap2pg.manager import RoleManager
 
@@ -184,17 +196,29 @@ def test_sync_query_loop(mocker):
     manager = RoleManager(psql=psql, ldapconn=mocker.Mock())
 
     # Simple diff with one query
-    pgroles = RoleSet.return_value
-    pgroles.diff.return_value = [mocker.Mock(name='qry', args=())]
+    pgroles = mocker.Mock(name='pgdiff')
+    pgroles.diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    qry[0].expand.return_value = [qry[0]]
+
+    sync_kw = dict(
+        databases=['postgres', 'template1'],
+        pgroles=pgroles,
+        ldaproles=mocker.Mock(name='ldaproles'),
+    )
 
     # Dry run
     manager.dry = True
     # No mapping, we're just testing query loop
-    manager.sync(map_=dict())
-
+    manager.sync(**sync_kw)
     assert cursor.called is False
 
     # Real mode
     manager.dry = False
-    manager.sync(map_=dict())
+    manager.sync(**sync_kw)
+    assert cursor.called is True
+
+    # Nothing to do
+    pgroles.diff.return_value = []
+    manager.dry = False
+    manager.sync(**sync_kw)
     assert cursor.called is True

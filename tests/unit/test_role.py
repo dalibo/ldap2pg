@@ -53,7 +53,8 @@ def test_drop():
 
     queries = [q.args[0] for q in role.drop()]
 
-    assert fnfilter(queries, "DROP ROLE toto;")
+    assert fnfilter(queries, "DROP OWNED BY toto;*")
+    assert fnfilter(queries, "*DROP ROLE toto;")
 
 
 def test_options():
@@ -87,7 +88,7 @@ def test_roles_diff_queries():
 
     assert fnfilter(queries, "ALTER ROLE alter-me WITH* LOGIN*;")
     assert fnfilter(queries, "CREATE ROLE create-me *;")
-    assert 'DROP ROLE drop-me;' in queries
+    assert fnfilter(queries, '*DROP ROLE drop-me;*')
     assert not fnfilter(queries, '*nothing*')
 
 
