@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
-from ldap3.core.exceptions import LDAPObjectClassError
+from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.dn import parse_dn
 
 from .role import (
@@ -99,7 +99,7 @@ class RoleManager(object):
 
         try:
             self.ldapconn.search(base, filter, attributes=attributes)
-        except LDAPObjectClassError as e:
+        except LDAPExceptionError as e:
             message = "Failed to query LDAP: %s." % (e,)
             raise UserError(message)
 

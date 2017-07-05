@@ -70,10 +70,10 @@ def test_query_ldap(mocker):
 
 
 def test_query_ldap_bad_filter(mocker):
-    from ldap2pg.manager import RoleManager, LDAPObjectClassError, UserError
+    from ldap2pg.manager import RoleManager, LDAPExceptionError, UserError
 
     manager = RoleManager(ldapconn=mocker.Mock())
-    manager.ldapconn.search.side_effect = LDAPObjectClassError()
+    manager.ldapconn.search.side_effect = LDAPExceptionError()
 
     with pytest.raises(UserError):
         manager.query_ldap(base='dc=unit', filter='(broken', attributes=[])

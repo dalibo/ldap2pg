@@ -12,6 +12,8 @@
 # ldap2pg accepts a special env vars: DEBUG with values 1, y or Y. This enable
 # verbose logging. If ldap2pg is executed from a terminal, a debugger is
 # triggered on unhandled error.
+#
+# This sample file is tested with datata dev-fixture.ldif and dev-fixture.sql
 
 # Colorization. env var: COLOR=<anything>
 color: yes
@@ -85,7 +87,7 @@ sync_map:
     parent: LDAP_USERS
 - ldap:
     base: ou=groups,dc=ldap2pg,dc=local
-    filter: "(&(objectClass=groupOfNames)(cn=app*))"
+    filter: "(&(objectClass=groupOfNames)(|(cn=backend)(cn=frontend)))"
     attributes: [cn, member]
   # A list of rules to generate roles. Each rules is applied on each LDAP
   # entries.

@@ -100,7 +100,7 @@ class Role(object):
 
     def drop(self):
         yield Query(
-            'Reassign %s objects and purge ACL.' % (self.name,),
+            'Reassign %s objects and purge ACL on %%(dbname)s.' % (self.name,),
             Query.ALL_DATABASES,
             self._drop_objects_sql % dict(role=self.name),
         )

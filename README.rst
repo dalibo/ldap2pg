@@ -30,16 +30,26 @@ Features
         options: LOGIN
     $ ldap2pg --real
     Using ./ldap2pg.yml.
-    Starting ldap2pg 1.0a2.
+    Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
+    Starting ldap2pg 1.0.
     Running in real mode.
     Inspecting Postgres...
-    Querying LDAP cn=people,dc=ldap2pg,dc=local...
-    Create bar.
-    Create baz.
-    Create bob.
-    Create foo.
+    Querying LDAP cn=dba,ou=groups,dc=ldap2pg,dc=local...
+    Querying LDAP ou=groups,dc=ldap2pg,dc=local...
+    Create alan.
+    Create dave.
+    Create david.
+    Create ldap_users.
+    Add ldap_users members.
+    Add missing backend members.
+    Delete spurious backend members.
     Update options of alice.
-    Drop spurious.
+    Would reassign oscar objects and purge ACL on backend.
+    Would reassign oscar objects and purge ACL on frontend.
+    Would reassign oscar objects and purge ACL on legacy.
+    Would reassign oscar objects and purge ACL on postgres.
+    Would reassign oscar objects and purge ACL on template1.
+    Drop oscar.
     Synchronization complete.
     $
 
