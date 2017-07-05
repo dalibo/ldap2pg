@@ -16,6 +16,13 @@ def test_various_arguments():
     ldap2pg('-vn', '--color')
 
 
+def test_versionned_yaml():
+    from sh import ldap2pg
+
+    ldap2pg(config='ldap2pg.yml')
+    ldap2pg(config='ldap2pg.master.yml')
+
+
 YAML_FMT = """\
 ldap:
   host: %(LDAP_HOST)s
