@@ -44,11 +44,11 @@ Features
     Add missing backend members.
     Delete spurious backend members.
     Update options of alice.
-    Reassign oscar objects and purge ACL.
-    Reassign oscar objects and purge ACL.
-    Reassign oscar objects and purge ACL.
-    Reassign oscar objects and purge ACL.
-    Reassign oscar objects and purge ACL.
+    Would reassign oscar objects and purge ACL on backend.
+    Would reassign oscar objects and purge ACL on frontend.
+    Would reassign oscar objects and purge ACL on legacy.
+    Would reassign oscar objects and purge ACL on postgres.
+    Would reassign oscar objects and purge ACL on template1.
     Drop oscar.
     Synchronization complete.
     $

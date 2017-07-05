@@ -92,7 +92,11 @@ class Query(object):
     def expand(self, databases):
         if self.dbname is self.ALL_DATABASES:
             for dbname in databases:
-                yield Query(self.message, dbname, *self.args)
+                yield Query(
+                    self.message % dict(dbname=dbname),
+                    dbname,
+                    *self.args
+                )
         else:
             yield self
 
