@@ -9,28 +9,29 @@ def test_dry_run(dev, ldap, psql):
     ldap2pg('--verbose')
     roles = list(psql.roles())
     superusers = list(psql.superusers())
-    assert 'spurious' in roles
+    assert 'oscar' in roles
     assert 'alice' in superusers
 
 
 def test_real_mode(dev, ldap, psql):
     from sh import ldap2pg
 
-    assert 'keepme' in psql.tables(dbname='app0')
+    assert 'keepme' in psql.tables(dbname='legacy')
 
-    ldap2pg('-vN')
+    print(ldap2pg('-vN'))
+
     roles = list(psql.roles())
-    superusers = list(psql.superusers())
-    assert 'bob' in roles
-    assert 'spurious' not in roles
-    assert 'alice' in superusers
+    assert 'alan' in roles
+    assert 'oscar' not in roles
 
-    assert 'foo' in psql.members('app0')
-    assert 'bar' in psql.members('app1')
+    assert 'alice' in psql.superusers()
+
+    assert 'dave' in psql.members('backend')
+    assert 'david' in psql.members('frontend')
     assert 'alice' in psql.members('ldap_users')
 
     # Assert that table keepme owned by deleted user spurious is not dropped!
-    assert 'keepme' in psql.tables(dbname='app0')
+    assert 'keepme' in psql.tables(dbname='legacy')
 
 
 def test_nothing_to_do():

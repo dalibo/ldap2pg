@@ -1,6 +1,11 @@
 #
-# Dév fixture provides two UO: people and groups. Groups has a `member`
-# attribute referencing people.
+# Dév fixture tries to mimic ACME DB access policy.
+#
+# ACME has three apps: legacy, backend and frontend. Each app has a dedicated
+# team. ACME also have a big DBA team. That have access to everything.
+#
+# Users are in UO people. Groups in groups. Each team is defined in a groups,
+# referencing peoples entries.
 #
 
 dn: ou=people,dc=ldap2pg,dc=local
@@ -8,52 +13,87 @@ objectclass: organizationalUnit
 objectclass: top
 ou: people
 
+# Our database Administrators: a*
 dn: cn=ALICE,ou=people,dc=ldap2pg,dc=local
 cn: ALICE
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=BOB,ou=people,dc=ldap2pg,dc=local
-cn: BOB
+dn: cn=Alan,ou=people,dc=ldap2pg,dc=local
+cn: Alan
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=foo,ou=people,dc=ldap2pg,dc=local
-cn: foo
+dn: cn=albert,ou=people,dc=ldap2pg,dc=local
+cn: albert
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=bar,ou=people,dc=ldap2pg,dc=local
-cn: bar
+# Our developers: d*
+dn: cn=dave,ou=people,dc=ldap2pg,dc=local
+cn: dave
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=baz,ou=people,dc=ldap2pg,dc=local
-cn: baz
+dn: cn=david,ou=people,dc=ldap2pg,dc=local
+cn: david
 objectclass: organizationalRole
 objectclass: top
+
+dn: cn=daniel,ou=people,dc=ldap2pg,dc=local
+cn: daniel
+objectclass: organizationalRole
+objectclass: top
+
+dn: cn=donald,ou=people,dc=ldap2pg,dc=local
+cn: donald
+objectclass: organizationalRole
+objectclass: top
+
+# Our outsiders: o*
+# dn: cn=oscar,ou=people,dc=ldap2pg,dc=local
+# cn: oscar
+# objectclass: organizationalRole
+# objectclass: top
+
+# dn: cn=olivier,ou=people,dc=ldap2pg,dc=local
+# cn: olivier
+# objectclass: organizationalRole
+# objectclass: top
 
 dn: ou=groups,dc=ldap2pg,dc=local
 objectclass: organizationalUnit
 objectclass: top
-ou: people
+ou: groups
 
 dn: cn=dba,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames
 objectClass: top
 cn: dba
+member: cn=Alan,ou=people,dc=ldap2pg,dc=local
+member: cn=albert,ou=people,dc=ldap2pg,dc=local
 member: cn=ALICE,ou=people,dc=ldap2pg,dc=local
-member: cn=BOB,ou=people,dc=ldap2pg,dc=local
 
-dn: cn=app0,ou=groups,dc=ldap2pg,dc=local
+# Our apps, with their developers.
+
+# An old app
+# dn: cn=legacy,ou=groups,dc=ldap2pg,dc=local
+# objectClass: groupOfNames
+# objectClass: top
+# cn: legacy
+
+dn: cn=backend,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames
 objectClass: top
-cn: app0
-member: cn=foo,ou=people,dc=ldap2pg,dc=local
+cn: backend
+member: cn=david,ou=people,dc=ldap2pg,dc=local
+member: cn=dave,ou=people,dc=ldap2pg,dc=local
 
-dn: cn=app1,ou=groups,dc=ldap2pg,dc=local
+dn: cn=frontend,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames
 objectClass: top
-cn: app1
-member: cn=bar,ou=people,dc=ldap2pg,dc=local
-member: cn=baz,ou=people,dc=ldap2pg,dc=local
+cn: backend
+member: cn=carole,ou=people,dc=ldap2pg,dc=local
+member: cn=david,ou=people,dc=ldap2pg,dc=local
+member: cn=donald,ou=people,dc=ldap2pg,dc=local
+member: cn=daniel,ou=people,dc=ldap2pg,dc=local

@@ -89,12 +89,12 @@ sync_map:
       options: LOGIN SUPERUSER NOBYPASSRLS
       # Define static parents
       parent: LDAP_USERS
-  # This is specific to Postgres database `app0`.
-  app0:
+  # This is specific to Postgres database `backend`.
+  backend:
   # Again, for all schemas, do this:
   - ldap:
       base: ou=groups,dc=ldap2pg,dc=local
-      filter: "(&(objectClass=groupOfNames)(cn=app0))"
+      filter: "(&(objectClass=groupOfNames)(cn=backend))"
       attributes: [cn, member]
     # A list of rules to generate roles. Each rules is applied on each LDAP
     # entries.
@@ -108,13 +108,13 @@ sync_map:
       options:
         LOGIN: yes
       parents: [LDAP_USERS]
-  # This one is specific to Postgres database `app0`.
-  app1:
+  # This one is specific to Postgres database `frontend`.
+  frontend:
     # These rules are narrowed to one schema.
     appschema:
     - ldap:
         base: ou=groups,dc=ldap2pg,dc=local
-        filter: "(&(objectClass=groupOfNames)(cn=app1))"
+        filter: "(&(objectClass=groupOfNames)(cn=frontend))"
         attributes: [cn, member]
       roles:
       - name_attribute: cn
