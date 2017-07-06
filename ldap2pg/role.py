@@ -171,32 +171,7 @@ class RoleSet(set):
                 parent.members.append(role.name)
 
     def reindex(self):
-        return {
-            role.name: role
-            for role in self
-        }
-
-    def diff(self, other):
-        # Yields SQL queries to synchronize self with other.
-
-        missing = RoleSet(other - self)
-        for role in missing.flatten():
-            for qry in role.create():
-                yield qry
-
-        existing = self & other
-        myindex = self.reindex()
-        itsindex = other.reindex()
-        for role in existing:
-            my = myindex[role.name]
-            its = itsindex[role.name]
-            for qry in my.alter(its):
-                yield qry
-
-        spurious = RoleSet(self - other)
-        for role in reversed(list(spurious.flatten())):
-            for qry in role.drop():
-                yield qry
+        return {role.name: role for role in self}
 
     def flatten(self):
         # Generates the flatten tree of roles, children first.

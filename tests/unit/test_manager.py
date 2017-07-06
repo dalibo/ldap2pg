@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from fnmatch import filter as fnfilter
+
 import pytest
 
 
@@ -311,27 +313,66 @@ def test_inspect_roles(mocker):
     assert 2 is r.call_count, "sync did not iterate over each rules."
 
 
+def test_diff_roles(mocker):
+    from ldap2pg.manager import RoleManager, Role, RoleSet
+
+    m = RoleManager()
+
+    pgroles = RoleSet([
+        Role('drop-me'),
+        Role('alter-me'),
+        Role('nothing'),
+    ])
+    ldaproles = RoleSet([
+        Role('alter-me', options=dict(LOGIN=True)),
+        Role('nothing'),
+        Role('create-me')
+    ])
+    queries = [q.args[0] for q in m.diff(pgroles, set(), ldaproles, set())]
+
+    assert fnfilter(queries, "ALTER ROLE alter-me WITH* LOGIN*;")
+    assert fnfilter(queries, "CREATE ROLE create-me *;")
+    assert fnfilter(queries, '*DROP ROLE drop-me;*')
+    assert not fnfilter(queries, '*nothing*')
+
+
+def test_diff_acls(mocker):
+    from ldap2pg.acl import Acl, AclItem
+    from ldap2pg.manager import RoleManager
+
+    acl = Acl(name='connect', revoke='REVOKE %(role)s;')
+    m = RoleManager(acl_dict={acl.name: acl})
+
+    item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
+    pgacls = set([
+        item0,
+        AclItem(acl=acl.name, dbname='backend', role='alice'),
+    ])
+    ldapacls = set([item0])
+
+    queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]
+
+    assert not fnfilter(queries, "REVOKE daniel*")
+    assert fnfilter(queries, "*alice*")
+
+
 def test_sync(mocker):
-    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
+    diff = mocker.patch('ldap2pg.manager.RoleManager.diff')
 
     from ldap2pg.manager import RoleManager
 
     psql = mocker.MagicMock()
     cursor = psql.return_value.__enter__.return_value
 
-    manager = RoleManager(psql=psql, ldapconn=mocker.Mock())
+    manager = RoleManager(psql=psql)
 
     # Simple diff with one query
-    pgroles = mocker.Mock(name='pgdiff')
-    pgroles.diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    diff.return_value = qry = [mocker.Mock(name='qry', args=())]
     qry[0].expand.return_value = [qry[0]]
 
     sync_kw = dict(
         databases=['postgres', 'template1'],
-        pgroles=pgroles,
-        pgacls=set(),
-        ldaproles=mocker.Mock(name='ldaproles'),
-        ldapacls=set(),
+        pgroles=set(), pgacls=set(), ldaproles=set(), ldapacls=set(),
     )
 
     # Dry run
@@ -346,7 +387,7 @@ def test_sync(mocker):
     assert cursor.called is True
 
     # Nothing to do
-    pgroles.diff.return_value = []
+    diff.return_value = []
     manager.dry = False
     manager.sync(**sync_kw)
     assert cursor.called is True
