@@ -147,6 +147,9 @@ def mapping(value):
     # A single mapping from a query to a set of role rules. This function
     # translate random YAML to cannonical schema.
 
+    if not isinstance(value, dict):
+        raise ValueError("Mapping should be a dict.")
+
     if 'ldap' in value:
         value['ldap'] = ldapquery(value['ldap'])
 
