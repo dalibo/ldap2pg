@@ -35,7 +35,7 @@ def test_fetch_roles(mocker):
     assert r == rows
 
 
-def test_process_rows():
+def test_process_roles_rows():
     from ldap2pg.manager import RoleManager
 
     manager = RoleManager(blacklist=['pg_*', 'postgres'])
@@ -50,6 +50,26 @@ def test_process_rows():
     assert 2 == len(roles)
     assert 'dba' == roles[0].name
     assert 'alice' == roles[1].name
+
+
+def test_process_acl_rows():
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager(blacklist=['pg_*', 'postgres'])
+    rows = [
+        ('postgres', None, 'postgres'),
+        ('template1', None, 'pg_signal_backend'),
+        ('backend', 'public', 'alice'),
+    ]
+
+    items = list(manager.process_pg_acl_items('connect', rows))
+
+    assert 1 == len(items)
+    item = items[0]
+    assert 'connect' == item.acl
+    assert 'backend' == item.dbname
+    assert 'public' == item.schema
+    assert 'alice' == item.role
 
 
 def test_query_ldap(mocker):
@@ -158,7 +178,30 @@ def test_process_entry_members(mocker):
     assert 'bob' in role.members
 
 
-def test_inspect(mocker):
+def test_inspect_acls(mocker):
+    psql = mocker.MagicMock()
+    psql.itersessions.return_value = [('postgres', psql)]
+
+    dbl = mocker.patch('ldap2pg.manager.RoleManager.fetch_database_list', autospec=True)
+    dbl.return_value = ['postgres']
+    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles', autospec=True)
+    a = mocker.patch('ldap2pg.manager.RoleManager.process_pg_acl_items', autospec=True)
+
+    from ldap2pg.manager import RoleManager, AclItem
+    from ldap2pg.acl import Acl
+
+    acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
+    a.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+
+    manager = RoleManager(psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict)
+    syncmap = dict()
+
+    databases, _, pgacls, _, _ = manager.inspect(syncmap=syncmap)
+
+    assert 1 == len(pgacls)
+
+
+def test_inspect_roles(mocker):
     p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
     l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
@@ -203,7 +246,9 @@ def test_sync(mocker):
     sync_kw = dict(
         databases=['postgres', 'template1'],
         pgroles=pgroles,
+        pgacls=set(),
         ldaproles=mocker.Mock(name='ldaproles'),
+        ldapacls=set(),
     )
 
     # Dry run

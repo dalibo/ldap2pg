@@ -43,6 +43,20 @@ def test_psql_pool_limit():
     assert session0 is session0_bis
 
 
+def test_iter_sessions(mocker):
+    connect = mocker.patch('ldap2pg.psql.psycopg2.connect')
+
+    from ldap2pg.psql import PSQL
+
+    psql = PSQL()
+
+    databases = ['postgres', 'backend', 'frontend']
+    for dbname, session in psql.itersessions(databases):
+        assert dbname in databases
+        assert connect.called is True
+        connect.reset_mock()
+
+
 def test_query():
     from ldap2pg.psql import Query
 

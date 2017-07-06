@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class PSQL(object):
-    # For now, ldap2pg self limit it's connexion pool to 32 session. Later if
+    # A simple connexion manager to Postgres
+    #
+    # For now, ldap2pg self limits it's connexion pool to 32 sessions. Later if
     # we hit the limit, we'll see how to managed this better.
     def __init__(self, connstring=None, max_pool_size=32):
         self.connstring = connstring or ''
@@ -29,6 +31,13 @@ class PSQL(object):
         connstring = self.connstring + " dbname=%s" % (dbname,)
         session = self.pool.setdefault(dbname, PSQLSession(connstring.strip()))
         return session
+
+    def itersessions(self, databases):
+        # Generate a session for each database. Handful for iterating queries
+        # in each databases in the cluster.
+        for dbname in databases:
+            with self(dbname) as session:
+                yield dbname, session
 
 
 class PSQLSession(object):

@@ -5,6 +5,7 @@ import logging
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.dn import parse_dn
 
+from .acl import AclItem, AclSet
 from .role import (
     Role,
     RoleOptions,
@@ -35,9 +36,12 @@ def get_ldap_attribute(entry, attribute):
 
 class RoleManager(object):
 
-    def __init__(self, ldapconn=None, psql=None, blacklist=[], dry=False):
+    def __init__(
+            self, ldapconn=None, psql=None, acl_dict=None, blacklist=[],
+            dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
+        self.acl_dict = acl_dict or {}
         self._blacklist = blacklist
         self.dry = dry
 
@@ -85,6 +89,12 @@ class RoleManager(object):
                         role.name, ','.join(role.members),
                     )
                 yield role
+
+    def process_pg_acl_items(self, name, rows):
+        for row in rows:
+            if match(row[2], self._blacklist):
+                continue
+            yield AclItem.from_row(name, *row)
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -154,8 +164,19 @@ class RoleManager(object):
             rows = self.fetch_pg_roles(psql)
             pgroles = RoleSet(self.process_pg_roles(rows))
 
+        # Inspect ACLs
+        pgacls = AclSet()
+        for name, acl in sorted(self.acl_dict.items()):
+            for dbname, psql in self.psql.itersessions(databases):
+                logger.debug("Searching items of ACL %s in %s.", acl, dbname)
+                rows = psql(acl.inspect)
+                for aclitem in self.process_pg_acl_items(name, rows):
+                    logger.debug("Found ACL item %s.", aclitem)
+                    pgacls.add(aclitem)
+
         # Gather wanted roles
         ldaproles = RoleSet()
+        ldapacls = AclSet()
         for dbname, schema, mapping in self.itermappings(syncmap):
             logger.debug("Working on schema %s.%s.", dbname, schema)
             if 'ldap' in mapping:
@@ -170,9 +191,9 @@ class RoleManager(object):
         logger.debug("LDAP inspection completing. Resolving memberships.")
         ldaproles.resolve_membership()
 
-        return databases, pgroles, ldaproles
+        return databases, pgroles, pgacls, ldaproles, ldapacls
 
-    def sync(self, databases, pgroles, ldaproles):
+    def sync(self, databases, pgroles, pgacls, ldaproles, ldapacls):
         count = 0
         queries = pgroles.diff(ldaproles)
         for query in expandqueries(queries, databases):
