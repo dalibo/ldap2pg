@@ -92,7 +92,7 @@ member: cn=dave,ou=people,dc=ldap2pg,dc=local
 dn: cn=frontend,ou=groups,dc=ldap2pg,dc=local
 objectClass: groupOfNames
 objectClass: top
-cn: backend
+cn: frontend
 member: cn=carole,ou=people,dc=ldap2pg,dc=local
 member: cn=david,ou=people,dc=ldap2pg,dc=local
 member: cn=donald,ou=people,dc=ldap2pg,dc=local
