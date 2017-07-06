@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-from fnmatch import fnmatch
 import logging
 
 from ldap3.core.exceptions import LDAPExceptionError
@@ -11,7 +10,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, lower1
+from .utils import UserError, lower1, match
 from .psql import expandqueries
 
 
@@ -73,12 +72,10 @@ class RoleManager(object):
     def process_pg_roles(self, rows):
         for row in rows:
             name = row[0]
-            for pattern in self._blacklist:
-                if fnmatch(name, pattern):
-                    logger.debug(
-                        "Ignoring role %s. Matches %r.", name, pattern,
-                    )
-                    break
+            pattern = match(name, self._blacklist)
+            if pattern:
+                logger.debug("Ignoring role %s. Matches %r.", name, pattern)
+                continue
             else:
                 role = Role.from_row(*row)
                 logger.debug("Found role %r %s.", role.name, role.options)
