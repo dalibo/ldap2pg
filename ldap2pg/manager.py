@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import logging
+from itertools import groupby
 
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.dn import parse_dn
@@ -90,11 +91,11 @@ class RoleManager(object):
                     )
                 yield role
 
-    def process_pg_acl_items(self, name, rows):
+    def process_pg_acl_items(self, acl, rows):
         for row in rows:
             if match(row[2], self._blacklist):
                 continue
-            yield AclItem.from_row(name, *row)
+            yield AclItem.from_row(acl, *row)
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -216,9 +217,44 @@ class RoleManager(object):
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 
+    def diff(self, pgroles=None, pgacls=set(), ldaproles=None, ldapacls=set()):
+        pgroles = pgroles or RoleSet()
+        ldaproles = ldaproles or RoleSet()
+
+        # First, revoke spurious ACLs
+        spurious = pgacls - ldapacls
+        spurious = sorted(list(spurious))
+        for aclname, aclitems in groupby(spurious, lambda i: i.acl):
+            acl = self.acl_dict[aclname]
+            for aclitem in aclitems:
+                for qry in acl.revoke(aclitem):
+                    yield qry
+
+        # Then create missing roles
+        missing = RoleSet(ldaproles - pgroles)
+        for role in missing.flatten():
+            for qry in role.create():
+                yield qry
+
+        # Now update existing roles options and memberships
+        existing = pgroles & ldaproles
+        pg_roles_index = pgroles.reindex()
+        ldap_roles_index = ldaproles.reindex()
+        for role in existing:
+            my = pg_roles_index[role.name]
+            its = ldap_roles_index[role.name]
+            for qry in my.alter(its):
+                yield qry
+
+        # Finally, trash all spurious roles
+        spurious = RoleSet(pgroles - ldaproles)
+        for role in reversed(list(spurious.flatten())):
+            for qry in role.drop():
+                yield qry
+
     def sync(self, databases, pgroles, pgacls, ldaproles, ldapacls):
         count = 0
-        queries = pgroles.diff(ldaproles)
+        queries = self.diff(pgroles, pgacls, ldaproles, ldapacls)
         for query in expandqueries(queries, databases):
             with self.psql(query.dbname) as psql:
                 count += 1
@@ -230,7 +266,7 @@ class RoleManager(object):
                     logger.debug("Would execute: %s", sql)
                 else:
                     psql(sql)
-        logger.debug("Executed %d querie(s).", count)
+        logger.debug("Generated %d querie(s).", count)
 
         if not count:
             logger.info("Nothing to do.")

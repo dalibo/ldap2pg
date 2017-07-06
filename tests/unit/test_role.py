@@ -71,27 +71,6 @@ def test_options():
         RoleOptions(POUET=True)
 
 
-def test_roles_diff_queries():
-    from ldap2pg.manager import Role, RoleSet
-
-    a = RoleSet([
-        Role('drop-me'),
-        Role('alter-me'),
-        Role('nothing'),
-    ])
-    b = RoleSet([
-        Role('alter-me', options=dict(LOGIN=True)),
-        Role('nothing'),
-        Role('create-me')
-    ])
-    queries = [q.args[0] for q in a.diff(b)]
-
-    assert fnfilter(queries, "ALTER ROLE alter-me WITH* LOGIN*;")
-    assert fnfilter(queries, "CREATE ROLE create-me *;")
-    assert fnfilter(queries, '*DROP ROLE drop-me;*')
-    assert not fnfilter(queries, '*nothing*')
-
-
 def test_flatten():
     from ldap2pg.role import RoleSet, Role
 
