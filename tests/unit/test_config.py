@@ -246,6 +246,14 @@ def test_process_syncmap():
     with pytest.raises(ValueError):
         syncmap(raw)
 
+    bad_fixtures = [
+        'string_value',
+        [None],
+    ]
+    for raw in bad_fixtures:
+        with pytest.raises(ValueError):
+            syncmap(raw)
+
 
 def test_process_mapping_grant():
     from ldap2pg.config import mapping

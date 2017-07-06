@@ -226,6 +226,9 @@ def syncmap(value):
     if ismapping(value):
         value = dict(__common__=[value])
 
+    if not isinstance(value, dict):
+        raise ValueError("Illegal value for sync_map.")
+
     for dbname, ivalue in value.items():
         if isinstance(ivalue, list):
             value[dbname] = ivalue = dict(__common__=ivalue)
