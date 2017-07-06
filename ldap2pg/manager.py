@@ -227,8 +227,7 @@ class RoleManager(object):
         for aclname, aclitems in groupby(spurious, lambda i: i.acl):
             acl = self.acl_dict[aclname]
             for aclitem in aclitems:
-                for qry in acl.revoke(aclitem):
-                    yield qry
+                yield acl.revoke(aclitem)
 
         # Then create missing roles
         missing = RoleSet(ldaproles - pgroles)
@@ -246,11 +245,19 @@ class RoleManager(object):
             for qry in my.alter(its):
                 yield qry
 
-        # Finally, trash all spurious roles
+        # Don't forket trash all spurious roles!
         spurious = RoleSet(pgroles - ldaproles)
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry
+
+        # Finally, grant ACL when all roles are ok.
+        missing = ldapacls - pgacls
+        missing = sorted(list(missing))
+        for aclname, aclitems in groupby(missing, lambda i: i.acl):
+            acl = self.acl_dict[aclname]
+            for aclitem in aclitems:
+                yield acl.grant(aclitem)
 
     def sync(self, databases, pgroles, pgacls, ldaproles, ldapacls):
         count = 0

@@ -19,8 +19,10 @@ def test_real_mode(dev, ldap, psql):
     from sh import ErrorReturnCode, ldap2pg
 
     assert 'keepme' in psql.tables(dbname='legacy')
-    # Assert daniel can connect to backend
+    # Assert daniel can connect to backend, not to frontend
     psql(U='daniel', d='backend', c='SELECT CURRENT_USER')
+    with pytest.raises(ErrorReturnCode):
+        psql(U='daniel', d='frontend', c='SELECT CURRENT_USER')
 
     print(ldap2pg('-vN', c='ldap2pg.master.yml'))
 
@@ -40,6 +42,8 @@ def test_real_mode(dev, ldap, psql):
     # Assert CONNECT to backend has been revoked from daniel.
     with pytest.raises(ErrorReturnCode):
         psql(U='daniel', d='backend', c='SELECT CURRENT_USER')
+    # Assert daniel can now connect to frontend
+    psql(U='daniel', d='frontend', c='SELECT CURRENT_USER')
 
 
 def test_nothing_to_do():

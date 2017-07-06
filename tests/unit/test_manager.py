@@ -340,7 +340,7 @@ def test_diff_acls(mocker):
     from ldap2pg.acl import Acl, AclItem
     from ldap2pg.manager import RoleManager
 
-    acl = Acl(name='connect', revoke='REVOKE %(role)s;')
+    acl = Acl(name='connect', revoke='REVOKE %(role)s', grant='GRANT %(role)s')
     m = RoleManager(acl_dict={acl.name: acl})
 
     item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
@@ -348,12 +348,16 @@ def test_diff_acls(mocker):
         item0,
         AclItem(acl=acl.name, dbname='backend', role='alice'),
     ])
-    ldapacls = set([item0])
+    ldapacls = set([
+        item0,
+        AclItem(acl=acl.name, dbname='backend', role='david'),
+    ])
 
     queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]
 
     assert not fnfilter(queries, "REVOKE daniel*")
-    assert fnfilter(queries, "*alice*")
+    assert fnfilter(queries, "REVOKE alice*")
+    assert fnfilter(queries, "GRANT david*")
 
 
 def test_sync(mocker):
