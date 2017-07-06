@@ -507,8 +507,10 @@ class Configuration(dict):
 
     def read(self, fo, mode):
         payload = yaml.load(fo) or {}
+        if isinstance(payload, list):
+            payload = dict(sync_map=payload)
         if not isinstance(payload, dict):
-            raise ConfigurationError("Configuration file must be a mapping")
+            raise ConfigurationError("Configuration file must be a mapping.")
         payload['world_readable'] = bool(mode & 0o077)
         return payload
 

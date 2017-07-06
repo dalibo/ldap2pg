@@ -413,14 +413,13 @@ def test_security():
 def test_read_yml():
     from io import StringIO
 
-    from ldap2pg.config import Configuration, ConfigurationError
+    from ldap2pg.config import Configuration
 
     config = Configuration()
 
-    # Deny list file
-    fo = StringIO("- listentry")
-    with pytest.raises(ConfigurationError):
-        config.read(fo, mode=0o0)
+    fo = StringIO("- role: alice")
+    payload = config.read(fo, mode=0o0)
+    assert 'sync_map' in payload
 
     fo = StringIO("entry: value")
     payload = config.read(fo, mode=0o644)
