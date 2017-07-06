@@ -188,7 +188,7 @@ class RoleManager(object):
             roles = self.apply_role_rules(mapping['roles'], entries)
             ldaproles |= set(roles)
 
-        logger.debug("LDAP inspection completing. Resolving memberships.")
+        logger.debug("LDAP inspection completed. Resolving memberships.")
         ldaproles.resolve_membership()
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
