@@ -115,11 +115,29 @@ def rolerule(value):
     return rule
 
 
+def grantrule(value):
+    if not isinstance(value, dict):
+        raise ValueError('Grant rule must be a dict.')
+    if 'acl' not in value:
+        raise ValueError('Missing acl to grant rule.')
+
+    allowed_keys = set(['acl', 'database', 'schema', 'role_attribute'])
+    defined_keys = set(value.keys())
+
+    if defined_keys - allowed_keys:
+        msg = 'Spurious parameters to grant rules: %s' % (
+            ', '.join(allowed_keys - defined_keys)
+        )
+        raise ValueError(msg)
+
+    return value
+
+
 def ismapping(value):
     # Check whether a YAML value is supposed to be a single mapping.
     if not isinstance(value, dict):
         return False
-    return bool({'ldap', 'role', 'roles'} >= set(value.keys()))
+    return bool({'grant', 'ldap', 'role', 'roles'} >= set(value.keys()))
 
 
 def mapping(value):
@@ -132,11 +150,18 @@ def mapping(value):
     if 'role' in value:
         value['roles'] = value['role']
     if 'roles' not in value:
-        raise ValueError("Missing role rules.")
+        value['roles'] = []
     if isinstance(value['roles'], dict):
         value['roles'] = [value['roles']]
 
     value['roles'] = [rolerule(r) for r in value['roles']]
+
+    if 'grant' in value:
+        value['grant'] = grantrule(value['grant'])
+
+    if not value['roles'] and 'grant' not in value:
+        # Don't accept unused LDAP queries.
+        raise ValueError("Missing role or grant rule.")
 
     return value
 

@@ -175,6 +175,26 @@ def test_process_acldict():
     assert 'ro' in acl_dict
 
 
+def test_process_grant():
+    from ldap2pg.config import grantrule
+
+    with pytest.raises(ValueError):
+        grantrule([])
+
+    with pytest.raises(ValueError):
+        grantrule(dict(missing_acl=True))
+
+    with pytest.raises(ValueError):
+        grantrule(dict(acl='toto', spurious_attribute=True))
+
+    grantrule(dict(
+        acl='ro',
+        database='postgres',
+        schema='public',
+        role_attribute='cn',
+    ))
+
+
 def test_ismapping():
     from ldap2pg.config import ismapping
 
@@ -225,6 +245,12 @@ def test_process_syncmap():
     raw = dict(ldap=dict(base='dc=unit', attribute='cn'))
     with pytest.raises(ValueError):
         syncmap(raw)
+
+
+def test_process_mapping_grant():
+    from ldap2pg.config import mapping
+
+    mapping(dict(grant=dict(acl='ro')))
 
 
 def test_process_ldapquery():

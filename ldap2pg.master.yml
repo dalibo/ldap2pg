@@ -132,6 +132,10 @@ sync_map:
       options:
         LOGIN: yes
       parents: [LDAP_USERS]
+    grant:
+      acl: connect
+      schema: null
+      role_attribute: cn
   # This one is specific to Postgres database `frontend`.
   frontend:
     # These rules are narrowed to one schema.
@@ -147,3 +151,7 @@ sync_map:
       - name_attribute: member.cn
         options: LOGIN
         parents: [LDAP_USERS]
+      grant:
+        acl: connect
+        schema: null
+        role_attribute: cn
