@@ -10,6 +10,7 @@ DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIK
 
 -- Create role as it should be. for NOOP
 CREATE ROLE backend NOLOGIN;
+CREATE ROLE daniel;
 -- Create spurious roles, for DROP.
 CREATE ROLE legacy WITH NOLOGIN;
 CREATE ROLE oscar WITH LOGIN IN ROLE legacy, backend;
