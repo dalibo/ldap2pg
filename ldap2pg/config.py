@@ -12,6 +12,7 @@ from six import string_types
 import yaml
 
 from . import __version__
+from .acl import Acl
 from .utils import (
     deepget,
     deepset,
@@ -57,6 +58,16 @@ class ColoredStreamHandler(logging.StreamHandler):
             for line in lines.splitlines(True)
         ])
         return lines
+
+
+def acldict(value):
+    if not hasattr(value, 'items'):
+        raise ValueError('acl_dict must be a dict')
+
+    return {
+        k: Acl(k, **v)
+        for k, v in value.items()
+    }
 
 
 def raw(v):
@@ -355,6 +366,7 @@ class Configuration(dict):
             'dsn': '',
             'blacklist': ['pg_*', 'postgres'],
         },
+        'acl_dict': {},
         'sync_map': [],
     }
 
@@ -371,6 +383,7 @@ class Configuration(dict):
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:blacklist', env=None),
+        Mapping('acl_dict', processor=acldict),
         Mapping('sync_map', env=None, processor=syncmap)
     ]
 

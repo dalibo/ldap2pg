@@ -1,5 +1,15 @@
+from fnmatch import fnmatch
+
+
 def lower1(string):
     return string[0].lower() + string[1:]
+
+
+def match(string, patterns):
+    for pattern in patterns:
+        if fnmatch(string, pattern):
+            return pattern
+    return False
 
 
 class UserError(Exception):

@@ -164,6 +164,17 @@ def test_processor():
     assert v is False
 
 
+def test_process_acldict():
+    from ldap2pg.config import acldict
+
+    with pytest.raises(ValueError):
+        acldict([])
+
+    acl_dict = acldict(dict(ro=dict(inspect='SQL', grant='SQL', revoke='SQL')))
+
+    assert 'ro' in acl_dict
+
+
 def test_ismapping():
     from ldap2pg.config import ismapping
 

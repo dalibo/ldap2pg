@@ -52,6 +52,30 @@ postgres:
   blacklist: [postgres, pg_*]
 
 #
+# **ACL**
+#
+acl_dict:
+  connect:
+    inspect: |
+      WITH d AS (
+          SELECT
+              datname,
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      )
+      SELECT d.datname as datname, NULL as namespace, r.rolname
+      FROM pg_catalog.pg_roles AS r
+      JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
+    grant: |
+      REVOKE ALL ON DATABASE %(database)s FROM %(role)s
+      GRANT CONNECT ON DATABASE %(database)s FROM %(role)s
+    revoke: |
+      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+
+
+#
 # **Synchronization map**
 #
 

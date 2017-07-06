@@ -49,17 +49,18 @@ def wrapped_main(config=None):
     psql = PSQL(connstring=config['postgres']['dsn'])
     manager = RoleManager(
         ldapconn=ldapconn, psql=psql,
+        acl_dict=config['acl_dict'],
         blacklist=config['postgres']['blacklist'],
         dry=config['dry'],
     )
     try:
-        databases, pgroles, ldaproles = manager.inspect(
+        sync_data = manager.inspect(
             syncmap=config['sync_map'])
     except psycopg2.OperationalError as e:
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
 
-    manager.sync(databases, pgroles, ldaproles)
+    manager.sync(*sync_data)
 
     logger.info("Synchronization complete.")
 

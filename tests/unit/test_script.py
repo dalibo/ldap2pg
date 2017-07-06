@@ -80,7 +80,7 @@ def test_wrapped_main(mocker):
     clc = mocker.patch('ldap2pg.script.create_ldap_connection')
     RM = mocker.patch('ldap2pg.script.RoleManager', autospec=True)
     rm = RM.return_value
-    rm.inspect.return_value = [mocker.Mock()] * 3
+    rm.inspect.return_value = [mocker.Mock()] * 5
 
     from ldap2pg.script import wrapped_main
 
