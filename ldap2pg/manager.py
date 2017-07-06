@@ -230,7 +230,7 @@ class RoleManager(object):
                     logger.debug("Would execute: %s", sql)
                 else:
                     psql(sql)
-        logger.debug("Executed %d querie(s).", count)
+        logger.debug("Generated %d querie(s).", count)
 
         if not count:
             logger.info("Nothing to do.")
