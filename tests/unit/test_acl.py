@@ -7,6 +7,7 @@ def test_set():
     set_ = AclSet([acl0, acl1, duplicata])
 
     assert 2 == len(set_)
-    assert str(acl0)
+    assert 'postgres' in str(acl0)
+    assert 'ro' in repr(acl0)
     assert acl0 != acl1
     assert acl0 == duplicata

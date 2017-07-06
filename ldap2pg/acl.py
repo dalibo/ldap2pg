@@ -22,6 +22,9 @@ class AclItem(object):
             schema=self.schema or '__common__'
         )
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self)
+
     def __hash__(self):
         return hash(self.as_tuple())
 
