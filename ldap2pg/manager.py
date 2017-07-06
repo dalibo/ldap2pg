@@ -157,6 +157,22 @@ class RoleManager(object):
                 for role in self.process_ldap_entry(entry=entry, **rule):
                     yield role
 
+    def apply_grant_rules(self, grant, entries):
+        acl = grant.get('acl')
+        if not acl:
+            return
+
+        database = grant['database']
+        if database == '__common__':
+            raise ValueError("You must associate an ACL to a database.")
+        schema = grant['schema']
+        if schema == '__common__':
+            schema = None
+
+        for entry in entries:
+            for role in get_ldap_attribute(entry, grant['role_attribute']):
+                yield AclItem(acl, database, schema, role)
+
     def inspect(self, syncmap):
         logger.info("Inspecting Postgres...")
         with self.psql('postgres') as psql:
@@ -185,10 +201,17 @@ class RoleManager(object):
             else:
                 entries = [None]
 
-            roles = self.apply_role_rules(mapping['roles'], entries)
-            ldaproles |= set(roles)
+            for role in self.apply_role_rules(mapping['roles'], entries):
+                ldaproles.add(role)
 
-        logger.debug("LDAP inspection completing. Resolving memberships.")
+            grant = mapping.get('grant', {})
+            grant.setdefault('database', dbname)
+            grant.setdefault('schema', schema)
+            for aclitem in self.apply_grant_rules(grant, entries):
+                logger.debug("Found ACL item %s in LDAP.", aclitem)
+                ldapacls.add(aclitem)
+
+        logger.debug("LDAP inspection completed. Resolving memberships.")
         ldaproles.resolve_membership()
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
