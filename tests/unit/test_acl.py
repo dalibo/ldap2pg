@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from fnmatch import filter as fnfilter
-
 
 def test_acl():
     from ldap2pg.acl import Acl
@@ -30,13 +28,23 @@ def test_items():
     assert acl0 == duplicata
 
 
+def test_grant():
+    from ldap2pg.acl import Acl, AclItem
+
+    acl = Acl(name='connect', grant='GRANT %(database)s TO %(role)s;')
+    item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
+    qry = acl.grant(item)
+
+    assert 'GRANT backend' in qry.args[0]
+    assert 'daniel' in qry.args[0]
+
+
 def test_revoke():
     from ldap2pg.acl import Acl, AclItem
 
     acl = Acl(name='connect', revoke='REVOKE %(database)s FROM %(role)s;')
     item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
-    queries = [q.args[0] for q in acl.revoke(item)]
+    qry = acl.revoke(item)
 
-    assert 1 == len(queries)
-    assert fnfilter(queries, '*backend*')
-    assert fnfilter(queries, '*daniel*')
+    assert 'REVOKE backend' in qry.args[0]
+    assert 'daniel' in qry.args[0]

@@ -23,6 +23,7 @@ CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE backend;
 CREATE DATABASE backend WITH OWNER backend;
 REVOKE CONNECT ON DATABASE backend FROM PUBLIC;
 CREATE DATABASE frontend;
+REVOKE CONNECT ON DATABASE frontend FROM PUBLIC;
 CREATE DATABASE legacy;
 
 -- daniel was a backend developer and is now a frontend. He add access to

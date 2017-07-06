@@ -17,8 +17,19 @@ class Acl(object):
     def __str__(self):
         return self.name
 
+    def grant(self, item):
+        return Query(
+            "Grant %s." % (item,),
+            item.dbname,
+            self._grant % dict(
+                database=item.dbname,
+                schema=item.schema,
+                role=item.role,
+            ),
+        )
+
     def revoke(self, item):
-        yield Query(
+        return Query(
             "Revoke %s." % (item,),
             item.dbname,
             self._revoke % dict(

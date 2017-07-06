@@ -69,8 +69,7 @@ acl_dict:
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
-      REVOKE ALL ON DATABASE %(database)s FROM %(role)s
-      GRANT CONNECT ON DATABASE %(database)s FROM %(role)s
+      GRANT CONNECT ON DATABASE %(database)s TO %(role)s;
     revoke: |
       REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
 
