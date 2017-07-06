@@ -359,6 +359,19 @@ def test_find_filename_custom(mocker):
     assert filename.endswith('argv.yml')
 
 
+def test_find_filename_stdin():
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    filename, mode = config.find_filename(
+        environ=dict(LDAP2PG_CONFIG='-'),
+    )
+
+    assert '-' == filename
+    assert 0o400 == mode
+
+
 def test_merge_and_mappings():
     from ldap2pg.config import Configuration
 
@@ -424,7 +437,7 @@ def test_security():
 def test_read_yml():
     from io import StringIO
 
-    from ldap2pg.config import Configuration
+    from ldap2pg.config import Configuration, ConfigurationError
 
     config = Configuration()
 
@@ -442,12 +455,15 @@ def test_read_yml():
     payload = config.read(fo, mode=0o600)
     assert payload['world_readable'] is False
 
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("bad_value")
+        payload = config.read(fo, mode=0o600)
 
-def test_load(mocker):
+
+def test_load_badfiles(mocker):
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
-    read = mocker.patch('ldap2pg.config.Configuration.read')
     o = mocker.patch('ldap2pg.config.open', create=True)
 
     from ldap2pg.config import (
@@ -473,10 +489,40 @@ def test_load(mocker):
     with pytest.raises(UserError):
         config.load(argv=[])
 
-    # Readable..
-    o.side_effect = None
-    # ...containing mapping
-    read.return_value = dict(sync_map=dict(ldap=dict(), role=dict()))
+
+def test_load_stdin(mocker):
+    environ = dict()
+    mocker.patch('ldap2pg.config.os.environ', environ)
+    ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
+    mocker.patch('ldap2pg.config.open', create=True)
+    read = mocker.patch('ldap2pg.config.Configuration.read')
+
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    ff.return_value = ['-', 0o400]
+    read.return_value = dict(sync_map=[dict(role='alice')])
+
+    config.load(argv=[])
+
+    maplist = config['sync_map']['__common__']['__common__']
+    assert 1 == len(maplist)
+
+
+def test_load_file(mocker):
+    environ = dict()
+    mocker.patch('ldap2pg.config.os.environ', environ)
+    ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
+    mocker.patch('ldap2pg.config.open', create=True)
+    read = mocker.patch('ldap2pg.config.Configuration.read')
+
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    ff.return_value = ['filename.yml', 0o0]
+    read.return_value = dict(sync_map=[dict(role='alice')])
     # send one env var for LDAP bind
     environ.update(dict(LDAP_BIND='envbind'))
 
@@ -485,5 +531,4 @@ def test_load(mocker):
     assert 'envbind' == config['ldap']['bind']
     maplist = config['sync_map']['__common__']['__common__']
     assert 1 == len(maplist)
-    assert 'ldap' in maplist[0]
     assert config['verbose'] is True

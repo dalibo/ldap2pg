@@ -432,7 +432,10 @@ class Configuration(dict):
 
     def find_filename(self, environ=os.environ, args=None):
         custom = getattr(args, 'config', environ.get('LDAP2PG_CONFIG'))
-        if custom:
+
+        if '-' == custom:
+            return custom, 0o400
+        elif custom:
             candidates = [custom]
         else:
             candidates = self._file_candidates
@@ -483,18 +486,22 @@ class Configuration(dict):
 
         # File loading.
         try:
-            filename, mode = self.find_filename(environ=os.environ, args=args)
+            filename, mode = self.find_filename(os.environ, args)
         except NoConfigurationError:
             logger.debug("No configuration file found.")
             file_config = {}
         else:
-            logger.info("Using %s.", filename)
-            try:
-                with open(filename) as fo:
-                    file_config = self.read(fo, mode)
-            except OSError as e:
-                msg = "Failed to read configuration: %s" % (e,)
-                raise UserError(msg)
+            if filename == '-':
+                logger.info("Reading configuration from stdin.")
+                file_config = self.read(sys.stdin, mode)
+            else:
+                logger.info("Using %s.", filename)
+                try:
+                    with open(filename) as fo:
+                        file_config = self.read(fo, mode)
+                except OSError as e:
+                    msg = "Failed to read configuration: %s" % (e,)
+                    raise UserError(msg)
 
         # Now merge all config sources.
         try:

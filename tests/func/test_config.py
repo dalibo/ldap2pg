@@ -66,3 +66,11 @@ def test_custom_yaml():
     # And that fixing file mode do the trick.
     chmod('0600', LDAP2PG_CONFIG)
     ldap2pg('--config', LDAP2PG_CONFIG, _env=ldapfree_env)
+
+
+def test_stdin():
+    from sh import ldap2pg
+
+    out = ldap2pg('--config=-', _in="- role: stdinuser")
+
+    assert b'stdinuser' in out.stderr
