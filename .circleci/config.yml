@@ -19,7 +19,7 @@ version: 2
   - run: |
       . .venv/bin/activate
       sort --check .gitignore
-      flake8 .
+      flake8 . tests/*/
       python setup.py --long-description | rst2html.py --strict >/dev/null
       pytest tests/unit/
       codecov
