@@ -13,8 +13,8 @@ state of the art code **quality** and nice **user experience**.
 
 - Configure multiples LDAP queries.
 - Customize Postgres role options (`LOGIN`, `SUPERUSER`, `REPLICATION`, etc.).
-- Creates, alter and drop roles.
-- Manager role members.
+- Create, alter and drop roles.
+- Manage role members.
 - Dry run to audit a cluster.
 
 
