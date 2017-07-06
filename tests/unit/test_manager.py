@@ -178,27 +178,110 @@ def test_process_entry_members(mocker):
     assert 'bob' in role.members
 
 
+def test_apply_grant_rule_noop(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager()
+
+    items = manager.apply_grant_rules(grant=dict(), entries=[])
+
+    assert not list(items)
+    assert gla.called is False
+
+
+def test_apply_grant_rule_ok(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager()
+
+    gla.side_effect = [['alice'], ['bob']]
+    items = manager.apply_grant_rules(
+        grant=dict(
+            acl='connect',
+            database='postgres',
+            schema='__common__',
+            role_attribute='cn',
+        ),
+        entries=[None, None],
+    )
+    items = list(items)
+    assert 2 == len(items)
+    assert 'alice' == items[0].role
+    assert 'postgres' == items[0].dbname
+    # Ensure __common__ schema is mapped to None
+    assert items[0].schema is None
+    assert 'bob' == items[1].role
+
+
+def test_apply_grant_rule_nodb(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager()
+
+    gla.return_value = ['alice']
+    with pytest.raises(ValueError):
+        list(manager.apply_grant_rules(
+            grant=dict(
+                acl='connect',
+                database='__common__', schema='__common__',
+                role_attribute='cn',
+            ),
+            entries=[None],
+        ))
+
+
+def test_apply_grant_rule_static(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import RoleManager
+
+    manager = RoleManager()
+
+    gla.return_value = ['alice']
+    items = list(manager.apply_grant_rules(
+        grant=dict(
+            acl='connect', database='postgres', schema='app',
+            role_attribute='cn',
+        ),
+        entries=[None],
+    ))
+    assert 1 == len(items)
+    item = items[0]
+    assert 'postgres' == item.dbname
+    assert 'app' == item.schema
+
+
 def test_inspect_acls(mocker):
+    mod = 'ldap2pg.manager.'
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    dbl = mocker.patch('ldap2pg.manager.RoleManager.fetch_database_list', autospec=True)
+    dbl = mocker.patch(mod + 'RoleManager.fetch_database_list', autospec=True)
     dbl.return_value = ['postgres']
-    mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles', autospec=True)
-    a = mocker.patch('ldap2pg.manager.RoleManager.process_pg_acl_items', autospec=True)
+    mocker.patch(mod + 'RoleManager.process_pg_roles', autospec=True)
+    pa = mocker.patch(mod + 'RoleManager.process_pg_acl_items', autospec=True)
+    la = mocker.patch(mod + 'RoleManager.apply_grant_rules', autospec=True)
 
     from ldap2pg.manager import RoleManager, AclItem
     from ldap2pg.acl import Acl
 
     acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
-    a.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+    pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+    la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
 
     manager = RoleManager(psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict)
-    syncmap = dict()
+    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
-    databases, _, pgacls, _, _ = manager.inspect(syncmap=syncmap)
+    databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)
 
     assert 1 == len(pgacls)
+    assert 1 == len(ldapacls)
 
 
 def test_inspect_roles(mocker):
