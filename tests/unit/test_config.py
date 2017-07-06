@@ -268,6 +268,9 @@ def test_process_ldapquery():
 def test_process_rolerule():
     from ldap2pg.config import rolerule
 
+    rule = rolerule('aline')
+    assert 'aline' == rule['names'][0]
+
     rule = rolerule(dict(name='rolname', parent='parent'))
     assert ['rolname'] == rule['names']
     assert ['parent'] == rule['parents']

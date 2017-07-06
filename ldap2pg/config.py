@@ -89,6 +89,9 @@ def ldapquery(value):
 def rolerule(value):
     rule = value
 
+    if isinstance(rule, string_types):
+        rule = dict(names=[rule])
+
     if 'name' in rule:
         rule['names'] = rule.pop('name')
     if 'names' in rule and isinstance(rule['names'], string_types):
@@ -151,7 +154,7 @@ def mapping(value):
         value['roles'] = value['role']
     if 'roles' not in value:
         value['roles'] = []
-    if isinstance(value['roles'], dict):
+    if isinstance(value['roles'], string_types + (dict,)):
         value['roles'] = [value['roles']]
 
     value['roles'] = [rolerule(r) for r in value['roles']]
