@@ -9,6 +9,8 @@ DROP DATABASE IF EXISTS backend;
 DROP DATABASE IF EXISTS frontend;
 DELETE FROM pg_catalog.pg_auth_members;
 DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
+REVOKE TEMPORARY ON DATABASE postgres FROM PUBLIC;
+REVOKE TEMPORARY ON DATABASE template1 FROM PUBLIC;
 
 -- Create role as it should be. for NOOP
 CREATE ROLE backend NOLOGIN;
