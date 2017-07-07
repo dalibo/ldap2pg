@@ -89,6 +89,9 @@ def ldapquery(value):
 def rolerule(value):
     rule = value
 
+    if isinstance(rule, string_types):
+        rule = dict(names=[rule])
+
     if 'name' in rule:
         rule['names'] = rule.pop('name')
     if 'names' in rule and isinstance(rule['names'], string_types):
@@ -144,6 +147,9 @@ def mapping(value):
     # A single mapping from a query to a set of role rules. This function
     # translate random YAML to cannonical schema.
 
+    if not isinstance(value, dict):
+        raise ValueError("Mapping should be a dict.")
+
     if 'ldap' in value:
         value['ldap'] = ldapquery(value['ldap'])
 
@@ -151,7 +157,7 @@ def mapping(value):
         value['roles'] = value['role']
     if 'roles' not in value:
         value['roles'] = []
-    if isinstance(value['roles'], dict):
+    if isinstance(value['roles'], string_types + (dict,)):
         value['roles'] = [value['roles']]
 
     value['roles'] = [rolerule(r) for r in value['roles']]
@@ -219,6 +225,9 @@ def syncmap(value):
 
     if ismapping(value):
         value = dict(__common__=[value])
+
+    if not isinstance(value, dict):
+        raise ValueError("Illegal value for sync_map.")
 
     for dbname, ivalue in value.items():
         if isinstance(ivalue, list):
@@ -423,7 +432,10 @@ class Configuration(dict):
 
     def find_filename(self, environ=os.environ, args=None):
         custom = getattr(args, 'config', environ.get('LDAP2PG_CONFIG'))
-        if custom:
+
+        if '-' == custom:
+            return custom, 0o400
+        elif custom:
             candidates = [custom]
         else:
             candidates = self._file_candidates
@@ -474,18 +486,22 @@ class Configuration(dict):
 
         # File loading.
         try:
-            filename, mode = self.find_filename(environ=os.environ, args=args)
+            filename, mode = self.find_filename(os.environ, args)
         except NoConfigurationError:
             logger.debug("No configuration file found.")
             file_config = {}
         else:
-            logger.info("Using %s.", filename)
-            try:
-                with open(filename) as fo:
-                    file_config = self.read(fo, mode)
-            except OSError as e:
-                msg = "Failed to read configuration: %s" % (e,)
-                raise UserError(msg)
+            if filename == '-':
+                logger.info("Reading configuration from stdin.")
+                file_config = self.read(sys.stdin, mode)
+            else:
+                logger.info("Using %s.", filename)
+                try:
+                    with open(filename) as fo:
+                        file_config = self.read(fo, mode)
+                except OSError as e:
+                    msg = "Failed to read configuration: %s" % (e,)
+                    raise UserError(msg)
 
         # Now merge all config sources.
         try:
@@ -507,8 +523,10 @@ class Configuration(dict):
 
     def read(self, fo, mode):
         payload = yaml.load(fo) or {}
+        if isinstance(payload, list):
+            payload = dict(sync_map=payload)
         if not isinstance(payload, dict):
-            raise ConfigurationError("Configuration file must be a mapping")
+            raise ConfigurationError("Configuration file must be a mapping.")
         payload['world_readable'] = bool(mode & 0o077)
         return payload
 

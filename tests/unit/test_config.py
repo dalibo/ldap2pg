@@ -246,6 +246,14 @@ def test_process_syncmap():
     with pytest.raises(ValueError):
         syncmap(raw)
 
+    bad_fixtures = [
+        'string_value',
+        [None],
+    ]
+    for raw in bad_fixtures:
+        with pytest.raises(ValueError):
+            syncmap(raw)
+
 
 def test_process_mapping_grant():
     from ldap2pg.config import mapping
@@ -267,6 +275,9 @@ def test_process_ldapquery():
 
 def test_process_rolerule():
     from ldap2pg.config import rolerule
+
+    rule = rolerule('aline')
+    assert 'aline' == rule['names'][0]
 
     rule = rolerule(dict(name='rolname', parent='parent'))
     assert ['rolname'] == rule['names']
@@ -348,6 +359,19 @@ def test_find_filename_custom(mocker):
     assert filename.endswith('argv.yml')
 
 
+def test_find_filename_stdin():
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    filename, mode = config.find_filename(
+        environ=dict(LDAP2PG_CONFIG='-'),
+    )
+
+    assert '-' == filename
+    assert 0o400 == mode
+
+
 def test_merge_and_mappings():
     from ldap2pg.config import Configuration
 
@@ -417,10 +441,9 @@ def test_read_yml():
 
     config = Configuration()
 
-    # Deny list file
-    fo = StringIO("- listentry")
-    with pytest.raises(ConfigurationError):
-        config.read(fo, mode=0o0)
+    fo = StringIO("- role: alice")
+    payload = config.read(fo, mode=0o0)
+    assert 'sync_map' in payload
 
     fo = StringIO("entry: value")
     payload = config.read(fo, mode=0o644)
@@ -432,12 +455,15 @@ def test_read_yml():
     payload = config.read(fo, mode=0o600)
     assert payload['world_readable'] is False
 
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("bad_value")
+        payload = config.read(fo, mode=0o600)
 
-def test_load(mocker):
+
+def test_load_badfiles(mocker):
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
-    read = mocker.patch('ldap2pg.config.Configuration.read')
     o = mocker.patch('ldap2pg.config.open', create=True)
 
     from ldap2pg.config import (
@@ -463,10 +489,40 @@ def test_load(mocker):
     with pytest.raises(UserError):
         config.load(argv=[])
 
-    # Readable..
-    o.side_effect = None
-    # ...containing mapping
-    read.return_value = dict(sync_map=dict(ldap=dict(), role=dict()))
+
+def test_load_stdin(mocker):
+    environ = dict()
+    mocker.patch('ldap2pg.config.os.environ', environ)
+    ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
+    mocker.patch('ldap2pg.config.open', create=True)
+    read = mocker.patch('ldap2pg.config.Configuration.read')
+
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    ff.return_value = ['-', 0o400]
+    read.return_value = dict(sync_map=[dict(role='alice')])
+
+    config.load(argv=[])
+
+    maplist = config['sync_map']['__common__']['__common__']
+    assert 1 == len(maplist)
+
+
+def test_load_file(mocker):
+    environ = dict()
+    mocker.patch('ldap2pg.config.os.environ', environ)
+    ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
+    mocker.patch('ldap2pg.config.open', create=True)
+    read = mocker.patch('ldap2pg.config.Configuration.read')
+
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    ff.return_value = ['filename.yml', 0o0]
+    read.return_value = dict(sync_map=[dict(role='alice')])
     # send one env var for LDAP bind
     environ.update(dict(LDAP_BIND='envbind'))
 
@@ -475,5 +531,4 @@ def test_load(mocker):
     assert 'envbind' == config['ldap']['bind']
     maplist = config['sync_map']['__common__']['__common__']
     assert 1 == len(maplist)
-    assert 'ldap' in maplist[0]
     assert config['verbose'] is True
