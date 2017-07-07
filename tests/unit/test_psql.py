@@ -22,6 +22,10 @@ def test_psql(mocker):
         rows = session('SQL')
         assert rows
 
+    connect.reset_mock()
+    with session:
+        assert connect.called is False
+
     del psql, session
 
     assert cursor.close.called is True

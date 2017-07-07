@@ -57,7 +57,9 @@ class PSQLSession(object):
             self.conn = None
 
     def __enter__(self):
-        if not self.conn:
+        if self.conn:
+            logger.debug("Using Postgres connection to %s.", self.connstring)
+        else:
             logger.debug("Connecting to Postgres %s.", self.connstring)
             self.conn = psycopg2.connect(self.connstring)
         if not self.cursor:
