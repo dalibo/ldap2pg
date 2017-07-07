@@ -484,6 +484,8 @@ class Configuration(dict):
             self['color'] = getattr(args, 'color', self['color'])
             logging.config.dictConfig(self.logging_dict())
 
+        logger.info("Starting ldap2pg %s.", __version__)
+
         # File loading.
         try:
             filename, mode = self.find_filename(os.environ, args)

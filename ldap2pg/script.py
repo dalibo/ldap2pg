@@ -9,7 +9,6 @@ import sys
 import ldap3
 import psycopg2
 
-from . import __version__
 from .config import Configuration, ConfigurationError
 from .manager import RoleManager
 from .psql import PSQL
@@ -72,8 +71,6 @@ def main():
     config['verbose'] = debug or verbose
     config['color'] = sys.stderr.isatty()
     logging.config.dictConfig(config.logging_dict())
-
-    logger.info("Starting ldap2pg %s.", __version__)
 
     try:
         wrapped_main(config)
