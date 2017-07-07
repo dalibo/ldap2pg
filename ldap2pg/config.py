@@ -125,15 +125,24 @@ def grantrule(value):
         raise ValueError('Missing acl to grant rule.')
 
     allowed_keys = set([
-        'acl', 'database', 'schema', 'role_match', 'role_attribute',
+        'acl', 'database', 'schema',
+        'role', 'roles', 'role_match', 'role_attribute',
     ])
     defined_keys = set(value.keys())
 
     if defined_keys - allowed_keys:
         msg = 'Unknown parameter to grant rules: %s' % (
-            ', '.join(allowed_keys - defined_keys)
+            ', '.join(defined_keys - allowed_keys)
         )
         raise ValueError(msg)
+
+    if 'role' in value:
+        value['roles'] = value.pop('role')
+    if 'roles' in value and isinstance(value['roles'], string_types):
+        value['roles'] = [value['roles']]
+
+    if 'roles' not in value and 'role_attribute' not in value:
+        raise ValueError('Missing role in grant rule.')
 
     return value
 

@@ -1,12 +1,13 @@
 from .psql import Query
+from .utils import AllDatabases
 
 
 class Acl(object):
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
         self.inspect = inspect
-        self._grant = grant
-        self._revoke = revoke
+        self.grant_sql = grant
+        self.revoke_sql = revoke
 
     def __lt__(self, other):
         return str(self) < str(other)
@@ -21,7 +22,7 @@ class Acl(object):
         return Query(
             "Grant %s." % (item,),
             item.dbname,
-            self._grant % dict(
+            self.grant_sql % dict(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,
@@ -32,7 +33,7 @@ class Acl(object):
         return Query(
             "Revoke %s." % (item,),
             item.dbname,
-            self._revoke % dict(
+            self.revoke_sql % dict(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,
@@ -41,6 +42,8 @@ class Acl(object):
 
 
 class AclItem(object):
+    ALL_DATABASES = AllDatabases()
+
     @classmethod
     def from_row(cls, *args):
         return cls(*args)
@@ -72,6 +75,21 @@ class AclItem(object):
     def as_tuple(self):
         return (self.acl, self.dbname, self.schema, self.role)
 
+    def expand(self, databases):
+        if self.dbname is self.ALL_DATABASES:
+            for dbname in databases:
+                yield self.__class__(
+                    acl=self.acl,
+                    dbname=dbname,
+                    schema=self.schema,
+                    role=self.role,
+                )
+        else:
+            yield self
+
 
 class AclSet(set):
-    pass
+    def expanditems(self, databases):
+        for item in self:
+            for expansion in item.expand(databases):
+                yield expansion

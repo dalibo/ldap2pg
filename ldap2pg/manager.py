@@ -92,11 +92,11 @@ class SyncManager(object):
                     )
                 yield role
 
-    def process_pg_acl_items(self, acl, rows):
-        for row in rows:
-            if match(row[2], self._blacklist):
+    def process_pg_acl_items(self, acl, dbname, rows):
+        for schema, role in rows:
+            if match(role, self._blacklist):
                 continue
-            yield AclItem.from_row(acl, *row)
+            yield AclItem.from_row(acl, dbname, schema, role)
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -164,14 +164,18 @@ class SyncManager(object):
             acl = rule.get('acl')
             database = rule.get('database', dbname)
             if database == '__common__':
-                raise ValueError("You must associate an ACL to a database.")
+                database = AclItem.ALL_DATABASES
             schema = rule.get('schema', schema)
             if schema == '__common__':
                 schema = None
             pattern = rule.get('role_match')
 
             for entry in entries:
-                for role in get_ldap_attribute(entry, rule['role_attribute']):
+                if 'roles' in rule:
+                    roles = rule['roles']
+                else:
+                    roles = get_ldap_attribute(entry, rule['role_attribute'])
+                for role in roles:
                     if pattern and not fnmatch(role, pattern):
                         logger.debug(
                             "Don't grand %s to %s not matching %s",
@@ -190,10 +194,16 @@ class SyncManager(object):
         # Inspect ACLs
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
+            logger.debug("Searching items of ACL %s.", acl)
             for dbname, psql in self.psql.itersessions(databases):
-                logger.debug("Searching items of ACL %s in %s.", acl, dbname)
+                if not acl.inspect:
+                    logger.warn(
+                        "Can't inspect ACL %s: query not defined.", acl,
+                    )
+                    continue
+
                 rows = psql(acl.inspect)
-                for aclitem in self.process_pg_acl_items(name, rows):
+                for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
@@ -217,8 +227,9 @@ class SyncManager(object):
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)
 
-        logger.debug("LDAP inspection completed. Resolving memberships.")
+        logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
+        ldapacls = AclSet(list(ldapacls.expanditems(databases)))
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 
@@ -231,6 +242,9 @@ class SyncManager(object):
         spurious = sorted(list(spurious))
         for aclname, aclitems in groupby(spurious, lambda i: i.acl):
             acl = self.acl_dict[aclname]
+            if not acl.grant_sql:
+                logger.warn("Can't revoke ACL %s: query not defined.", acl)
+                continue
             for aclitem in aclitems:
                 yield acl.revoke(aclitem)
 
@@ -261,6 +275,9 @@ class SyncManager(object):
         missing = sorted(list(missing))
         for aclname, aclitems in groupby(missing, lambda i: i.acl):
             acl = self.acl_dict[aclname]
+            if not acl.grant_sql:
+                logger.warn("Can't grant ACL %s: query not defined.", acl)
+                continue
             for aclitem in aclitems:
                 yield acl.grant(aclitem)
 

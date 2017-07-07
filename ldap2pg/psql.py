@@ -4,7 +4,7 @@ import logging
 
 import psycopg2
 
-from .utils import UserError
+from .utils import AllDatabases, UserError
 
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,9 @@ class PSQLSession(object):
             self.conn = None
 
     def __enter__(self):
-        if not self.conn:
+        if self.conn:
+            logger.debug("Using Postgres connection to %s.", self.connstring)
+        else:
             logger.debug("Connecting to Postgres %s.", self.connstring)
             self.conn = psycopg2.connect(self.connstring)
         if not self.cursor:
@@ -79,10 +81,6 @@ class PSQLSession(object):
 
 
 class Query(object):
-    class AllDatabases(object):
-        def __repr__(self):
-            return '__ALL_DATABASES__'
-
     ALL_DATABASES = AllDatabases()
 
     def __init__(self, message, dbname, *args):
