@@ -187,6 +187,9 @@ def test_process_grant():
     with pytest.raises(ValueError):
         grantrule(dict(acl='toto', spurious_attribute=True))
 
+    with pytest.raises(ValueError):
+        grantrule(dict(acl='missing role*'))
+
     grantrule(dict(
         acl='ro',
         database='postgres',
@@ -258,7 +261,7 @@ def test_process_syncmap():
 def test_process_mapping_grant():
     from ldap2pg.config import mapping
 
-    mapping(dict(grant=dict(acl='ro')))
+    mapping(dict(grant=dict(acl='ro', role='alice')))
 
 
 def test_process_ldapquery():
