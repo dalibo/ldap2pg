@@ -131,7 +131,7 @@ def grantrule(value):
 
     if defined_keys - allowed_keys:
         msg = 'Unknown parameter to grant rules: %s' % (
-            ', '.join(allowed_keys - defined_keys)
+            ', '.join(defined_keys - allowed_keys)
         )
         raise ValueError(msg)
 
