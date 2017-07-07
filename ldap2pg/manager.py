@@ -242,7 +242,7 @@ class SyncManager(object):
         spurious = sorted(list(spurious))
         for aclname, aclitems in groupby(spurious, lambda i: i.acl):
             acl = self.acl_dict[aclname]
-            if not acl.grant_sql:
+            if not acl.revoke_sql:
                 logger.warn("Can't revoke ACL %s: query not defined.", acl)
                 continue
             for aclitem in aclitems:

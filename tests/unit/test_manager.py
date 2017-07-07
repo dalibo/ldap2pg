@@ -328,19 +328,20 @@ def test_diff_acls(mocker):
     from ldap2pg.manager import SyncManager
 
     acl = Acl(name='connect', revoke='REVOKE %(role)s', grant='GRANT %(role)s')
-    noquery = Acl(name='noquery')
-    m = SyncManager(acl_dict={acl.name: acl, noquery.name: noquery})
+    nogrant = Acl(name='nogrant', revoke='REVOKE')
+    norvk = Acl(name='norvk', grant='GRANT')
+    m = SyncManager(acl_dict={a.name: a for a in [acl, nogrant, norvk]})
 
     item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
     pgacls = set([
         item0,
         AclItem(acl=acl.name, dbname='backend', role='alice'),
-        AclItem(acl=noquery.name, role='torevoke'),
+        AclItem(acl=norvk.name, role='torevoke'),
     ])
     ldapacls = set([
         item0,
         AclItem(acl=acl.name, dbname='backend', role='david'),
-        AclItem(acl=noquery.name, role='togrant'),
+        AclItem(acl=nogrant.name, role='togrant'),
     ])
 
     queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]
