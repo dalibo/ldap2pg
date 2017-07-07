@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
@@ -169,9 +170,16 @@ class SyncManager(object):
         schema = grant['schema']
         if schema == '__common__':
             schema = None
+        pattern = grant.get('role_match')
 
         for entry in entries:
             for role in get_ldap_attribute(entry, grant['role_attribute']):
+                if pattern and not fnmatch(role, pattern):
+                    logger.debug(
+                        "Don't grand %s to %s not matching %s",
+                        acl, role, pattern,
+                    )
+                    continue
                 yield AclItem(acl, database, schema, role)
 
     def inspect(self, syncmap):

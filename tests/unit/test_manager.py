@@ -219,6 +219,27 @@ def test_apply_grant_rule_ok(mocker):
     assert 'bob' == items[1].role
 
 
+def test_apply_grant_rule_filter(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import SyncManager
+
+    gla.return_value = ['alice_r', 'bob_rw']
+    items = SyncManager().apply_grant_rules(
+        grant=dict(
+            acl='connect',
+            database='postgres',
+            schema='__common__',
+            role_match='*_r',
+            role_attribute='cn',
+        ),
+        entries=[None],
+    )
+    items = list(items)
+    assert 1 == len(items)
+    assert 'alice_r' == items[0].role
+
+
 def test_apply_grant_rule_nodb(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 

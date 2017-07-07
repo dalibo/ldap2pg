@@ -124,7 +124,9 @@ def grantrule(value):
     if 'acl' not in value:
         raise ValueError('Missing acl to grant rule.')
 
-    allowed_keys = set(['acl', 'database', 'schema', 'role_attribute'])
+    allowed_keys = set([
+        'acl', 'database', 'schema', 'role_match', 'role_attribute',
+    ])
     defined_keys = set(value.keys())
 
     if defined_keys - allowed_keys:
