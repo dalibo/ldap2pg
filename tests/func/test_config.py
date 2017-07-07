@@ -16,7 +16,7 @@ def test_various_arguments():
     ldap2pg('-vn', '--color')
 
 
-def test_versionned_yaml():
+def test_versionned_yaml(dev):
     from sh import ldap2pg
 
     ldap2pg(config='ldap2pg.yml')

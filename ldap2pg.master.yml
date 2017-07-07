@@ -110,6 +110,11 @@ sync_map:
       # lowering inputs.
       name: LDAP_USERS
       options: NOLOGIN
+  # Static ACL definition: allows backend team to connect to legacy database.
+  - grant:
+      role: backend
+      acl: connect
+      database: legacy
   # Second mapping, from an LDAP query.
   - ldap:
       base: cn=dba,ou=groups,dc=ldap2pg,dc=local
