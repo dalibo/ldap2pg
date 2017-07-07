@@ -190,8 +190,8 @@ class SyncManager(object):
         # Inspect ACLs
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
+            logger.debug("Searching items of ACL %s.", acl)
             for dbname, psql in self.psql.itersessions(databases):
-                logger.debug("Searching items of ACL %s in %s.", acl, dbname)
                 rows = psql(acl.inspect)
                 for aclitem in self.process_pg_acl_items(name, rows):
                     logger.debug("Found ACL item %s.", aclitem)
