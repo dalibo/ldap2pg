@@ -165,7 +165,9 @@ def mapping(value):
     value['roles'] = [rolerule(r) for r in value['roles']]
 
     if 'grant' in value:
-        value['grant'] = grantrule(value['grant'])
+        if isinstance(value['grant'], dict):
+            value['grant'] = [value['grant']]
+        value['grant'] = [grantrule(g) for g in value['grant']]
 
     if not value['roles'] and 'grant' not in value:
         # Don't accept unused LDAP queries.
