@@ -9,9 +9,8 @@ import sys
 import ldap3
 import psycopg2
 
-from . import __version__
 from .config import Configuration, ConfigurationError
-from .manager import RoleManager
+from .manager import SyncManager
 from .psql import PSQL
 from .utils import UserError
 
@@ -46,7 +45,7 @@ def wrapped_main(config=None):
         logger.warn("Running in real mode.")
 
     psql = PSQL(connstring=config['postgres']['dsn'])
-    manager = RoleManager(
+    manager = SyncManager(
         ldapconn=ldapconn, psql=psql,
         acl_dict=config['acl_dict'],
         blacklist=config['postgres']['blacklist'],
@@ -72,8 +71,6 @@ def main():
     config['verbose'] = debug or verbose
     config['color'] = sys.stderr.isatty()
     logging.config.dictConfig(config.logging_dict())
-
-    logger.info("Starting ldap2pg %s.", __version__)
 
     try:
         wrapped_main(config)

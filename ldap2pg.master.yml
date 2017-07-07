@@ -153,4 +153,5 @@ sync_map:
       grant:
         acl: connect
         schema: null
+        role_match: d*
         role_attribute: member.cn

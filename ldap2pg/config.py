@@ -124,11 +124,13 @@ def grantrule(value):
     if 'acl' not in value:
         raise ValueError('Missing acl to grant rule.')
 
-    allowed_keys = set(['acl', 'database', 'schema', 'role_attribute'])
+    allowed_keys = set([
+        'acl', 'database', 'schema', 'role_match', 'role_attribute',
+    ])
     defined_keys = set(value.keys())
 
     if defined_keys - allowed_keys:
-        msg = 'Spurious parameters to grant rules: %s' % (
+        msg = 'Unknown parameter to grant rules: %s' % (
             ', '.join(allowed_keys - defined_keys)
         )
         raise ValueError(msg)
@@ -483,6 +485,8 @@ class Configuration(dict):
             self['verbose'] = getattr(args, 'verbose', self['verbose'])
             self['color'] = getattr(args, 'color', self['color'])
             logging.config.dictConfig(self.logging_dict())
+
+        logger.info("Starting ldap2pg %s.", __version__)
 
         # File loading.
         try:

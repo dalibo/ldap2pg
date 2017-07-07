@@ -27,13 +27,15 @@ def test_real_mode(dev, ldap, psql):
     print(ldap2pg('-vN', c='ldap2pg.master.yml'))
 
     roles = list(psql.roles())
+    frontend = list(psql.members('frontend'))
+
     assert 'alan' in roles
     assert 'oscar' not in roles
 
     assert 'alice' in psql.superusers()
 
     assert 'dave' in psql.members('backend')
-    assert 'david' in psql.members('frontend')
+    assert 'david' in frontend
     assert 'alice' in psql.members('ldap_users')
 
     # Assert that table keepme owned by deleted user spurious is not dropped!
@@ -44,6 +46,12 @@ def test_real_mode(dev, ldap, psql):
         psql(U='daniel', d='backend', c='SELECT CURRENT_USER')
     # Assert daniel can now connect to frontend
     psql(U='daniel', d='frontend', c='SELECT CURRENT_USER')
+
+    # Assert carole can't connect even if she is in groups. This check
+    # role_match pattern.
+    assert 'carole' in frontend
+    with pytest.raises(ErrorReturnCode):
+        psql(U='carole', d='frontend', c='SELECT CURRENT_USER')
 
 
 def test_nothing_to_do():
