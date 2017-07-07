@@ -6,9 +6,9 @@ import pytest
 
 
 def test_fetch_databases(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
     psql = mocker.Mock(name='psql')
     psql.return_value = mocker.MagicMock()
     psql.return_value.__iter__.return_value = [
@@ -24,9 +24,9 @@ def test_fetch_databases(mocker):
 
 
 def test_fetch_roles(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
     psql = mocker.Mock(name='psql')
     psql.return_value = mocker.MagicMock()
     psql.return_value.__iter__.return_value = r = [mocker.Mock()]
@@ -38,9 +38,9 @@ def test_fetch_roles(mocker):
 
 
 def test_process_roles_rows():
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager(blacklist=['pg_*', 'postgres'])
+    manager = SyncManager(blacklist=['pg_*', 'postgres'])
     rows = [
         ('postgres', []),
         ('pg_signal_backend', []),
@@ -55,9 +55,9 @@ def test_process_roles_rows():
 
 
 def test_process_acl_rows():
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager(blacklist=['pg_*', 'postgres'])
+    manager = SyncManager(blacklist=['pg_*', 'postgres'])
     rows = [
         ('postgres', None, 'postgres'),
         ('template1', None, 'pg_signal_backend'),
@@ -75,9 +75,9 @@ def test_process_acl_rows():
 
 
 def test_query_ldap(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager(ldapconn=mocker.Mock())
+    manager = SyncManager(ldapconn=mocker.Mock())
 
     manager.ldapconn.entries = [
         mocker.Mock(cn=mocker.Mock(value='alice')),
@@ -92,9 +92,9 @@ def test_query_ldap(mocker):
 
 
 def test_query_ldap_bad_filter(mocker):
-    from ldap2pg.manager import RoleManager, LDAPExceptionError, UserError
+    from ldap2pg.manager import SyncManager, LDAPExceptionError, UserError
 
-    manager = RoleManager(ldapconn=mocker.Mock())
+    manager = SyncManager(ldapconn=mocker.Mock())
     manager.ldapconn.search.side_effect = LDAPExceptionError()
 
     with pytest.raises(UserError):
@@ -104,9 +104,9 @@ def test_query_ldap_bad_filter(mocker):
 
 
 def test_process_entry_static():
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     roles = manager.process_ldap_entry(
         entry=None, names=['ALICE'], parents=['postgres'],
@@ -120,9 +120,9 @@ def test_process_entry_static():
 
 
 def test_process_entry_user(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     entry = mocker.Mock(entry_attributes_as_dict=dict(cn=['alice', 'bob']))
 
@@ -139,9 +139,9 @@ def test_process_entry_user(mocker):
 
 
 def test_process_entry_dn(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     entry = mocker.Mock(
         entry_attributes_as_dict=dict(
@@ -158,9 +158,9 @@ def test_process_entry_dn(mocker):
 
 
 def test_process_entry_members(mocker):
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     entry = mocker.Mock(
         entry_attributes_as_dict=dict(
@@ -183,9 +183,9 @@ def test_process_entry_members(mocker):
 def test_apply_grant_rule_noop(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     items = manager.apply_grant_rules(grant=dict(), entries=[])
 
@@ -196,9 +196,9 @@ def test_apply_grant_rule_noop(mocker):
 def test_apply_grant_rule_ok(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     gla.side_effect = [['alice'], ['bob']]
     items = manager.apply_grant_rules(
@@ -222,9 +222,9 @@ def test_apply_grant_rule_ok(mocker):
 def test_apply_grant_rule_nodb(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     gla.return_value = ['alice']
     with pytest.raises(ValueError):
@@ -241,9 +241,9 @@ def test_apply_grant_rule_nodb(mocker):
 def test_apply_grant_rule_static(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
-    manager = RoleManager()
+    manager = SyncManager()
 
     gla.return_value = ['alice']
     items = list(manager.apply_grant_rules(
@@ -264,20 +264,20 @@ def test_inspect_acls(mocker):
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    dbl = mocker.patch(mod + 'RoleManager.fetch_database_list', autospec=True)
+    dbl = mocker.patch(mod + 'SyncManager.fetch_database_list', autospec=True)
     dbl.return_value = ['postgres']
-    mocker.patch(mod + 'RoleManager.process_pg_roles', autospec=True)
-    pa = mocker.patch(mod + 'RoleManager.process_pg_acl_items', autospec=True)
-    la = mocker.patch(mod + 'RoleManager.apply_grant_rules', autospec=True)
+    mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
+    pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
+    la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
-    from ldap2pg.manager import RoleManager, AclItem
+    from ldap2pg.manager import SyncManager, AclItem
     from ldap2pg.acl import Acl
 
     acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
     pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
     la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
 
-    manager = RoleManager(psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict)
+    manager = SyncManager(psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict)
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)
@@ -287,18 +287,18 @@ def test_inspect_acls(mocker):
 
 
 def test_inspect_roles(mocker):
-    p = mocker.patch('ldap2pg.manager.RoleManager.process_pg_roles')
-    l = mocker.patch('ldap2pg.manager.RoleManager.query_ldap')
-    r = mocker.patch('ldap2pg.manager.RoleManager.process_ldap_entry')
+    p = mocker.patch('ldap2pg.manager.SyncManager.process_pg_roles')
+    l = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
+    r = mocker.patch('ldap2pg.manager.SyncManager.process_ldap_entry')
     psql = mocker.MagicMock()
 
-    from ldap2pg.manager import RoleManager, Role
+    from ldap2pg.manager import SyncManager, Role
 
     p.return_value = {Role(name='spurious')}
     l.return_value = [mocker.Mock(name='entry')]
     r.side_effect = [{Role(name='alice')}, {Role(name='bob')}]
 
-    manager = RoleManager(psql=psql, ldapconn=mocker.Mock())
+    manager = SyncManager(psql=psql, ldapconn=mocker.Mock())
     # Minimal effective syncmap
     syncmap = dict(db=dict(s=[
         dict(roles=[]),
@@ -314,9 +314,9 @@ def test_inspect_roles(mocker):
 
 
 def test_diff_roles(mocker):
-    from ldap2pg.manager import RoleManager, Role, RoleSet
+    from ldap2pg.manager import SyncManager, Role, RoleSet
 
-    m = RoleManager()
+    m = SyncManager()
 
     pgroles = RoleSet([
         Role('drop-me'),
@@ -338,10 +338,10 @@ def test_diff_roles(mocker):
 
 def test_diff_acls(mocker):
     from ldap2pg.acl import Acl, AclItem
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
     acl = Acl(name='connect', revoke='REVOKE %(role)s', grant='GRANT %(role)s')
-    m = RoleManager(acl_dict={acl.name: acl})
+    m = SyncManager(acl_dict={acl.name: acl})
 
     item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
     pgacls = set([
@@ -361,14 +361,14 @@ def test_diff_acls(mocker):
 
 
 def test_sync(mocker):
-    diff = mocker.patch('ldap2pg.manager.RoleManager.diff')
+    diff = mocker.patch('ldap2pg.manager.SyncManager.diff')
 
-    from ldap2pg.manager import RoleManager
+    from ldap2pg.manager import SyncManager
 
     psql = mocker.MagicMock()
     cursor = psql.return_value.__enter__.return_value
 
-    manager = RoleManager(psql=psql)
+    manager = SyncManager(psql=psql)
 
     # Simple diff with one query
     diff.return_value = qry = [mocker.Mock(name='qry', args=())]

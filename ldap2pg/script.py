@@ -10,7 +10,7 @@ import ldap3
 import psycopg2
 
 from .config import Configuration, ConfigurationError
-from .manager import RoleManager
+from .manager import SyncManager
 from .psql import PSQL
 from .utils import UserError
 
@@ -45,7 +45,7 @@ def wrapped_main(config=None):
         logger.warn("Running in real mode.")
 
     psql = PSQL(connstring=config['postgres']['dsn'])
-    manager = RoleManager(
+    manager = SyncManager(
         ldapconn=ldapconn, psql=psql,
         acl_dict=config['acl_dict'],
         blacklist=config['postgres']['blacklist'],

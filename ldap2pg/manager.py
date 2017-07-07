@@ -35,7 +35,7 @@ def get_ldap_attribute(entry, attribute):
         yield value
 
 
-class RoleManager(object):
+class SyncManager(object):
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, blacklist=[],
