@@ -92,11 +92,11 @@ class SyncManager(object):
                     )
                 yield role
 
-    def process_pg_acl_items(self, acl, rows):
-        for row in rows:
-            if match(row[2], self._blacklist):
+    def process_pg_acl_items(self, acl, dbname, rows):
+        for schema, role in rows:
+            if match(role, self._blacklist):
                 continue
-            yield AclItem.from_row(acl, *row)
+            yield AclItem.from_row(acl, dbname, schema, role)
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
@@ -203,7 +203,7 @@ class SyncManager(object):
                     continue
 
                 rows = psql(acl.inspect)
-                for aclitem in self.process_pg_acl_items(name, rows):
+                for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 

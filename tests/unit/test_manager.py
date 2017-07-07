@@ -59,17 +59,17 @@ def test_process_acl_rows():
 
     manager = SyncManager(blacklist=['pg_*', 'postgres'])
     rows = [
-        ('postgres', None, 'postgres'),
-        ('template1', None, 'pg_signal_backend'),
-        ('backend', 'public', 'alice'),
+        (None, 'postgres'),
+        (None, 'pg_signal_backend'),
+        ('public', 'alice'),
     ]
 
-    items = list(manager.process_pg_acl_items('connect', rows))
+    items = list(manager.process_pg_acl_items('connect', 'postgres', rows))
 
     assert 1 == len(items)
     item = items[0]
     assert 'connect' == item.acl
-    assert 'backend' == item.dbname
+    assert 'postgres' == item.dbname
     assert 'public' == item.schema
     assert 'alice' == item.role
 

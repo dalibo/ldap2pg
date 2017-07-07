@@ -59,19 +59,18 @@ acl_dict:
     inspect: |
       WITH d AS (
           SELECT
-              datname,
               (aclexplode(datacl)).grantee AS grantee,
               (aclexplode(datacl)).privilege_type AS priv
           FROM pg_catalog.pg_database
           WHERE datname = current_database()
       )
-      SELECT d0.datname as datname, NULL as namespace, 'public' as rolname
+      SELECT NULL AS namespace, 'public' AS rolname
       FROM d AS d0
       LEFT OUTER JOIN d AS d1 ON d1.grantee = d0.grantee AND d1.priv <> d0.priv
       WHERE d0.grantee = 0 AND d0.priv = 'TEMPORARY' AND d1.priv IS NULL
       UNION
       -- CONNECT ACL is not stored on template1 for PUBLIC. So fake it.
-      SELECT 'template1', NULL, 'public'
+      SELECT NULL AS namespace, 'public' AS rolname
       WHERE current_database() = 'template1'
     grant: |
       REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
@@ -80,13 +79,12 @@ acl_dict:
     inspect: |
       WITH d AS (
           SELECT
-              datname,
               (aclexplode(datacl)).grantee AS grantee,
               (aclexplode(datacl)).privilege_type AS priv
           FROM pg_catalog.pg_database
           WHERE datname = current_database()
       )
-      SELECT d.datname as datname, NULL as namespace, r.rolname
+      SELECT NULL as namespace, r.rolname
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
