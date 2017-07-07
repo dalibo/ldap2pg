@@ -180,19 +180,6 @@ def test_process_entry_members(mocker):
     assert 'bob' in role.members
 
 
-def test_apply_grant_rule_noop(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
-
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    items = manager.apply_grant_rules(grant=dict(), entries=[])
-
-    assert not list(items)
-    assert gla.called is False
-
-
 def test_apply_grant_rule_ok(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
@@ -202,12 +189,12 @@ def test_apply_grant_rule_ok(mocker):
 
     gla.side_effect = [['alice'], ['bob']]
     items = manager.apply_grant_rules(
-        grant=dict(
+        grant=[dict(
             acl='connect',
             database='postgres',
             schema='__common__',
             role_attribute='cn',
-        ),
+        )],
         entries=[None, None],
     )
     items = list(items)
@@ -226,13 +213,13 @@ def test_apply_grant_rule_filter(mocker):
 
     gla.return_value = ['alice_r', 'bob_rw']
     items = SyncManager().apply_grant_rules(
-        grant=dict(
+        grant=[dict(
             acl='connect',
             database='postgres',
             schema='__common__',
             role_match='*_r',
             role_attribute='cn',
-        ),
+        )],
         entries=[None],
     )
     items = list(items)
@@ -250,34 +237,13 @@ def test_apply_grant_rule_nodb(mocker):
     gla.return_value = ['alice']
     with pytest.raises(ValueError):
         list(manager.apply_grant_rules(
-            grant=dict(
+            grant=[dict(
                 acl='connect',
                 database='__common__', schema='__common__',
                 role_attribute='cn',
-            ),
+            )],
             entries=[None],
         ))
-
-
-def test_apply_grant_rule_static(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
-
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    gla.return_value = ['alice']
-    items = list(manager.apply_grant_rules(
-        grant=dict(
-            acl='connect', database='postgres', schema='app',
-            role_attribute='cn',
-        ),
-        entries=[None],
-    ))
-    assert 1 == len(items)
-    item = items[0]
-    assert 'postgres' == item.dbname
-    assert 'app' == item.schema
 
 
 def test_inspect_acls(mocker):

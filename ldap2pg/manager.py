@@ -159,28 +159,26 @@ class SyncManager(object):
                 for role in self.process_ldap_entry(entry=entry, **rule):
                     yield role
 
-    def apply_grant_rules(self, grant, entries):
-        acl = grant.get('acl')
-        if not acl:
-            return
+    def apply_grant_rules(self, grant, dbname=None, schema=None, entries=[]):
+        for rule in grant:
+            acl = rule.get('acl')
+            database = rule.get('database', dbname)
+            if database == '__common__':
+                raise ValueError("You must associate an ACL to a database.")
+            schema = rule.get('schema', schema)
+            if schema == '__common__':
+                schema = None
+            pattern = rule.get('role_match')
 
-        database = grant['database']
-        if database == '__common__':
-            raise ValueError("You must associate an ACL to a database.")
-        schema = grant['schema']
-        if schema == '__common__':
-            schema = None
-        pattern = grant.get('role_match')
-
-        for entry in entries:
-            for role in get_ldap_attribute(entry, grant['role_attribute']):
-                if pattern and not fnmatch(role, pattern):
-                    logger.debug(
-                        "Don't grand %s to %s not matching %s",
-                        acl, role, pattern,
-                    )
-                    continue
-                yield AclItem(acl, database, schema, role)
+            for entry in entries:
+                for role in get_ldap_attribute(entry, rule['role_attribute']):
+                    if pattern and not fnmatch(role, pattern):
+                        logger.debug(
+                            "Don't grand %s to %s not matching %s",
+                            acl, role, pattern,
+                        )
+                        continue
+                    yield AclItem(acl, database, schema, role)
 
     def inspect(self, syncmap):
         logger.info("Inspecting Postgres...")
@@ -213,10 +211,9 @@ class SyncManager(object):
             for role in self.apply_role_rules(mapping['roles'], entries):
                 ldaproles.add(role)
 
-            grant = mapping.get('grant', {})
-            grant.setdefault('database', dbname)
-            grant.setdefault('schema', schema)
-            for aclitem in self.apply_grant_rules(grant, entries):
+            grant = mapping.get('grant', [])
+            aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
+            for aclitem in aclitems:
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)
 

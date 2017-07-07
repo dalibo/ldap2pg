@@ -151,7 +151,7 @@ sync_map:
         options: LOGIN
         parents: [LDAP_USERS]
       grant:
-        acl: connect
+      - acl: connect
         schema: null
         role_match: d*
         role_attribute: member.cn
