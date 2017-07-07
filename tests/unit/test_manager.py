@@ -227,20 +227,20 @@ def test_apply_grant_rule_filter(mocker):
 def test_apply_grant_rule_nodb(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import AclItem, SyncManager
 
     manager = SyncManager()
 
     gla.return_value = ['alice']
-    with pytest.raises(ValueError):
-        list(manager.apply_grant_rules(
-            grant=[dict(
-                acl='connect',
-                database='__common__', schema='__common__',
-                role_attribute='cn',
-            )],
-            entries=[None],
-        ))
+    items = list(manager.apply_grant_rules(
+        grant=[dict(
+            acl='connect',
+            database='__common__', schema='__common__',
+            role_attribute='cn',
+        )],
+        entries=[None],
+    ))
+    assert items[0].dbname is AclItem.ALL_DATABASES
 
 
 def test_inspect_acls(mocker):

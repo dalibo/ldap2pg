@@ -1,4 +1,5 @@
 from .psql import Query
+from .utils import AllDatabases
 
 
 class Acl(object):
@@ -41,6 +42,8 @@ class Acl(object):
 
 
 class AclItem(object):
+    ALL_DATABASES = AllDatabases()
+
     @classmethod
     def from_row(cls, *args):
         return cls(*args)
@@ -72,6 +75,21 @@ class AclItem(object):
     def as_tuple(self):
         return (self.acl, self.dbname, self.schema, self.role)
 
+    def expand(self, databases):
+        if self.dbname is self.ALL_DATABASES:
+            for dbname in databases:
+                yield self.__class__(
+                    acl=self.acl,
+                    dbname=dbname,
+                    schema=self.schema,
+                    role=self.role,
+                )
+        else:
+            yield self
+
 
 class AclSet(set):
-    pass
+    def expanditems(self, databases):
+        for item in self:
+            for expansion in item.expand(databases):
+                yield expansion

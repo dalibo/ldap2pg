@@ -55,6 +55,27 @@ postgres:
 # **ACL**
 #
 acl_dict:
+  defaults:
+    inspect: |
+      WITH d AS (
+          SELECT
+              datname,
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      )
+      SELECT d0.datname as datname, NULL as namespace, 'public' as rolname
+      FROM d AS d0
+      LEFT OUTER JOIN d AS d1 ON d1.grantee = d0.grantee AND d1.priv <> d0.priv
+      WHERE d0.grantee = 0 AND d0.priv = 'TEMPORARY' AND d1.priv IS NULL
+      UNION
+      -- CONNECT ACL is not stored on template1 for PUBLIC. So fake it.
+      SELECT 'template1', NULL, 'public'
+      WHERE current_database() = 'template1'
+    grant: |
+      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+
   connect:
     inspect: |
       WITH d AS (
@@ -85,6 +106,9 @@ sync_map:
   # Special database name to define global mapping
   __common__:
   # Here begin the list of mapping. The first one is static mapping.
+  - grant:
+      acl: defaults
+      role: public
   - role:
       # Static rule to create an extra roles not in LDAP. Here we create a
       # ldap_users role in which all roles defined here will belong to. See below.

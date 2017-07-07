@@ -1,6 +1,12 @@
 from fnmatch import fnmatch
 
 
+class AllDatabases(object):
+    # Simple object to represent dbname wildcard.
+    def __repr__(self):
+        return '__ALL_DATABASES__'
+
+
 def lower1(string):
     return string[0].lower() + string[1:]
 

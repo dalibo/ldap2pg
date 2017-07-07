@@ -164,7 +164,7 @@ class SyncManager(object):
             acl = rule.get('acl')
             database = rule.get('database', dbname)
             if database == '__common__':
-                raise ValueError("You must associate an ACL to a database.")
+                database = AclItem.ALL_DATABASES
             schema = rule.get('schema', schema)
             if schema == '__common__':
                 schema = None
@@ -227,8 +227,9 @@ class SyncManager(object):
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)
 
-        logger.debug("LDAP inspection completed. Resolving memberships.")
+        logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
+        ldapacls = AclSet(list(ldapacls.expanditems(databases)))
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 

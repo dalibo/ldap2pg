@@ -48,3 +48,14 @@ def test_revoke():
 
     assert 'REVOKE backend' in qry.args[0]
     assert 'daniel' in qry.args[0]
+
+
+def test_expand():
+    from ldap2pg.acl import AclItem
+
+    item = AclItem(acl='ro', dbname=AclItem.ALL_DATABASES)
+    items = list(item.expand(['postgres', 'template1']))
+
+    assert 2 == len(items)
+    assert 'postgres' == items[0].dbname
+    assert 'template1' == items[1].dbname
