@@ -128,7 +128,7 @@ def grantrule(value):
     defined_keys = set(value.keys())
 
     if defined_keys - allowed_keys:
-        msg = 'Spurious parameters to grant rules: %s' % (
+        msg = 'Unknown parameter to grant rules: %s' % (
             ', '.join(allowed_keys - defined_keys)
         )
         raise ValueError(msg)
