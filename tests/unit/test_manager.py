@@ -260,7 +260,10 @@ def test_inspect_acls(mocker):
     from ldap2pg.manager import SyncManager, AclItem
     from ldap2pg.acl import Acl
 
-    acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
+    acl_dict = dict(
+        noinspect=Acl(name='noinspect'),
+        ro=Acl(name='ro', inspect='SQL'),
+    )
     pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
     la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
 
@@ -328,16 +331,19 @@ def test_diff_acls(mocker):
     from ldap2pg.manager import SyncManager
 
     acl = Acl(name='connect', revoke='REVOKE %(role)s', grant='GRANT %(role)s')
-    m = SyncManager(acl_dict={acl.name: acl})
+    noquery = Acl(name='noquery')
+    m = SyncManager(acl_dict={acl.name: acl, noquery.name: noquery})
 
     item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
     pgacls = set([
         item0,
         AclItem(acl=acl.name, dbname='backend', role='alice'),
+        AclItem(acl=noquery.name, role='torevoke'),
     ])
     ldapacls = set([
         item0,
         AclItem(acl=acl.name, dbname='backend', role='david'),
+        AclItem(acl=noquery.name, role='togrant'),
     ])
 
     queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]

@@ -5,8 +5,8 @@ class Acl(object):
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
         self.inspect = inspect
-        self._grant = grant
-        self._revoke = revoke
+        self.grant_sql = grant
+        self.revoke_sql = revoke
 
     def __lt__(self, other):
         return str(self) < str(other)
@@ -21,7 +21,7 @@ class Acl(object):
         return Query(
             "Grant %s." % (item,),
             item.dbname,
-            self._grant % dict(
+            self.grant_sql % dict(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,
@@ -32,7 +32,7 @@ class Acl(object):
         return Query(
             "Revoke %s." % (item,),
             item.dbname,
-            self._revoke % dict(
+            self.revoke_sql % dict(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,

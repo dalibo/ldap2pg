@@ -192,6 +192,12 @@ class SyncManager(object):
         for name, acl in sorted(self.acl_dict.items()):
             logger.debug("Searching items of ACL %s.", acl)
             for dbname, psql in self.psql.itersessions(databases):
+                if not acl.inspect:
+                    logger.warn(
+                        "Can't inspect ACL %s: query not defined.", acl,
+                    )
+                    continue
+
                 rows = psql(acl.inspect)
                 for aclitem in self.process_pg_acl_items(name, rows):
                     logger.debug("Found ACL item %s.", aclitem)
@@ -231,6 +237,9 @@ class SyncManager(object):
         spurious = sorted(list(spurious))
         for aclname, aclitems in groupby(spurious, lambda i: i.acl):
             acl = self.acl_dict[aclname]
+            if not acl.grant_sql:
+                logger.warn("Can't revoke ACL %s: query not defined.", acl)
+                continue
             for aclitem in aclitems:
                 yield acl.revoke(aclitem)
 
@@ -261,6 +270,9 @@ class SyncManager(object):
         missing = sorted(list(missing))
         for aclname, aclitems in groupby(missing, lambda i: i.acl):
             acl = self.acl_dict[aclname]
+            if not acl.grant_sql:
+                logger.warn("Can't grant ACL %s: query not defined.", acl)
+                continue
             for aclitem in aclitems:
                 yield acl.grant(aclitem)
 
