@@ -31,8 +31,6 @@ def wrapped_main(config=None):
     logging_config = config.logging_dict()
     logging.config.dictConfig(logging_config)
 
-    logger.debug("Debug mode enabled.")
-
     try:
         ldapconn = create_ldap_connection(**config['ldap'])
     except ldap3.core.exceptions.LDAPExceptionError as e:
@@ -71,6 +69,7 @@ def main():
     config['verbose'] = debug or verbose
     config['color'] = sys.stderr.isatty()
     logging.config.dictConfig(config.logging_dict())
+    logger.debug("Debug mode enabled.")
 
     try:
         wrapped_main(config)
