@@ -92,7 +92,8 @@ def test_mapping():
     assert 'fileval' == v
 
     m = Mapping('my:option')
-    assert ['MY_OPTION'] == m.env
+    assert 'MY_OPTION' in m.env
+    assert 'MYOPTION' in m.env
 
     # Prefer env over file
     v = m.process(

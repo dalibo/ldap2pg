@@ -312,7 +312,7 @@ class Mapping(object):
 
         env = env or []
         if env == self._auto_env:
-            env = self.arg.upper()
+            env = [self.arg.upper(), self.path.upper().replace(':', '')]
         self.env = env
         if isinstance(self.env, string_types):
             self.env = [self.env]
