@@ -9,6 +9,7 @@ import sys
 import ldap3
 import psycopg2
 
+from . import ldap
 from .config import Configuration, ConfigurationError
 from .manager import SyncManager
 from .psql import PSQL
@@ -16,12 +17,6 @@ from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
-
-
-def create_ldap_connection(host, port, bind, password, **kw):
-    logger.debug("Connecting to LDAP server %s:%s.", host, port)
-    server = ldap3.Server(host, port, get_info=ldap3.ALL)
-    return ldap3.Connection(server, bind, password, auto_bind=True)
 
 
 def wrapped_main(config=None):
@@ -32,7 +27,7 @@ def wrapped_main(config=None):
     logging.config.dictConfig(logging_config)
 
     try:
-        ldapconn = create_ldap_connection(**config['ldap'])
+        ldapconn = ldap.connect(**config['ldap'])
     except ldap3.core.exceptions.LDAPExceptionError as e:
         message = "Failed to connect to LDAP: %s" % (e,)
         raise ConfigurationError(message)
