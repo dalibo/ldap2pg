@@ -66,10 +66,8 @@ class LDAP(object):
     # Helper to query LDAP with creds from envvars.
     def __init__(self):
         self.common_args = (
-            '-v',
-            '-h', os.environ['LDAP_HOST'],
-            '-D', os.environ['LDAP_BIND'],
-            '-w', os.environ['LDAP_PASSWORD'],
+            '-xv',
+            '-w', os.environ['LDAPPASSWORD'],
         )
 
         self.add = sh.ldapadd.bake(*self.common_args)

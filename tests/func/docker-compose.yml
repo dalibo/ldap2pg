@@ -20,8 +20,8 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: fonctionnel
-      LDAP_HOST: ldap
-      LDAP_BIND: cn=admin,dc=ldap2pg,dc=local
-      LDAP_PASSWORD: fonctionnel
-      LDAP_BASE: dc=ldap2pg,dc=local
+      LDAPHOST: ldap
+      LDAPBINDDN: cn=admin,dc=ldap2pg,dc=local
+      LDAPPASSWORD: fonctionnel
+      LDAPBASE: dc=ldap2pg,dc=local
     entrypoint: /workspace/tests/func/entrypoint.sh

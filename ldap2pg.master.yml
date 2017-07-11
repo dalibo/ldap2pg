@@ -26,13 +26,13 @@ dry: yes
 # **LDAP connection**
 #
 ldap:
-  # env var: LDAP_HOST
+  # env var: LDAPHOST
   host: ldap2pg.local
-  # env var: LDAP_PORT
+  # env var: LDAPPORT
   port: 389
-  # env var: LDAP_BIND
-  bind: cn=admin,dc=ldap2pg,dc=local
-  # env var: LDAP_PASSWORD
+  # env var: LDAPBINDDN
+  binddn: cn=admin,dc=ldap2pg,dc=local
+  # env var: LDAPPASSWORD
   password: SECRET
 
 #

@@ -25,10 +25,8 @@ def test_versionned_yaml(dev):
 
 YAML_FMT = """\
 ldap:
-  host: %(LDAP_HOST)s
-  port: %(LDAP_PORT)s
-  bind: %(LDAP_BIND)s
-  password: %(LDAP_PASSWORD)s
+  host: %(LDAPHOST)s
+  password: %(LDAPPASSWORD)s
 
 sync_map:
 - ldap:
@@ -49,19 +47,19 @@ def test_custom_yaml():
     with pytest.raises(ErrorReturnCode):
         ldap2pg(_env=dict(os.environ, LDAP2PG_CONFIG=LDAP2PG_CONFIG))
 
-    yaml = YAML_FMT % dict(LDAP_PORT=389, **os.environ)
+    yaml = YAML_FMT % os.environ
     with open(LDAP2PG_CONFIG, 'w') as fo:
         fo.write(yaml)
 
     ldapfree_env = {
         k: v
         for k, v in os.environ.items()
-        if not k.startswith('LDAP_')
+        if not k.startswith('LDAP')
     }
 
     # Ensure world readable password is denied
     with pytest.raises(ErrorReturnCode):
-        ldap2pg(_env=ldapfree_env)
+        ldap2pg(config=LDAP2PG_CONFIG, _env=ldapfree_env)
 
     # And that fixing file mode do the trick.
     chmod('0600', LDAP2PG_CONFIG)

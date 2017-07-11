@@ -92,7 +92,8 @@ def test_mapping():
     assert 'fileval' == v
 
     m = Mapping('my:option')
-    assert ['MY_OPTION'] == m.env
+    assert 'MY_OPTION' in m.env
+    assert 'MYOPTION' in m.env
 
     # Prefer env over file
     v = m.process(
@@ -386,7 +387,6 @@ def test_merge_and_mappings():
 
     # Minimal configuration
     minimal_config = dict(
-        ldap=dict(host='confighost'),
         sync_map=dict(ldap=dict(), role=dict()),
     )
     config.merge(
@@ -395,9 +395,8 @@ def test_merge_and_mappings():
     )
     config.merge(
         file_config=minimal_config,
-        environ=dict(LDAP_PASSWORD='envpass', PGDSN='envdsn'),
+        environ=dict(LDAPPASSWORD='envpass', PGDSN='envdsn'),
     )
-    assert 'confighost' == config['ldap']['host']
     assert 'envpass' == config['ldap']['password']
     assert 'envdsn' == config['postgres']['dsn']
 
@@ -528,11 +527,11 @@ def test_load_file(mocker):
     ff.return_value = ['filename.yml', 0o0]
     read.return_value = dict(sync_map=[dict(role='alice')])
     # send one env var for LDAP bind
-    environ.update(dict(LDAP_BIND='envbind'))
+    environ.update(dict(LDAPPASSWORD='envpass'))
 
     config.load(argv=['--verbose'])
 
-    assert 'envbind' == config['ldap']['bind']
+    assert 'envpass' == config['ldap']['password']
     maplist = config['sync_map']['__common__']['__common__']
     assert 1 == len(maplist)
     assert config['verbose'] is True

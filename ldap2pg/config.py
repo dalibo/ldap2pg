@@ -312,7 +312,7 @@ class Mapping(object):
 
         env = env or []
         if env == self._auto_env:
-            env = self.arg.upper()
+            env = [self.arg.upper(), self.path.upper().replace(':', '')]
         self.env = env
         if isinstance(self.env, string_types):
             self.env = [self.env]
@@ -352,7 +352,8 @@ class Mapping(object):
             secret = self.secret
 
         if secret and unsecured_file:
-            raise ValueError("Refuse to load secret from world readable file.")
+            msg = "Refuse to load %s from world readable file." % (self.path)
+            raise ValueError(msg)
 
         logger.debug("Read %s from YAML.", self.path)
         return value
@@ -404,7 +405,7 @@ class Configuration(dict):
         'ldap': {
             'host': '',
             'port': 389,
-            'bind': None,
+            'binddn': None,
             'password': None,
             'default_query': {
                 'base': '',
@@ -426,7 +427,7 @@ class Configuration(dict):
         Mapping('verbose', env=['VERBOSE', 'DEBUG']),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
-        Mapping('ldap:bind'),
+        Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),
         Mapping('ldap:password', secret=True),
         Mapping(
             'postgres:dsn', env='PGDSN',
