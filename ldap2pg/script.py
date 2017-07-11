@@ -94,4 +94,5 @@ def main():
 
 
 if '__main__' == __name__:  # pragma: no cover
+    logger = logging.getLogger(__package__)
     main()

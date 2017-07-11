@@ -322,6 +322,9 @@ class Mapping(object):
             secret = re.compile(secret)
         self.secret = secret
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.path)
+
     def process_env(self, environ):
         # Get value from env var
         for env in self.env:
