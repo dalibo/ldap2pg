@@ -69,6 +69,7 @@ def test_mapping():
 
     m = Mapping('my:option', env=None)
     assert 'my_option' == m.arg
+    assert 'my:option' in repr(m)
 
     # Fallback to default
     v = m.process(default='defval', file_config=dict(), environ=dict())
