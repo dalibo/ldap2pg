@@ -72,10 +72,12 @@ jobs:
     working_directory: /tmp/ldap2pg
     docker:
       - image: centos:7
-      - image: dinkel/openldap:latest
+      - image: osixia/openldap:1.1.8
         environment:
-          SLAPD_PASSWORD: communication
-          SLAPD_DOMAIN: ldap2pg.local
+          LDAP_DOMAIN: ldap.ldap2pg.docker
+          LDAP_ADMIN_PASSWORD: communication
+          LDAP_CONFIG_PASSWORD: communication
+          LDAP_TLS_VERIFY_CLIENT: try
       - image: postgres:9.6
         environment:
           POSTGRES_USER: postgres
@@ -92,8 +94,9 @@ jobs:
     - run:
         name: Exécuting functionnal tests
         command: |
+          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
           export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
-          export LDAPHOST=localhost LDAPBINDDN=cn=admin,dc=ldap2pg,dc=local LDAPPASSWORD=communication
+          export LDAPHOST=ldap.ldap2pg.docker LDAPPASSWORD=communication
           tests/func/entrypoint.sh
 
 workflows:

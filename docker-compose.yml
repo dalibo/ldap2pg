@@ -11,17 +11,23 @@ services:
       LDAP_SERVER_HOST: ldap
 
   ldap:
-    image: dinkel/openldap
+    image: osixia/openldap:1.1.8
     environment:
-      SLAPD_DOMAIN: ldap2pg.local
-      SLAPD_PASSWORD: integral
+      LDAP_DOMAIN: ldap.ldap2pg.docker
+      LDAP_ADMIN_PASSWORD: integral
+      LDAP_CONFIG_PASSWORD: territorial
+      LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ldapetc:/etc/ldap
+    - ldapetc:/etc/ldap/slap.d/
     - ldapvar:/var/lib/ldap
-    - ./dev-fixture.ldif:/etc/ldap.dist/prepopulate/dev-fixture.ldif
-    command: ["slapd", "-d", "33768", "-u", "openldap", "-g", "openldap"]
+    hostname: ldap.ldap2pg.docker
+    labels:
+      com.dnsdock.alias: ldap.ldap2pg.docker
+
 
   postgres:
     image: postgres:9.6
     volumes:
     - ./dev-fixture.sh:/docker-entrypoint-initdb.d/dev-fixture.sh
+    labels:
+      com.dnsdock.alias: postgres.ldap2pg.docker

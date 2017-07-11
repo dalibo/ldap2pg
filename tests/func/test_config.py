@@ -30,7 +30,7 @@ ldap:
 
 sync_map:
 - ldap:
-    base: cn=dba,ou=groups,dc=ldap2pg,dc=local
+    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=groupOfNames)"
     attribute: member
   role:
@@ -54,7 +54,7 @@ def test_custom_yaml():
     ldapfree_env = {
         k: v
         for k, v in os.environ.items()
-        if not k.startswith('LDAP')
+        if not k.startswith('LDAP') or k == 'LDAPCONF'
     }
 
     # Ensure world readable password is denied

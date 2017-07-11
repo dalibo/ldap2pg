@@ -1,2 +1,3 @@
-BINDDN  cn=admin,dc=ldap2pg,dc=local
-BASE    dc=ldap2pg,dc=local
+BINDDN  cn=admin,dc=ldap,dc=ldap2pg,dc=docker
+BASE    dc=ldap,dc=ldap2pg,dc=docker
+TLS_REQCERT allow

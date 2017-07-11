@@ -117,6 +117,7 @@ def flushall(ldap, psql):
         "WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';",
     )
 
-    for dn in reversed(list(ldap.search_sub_dn(base='dc=ldap2pg,dc=local'))):
+    children = ldap.search_sub_dn(base='dc=ldap,dc=ldap2pg,dc=docker')
+    for dn in reversed(list(children)):
         if 'cn=admin,' not in dn:
             ldap.delete(dn)

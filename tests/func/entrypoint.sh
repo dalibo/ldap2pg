@@ -45,4 +45,5 @@ if ! rpm --query --queryformat= ldap2pg ; then
     rpm --query --queryformat= ldap2pg
 fi
 
-pytest tests/func/
+# Looks like ./ldaprc is ignored in CentOS7 by libldap and tools. Put it in envs.
+env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) pytest tests/func/
