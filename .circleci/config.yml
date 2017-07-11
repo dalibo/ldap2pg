@@ -91,7 +91,7 @@ jobs:
         name: Exécuting functionnal tests
         command: |
           export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
-          export LDAPHOST=localhost LDAPPASSWORD=communication
+          export LDAPHOST=localhost LDAPBINDDN=cn=admin,dc=ldap2pg,dc=local LDAPPASSWORD=communication
           tests/func/entrypoint.sh
 
 workflows:
