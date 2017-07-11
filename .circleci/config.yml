@@ -63,6 +63,8 @@ jobs:
     - persist_to_workspace:
         root: /tmp/ldap2pg
         paths: ["dist/"]
+    - store_artifacts:
+        path: /tmp/ldap2pg/dist/
 
   1-func-centos7:
     working_directory: /tmp/ldap2pg
