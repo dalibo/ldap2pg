@@ -4,8 +4,7 @@ from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
-from ldap3.core.exceptions import LDAPExceptionError
-from ldap3.utils.dn import parse_dn
+from .ldap import LDAPError, SCOPE_SUBTREE, str2dn
 
 from .acl import AclItem, AclSet
 from .role import (
@@ -21,18 +20,23 @@ logger = logging.getLogger(__name__)
 
 
 def get_ldap_attribute(entry, attribute):
+    _, attributes = entry
     path = attribute.split('.')
-    values = entry.entry_attributes_as_dict[path[0]]
+    values = attributes[path[0]]
     path = path[1:]
     for value in values:
         if path:
-            dn = parse_dn(value)
+            dn = str2dn(value)
             value = dict()
-            for type_, name, _ in dn:
+            for (type_, name, _), in dn:
                 names = value.setdefault(type_, [])
                 names.append(name)
             logger.debug("Parsed DN: %s", value)
             value = value[path[0]][0]
+
+        if hasattr(value, 'decode'):
+            value = value.decode('utf-8')
+
         yield value
 
 
@@ -100,19 +104,19 @@ class SyncManager(object):
 
     def query_ldap(self, base, filter, attributes):
         logger.debug(
-            "Doing: ldapsearch -h %s -p %s -D %s -W -b %s '%s' %s",
-            self.ldapconn.server.host, self.ldapconn.server.port,
-            self.ldapconn.user,
+            "Doing: ldapsearch -W -b %s '%s' %s",
             base, filter, ' '.join(attributes or []),
         )
 
         try:
-            self.ldapconn.search(base, filter, attributes=attributes)
-        except LDAPExceptionError as e:
+            entries = self.ldapconn.search_s(
+                base, SCOPE_SUBTREE, filter, attributes,
+            )
+        except LDAPError as e:
             message = "Failed to query LDAP: %s." % (e,)
             raise UserError(message)
 
-        return self.ldapconn.entries[:]
+        return entries
 
     def process_ldap_entry(self, entry, **kw):
         if 'names' in kw:
@@ -121,7 +125,7 @@ class SyncManager(object):
         else:
             name_attribute = kw['name_attribute']
             names = get_ldap_attribute(entry, name_attribute)
-            log_source = " from %s %s" % (entry.entry_dn, name_attribute)
+            log_source = " from %s %s" % (entry[0], name_attribute)
 
         if kw.get('members_attribute'):
             members = get_ldap_attribute(entry, kw['members_attribute'])

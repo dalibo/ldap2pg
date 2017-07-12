@@ -1,16 +1,22 @@
 version: 2
 
+.install_reqs: &install_reqs
+  run:
+    name: Install requirements
+    command: |
+      sudo apt-get install -y libldap2-dev libsasl2-dev
+      sudo pip install wheel virtualenv
+      virtualenv .venv/
+      . .venv/bin/activate
+      pip install -U -r requirements-ci.txt -e .
+
 .unit_tpl: &unit_tpl
   working_directory: ~/ldap2pg
   steps:
   - checkout
   - restore_cache:
       keys: [ldap2pg]
-  - run: |
-      sudo pip install wheel virtualenv
-      virtualenv .venv/
-      . .venv/bin/activate
-      pip install -U -r requirements-ci.txt -e .
+  - <<: *install_reqs
   - save_cache:
       key: ldap2pg
       paths:
@@ -32,11 +38,7 @@ jobs:
     - checkout
     - restore_cache:
         keys: [ldap2pg]
-    - run: |
-        sudo pip install wheel virtualenv
-        virtualenv .venv/
-        . .venv/bin/activate
-        pip install -U -r requirements-ci.txt -e .
+    - <<: *install_reqs
     - save_cache:
         key: ldap2pg
         paths:

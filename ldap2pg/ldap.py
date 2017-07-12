@@ -4,10 +4,13 @@ from collections import namedtuple
 import logging
 import os
 
-import ldap3
+from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
+from ldap.dn import str2dn
 
 
 logger = logging.getLogger(__name__)
+
+__all__ = ['SCOPE_SUBTREE', 'LDAPError', 'str2dn']
 
 
 def connect(**kw):
@@ -23,14 +26,10 @@ def connect(**kw):
     # Extra variable LDAPPASSWORD is supported.
 
     options = gather_options(**kw)
-    logger.debug(
-        "Connecting to LDAP server %s:%s.",
-        options['HOST'], options['PORT'],
-    )
-    server = ldap3.Server(options['HOST'], options['PORT'])
-    return ldap3.Connection(
-        server, options['BINDDN'], options['PASSWORD'], auto_bind=True,
-    )
+    logger.debug("Connecting to LDAP server %s.", options['URI'])
+    l = ldap_initialize(options['URI'], bytes_mode=False)
+    l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+    return l
 
 
 class Options(dict):
@@ -49,6 +48,7 @@ class Options(dict):
     def _parse_raw(self, value):
         return value
 
+    parse_uri = _parse_raw
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
@@ -58,6 +58,7 @@ class Options(dict):
 
 def gather_options(environ=None, **kw):
     options = Options(
+        URI=None,
         HOST='',
         PORT=389,
         BINDDN=None,
@@ -86,6 +87,9 @@ def gather_options(environ=None, **kw):
         for k, v in kw.items()
         if k.upper() in options and v
     })
+
+    if not options['URI']:
+        options['URI'] = 'ldap://%(HOST)s:%(PORT)s' % options
 
     return options
 

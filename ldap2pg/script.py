@@ -6,7 +6,6 @@ import os
 import pdb
 import sys
 
-import ldap3
 import psycopg2
 
 from . import ldap
@@ -28,7 +27,7 @@ def wrapped_main(config=None):
 
     try:
         ldapconn = ldap.connect(**config['ldap'])
-    except ldap3.core.exceptions.LDAPExceptionError as e:
+    except ldap.LDAPError as e:
         message = "Failed to connect to LDAP: %s" % (e,)
         raise ConfigurationError(message)
 

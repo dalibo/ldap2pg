@@ -13,13 +13,12 @@ base  ou=IT staff,o="Example, Inc",c=US
 
 def test_connect_from_env(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options')
-    Connection = mocker.patch('ldap2pg.ldap.ldap3.Connection')
+    ldap_initialize = mocker.patch('ldap2pg.ldap.ldap_initialize')
 
     from ldap2pg.ldap import connect
 
     go.return_value = dict(
-        HOST='host',
-        PORT=389,
+        URI='ldap://host:389',
         BINDDN='dc=local',
         PASSWORD='filepass',
     )
@@ -28,7 +27,7 @@ def test_connect_from_env(mocker):
 
     assert connexion
     assert go.called is True
-    assert Connection.called is True
+    assert ldap_initialize.called is True
 
 
 def test_options_dict():
@@ -39,9 +38,7 @@ def test_options_dict():
     assert 'initpass' == options['PASSWORD']
 
     assert options.set_raw('PASSWORD', 'setpass')
-    assert options.set_raw('HOST', 'host')
-    assert options.set_raw('PORT', '636')
-    assert 636 == options['PORT']
+    assert options.set_raw('URI', 'ldap://host:636')
     assert options.set_raw('BINDDN', 'cn=admin')
     assert not options.set_raw('UNKNOWN OPTION', 'raw')
 
@@ -62,7 +59,7 @@ def test_gather_options(mocker):
     from ldap2pg.ldap import gather_options, RCEntry
 
     rf.side_effect = [
-        [RCEntry(filename='a', lineno=1, option='HOST', value='host')],
+        [RCEntry(filename='a', lineno=1, option='URI', value='ldap:///')],
         [RCEntry(filename='b', lineno=1, option='BINDDN', value='cn=binddn')],
     ]
 
@@ -72,7 +69,7 @@ def test_gather_options(mocker):
     )
 
     assert 'envpass' == options['PASSWORD']
-    assert 'host' == options['HOST']
+    assert 'ldap:///' == options['URI']
     assert 'cn=binddn' == options['BINDDN']
 
 

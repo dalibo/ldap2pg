@@ -105,10 +105,10 @@ def test_conn_errors(mocker):
 
     from ldap2pg.script import (
         wrapped_main, ConfigurationError,
-        ldap3, psycopg2,
+        ldap, psycopg2,
     )
 
-    clc.side_effect = ldap3.core.exceptions.LDAPExceptionError("pouet")
+    clc.side_effect = ldap.LDAPError("pouet")
     with pytest.raises(ConfigurationError):
         wrapped_main()
 
