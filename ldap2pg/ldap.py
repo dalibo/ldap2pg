@@ -76,10 +76,13 @@ def gather_options(environ=None, **kw):
         logger.debug("LDAPNOINIT defined. Disabled ldap.conf loading.")
     else:
         for e in read_files(conf='/etc/ldap/ldap.conf', rc='ldaprc'):
+            logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for e in read_files(conf=options.get('CONF'), rc=options.get('RC')):
+            logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for option, value in environ.items():
+            logger.debug('Read %s from env.', option)
             options.set_raw(option, value)
 
     options.update({
