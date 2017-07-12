@@ -48,7 +48,7 @@ def test_gather_options_noinit(mocker):
 
     options = gather_options(
         password='password',
-        environ=dict(LDAPNOINIT='', LDAPBASEDN='dc=base'),
+        environ=dict(LDAPNOINIT=b'', LDAPBASEDN=b'dc=base'),
     )
     assert 'BASE' not in options
 
@@ -65,7 +65,7 @@ def test_gather_options(mocker):
 
     options = gather_options(
         password=None,
-        environ=dict(LDAPBASE='dc=local', LDAPPASSWORD='envpass'),
+        environ=dict(LDAPBASE=b'dc=local', LDAPPASSWORD=b'envpass'),
     )
 
     assert 'envpass' == options['PASSWORD']

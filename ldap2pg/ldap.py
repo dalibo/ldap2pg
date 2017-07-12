@@ -1,5 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+from codecs import open
 from collections import namedtuple
 import logging
 import os
@@ -67,7 +68,7 @@ def gather_options(environ=None, **kw):
 
     environ = environ or os.environ
     environ = {
-        k[4:]: v
+        k[4:]: v.decode('utf-8')
         for k, v in environ.items()
         if k.startswith('LDAP') and not k.startswith('LDAP2PG')
     }
@@ -104,7 +105,7 @@ def read_files(conf, rc):
     for candidate in candidates:
         candidate = os.path.expanduser(candidate)
         try:
-            with open(candidate, 'r') as fo:
+            with open(candidate, 'r', encoding='utf-8') as fo:
                 logger.debug('Found rcfile %s.', candidate)
                 for entry in parserc(fo):
                     yield entry
