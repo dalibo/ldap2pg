@@ -117,7 +117,7 @@ RCEntry = namedtuple('RCEntry', ('filename', 'lineno', 'option', 'value'))
 
 
 def parserc(fo):
-    filename = getattr(fo, 'filename', '<stdin>')
+    filename = getattr(fo, 'name', '<stdin>')
 
     for lineno, line in enumerate(fo):
         line = line.strip()
