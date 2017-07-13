@@ -18,10 +18,12 @@ services:
       LDAP_CONFIG_PASSWORD: territorial
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
+    - ./ldap-ep.sh:/entrypoint.sh
     - ldapetc:/etc/ldap/slap.d/
     - ldapvar:/var/lib/ldap
     - ./dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-ldap2pg-config.ldif
     hostname: ldap.ldap2pg.docker
+    entrypoint: /entrypoint.sh
     command: [--copy-service]
     labels:
       com.dnsdock.alias: ldap.ldap2pg.docker
