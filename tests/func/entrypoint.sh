@@ -21,15 +21,15 @@ yum_install() {
 }
 
 yum_install epel-release
-yum_install python python2-pip postgresql openldap-clients
-yum install -y ftp://195.220.108.108/linux/fedora/linux/development/rawhide/Everything/x86_64/os/Packages/p/python2-ldap3-2.2.3-1.fc27.noarch.rpm
+yum groupinstall -y 'Development Tools'
+yum_install python python2-pip python-devel postgresql openldap-clients openldap-devel
 
 # Check Postgres connectivity
 psql -tc "SELECT version();"
 
 # Install only ldap2pg and ldap3 package. If other package are required, it's a
 # bug.
-pip2 install --no-deps --requirement tests/func/requirements.txt
+pip2 install --no-deps pyldap --requirement tests/func/requirements.txt
 if ! rpm --query --queryformat= ldap2pg ; then
     yum install -y dist/ldap2pg*.noarch.rpm
     rpm --query --queryformat= ldap2pg

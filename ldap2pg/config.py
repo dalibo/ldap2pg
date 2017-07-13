@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
+from codecs import open
 import errno
 import logging.config
 import os.path
@@ -329,7 +330,7 @@ class Mapping(object):
         # Get value from env var
         for env in self.env:
             try:
-                value = environ[env]
+                value = environ[env].decode('utf-8')
                 logger.debug("Read %s from %s.", self.path, env)
                 break
             except KeyError:
@@ -397,6 +398,14 @@ class NoConfigurationError(Exception):
     pass
 
 
+def construct_yaml_str(self, node):
+    # See https://stackoverflow.com/a/2967461/2613806
+    return self.construct_scalar(node)
+
+
+yaml.Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
+
+
 class Configuration(dict):
     DEFAULTS = {
         'dry': True,
@@ -448,7 +457,10 @@ class Configuration(dict):
     ]
 
     def find_filename(self, environ=os.environ, args=None):
-        custom = getattr(args, 'config', environ.get('LDAP2PG_CONFIG'))
+        custom = getattr(
+            args, 'config',
+            environ.get('LDAP2PG_CONFIG', b'').decode('utf-8'),
+        )
 
         if '-' == custom:
             return custom, 0o400
@@ -516,7 +528,7 @@ class Configuration(dict):
             else:
                 logger.info("Using %s.", filename)
                 try:
-                    with open(filename) as fo:
+                    with open(filename, encoding='utf-8') as fo:
                         file_config = self.read(fo, mode)
                 except OSError as e:
                     msg = "Failed to read configuration: %s" % (e,)

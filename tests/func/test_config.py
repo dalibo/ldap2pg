@@ -10,13 +10,13 @@ def test_help():
     ldap2pg('--help')
 
 
-def test_various_arguments():
+def test_various_arguments(dev):
     from sh import ldap2pg
 
     ldap2pg('-vn', '--color')
 
 
-def test_versionned_yaml(dev):
+def test_versionned_yaml():
     from sh import ldap2pg
 
     ldap2pg(config='ldap2pg.yml')

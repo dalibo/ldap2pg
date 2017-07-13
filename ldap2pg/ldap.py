@@ -1,13 +1,17 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+from codecs import open
 from collections import namedtuple
 import logging
 import os
 
-import ldap3
+from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
+from ldap.dn import str2dn
 
 
 logger = logging.getLogger(__name__)
+
+__all__ = ['SCOPE_SUBTREE', 'LDAPError', 'str2dn']
 
 
 def connect(**kw):
@@ -23,14 +27,10 @@ def connect(**kw):
     # Extra variable LDAPPASSWORD is supported.
 
     options = gather_options(**kw)
-    logger.debug(
-        "Connecting to LDAP server %s:%s.",
-        options['HOST'], options['PORT'],
-    )
-    server = ldap3.Server(options['HOST'], options['PORT'])
-    return ldap3.Connection(
-        server, options['BINDDN'], options['PASSWORD'], auto_bind=True,
-    )
+    logger.debug("Connecting to LDAP server %s.", options['URI'])
+    l = ldap_initialize(options['URI'], bytes_mode=False)
+    l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+    return l
 
 
 class Options(dict):
@@ -49,6 +49,7 @@ class Options(dict):
     def _parse_raw(self, value):
         return value
 
+    parse_uri = _parse_raw
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
@@ -58,6 +59,7 @@ class Options(dict):
 
 def gather_options(environ=None, **kw):
     options = Options(
+        URI=None,
         HOST='',
         PORT=389,
         BINDDN=None,
@@ -66,7 +68,7 @@ def gather_options(environ=None, **kw):
 
     environ = environ or os.environ
     environ = {
-        k[4:]: v
+        k[4:]: v.decode('utf-8')
         for k, v in environ.items()
         if k.startswith('LDAP') and not k.startswith('LDAP2PG')
     }
@@ -87,6 +89,9 @@ def gather_options(environ=None, **kw):
         if k.upper() in options and v
     })
 
+    if not options['URI']:
+        options['URI'] = 'ldap://%(HOST)s:%(PORT)s' % options
+
     return options
 
 
@@ -100,7 +105,7 @@ def read_files(conf, rc):
     for candidate in candidates:
         candidate = os.path.expanduser(candidate)
         try:
-            with open(candidate, 'r') as fo:
+            with open(candidate, 'r', encoding='utf-8') as fo:
                 logger.debug('Found rcfile %s.', candidate)
                 for entry in parserc(fo):
                     yield entry

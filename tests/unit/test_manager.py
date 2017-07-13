@@ -78,11 +78,8 @@ def test_query_ldap(mocker):
     from ldap2pg.manager import SyncManager
 
     manager = SyncManager(ldapconn=mocker.Mock())
+    manager.ldapconn.search_s.return_value = [('dn=a', {}), ('dn=b', {})]
 
-    manager.ldapconn.entries = [
-        mocker.Mock(cn=mocker.Mock(value='alice')),
-        mocker.Mock(cn=mocker.Mock(value='bob')),
-    ]
     entries = manager.query_ldap(
         base='ou=people,dc=global', filter='(objectClass=*)',
         attributes=['cn'],
@@ -92,15 +89,15 @@ def test_query_ldap(mocker):
 
 
 def test_query_ldap_bad_filter(mocker):
-    from ldap2pg.manager import SyncManager, LDAPExceptionError, UserError
+    from ldap2pg.manager import SyncManager, LDAPError, UserError
 
     manager = SyncManager(ldapconn=mocker.Mock())
-    manager.ldapconn.search.side_effect = LDAPExceptionError()
+    manager.ldapconn.search_s.side_effect = LDAPError()
 
     with pytest.raises(UserError):
         manager.query_ldap(base='dc=unit', filter='(broken', attributes=[])
 
-    assert manager.ldapconn.search.called is True
+    assert manager.ldapconn.search_s.called is True
 
 
 def test_process_entry_static():
@@ -119,12 +116,12 @@ def test_process_entry_static():
     assert 'postgres' in roles[0].parents
 
 
-def test_process_entry_user(mocker):
+def test_process_entry_user():
     from ldap2pg.manager import SyncManager
 
     manager = SyncManager()
 
-    entry = mocker.Mock(entry_attributes_as_dict=dict(cn=['alice', 'bob']))
+    entry = ('dn', {'cn': ['alice', b'bob']})
 
     roles = manager.process_ldap_entry(
         entry, name_attribute='cn',
@@ -138,15 +135,12 @@ def test_process_entry_user(mocker):
     assert roles[0].options['LOGIN'] is True
 
 
-def test_process_entry_dn(mocker):
+def test_process_entry_dn():
     from ldap2pg.manager import SyncManager
 
     manager = SyncManager()
 
-    entry = mocker.Mock(
-        entry_attributes_as_dict=dict(
-            member=['cn=alice,dc=unit', 'cn=bob,dc=unit']),
-    )
+    entry = ('dn', {'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
 
     roles = manager.process_ldap_entry(entry, name_attribute='member.cn')
     roles = list(roles)
@@ -162,15 +156,10 @@ def test_process_entry_members(mocker):
 
     manager = SyncManager()
 
-    entry = mocker.Mock(
-        entry_attributes_as_dict=dict(
-            cn=['group'],
-            member=['cn=alice,dc=unit', 'cn=bob,dc=unit'],
-        ),
-    )
+    entry = ('dn', {'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
 
     roles = manager.process_ldap_entry(
-        entry, name_attribute='cn', members_attribute='member.cn',
+        entry, names=['group'], members_attribute='member.cn',
     )
     roles = list(roles)
 

@@ -87,7 +87,7 @@ def test_mapping():
     v = m.process(
         default='defval',
         file_config=dict(my=dict(option='fileval')),
-        environ=dict(MY_OPTION='envval'),
+        environ=dict(MY_OPTION=b'envval'),
     )
     assert 'fileval' == v
 
@@ -99,7 +99,7 @@ def test_mapping():
     v = m.process(
         default='defval',
         file_config=dict(my=dict(option='fileval')),
-        environ=dict(MY_OPTION='envval'),
+        environ=dict(MY_OPTION=b'envval'),
     )
     assert 'envval' == v
 
@@ -132,7 +132,7 @@ def test_mapping_security():
     v = m.process(
         default='DEFAULT',
         file_config=dict(ldap=dict(password='unsecure')),
-        environ=dict(LDAP_PASSWORD='fromenv'),
+        environ=dict(LDAP_PASSWORD=b'fromenv'),
     )
     assert 'fromenv' == v
 
@@ -348,7 +348,7 @@ def test_find_filename_custom(mocker):
         AssertionError("Not reached."),
     ]
     with pytest.raises(UserError):
-        config.find_filename(environ=dict(LDAP2PG_CONFIG='my.yml'))
+        config.find_filename(environ=dict(LDAP2PG_CONFIG=b'my.yml'))
 
     # Read from args
     stat.reset_mock()
@@ -357,7 +357,7 @@ def test_find_filename_custom(mocker):
         AssertionError("Not reached."),
     ]
     filename, mode = config.find_filename(
-        environ=dict(LDAP2PG_CONFIG='env.yml'),
+        environ=dict(LDAP2PG_CONFIG=b'env.yml'),
         args=MockArgs(config='argv.yml'),
     )
 
@@ -370,7 +370,7 @@ def test_find_filename_stdin():
     config = Configuration()
 
     filename, mode = config.find_filename(
-        environ=dict(LDAP2PG_CONFIG='-'),
+        environ=dict(LDAP2PG_CONFIG=b'-'),
     )
 
     assert '-' == filename
@@ -395,7 +395,7 @@ def test_merge_and_mappings():
     )
     config.merge(
         file_config=minimal_config,
-        environ=dict(LDAPPASSWORD='envpass', PGDSN='envdsn'),
+        environ=dict(LDAPPASSWORD=b'envpass', PGDSN=b'envdsn'),
     )
     assert 'envpass' == config['ldap']['password']
     assert 'envdsn' == config['postgres']['dsn']
@@ -527,7 +527,7 @@ def test_load_file(mocker):
     ff.return_value = ['filename.yml', 0o0]
     read.return_value = dict(sync_map=[dict(role='alice')])
     # send one env var for LDAP bind
-    environ.update(dict(LDAPPASSWORD='envpass'))
+    environ.update(dict(LDAPPASSWORD=b'envpass'))
 
     config.load(argv=['--verbose'])
 
