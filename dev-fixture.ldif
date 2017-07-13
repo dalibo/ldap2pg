@@ -8,6 +8,14 @@
 # referencing peoples entries.
 #
 
+
+dn: cn=slap,dc=ldap,dc=ldap2pg,dc=docker
+objectclass: simpleSecurityObject
+objectClass: organizationalRole
+cn: slap
+# Clear password for slap auth
+userpassword: voyage
+
 dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
 objectclass: organizationalUnit
 objectclass: top

@@ -20,7 +20,9 @@ services:
     volumes:
     - ldapetc:/etc/ldap/slap.d/
     - ldapvar:/var/lib/ldap
+    - ./dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-ldap2pg-config.ldif
     hostname: ldap.ldap2pg.docker
+    command: [--copy-service]
     labels:
       com.dnsdock.alias: ldap.ldap2pg.docker
 

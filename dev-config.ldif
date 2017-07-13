@@ -1,0 +1,6 @@
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by * none
+olcAccess: {1}to * by dn="cn=slap,dc=ldap,dc=ldap2pg,dc=docker" read
+olcAccess: {2}to * by self write by * none
