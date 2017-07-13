@@ -21,8 +21,18 @@ yum_install() {
 }
 
 yum_install epel-release
-yum groupinstall -y 'Development Tools'
-yum_install python python2-pip python-devel postgresql openldap-clients openldap-devel
+yum_install \
+    gcc \
+    make \
+    openldap-clients \
+    openldap-devel\
+    openssl-devel \
+    postgresql \
+    python \
+    python-devel \
+    python2-pip \
+    ${NULL-}
+
 
 # Check Postgres connectivity
 psql -tc "SELECT version();"
