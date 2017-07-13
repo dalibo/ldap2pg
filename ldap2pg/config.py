@@ -414,6 +414,7 @@ class Configuration(dict):
         'verbose': False,
         'color': False,
         'ldap': {
+            'uri': '',
             'host': '',
             'port': 389,
             'binddn': None,
@@ -436,6 +437,7 @@ class Configuration(dict):
         Mapping('color'),
         Mapping('dry'),
         Mapping('verbose', env=['VERBOSE', 'DEBUG']),
+        Mapping('ldap:uri'),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
         Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),

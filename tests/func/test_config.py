@@ -25,7 +25,7 @@ def test_versionned_yaml():
 
 YAML_FMT = """\
 ldap:
-  host: %(LDAPHOST)s
+  uri: %(LDAPURI)s
   password: %(LDAPPASSWORD)s
 
 sync_map:
@@ -51,10 +51,12 @@ def test_custom_yaml():
     with open(LDAP2PG_CONFIG, 'w') as fo:
         fo.write(yaml)
 
+    # Purge env from value set in file. Other are reads from ldaprc.
+    blacklist = {'LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD'}
     ldapfree_env = {
         k: v
         for k, v in os.environ.items()
-        if not k.startswith('LDAP') or k == 'LDAPCONF'
+        if k not in blacklist
     }
 
     # Ensure world readable password is denied

@@ -23,6 +23,6 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: fonctionnel
-      LDAPHOST: ldap
+      LDAPURI: ldaps://ldap
       LDAPPASSWORD: fonctionnel
     entrypoint: /workspace/tests/func/entrypoint.sh

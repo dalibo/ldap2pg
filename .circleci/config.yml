@@ -96,7 +96,7 @@ jobs:
         command: |
           echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
           export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
-          export LDAPHOST=ldap.ldap2pg.docker LDAPPASSWORD=communication
+          export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
           tests/func/entrypoint.sh
 
 workflows:
