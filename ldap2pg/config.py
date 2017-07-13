@@ -330,7 +330,9 @@ class Mapping(object):
         # Get value from env var
         for env in self.env:
             try:
-                value = environ[env].decode('utf-8')
+                value = environ[env]
+                if hasattr(value, 'decode'):
+                    value = value.decode('utf-8')
                 logger.debug("Read %s from %s.", self.path, env)
                 break
             except KeyError:
@@ -459,8 +461,11 @@ class Configuration(dict):
     def find_filename(self, environ=os.environ, args=None):
         custom = getattr(
             args, 'config',
-            environ.get('LDAP2PG_CONFIG', b'').decode('utf-8'),
+            environ.get('LDAP2PG_CONFIG', ''),
         )
+
+        if hasattr(custom, 'decode'):
+            custom = custom.decode('utf-8')
 
         if '-' == custom:
             return custom, 0o400

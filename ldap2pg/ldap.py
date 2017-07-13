@@ -68,7 +68,7 @@ def gather_options(environ=None, **kw):
 
     environ = environ or os.environ
     environ = {
-        k[4:]: v.decode('utf-8')
+        k[4:]: v.decode('utf-8') if hasattr(v, 'decode') else v
         for k, v in environ.items()
         if k.startswith('LDAP') and not k.startswith('LDAP2PG')
     }
