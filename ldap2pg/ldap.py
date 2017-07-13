@@ -7,6 +7,7 @@ import os
 
 from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
 from ldap.dn import str2dn
+from ldap import sasl
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,16 @@ def connect(**kw):
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
     l = ldap_initialize(options['URI'], bytes_mode=False)
-    l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+    if options.get('USER'):
+        logger.debug("Trying SASL DIGEST-MD5 auth.")
+        auth = sasl.sasl({
+            sasl.CB_AUTHNAME: options['USER'],
+            sasl.CB_PASS: options['PASSWORD'],
+        }, 'DIGEST-MD5')
+        l.sasl_interactive_bind_s("", auth)
+    else:
+        logger.debug("Trying simple bind.")
+        l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
     return l
 
 
@@ -53,6 +63,7 @@ class Options(dict):
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
+    parse_user = _parse_raw
     parse_password = _parse_raw
 
 
@@ -62,6 +73,7 @@ def gather_options(environ=None, **kw):
         HOST='',
         PORT=389,
         BINDDN=None,
+        USER=None,
         PASSWORD=None,
     )
 

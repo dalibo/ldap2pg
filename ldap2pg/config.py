@@ -418,6 +418,7 @@ class Configuration(dict):
             'host': '',
             'port': 389,
             'binddn': None,
+            'user': None,
             'password': None,
             'default_query': {
                 'base': '',
@@ -441,6 +442,7 @@ class Configuration(dict):
         Mapping('ldap:host'),
         Mapping('ldap:port'),
         Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),
+        Mapping('ldap:user'),
         Mapping('ldap:password', secret=True),
         Mapping(
             'postgres:dsn', env='PGDSN',
