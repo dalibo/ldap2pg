@@ -24,7 +24,7 @@ services:
     - ldapetc:/etc/ldap/slap.d/
     - ldapvar:/var/lib/ldap
     - ./docker/dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
-    - ./dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
+    # - ./dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
     hostname: ldap.ldap2pg.docker
     entrypoint: /ldap2pg-entrypoint.sh
     labels:
