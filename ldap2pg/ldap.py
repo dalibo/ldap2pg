@@ -53,7 +53,6 @@ class Options(dict):
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
-    parse_base = _parse_raw
     parse_password = _parse_raw
 
 
