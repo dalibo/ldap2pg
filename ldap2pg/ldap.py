@@ -53,7 +53,6 @@ class Options(dict):
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
-    parse_base = _parse_raw
     parse_password = _parse_raw
 
 
@@ -68,7 +67,7 @@ def gather_options(environ=None, **kw):
 
     environ = environ or os.environ
     environ = {
-        k[4:]: v.decode('utf-8')
+        k[4:]: v.decode('utf-8') if hasattr(v, 'decode') else v
         for k, v in environ.items()
         if k.startswith('LDAP') and not k.startswith('LDAP2PG')
     }
@@ -77,10 +76,13 @@ def gather_options(environ=None, **kw):
         logger.debug("LDAPNOINIT defined. Disabled ldap.conf loading.")
     else:
         for e in read_files(conf='/etc/ldap/ldap.conf', rc='ldaprc'):
+            logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for e in read_files(conf=options.get('CONF'), rc=options.get('RC')):
+            logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for option, value in environ.items():
+            logger.debug('Read %s from env.', option)
             options.set_raw(option, value)
 
     options.update({
@@ -117,7 +119,7 @@ RCEntry = namedtuple('RCEntry', ('filename', 'lineno', 'option', 'value'))
 
 
 def parserc(fo):
-    filename = getattr(fo, 'filename', '<stdin>')
+    filename = getattr(fo, 'name', '<stdin>')
 
     for lineno, line in enumerate(fo):
         line = line.strip()

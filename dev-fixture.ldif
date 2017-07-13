@@ -8,92 +8,92 @@
 # referencing peoples entries.
 #
 
-dn: ou=people,dc=ldap2pg,dc=local
+dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
 objectclass: organizationalUnit
 objectclass: top
 ou: people
 
 # Our database Administrators: a*
-dn: cn=ALICE,ou=people,dc=ldap2pg,dc=local
+dn: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: ALICE
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=Alan,ou=people,dc=ldap2pg,dc=local
+dn: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: Alan
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=albert,ou=people,dc=ldap2pg,dc=local
+dn: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: albert
 objectclass: organizationalRole
 objectclass: top
 
 # Our developers: d*
-dn: cn=dave,ou=people,dc=ldap2pg,dc=local
+dn: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: dave
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=david,ou=people,dc=ldap2pg,dc=local
+dn: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: david
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=daniel,ou=people,dc=ldap2pg,dc=local
+dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: daniel
 objectclass: organizationalRole
 objectclass: top
 
-dn: cn=donald,ou=people,dc=ldap2pg,dc=local
+dn: cn=donald,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 cn: donald
 objectclass: organizationalRole
 objectclass: top
 
 # Our outsiders: o*
-# dn: cn=oscar,ou=people,dc=ldap2pg,dc=local
+# dn: cn=oscar,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 # cn: oscar
 # objectclass: organizationalRole
 # objectclass: top
 
-# dn: cn=olivier,ou=people,dc=ldap2pg,dc=local
+# dn: cn=olivier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 # cn: olivier
 # objectclass: organizationalRole
 # objectclass: top
 
-dn: ou=groups,dc=ldap2pg,dc=local
+dn: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 objectclass: organizationalUnit
 objectclass: top
 ou: groups
 
-dn: cn=dba,ou=groups,dc=ldap2pg,dc=local
+dn: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 objectClass: groupOfNames
 objectClass: top
 cn: dba
-member: cn=Alan,ou=people,dc=ldap2pg,dc=local
-member: cn=albert,ou=people,dc=ldap2pg,dc=local
-member: cn=ALICE,ou=people,dc=ldap2pg,dc=local
+member: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
 # Our apps, with their developers.
 
 # An old app
-# dn: cn=legacy,ou=groups,dc=ldap2pg,dc=local
+# dn: cn=legacy,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 # objectClass: groupOfNames
 # objectClass: top
 # cn: legacy
 
-dn: cn=backend,ou=groups,dc=ldap2pg,dc=local
+dn: cn=backend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 objectClass: groupOfNames
 objectClass: top
 cn: backend
-member: cn=david,ou=people,dc=ldap2pg,dc=local
-member: cn=dave,ou=people,dc=ldap2pg,dc=local
+member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
-dn: cn=frontend,ou=groups,dc=ldap2pg,dc=local
+dn: cn=frontend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 objectClass: groupOfNames
 objectClass: top
 cn: frontend
-member: cn=carole,ou=people,dc=ldap2pg,dc=local
-member: cn=david,ou=people,dc=ldap2pg,dc=local
-member: cn=donald,ou=people,dc=ldap2pg,dc=local
-member: cn=daniel,ou=people,dc=ldap2pg,dc=local
+member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=donald,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker

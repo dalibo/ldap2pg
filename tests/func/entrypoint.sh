@@ -21,8 +21,18 @@ yum_install() {
 }
 
 yum_install epel-release
-yum groupinstall -y 'Development Tools'
-yum_install python python2-pip python-devel postgresql openldap-clients openldap-devel
+yum_install \
+    gcc \
+    make \
+    openldap-clients \
+    openldap-devel\
+    openssl-devel \
+    postgresql \
+    python \
+    python-devel \
+    python2-pip \
+    ${NULL-}
+
 
 # Check Postgres connectivity
 psql -tc "SELECT version();"
@@ -35,4 +45,5 @@ if ! rpm --query --queryformat= ldap2pg ; then
     rpm --query --queryformat= ldap2pg
 fi
 
-pytest tests/func/
+# Looks like ./ldaprc is ignored in CentOS7 by libldap and tools. Put it in envs.
+env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) pytest tests/func/

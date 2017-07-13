@@ -26,12 +26,10 @@ dry: yes
 # **LDAP connection**
 #
 ldap:
-  # env var: LDAPHOST
-  host: ldap2pg.local
-  # env var: LDAPPORT
-  port: 389
+  # env var: LDAPURI
+  uri: ldaps://ldap.ldap2pg.docker:636
   # env var: LDAPBINDDN
-  binddn: cn=admin,dc=ldap2pg,dc=local
+  binddn: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
   # env var: LDAPPASSWORD
   password: SECRET
 
@@ -117,7 +115,7 @@ sync_map:
       database: legacy
   # Second mapping, from an LDAP query.
   - ldap:
-      base: cn=dba,ou=groups,dc=ldap2pg,dc=local
+      base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
       filter: "(objectClass=groupOfNames)"
       attribute: member
     # A single rule to generate roles for each entries.
@@ -139,7 +137,7 @@ sync_map:
   backend:
   # Again, for all schemas, do this:
   - ldap:
-      base: ou=groups,dc=ldap2pg,dc=local
+      base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
       filter: "(&(objectClass=groupOfNames)(cn=backend))"
       attributes: [cn, member]
     # A list of rules to generate roles. Each rules is applied on each LDAP
@@ -163,7 +161,7 @@ sync_map:
     # These rules are narrowed to one schema.
     appschema:
     - ldap:
-        base: ou=groups,dc=ldap2pg,dc=local
+        base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
         filter: "(&(objectClass=groupOfNames)(cn=frontend))"
         attributes: [cn, member]
       roles:

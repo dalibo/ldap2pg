@@ -2,10 +2,13 @@ version: '2'
 
 services:
   ldap:
-    image: dinkel/openldap
+    image: osixia/openldap:1.1.8
     environment:
-      SLAPD_DOMAIN: ldap2pg.local
-      SLAPD_PASSWORD: fonctionnel
+      LDAP_DOMAIN: ldap.ldap2pg.docker
+      LDAP_ADMIN_PASSWORD: fonctionnel
+      LDAP_CONFIG_PASSWORD: fonctionnel
+      LDAP_TLS_VERIFY_CLIENT: try
+    hostname: ldap.ldap2pg.docker
 
   postgres:
     image: postgres:9.6
@@ -20,8 +23,6 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: fonctionnel
-      LDAPHOST: ldap
-      LDAPBINDDN: cn=admin,dc=ldap2pg,dc=local
+      LDAPURI: ldaps://ldap
       LDAPPASSWORD: fonctionnel
-      LDAPBASE: dc=ldap2pg,dc=local
     entrypoint: /workspace/tests/func/entrypoint.sh
