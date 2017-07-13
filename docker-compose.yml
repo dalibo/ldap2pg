@@ -13,18 +13,20 @@ services:
   ldap:
     image: osixia/openldap:1.1.8
     environment:
+      # To debug slapd configuration:
+      # LDAP_LOG_LEVEL: 33768
       LDAP_DOMAIN: ldap.ldap2pg.docker
       LDAP_ADMIN_PASSWORD: integral
       LDAP_CONFIG_PASSWORD: territorial
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ./ldap-ep.sh:/entrypoint.sh
+    - ./docker/openldap-entrypoint.sh:/ldap2pg-entrypoint.sh
     - ldapetc:/etc/ldap/slap.d/
     - ldapvar:/var/lib/ldap
-    - ./dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-ldap2pg-config.ldif
+    - ./docker/dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ./dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
     hostname: ldap.ldap2pg.docker
-    entrypoint: /entrypoint.sh
-    command: [--copy-service]
+    entrypoint: /ldap2pg-entrypoint.sh
     labels:
       com.dnsdock.alias: ldap.ldap2pg.docker
 

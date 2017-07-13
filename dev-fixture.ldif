@@ -8,13 +8,14 @@
 # referencing peoples entries.
 #
 
-
 dn: cn=slap,dc=ldap,dc=ldap2pg,dc=docker
-objectclass: simpleSecurityObject
-objectClass: organizationalRole
+objectClass: inetOrgPerson
 cn: slap
+uid: slap
+sn: SASL is not Simple
 # Clear password for slap auth
-userpassword: voyage
+userPassword: voyage
+#authzFrom: dn: uid=slap,cn=DIGEST-MD5,cn=auth
 
 dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
 objectclass: organizationalUnit
