@@ -543,6 +543,9 @@ class Configuration(dict):
                     msg = "Failed to read configuration: %s" % (e,)
                     raise UserError(msg)
 
+        # Now close stdin. To make SASL non-interactive.
+        sys.stdin.close()
+
         # Now merge all config sources.
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
