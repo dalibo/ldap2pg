@@ -22,14 +22,11 @@ yum_install() {
 
 yum_install epel-release
 yum_install \
-    gcc \
+    cyrus-sasl-md5 \
     make \
     openldap-clients \
-    openldap-devel\
-    openssl-devel \
     postgresql \
     python \
-    python-devel \
     python2-pip \
     ${NULL-}
 
@@ -39,11 +36,10 @@ psql -tc "SELECT version();"
 
 # Install only ldap2pg and ldap3 package. If other package are required, it's a
 # bug.
-pip2 install --no-deps pyldap --requirement tests/func/requirements.txt
+pip2 install --no-deps --requirement tests/func/requirements.txt
 if ! rpm --query --queryformat= ldap2pg ; then
     yum install -y dist/ldap2pg*.noarch.rpm
     rpm --query --queryformat= ldap2pg
 fi
 
-# Looks like ./ldaprc is ignored in CentOS7 by libldap and tools. Put it in envs.
-env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) pytest tests/func/
+make -C tests/func pytest

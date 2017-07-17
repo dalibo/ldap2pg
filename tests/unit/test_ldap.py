@@ -12,8 +12,8 @@ base  ou=IT staff,o="Example, Inc",c=US
 
 
 def test_connect_from_env(mocker):
-    go = mocker.patch('ldap2pg.ldap.gather_options')
-    ldap_initialize = mocker.patch('ldap2pg.ldap.ldap_initialize')
+    go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap_initialize', autospec=True)
 
     from ldap2pg.ldap import connect
 
@@ -27,12 +27,12 @@ def test_connect_from_env(mocker):
 
     assert connexion
     assert go.called is True
-    assert ldap_initialize.called is True
+    assert li.called is True
 
 
 def test_connect_sasl(mocker):
-    go = mocker.patch('ldap2pg.ldap.gather_options')
-    ldap_initialize = mocker.patch('ldap2pg.ldap.ldap_initialize')
+    go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap_initialize', autospec=True)
 
     from ldap2pg.ldap import connect
 
@@ -40,7 +40,7 @@ def test_connect_sasl(mocker):
 
     connect()
 
-    l = ldap_initialize.return_value
+    l = li.return_value
     assert l.sasl_interactive_bind_s.called is True
 
 

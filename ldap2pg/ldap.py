@@ -15,6 +15,40 @@ logger = logging.getLogger(__name__)
 __all__ = ['SCOPE_SUBTREE', 'LDAPError', 'str2dn']
 
 
+def fi_encode(value):
+    # Encode everyting in value. value can be of any types. Actually, tuple and
+    # sets are not preserved.
+    if hasattr(value, 'encode'):
+        return value.encode('utf-8')
+    elif hasattr(value, 'items'):
+        return {k: fi_encode(v) for k, v in value.items()}
+    elif hasattr(value, '__iter__'):
+        return [fi_encode(v) for v in value]
+    else:
+        return value
+
+
+class EncodedParamsCallable(object):
+    # Wrap a callable not accepting unicode to encode all arguments.
+    def __init__(self, callable_):
+        self.callable_ = callable_
+
+    def __call__(self, *a, **kw):
+        return self.callable_(*fi_encode(a), **fi_encode(kw))
+
+
+class UnicodeModeLDAPObject(object):
+    # Simulate UnicodeMode from pyldap, on top of python-ldap. This is not a
+    # Python2 issue but rather python-ldap not managing strings. Here we do it
+    # for this.
+
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+
+    def __getattr__(self, name):
+        return EncodedParamsCallable(getattr(self.wrapped, name))
+
+
 def connect(**kw):
     # Sources order, see ldap.conf(3)
     #   variable     $LDAPNOINIT, and if that is not set:
@@ -29,7 +63,8 @@ def connect(**kw):
 
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
-    l = ldap_initialize(options['URI'], bytes_mode=False)
+    l = UnicodeModeLDAPObject(ldap_initialize(options['URI']))
+
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
         auth = sasl.sasl({
@@ -40,6 +75,7 @@ def connect(**kw):
     else:
         logger.debug("Trying simple bind.")
         l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+
     return l
 
 
