@@ -8,6 +8,7 @@ import os
 from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
 from ldap.dn import str2dn
 from ldap import sasl
+from six import PY2
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,9 @@ def connect(**kw):
 
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
-    l = UnicodeModeLDAPObject(ldap_initialize(options['URI']))
+    l = ldap_initialize(options['URI'])
+    if PY2:
+        l = UnicodeModeLDAPObject(l)
 
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
