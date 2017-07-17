@@ -23,14 +23,10 @@ yum_install() {
 yum_install epel-release
 yum_install \
     cyrus-sasl-md5 \
-    gcc \
     make \
     openldap-clients \
-    openldap-devel\
-    openssl-devel \
     postgresql \
     python \
-    python-devel \
     python2-pip \
     ${NULL-}
 
@@ -40,7 +36,7 @@ psql -tc "SELECT version();"
 
 # Install only ldap2pg and ldap3 package. If other package are required, it's a
 # bug.
-pip2 install --no-deps pyldap --requirement tests/func/requirements.txt
+pip2 install --no-deps --requirement tests/func/requirements.txt
 if ! rpm --query --queryformat= ldap2pg ; then
     yum install -y dist/ldap2pg*.noarch.rpm
     rpm --query --queryformat= ldap2pg
