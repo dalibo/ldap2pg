@@ -22,6 +22,7 @@ yum_install() {
 
 yum_install epel-release
 yum_install \
+    cyrus-sasl-md5 \
     gcc \
     make \
     openldap-clients \

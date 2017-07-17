@@ -8,7 +8,11 @@ services:
       LDAP_ADMIN_PASSWORD: fonctionnel
       LDAP_CONFIG_PASSWORD: fonctionnel
       LDAP_TLS_VERIFY_CLIENT: try
+    volumes:
+    - ../../docker/openldap-entrypoint.sh:/ldap2pg-entrypoint.sh
+    - ../../docker/dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
     hostname: ldap.ldap2pg.docker
+    entrypoint: /ldap2pg-entrypoint.sh
 
   postgres:
     image: postgres:9.6
