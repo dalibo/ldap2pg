@@ -60,6 +60,7 @@ def main():
     verbose = os.environ.get('VERBOSE', '').lower() in {'1', 'y'}
 
     config = Configuration()
+    config['debug'] = debug
     config['verbose'] = debug or verbose
     config['color'] = sys.stderr.isatty()
     logging.config.dictConfig(config.logging_dict())
