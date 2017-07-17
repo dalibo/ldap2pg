@@ -74,3 +74,15 @@ def test_stdin():
     out = ldap2pg('--config=-', _in="- role: stdinuser")
 
     assert b'stdinuser' in out.stderr
+
+
+@pytest.mark.xfail(
+    'CI' in os.environ,
+    reason="Can't setup SASL with osixia/openldap:1.1.8")
+def test_sasl():
+    from sh import ldap2pg
+
+    env = dict(os.environ, LDAPUSER='slap', LDAPPASSWORD='voyage')
+    out = ldap2pg(verbose=True, _env=env)
+
+    assert b'SASL' in out.stderr

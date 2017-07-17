@@ -30,6 +30,20 @@ def test_connect_from_env(mocker):
     assert ldap_initialize.called is True
 
 
+def test_connect_sasl(mocker):
+    go = mocker.patch('ldap2pg.ldap.gather_options')
+    ldap_initialize = mocker.patch('ldap2pg.ldap.ldap_initialize')
+
+    from ldap2pg.ldap import connect
+
+    go.return_value = dict(URI='ldaps://host', USER='toto', PASSWORD='pw')
+
+    connect()
+
+    l = ldap_initialize.return_value
+    assert l.sasl_interactive_bind_s.called is True
+
+
 def test_options_dict():
     from ldap2pg.ldap import Options
 
