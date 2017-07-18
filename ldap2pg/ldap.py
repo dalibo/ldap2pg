@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 __all__ = ['SCOPE_SUBTREE', 'LDAPError', 'str2dn']
 
 
-def fi_encode(value):
+def fi_encode(value):  # pragma: nocover_py3
     # Encode everyting in value. value can be of any types. Actually, tuple and
     # sets are not preserved.
     if hasattr(value, 'encode'):
@@ -29,7 +29,7 @@ def fi_encode(value):
         return value
 
 
-class EncodedParamsCallable(object):
+class EncodedParamsCallable(object):  # pragma: nocover_py3
     # Wrap a callable not accepting unicode to encode all arguments.
     def __init__(self, callable_):
         self.callable_ = callable_
@@ -38,7 +38,7 @@ class EncodedParamsCallable(object):
         return self.callable_(*fi_encode(a), **fi_encode(kw))
 
 
-class UnicodeModeLDAPObject(object):
+class UnicodeModeLDAPObject(object):  # pragma: nocover_py3
     # Simulate UnicodeMode from pyldap, on top of python-ldap. This is not a
     # Python2 issue but rather python-ldap not managing strings. Here we do it
     # for this.
@@ -65,7 +65,7 @@ def connect(**kw):
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
     l = ldap_initialize(options['URI'])
-    if PY2:
+    if PY2:  # pragma: nocover_py3
         l = UnicodeModeLDAPObject(l)
 
     if options.get('USER'):
