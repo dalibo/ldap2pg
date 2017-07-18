@@ -6,6 +6,7 @@
 
 Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
 
+
 Features
 ========
 
@@ -62,7 +63,7 @@ options.
 Installation
 ============
 
-Install it from PypI tarball::
+Install it from PyPI tarball::
 
     pip install ldap2pg
 
