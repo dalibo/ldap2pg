@@ -6,6 +6,7 @@ configuration from three sources, in the following order:
 1. command line arguments.
 2. environment variables.
 3. configuration file.
+4. ldaprc, ldap.conf, etc.
 
 The `--help` switch shows regular online documentation for CLI arguments. As of
 version 1.0, this looks like:

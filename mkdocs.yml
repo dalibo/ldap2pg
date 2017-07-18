@@ -11,8 +11,8 @@ pages:
 - Installation: install.md
 - Configuration: config.md
 #- Cookbook: cookbook.md
+- Hacking: hacking.md
 - Changelog: changelog.md
-#- Develop: contribute.md
 
 theme: readthedocs
 site_dir: build/docs/

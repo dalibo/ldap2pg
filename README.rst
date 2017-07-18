@@ -1,10 +1,11 @@
-=====================================================
- ``ldap2pg`` -- Synchronize Postgres roles from LDAP
-=====================================================
+====================================================
+ ``ldap2pg`` -- PostgreSQL roles and ACL management
+====================================================
 
 | |CircleCI| |Codecov| |RTD| |PyPI|
 
-Swiss-army knife to synchronize Postgres roles from any LDAP directory.
+Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
+
 
 Features
 ========
@@ -12,6 +13,7 @@ Features
 - Creates, alter and drops PostgreSQL roles from LDAP queries.
 - Creates static roles from YAML to complete LDAP entries.
 - Manage role members (alias *groups*).
+- Grant or revoke custom ACL statically or from LDAP entries.
 - Dry run.
 - Logs LDAP queries as ``ldapsearch`` commands.
 - Logs **every** SQL queries.
@@ -61,7 +63,7 @@ options.
 Installation
 ============
 
-Install it from PypI tarball::
+Install it from PyPI tarball::
 
     pip install ldap2pg
 
