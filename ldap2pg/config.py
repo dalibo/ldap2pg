@@ -513,7 +513,7 @@ class Configuration(dict):
             # Only store value from argv. Defaults are managed by
             # Configuration.
             argument_default=SUPPRESS_ARG,
-            description="Swiss-army knife to sync Postgres ACL from LDAP.",
+            description="PostgreSQL roles and ACL management.",
             epilog=self.EPILOG,
         )
         define_arguments(parser)
