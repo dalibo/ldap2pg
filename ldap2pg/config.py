@@ -263,7 +263,10 @@ def define_arguments(parser):
     parser.add_argument(
         '-c', '--config',
         action='store', dest='config', metavar='PATH',
-        help='path to YAML configuration file (env: LDAP2PG_CONFIG)'
+        help=(
+            'path to YAML configuration file (env: LDAP2PG_CONFIG). '
+            'Use - for stdin.'
+        )
     )
     parser.add_argument(
         '-n', '--dry',
