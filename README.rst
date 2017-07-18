@@ -1,3 +1,5 @@
+.. image:: /docs/img/logo-ldap2pg80px.png
+
 ====================================================
  ``ldap2pg`` -- PostgreSQL roles and ACL management
 ====================================================
