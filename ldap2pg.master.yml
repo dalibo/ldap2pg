@@ -8,10 +8,6 @@
 # it: clone the repository, run pip install -e ., run docker-compose -d then
 # just run ldap2pg. See dev-fixture.ldif and dev-fixture.sql for details on data
 # migrated.
-#
-# ldap2pg accepts a special env vars: DEBUG with values 1, y or Y. This enable
-# verbose logging. If ldap2pg is executed from a terminal, a debugger is
-# triggered on unhandled error.
 
 # Colorization. env var: COLOR=<anything>
 color: yes

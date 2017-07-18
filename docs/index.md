@@ -1,7 +1,7 @@
 <h1><code>ldap2pg</code></h1>
 
-`ldap2pg` is a simple yet powerful tool to synchronize Postgres roles from LDAP
-directories, including OpenLDAP and Active Directory.
+`ldap2pg` is a simple yet powerful tool to synchronize Postgres roles and ACLs
+from LDAP directories, including OpenLDAP and Active Directory.
 
 Project goals include **stability**, **portability**, high **configurability**,
 state of the art code **quality** and nice **user experience**.
@@ -15,6 +15,7 @@ state of the art code **quality** and nice **user experience**.
 - Customize Postgres role options (`LOGIN`, `SUPERUSER`, `REPLICATION`, etc.).
 - Create, alter and drop roles.
 - Manage role members.
+- Grant or revoke ACLs per database and/or per schema.
 - Dry run to audit a cluster.
 
 
@@ -38,4 +39,4 @@ a good way to start.
 # editor ldap2pg.yml
 ```
 
-Finally, it's up to you tu use `ldap2pg` in a crontab or a playbook.
+Finally, it's up to you to use `ldap2pg` in a crontab or a playbook. Have fun !
