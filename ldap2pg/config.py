@@ -271,12 +271,12 @@ def define_arguments(parser):
     parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
-        help="don't touch Postgres, just print what to do (env: DRY)"
+        help="don't touch Postgres, just print what to do (env: DRY=1)"
     )
     parser.add_argument(
         '-N', '--real',
         action='store_false', dest='dry',
-        help="real mode, apply changes to Postgres (env: DRY)"
+        help="real mode, apply changes to Postgres (env: DRY='')"
     )
     parser.add_argument(
         '-v', '--verbose',
@@ -286,12 +286,12 @@ def define_arguments(parser):
     parser.add_argument(
         '--color',
         action='store_true', dest='color',
-        help="force color output (env: COLOR)"
+        help="force color output (env: COLOR=1)"
     )
     parser.add_argument(
         '--no-color',
         action='store_false', dest='color',
-        help="force plain text output (env: COLOR)"
+        help="force plain text output (env: COLOR='')"
     )
     parser.add_argument(
         '-?', '--help',
