@@ -30,16 +30,15 @@ yum_install \
     python2-pip \
     ${NULL-}
 
-
-# Check Postgres connectivity
-psql -tc "SELECT version();"
-
-# Install only ldap2pg and ldap3 package. If other package are required, it's a
-# bug.
-pip2 install --no-deps --requirement tests/func/requirements.txt
 if ! rpm --query --queryformat= ldap2pg ; then
     yum install -y dist/ldap2pg*.noarch.rpm
     rpm --query --queryformat= ldap2pg
 fi
+
+# Check Postgres connectivity
+psql -tc "SELECT version();"
+
+# Install requirements tools with pip.
+pip2 install --no-deps --requirement tests/func/requirements.txt
 
 make -C tests/func pytest
