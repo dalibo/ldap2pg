@@ -1,5 +1,4 @@
-|ldap2pg|
-
+.. image:: /docs/img/ldap2pg-catchphrase-transp.png
 =====================================
  PostgreSQL roles and ACL management
 =====================================
