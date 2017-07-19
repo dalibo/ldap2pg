@@ -1,8 +1,8 @@
-.. image:: /docs/img/logo-ldap2pg80px.png 
+|ldap2pg|
 
-====================================================
- ``ldap2pg`` -- PostgreSQL roles and ACL management
-====================================================
+=====================================
+ PostgreSQL roles and ACL management
+=====================================
 
 | |CircleCI| |Codecov| |RTD| |PyPI|
 
@@ -80,6 +80,10 @@ Install it from PyPI tarball::
 .. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
+
+.. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-horizontal.png
+   :target: https://github.com/dalibo/ldap2pg
+   :alt: ldap2pg logo
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/ldap2pg.svg
    :target: https://pypi.python.org/pypi/ldap2pg
