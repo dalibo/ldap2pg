@@ -36,9 +36,7 @@ $ psql -c 'SELECT version()';
 
 Do the same to setup `libldap2` with `LDAP*` envvars. A `ldaprc` is provided
 setting up `BINDDN` and `BASE`. `ldap2pg` supports `LDAPPASSWORD` to set
-password from env. Check it with `ldapsearch`. Note that currently, OpenLDAP
-startup is long due to installation of SASL modules.
-See [osixia/openldap#130](https://github.com/osixia/docker-openldap/pull/130).
+password from env. Check it with `ldapsearch`:
 
 ``` console
 $ export LDAPURI=ldaps://ldap.ldap2pg.dockr LDAPPASSWORD=integral

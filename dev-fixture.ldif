@@ -8,15 +8,15 @@
 # referencing peoples entries.
 #
 
-dn: cn=slap,dc=ldap,dc=ldap2pg,dc=docker
+# Create the testsasl user to test SASL
+dn: cn=testsasl,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectClass: inetOrgPerson
-cn: slap
-uid: slap
+cn: testsasl
+uid: testsasl
 sn: SASL is not Simple
-# Clear password for slap auth
+# Clear password for SASL auth
 userPassword: voyage
-#authzFrom: dn: uid=slap,cn=DIGEST-MD5,cn=auth
 
 dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add

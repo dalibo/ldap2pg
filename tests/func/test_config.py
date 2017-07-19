@@ -78,11 +78,11 @@ def test_stdin():
 
 @pytest.mark.xfail(
     'CI' in os.environ,
-    reason="Can't setup SASL with osixia/openldap:1.1.8")
+    reason="Can't setup SASL on CircleCI")
 def test_sasl():
     from sh import ldap2pg
 
-    env = dict(os.environ, LDAPUSER='slap', LDAPPASSWORD='voyage')
+    env = dict(os.environ, LDAPUSER='testsasl', LDAPPASSWORD='voyage')
     out = ldap2pg(verbose=True, _env=env)
 
     assert b'SASL' in out.stderr

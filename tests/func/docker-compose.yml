@@ -2,17 +2,18 @@ version: '2'
 
 services:
   ldap:
-    image: osixia/openldap:1.1.8
+    image: osixia/openldap:1.1.9
     environment:
       LDAP_DOMAIN: ldap.ldap2pg.docker
       LDAP_ADMIN_PASSWORD: fonctionnel
       LDAP_CONFIG_PASSWORD: fonctionnel
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ../../docker/openldap-entrypoint.sh:/ldap2pg-entrypoint.sh
-    - ../../docker/dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ../../dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ../../dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-fixture.ldif
     hostname: ldap.ldap2pg.docker
-    entrypoint: /ldap2pg-entrypoint.sh
+    domainname: ldap.ldap2pg.docker
+    command: [--copy-service, --loglevel, trace]
 
   postgres:
     image: postgres:9.6
