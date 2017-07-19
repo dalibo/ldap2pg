@@ -34,7 +34,7 @@ Features
         options: LOGIN
     $ ldap2pg --real
     Using ./ldap2pg.yml.
-    Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
+    Using /home/.../src/dalibo/ldap2pg/ldap2pg.yml.
     Starting ldap2pg 1.0.
     Running in real mode.
     Inspecting Postgres...
