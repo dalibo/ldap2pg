@@ -167,10 +167,10 @@ class SyncManager(object):
         for rule in grant:
             acl = rule.get('acl')
             database = rule.get('database', dbname)
-            if database == '__common__':
+            if database == '__all__':
                 database = AclItem.ALL_DATABASES
             schema = rule.get('schema', schema)
-            if schema == '__common__':
+            if schema == '__any__':
                 schema = None
             pattern = rule.get('role_match')
 

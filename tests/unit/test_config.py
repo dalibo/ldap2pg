@@ -207,7 +207,7 @@ def test_ismapping():
     assert ismapping(dict(roles=[]))
     assert ismapping(dict(role=dict()))
     assert not ismapping([])
-    assert not ismapping(dict(__common__=[]))
+    assert not ismapping(dict(__all__=[]))
 
 
 def test_process_syncmap():
@@ -216,20 +216,20 @@ def test_process_syncmap():
     fixtures = [
         # Canonical case.
         dict(
-            __common__=dict(
-                __common__=[
+            __all__=dict(
+                __any__=[
                     dict(role=dict(name='alice')),
                 ]
             ),
         ),
         # Squeeze list.
         dict(
-            __common__=dict(
-                __common__=dict(role=dict(name='alice')),
+            __all__=dict(
+                __any__=dict(role=dict(name='alice')),
             ),
         ),
         # Squeeze also schema.
-        dict(__common__=dict(role=dict(name='alice'))),
+        dict(__all__=dict(role=dict(name='alice'))),
         # Squeeze also database.
         dict(role=dict(name='alice')),
         # Direct list (this is 1.0 format).
@@ -240,9 +240,9 @@ def test_process_syncmap():
         v = syncmap(raw)
 
         assert isinstance(v, dict)
-        assert '__common__' in v
-        assert '__common__' in v['__common__']
-        maplist = v['__common__']['__common__']
+        assert '__all__' in v
+        assert '__any__' in v['__all__']
+        maplist = v['__all__']['__any__']
         assert 1 == len(maplist)
         assert 'roles' in maplist[0]
 
@@ -509,7 +509,7 @@ def test_load_stdin(mocker):
 
     config.load(argv=[])
 
-    maplist = config['sync_map']['__common__']['__common__']
+    maplist = config['sync_map']['__all__']['__any__']
     assert 1 == len(maplist)
 
 
@@ -532,6 +532,6 @@ def test_load_file(mocker):
     config.load(argv=['--verbose'])
 
     assert 'envpass' == config['ldap']['password']
-    maplist = config['sync_map']['__common__']['__common__']
+    maplist = config['sync_map']['__all__']['__any__']
     assert 1 == len(maplist)
     assert config['verbose'] is True

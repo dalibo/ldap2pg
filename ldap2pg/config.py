@@ -191,8 +191,8 @@ def syncmap(value):
     #
     # A sync map has the following canonical schema:
     #
-    # <__common__|dbname>:
-    #   <__common__|schema>:
+    # <__all__|dbname>:
+    #   <__any__|schema>:
     #   - ldap: <ldapquery>
     #     roles:
     #     - <rolerule>
@@ -234,21 +234,21 @@ def syncmap(value):
     if not value:
         raise ValueError("Empty mapping.")
 
-    if isinstance(value, list):
-        value = dict(__common__=value)
-
     if ismapping(value):
-        value = dict(__common__=[value])
+        value = [value]
+
+    if isinstance(value, list):
+        value = dict(__all__=value)
 
     if not isinstance(value, dict):
         raise ValueError("Illegal value for sync_map.")
 
     for dbname, ivalue in value.items():
-        if isinstance(ivalue, list):
-            value[dbname] = ivalue = dict(__common__=ivalue)
-
         if ismapping(ivalue):
-            value[dbname] = ivalue = dict(__common__=[ivalue])
+            value[dbname] = ivalue = [ivalue]
+
+        if isinstance(ivalue, list):
+            value[dbname] = ivalue = dict(__any__=ivalue)
 
         for schema, maplist in ivalue.items():
             if isinstance(maplist, dict):
