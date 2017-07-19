@@ -83,19 +83,13 @@ $
 
 # Development fixtures
 
+OpenLDAP is starts with `dev-fixture.ldif` data. `dev-fixture.ldif` is well
+commented.
+
 Some users, database and ACLs are provided for testing purpose in
 `./dev-fixture.sh`. Postgres instance is initialized with this automatically.
 This script also resets modifications to Postgres instance by `ldap2pg`. You can
 run `./dev-fixture.sh` every time you need to reset the Postgres instance.
-
-`dev-fixture.ldif` provides the data seeding the OpenLDAP. You must do this
-manually.
-
-``` console
-$ ldapadd -xw $LDAPPASSWORD -f dev-fixture.ldif
-```
-
-These fixtures are tested in functionnal tests. See below.
 
 
 # Debugging

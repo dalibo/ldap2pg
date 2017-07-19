@@ -9,6 +9,7 @@
 #
 
 dn: cn=slap,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectClass: inetOrgPerson
 cn: slap
 uid: slap
@@ -18,64 +19,76 @@ userPassword: voyage
 #authzFrom: dn: uid=slap,cn=DIGEST-MD5,cn=auth
 
 dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectclass: organizationalUnit
 objectclass: top
 ou: people
 
 # Our database Administrators: a*
 dn: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: ALICE
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: ALICE
 
 dn: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: Alan
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: Alan
 
 dn: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: albert
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: albert
 
 # Our developers: d*
 dn: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: dave
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: dave
 
 dn: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: david
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: david
 
 dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: daniel
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: daniel
 
 dn: cn=donald,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-cn: donald
+changetype: add
 objectclass: organizationalRole
 objectclass: top
+cn: donald
 
 # Our outsiders: o*
 # dn: cn=oscar,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-# cn: oscar
+# changetype: add
 # objectclass: organizationalRole
 # objectclass: top
+# cn: oscar
 
 # dn: cn=olivier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-# cn: olivier
+# changetype: add
 # objectclass: organizationalRole
 # objectclass: top
+# cn: olivier
 
 dn: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectclass: organizationalUnit
 objectclass: top
 ou: groups
 
 dn: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: dba
@@ -87,11 +100,13 @@ member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
 # An old app
 # dn: cn=legacy,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+# changetype: add
 # objectClass: groupOfNames
 # objectClass: top
 # cn: legacy
 
 dn: cn=backend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: backend
@@ -99,6 +114,7 @@ member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
 dn: cn=frontend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: frontend
