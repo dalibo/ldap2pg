@@ -96,7 +96,7 @@ acl_dict:
 # entries returned by LDAP.
 sync_map:
   # Special database name to define global mapping
-  __common__:
+  __all__:
   - role:
       # Static rule to create an extra roles not in LDAP. Here we create a
       # ldap_users role in which all roles defined here will belong to. See below.

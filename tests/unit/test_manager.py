@@ -181,7 +181,7 @@ def test_apply_grant_rule_ok(mocker):
         grant=[dict(
             acl='connect',
             database='postgres',
-            schema='__common__',
+            schema='__any__',
             role_attribute='cn',
         )],
         entries=[None, None],
@@ -190,7 +190,7 @@ def test_apply_grant_rule_ok(mocker):
     assert 2 == len(items)
     assert 'alice' == items[0].role
     assert 'postgres' == items[0].dbname
-    # Ensure __common__ schema is mapped to None
+    # Ensure __any__ schema is mapped to None
     assert items[0].schema is None
     assert 'bob' == items[1].role
 
@@ -202,7 +202,7 @@ def test_apply_grant_rule_filter(mocker):
         grant=[dict(
             acl='connect',
             database='postgres',
-            schema='__common__',
+            schema='__any__',
             role_match='*_r',
             roles=['alice_r', 'bob_rw'],
         )],
@@ -224,7 +224,7 @@ def test_apply_grant_rule_nodb(mocker):
     items = list(manager.apply_grant_rules(
         grant=[dict(
             acl='connect',
-            database='__common__', schema='__common__',
+            database='__all__', schema='__any__',
             role_attribute='cn',
         )],
         entries=[None],
