@@ -1,7 +1,4 @@
-.. image:: /docs/img/ldap2pg-catchphrase-transp.png
-=====================================
- PostgreSQL roles and ACL management
-=====================================
+|ldap2pg|
 
 | |CircleCI| |Codecov| |RTD| |PyPI|
 
@@ -80,7 +77,7 @@ Install it from PyPI tarball::
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
 
-.. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-horizontal.png
+.. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
    :target: https://github.com/dalibo/ldap2pg
    :alt: ldap2pg logo
 
