@@ -263,17 +263,20 @@ def define_arguments(parser):
     parser.add_argument(
         '-c', '--config',
         action='store', dest='config', metavar='PATH',
-        help='path to YAML configuration file (env: LDAP2PG_CONFIG)'
+        help=(
+            'path to YAML configuration file (env: LDAP2PG_CONFIG). '
+            'Use - for stdin.'
+        )
     )
     parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
-        help="don't touch Postgres, just print what to do (env: DRY)"
+        help="don't touch Postgres, just print what to do (env: DRY=1)"
     )
     parser.add_argument(
         '-N', '--real',
         action='store_false', dest='dry',
-        help="real mode, apply changes to Postgres (env: DRY)"
+        help="real mode, apply changes to Postgres (env: DRY='')"
     )
     parser.add_argument(
         '-v', '--verbose',
@@ -283,12 +286,12 @@ def define_arguments(parser):
     parser.add_argument(
         '--color',
         action='store_true', dest='color',
-        help="force color output (env: COLOR)"
+        help="force color output (env: COLOR=1)"
     )
     parser.add_argument(
         '--no-color',
         action='store_false', dest='color',
-        help="force plain text output (env: COLOR)"
+        help="force plain text output (env: COLOR='')"
     )
     parser.add_argument(
         '-?', '--help',
@@ -496,8 +499,8 @@ class Configuration(dict):
 
     EPILOG = """\
 
-    ldap2pg requires a configuration file to describe LDAP queries and
-    role mappings. See project home for further details.
+    ldap2pg requires a configuration file to describe LDAP queries and role
+    mappings. See https://ldap2pg.readthedocs.org/ for further details.
 
     By default, ldap2pg runs in dry mode.
     """.replace(4 * ' ', '')
@@ -510,7 +513,7 @@ class Configuration(dict):
             # Only store value from argv. Defaults are managed by
             # Configuration.
             argument_default=SUPPRESS_ARG,
-            description="Swiss-army knife to sync Postgres ACL from LDAP.",
+            description="PostgreSQL roles and ACL management.",
             epilog=self.EPILOG,
         )
         define_arguments(parser)
