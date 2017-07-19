@@ -100,7 +100,6 @@ def dev(ldap):
     from sh import Command
 
     Command('./dev-fixture.sh')()
-    ldap.add('-f', 'dev-fixture.ldif')
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -116,8 +115,3 @@ def flushall(ldap, psql):
         "DELETE FROM pg_catalog.pg_authid "
         "WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';",
     )
-
-    children = ldap.search_sub_dn(base='dc=ldap,dc=ldap2pg,dc=docker')
-    for dn in reversed(list(children)):
-        if 'cn=admin,' not in dn:
-            ldap.delete(dn)
