@@ -30,7 +30,6 @@ services:
     labels:
       com.dnsdock.alias: ldap.ldap2pg.docker
 
-
   postgres:
     image: postgres:9.6
     volumes:
