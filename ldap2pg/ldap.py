@@ -8,7 +8,8 @@ import os
 from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
 from ldap.dn import str2dn
 from ldap import sasl
-from six import PY2
+
+from .utils import PY2
 
 
 logger = logging.getLogger(__name__)

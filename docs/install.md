@@ -20,7 +20,7 @@ dependencies.
 
 ``` console
 # yum install -y epel-release
-# yum install -y gcc openldap-clients openldap-devel  openssl-devel postgresql python python-devel python2-pip python-six python-psycopg2 PyYAML python2-pyasn1
+# yum install -y gcc openldap-clients openldap-devel  openssl-devel postgresql python python-devel python2-pip python-psycopg2 PyYAML python2-pyasn1
 # pip2 install --no-deps ldap2pg pyldap
 ```
 
@@ -30,6 +30,6 @@ dependencies.
 On Debian jessie, you can use regular Python3.4.
 
 ``` console
-# apt install -y python3-pip python3-psycopg2 python3-six python3-wheel python3-yaml python-pyldap
+# apt install -y python3-pip python3-psycopg2 python3-wheel python3-yaml python-pyldap
 # pip3 install --no-deps ldap2pg
 ```

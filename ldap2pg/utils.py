@@ -1,4 +1,15 @@
+from __future__ import unicode_literals
+
+import sys
 from fnmatch import fnmatch
+
+
+PY2 = sys.version_info < (3,)
+
+if PY2:
+    string_types = (str, unicode)
+else:
+    string_types = (str,)
 
 
 class AllDatabases(object):

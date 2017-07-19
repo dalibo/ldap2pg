@@ -9,7 +9,6 @@ from os import stat
 import re
 import sys
 
-from six import string_types
 import yaml
 
 from . import __version__
@@ -18,6 +17,7 @@ from .utils import (
     deepget,
     deepset,
     UserError,
+    string_types,
 )
 from .role import RoleOptions
 
