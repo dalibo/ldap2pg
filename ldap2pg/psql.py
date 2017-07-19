@@ -28,7 +28,16 @@ class PSQL(object):
             ) % (self.max_pool_size)
             raise UserError(msg)
 
-        connstring = self.connstring + " dbname=%s" % (dbname,)
+        if self.connstring.startswith('postgres://'):
+            if '/?' in self.connstring:
+                connstring = self.connstring.replace('/?', '/%s?' % (dbname,))
+            elif '?' in self.connstring:
+                connstring = self.connstring.replace('?', '/%s?' % (dbname,))
+            else:
+                connstring = self.connstring.rstrip('/') + "/%s" % (dbname,)
+        else:
+            connstring = self.connstring + " dbname=%s" % (dbname,)
+
         session = self.pool.setdefault(dbname, PSQLSession(connstring.strip()))
         return session
 

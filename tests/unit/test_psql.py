@@ -8,9 +8,19 @@ def test_psql(mocker):
     conn = connect.return_value
     cursor = conn.cursor.return_value
 
-    psql = PSQL('')
-    session = psql('postgres')
-    assert 'postgres' in session.connstring
+    dsns = [
+        '',
+        'postgres://toto@localhost',
+        'postgres://toto@localhost?connect_timeout=4',
+        'postgres://toto@localhost/?connect_timeout=4',
+    ]
+    for dsn in dsns:
+        psql = PSQL(dsn)
+        session = psql('postgres')
+        if dsn.startswith('postgres://'):
+            assert 'localhost/postgres' in session.connstring
+        else:
+            assert 'dbname=postgres' in session.connstring
 
     with session:
         assert connect.called is True
