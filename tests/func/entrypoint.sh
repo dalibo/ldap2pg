@@ -14,6 +14,10 @@ cd $top_srcdir
 test -f setup.py
 test -f dist/ldap2pg-*.noarch.rpm
 
+if [ -z "${LDAPBINDDN-}" ] ; then
+    exec env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) $0 $@
+fi
+
 yum_install() {
     local packages=$*
     yum install -y $packages
@@ -35,10 +39,15 @@ if ! rpm --query --queryformat= ldap2pg ; then
     rpm --query --queryformat= ldap2pg
 fi
 
-# Check Postgres connectivity
+# Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
+ldapwhoami -xw ${LDAPPASSWORD}
 
 # Install requirements tools with pip.
 pip2 install --no-deps --requirement tests/func/requirements.txt
+
+if [ -n "${CI+x}" ] ; then
+    ldapmodify -xw ${LDAPPASSWORD} -f ./dev-fixture.ldif
+fi
 
 make -C tests/func pytest
