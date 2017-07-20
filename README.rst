@@ -80,7 +80,7 @@ Install it from PyPI tarball::
 
 .. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
    :target: https://github.com/dalibo/ldap2pg
-   :alt: ldap2pg logo
+   :alt: ldap2pg: PostgreSQL role and ACL management
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/ldap2pg.svg
    :target: https://pypi.python.org/pypi/ldap2pg
