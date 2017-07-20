@@ -17,38 +17,39 @@ Features
 - Logs **every** SQL queries.
 - Reads settings from YAML config file.
 
+Here is a sample configuration and execution:
+
 ::
 
-    $ cat ldap2pg.yml
+    $ cat ldap2pg.minimal.yml
     sync_map:
-      ldap:
-        base: ou=people,dc=ldap2pg,dc=local
+    - role:
+        name: ldap
+        options: NOLOGIN
+    - ldap:
+        base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
         filter: "(objectClass=organizationalRole)"
         attribute: cn
       role:
         name_attribute: cn
         options: LOGIN
-    $ ldap2pg --real
-    Using ./ldap2pg.yml.
-    Using /home/.../src/dalibo/ldap2pg/ldap2pg.yml.
-    Starting ldap2pg 1.0.
+        parent: ldap
+    $ ldap2pg --color --config ldap2pg.minimal.yml --real 2>&1 | sed s,bersace,...,g
+    Starting ldap2pg 2.0a3.
+    Using /home/.../src/dalibo/ldap2pg/ldap2pg.minimal.yml.
     Running in real mode.
     Inspecting Postgres...
-    Querying LDAP cn=dba,ou=groups,dc=ldap2pg,dc=local...
-    Querying LDAP ou=groups,dc=ldap2pg,dc=local...
+    Querying LDAP ou=people,dc=ldap,dc=ldap2pg,dc=docker...
     Create alan.
+    Create albert.
     Create dave.
-    Create david.
-    Create ldap_users.
-    Add ldap_users members.
-    Add missing backend members.
-    Delete spurious backend members.
+    Create donald.
+    Create ldap.
+    Add ldap members.
     Update options of alice.
-    Would reassign oscar objects and purge ACL on backend.
-    Would reassign oscar objects and purge ACL on frontend.
-    Would reassign oscar objects and purge ACL on legacy.
-    Would reassign oscar objects and purge ACL on postgres.
-    Would reassign oscar objects and purge ACL on template1.
+    Reassign oscar objects and purge ACL on frontend.
+    Reassign oscar objects and purge ACL on postgres.
+    Reassign oscar objects and purge ACL on template1.
     Drop oscar.
     Synchronization complete.
     $

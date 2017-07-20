@@ -9,7 +9,7 @@ configuration from three sources, in the following order:
 4. ldaprc, ldap.conf, etc.
 
 The `--help` switch shows regular online documentation for CLI arguments. As of
-version 1.0, this looks like:
+version 2.0, this looks like:
 
 ``` console
 $ ldap2pg --help
