@@ -1,6 +1,7 @@
 #!/bin/bash -eux
+
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
-# synchronization. See dev-fixture.ldif for details.
+# synchronization. See openldap-data.ldif for details.
 
 psql <<EOSQL
 -- Purge everything.

@@ -6,8 +6,7 @@
 #
 # This file is tested under CI with real OpenLDAP and Postgres services. To test
 # it: clone the repository, run pip install -e ., run docker-compose -d then
-# just run ldap2pg. See dev-fixture.ldif and dev-fixture.sh for details on data
-# migrated.
+# just run ldap2pg. See fixtures/ for details on data migrated.
 
 # Colorization. env var: COLOR=<anything>
 color: yes

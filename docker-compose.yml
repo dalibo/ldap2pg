@@ -16,8 +16,8 @@ services:
       LDAP_CONFIG_PASSWORD: territorial
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ./dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
-    - ./dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-fixture.ldif
+    - ./fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ./fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
     hostname: ldap.ldap2pg.docker
     domainname: ldap.ldap2pg.docker
     command: [--copy-service, --loglevel, debug]
@@ -27,6 +27,6 @@ services:
   postgres:
     image: postgres:9.6
     volumes:
-    - ./dev-fixture.sh:/docker-entrypoint-initdb.d/dev-fixture.sh
+    - ./fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
