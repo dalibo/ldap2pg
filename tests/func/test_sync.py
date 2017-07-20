@@ -8,7 +8,7 @@ import pytest
 def test_dry_run(dev, ldap, psql):
     from sh import ldap2pg
 
-    ldap2pg('--verbose')
+    ldap2pg('--verbose', '--config', 'tests/func/ldap2pg.yml')
     roles = list(psql.roles())
     superusers = list(psql.superusers())
     assert 'oscar' in roles
@@ -24,7 +24,7 @@ def test_real_mode(dev, ldap, psql):
     with pytest.raises(ErrorReturnCode):
         psql(U='daniel', d='frontend', c='SELECT CURRENT_USER')
 
-    print(ldap2pg('-vN', c='ldap2pg.master.yml'))
+    ldap2pg('-vN', c='tests/func/ldap2pg.yml')
 
     roles = list(psql.roles())
     frontend = list(psql.members('frontend'))
@@ -57,6 +57,6 @@ def test_real_mode(dev, ldap, psql):
 def test_nothing_to_do():
     from sh import ldap2pg
 
-    out = ldap2pg('--real', '--config', 'ldap2pg.master.yml')
+    out = ldap2pg('--real', '--config', 'tests/func/ldap2pg.yml')
 
     assert b'Nothing to do' in out.stderr
