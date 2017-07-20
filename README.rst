@@ -4,6 +4,7 @@
 
 Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
 
+.. _documentation: http://ldap2pg.readthedocs.io/
 
 Features
 ========
@@ -55,8 +56,8 @@ Here is a sample configuration and execution:
     $
 
 See versionned `ldap2pg.yml
-<https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml>`_ for further
-options.
+<https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml>`_ and documentation_
+for further options.
 
 
 Installation
@@ -66,9 +67,12 @@ Install it from PyPI tarball::
 
     pip install ldap2pg
 
+More details can be found in documentation_.
+
 
 ``ldap2pg`` is licensed under `PostgreSQL license
 <https://opensource.org/licenses/postgresql>`_.
+
 
 .. |Codecov| image:: https://codecov.io/gh/dalibo/ldap2pg/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/dalibo/ldap2pg
