@@ -1,9 +1,5 @@
 version: '2'
 
-volumes:
-  ldapetc:
-  ldapvar:
-
 services:
   admin:
     image: dinkel/phpldapadmin
@@ -20,8 +16,6 @@ services:
       LDAP_CONFIG_PASSWORD: territorial
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ldapetc:/etc/ldap/slap.d/
-    - ldapvar:/var/lib/ldap
     - ./dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
     - ./dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-fixture.ldif
     hostname: ldap.ldap2pg.docker
