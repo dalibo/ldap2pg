@@ -448,6 +448,12 @@ sync_map:
     role_attribute: member.cn
 ```
 
+We provide a well
+commented
+[ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml), tested
+on CI. This file is kept compatible with released `ldap2pg`. Feel free to start
+with it and adapt it to your needs.
+
 If you have trouble finding the right configuration for your needs,
 please [file an issue](https://github.com/dalibo/ldap2pg/issues/new) to get
 help. We would like to ship a Cookbook with well known use case as well as some
