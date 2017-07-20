@@ -96,10 +96,10 @@ def ldap():
 
 
 @pytest.fixture(scope='module')
-def dev(ldap):
+def dev():
     from sh import Command
 
-    Command('./dev-fixture.sh')()
+    Command('fixtures/postgres.sh')()
 
 
 @pytest.fixture(scope='module', autouse=True)

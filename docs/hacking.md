@@ -71,7 +71,7 @@ Now you can install `ldap2pg` from source and test your changes!
 $ pip install -e .
 $ ldap2pg
 Starting ldap2pg 2.0a1.
-Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.master.yml.
+Using /home/.../src/dalibo/ldap2pg/ldap2pg.yml.
 Running in dry mode. Postgres will be untouched.
 Inspecting Postgres...
 Querying LDAP ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
@@ -81,13 +81,14 @@ $
 
 # Development fixtures
 
-OpenLDAP is starts with `dev-fixture.ldif` data. `dev-fixture.ldif` is well
-commented.
+OpenLDAP is starts with `fixture/openldap-data.ldif` loaded. `fixture/openldap-data.ldif`
+is well commented.
 
 Some users, database and ACLs are provided for testing purpose in
-`./dev-fixture.sh`. Postgres instance is initialized with this automatically.
-This script also resets modifications to Postgres instance by `ldap2pg`. You can
-run `./dev-fixture.sh` every time you need to reset the Postgres instance.
+`./fixtures/postgres.sh`. Postgres instance is initialized with this
+automatically. This script also resets modifications to Postgres instance by
+`ldap2pg`. You can run `./fixtures/postgres.sh` every time you need to reset the
+Postgres instance.
 
 
 # Debugging

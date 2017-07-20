@@ -13,14 +13,7 @@ def test_help():
 def test_various_arguments(dev):
     from sh import ldap2pg
 
-    ldap2pg('-vn', '--color')
-
-
-def test_versionned_yaml():
-    from sh import ldap2pg
-
-    ldap2pg(config='ldap2pg.yml')
-    ldap2pg(config='ldap2pg.master.yml')
+    ldap2pg('-vn', '--color', '--config', 'ldap2pg.yml')
 
 
 YAML_FMT = """\
@@ -83,6 +76,6 @@ def test_sasl():
     from sh import ldap2pg
 
     env = dict(os.environ, LDAPUSER='testsasl', LDAPPASSWORD='voyage')
-    out = ldap2pg(verbose=True, _env=env)
+    out = ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
 
     assert b'SASL' in out.stderr

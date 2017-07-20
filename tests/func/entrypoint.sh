@@ -47,7 +47,9 @@ ldapwhoami -xw ${LDAPPASSWORD}
 pip2 install --no-deps --requirement tests/func/requirements.txt
 
 if [ -n "${CI+x}" ] ; then
-    ldapmodify -xw ${LDAPPASSWORD} -f ./dev-fixture.ldif
+    # We can't modify config with ldapmodify. This prevent us to setup SASL in
+    # CircleCI.
+    ldapmodify -xw ${LDAPPASSWORD} -f ./fixtures/openldap-data.ldif
 fi
 
 make -C tests/func pytest

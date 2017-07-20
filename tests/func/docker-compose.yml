@@ -9,8 +9,8 @@ services:
       LDAP_CONFIG_PASSWORD: fonctionnel
       LDAP_TLS_VERIFY_CLIENT: try
     volumes:
-    - ../../dev-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
-    - ../../dev-fixture.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-fixture.ldif
+    - ../../fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ../../fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-data.ldif
     hostname: ldap.ldap2pg.docker
     domainname: ldap.ldap2pg.docker
     command: [--copy-service, --loglevel, trace]
