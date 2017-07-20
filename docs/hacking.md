@@ -71,7 +71,7 @@ Now you can install `ldap2pg` from source and test your changes!
 $ pip install -e .
 $ ldap2pg
 Starting ldap2pg 2.0a1.
-Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.master.yml.
+Using /home/.../src/dalibo/ldap2pg/ldap2pg.yml.
 Running in dry mode. Postgres will be untouched.
 Inspecting Postgres...
 Querying LDAP ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
