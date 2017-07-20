@@ -6,7 +6,7 @@ readme-sample:
 	@echo -n '$$ '
 	cat ldap2pg.minimal.yml
 	@echo -n '$$ '
-	ldap2pg --color --config ldap2pg.minimal.yml --real 2>&1 | sed s,${LOGNAME},...,g
+	ldap2pg --color --config docs/ldap2pg.minimal.yml --real 2>&1 | sed s,${LOGNAME},...,g
 
 release:
 	python setup.py egg_info
