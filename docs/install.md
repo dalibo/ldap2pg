@@ -9,7 +9,7 @@ available from official distributions repositories.
 You can fetch all dependencies with PIP. Choose either `pip3` or `pip2`.
 
 ``` console
-# apt install libldap2-dev libsasl2-dev libpq-dev python3-pip python3-wheel
+# apt install -y libldap2-dev libsasl2-dev python3-pip
 # pip3 install ldap2pg
 ```
 
@@ -20,16 +20,22 @@ dependencies.
 
 ``` console
 # yum install -y epel-release
-# yum install -y gcc openldap-clients openldap-devel  openssl-devel postgresql python python-devel python2-pip python-psycopg2 PyYAML python2-pyasn1
-# pip2 install --no-deps ldap2pg pyldap
+# yum install -y gcc python python-devel python2-pip python-psycopg2 PyYAML python-ldap
+# pip2 install -U setuptools
+# pip2 install --no-binary :all: --no-deps ldap2pg
 ```
+
+Note that wheel package uses [pyldap](https://github.com/pyldap/pyldap) which is
+not packaged on CentOS. Installing from source will fallback
+to [python-ldap](https://www.python-ldap.org/). Installing from source require a
+recent setuptools version.
 
 
 # On Debian
 
-On Debian jessie, you can use regular Python3.4.
+On Debian jessie or later, you can use regular Python3 and wheel package.
 
 ``` console
-# apt install -y python3-pip python3-psycopg2 python3-wheel python3-yaml python-pyldap
+# apt install -y python3-pip python3-psycopg2 python3-yaml python3-pyldap
 # pip3 install --no-deps ldap2pg
 ```

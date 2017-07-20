@@ -24,7 +24,8 @@ state of the art code **quality** and nice **user experience**.
 Just use PyPI as any regular Python project:
 
 ``` console
-# pip install ldap2pg
+# apt install -y libldap2-dev libsasl2-dev
+# pip3 install ldap2pg
 # ldap2pg --help
 ```
 
