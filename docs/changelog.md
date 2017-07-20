@@ -7,8 +7,10 @@ just
 follow
 [merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
+
 # ldap2pg 2.0
 
+- Adopt new logo.
 - Inspect, grant and revoke custom ACLs.
 - Reassign objects on role delete.
 - Manage several databases.
@@ -20,6 +22,7 @@ follow
 - SSL/TLS support.
 - SASL authentification support.
 - Read configuration from stdin.
+
 
 # ldap2pg 1.0
 
