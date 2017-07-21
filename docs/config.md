@@ -68,7 +68,7 @@ $ PGDSN="host=localhost port=5432 user=postgres" ldap2pg
 `ldap2pg` works at cluster level. You **must not** specify database.
 
 
-Likewise for LDAP, `ldap2pg` supports `LDAP*` env vars and `ldaprc` file:
+The same goes for LDAP, `ldap2pg` supports `LDAP*` env vars and `ldaprc` file:
 
 ``` console
 $ LDAPURI=ldaps://localhost LDAPBINDDN=cn=you,dc=entreprise,dc=fr LDAPPASSWORD=pasglop ldap2pg
@@ -92,7 +92,7 @@ You can also configure Postgres and LDAP connection through `ldap2pg.yml`.
 
 # `ldap2pg.yml`
 
-`ldap2pg` **requires** a config file where the synchronisation map is described.
+`ldap2pg` **requires** a config file where the synchronization map is described.
 Everything can be configured from the YAML file: verbosity, real mode, LDAP and
 Postgres credentials, ACL and synchronization map.
 
@@ -159,16 +159,15 @@ Schema name can be `NULL` if the schema is irrelevant. Each tuple in the rowset
 references a grant of this ACL to a role on a schema (or none).
 
 `inspect` can be undefined. This is just as if the query returns an empty
-rowset. It's actually a bad idea no to provide `inspect`. This wont allow
-`ldap2pg` to revoke ACL. Also, this prevent you to check that a cluster is
-synchronized:  `ldap2pg` will always re-grant the ACL.
+rowset. It's actually a bad idea no to provide `inspect`. This won't allow
+`ldap2pg` to revoke ACL. Also, this prevents you to check that a cluster is
+synchronized: `ldap2pg` will always re-grant the ACL.
 
 `grant` and `revoke` provide queries to respectively grant and revoke the ACL.
 The query is formatted with three parameters: `database`, `schema` and `role`.
 `database` strictly equals to `CURRENT_DATABASE`, it's just there to help
-incrusting identifier in the query. `ldap2pg` uses named printf-style
-formatting. See example below. In verbose mode, you will see the formatted
-queries.
+putting identifier in the query. `ldap2pg` uses named printf-style formatting.
+See example below. In verbose mode, you will see the formatted queries.
 
 Here is an example of a simple ACL which is not schema-aware:
 
@@ -201,10 +200,10 @@ Postgres.
 
 ## Synchronization map
 
-The synchronization map is complex and polyform setting. The core element of the
-synchronization map is called a *mapping*. One or more mapping can be associated
-with either the cluster, a database within the cluster or a single schema in one
-database.
+The synchronization map is a complex and polyform setting. The core element of
+the synchronization map is called a *mapping*. One or more mappings can be
+associated with either the cluster, a database within the cluster or a single
+schema in one database.
 
 A mapping is a dict with three kind of rules: `ldap`, `roles` and `grant`.
 `ldap` entry is optionnal, however either one of `roles` or `grant` is required.
@@ -226,7 +225,7 @@ Here is a sample:
 
 `ldap` define the LDAP query. `base`, `filter` and either `attribute` or
 `attributes` must be defined. Their meaning is the same as in `ldapsearch`.
-`attribute` can be either a string or a list of string. You need at least one
+`attribute` can be either a string or a list of strings. You need at least one
 attribute, an empty entry is useless.
 
 `role` or `roles` contains one or more rules to
@@ -238,8 +237,8 @@ for each entry returned by the LDAP search.
 below for details.
 
 An LDAP search is not mandatory. `ldap2pg` can create roles defined statically
-from YAML. Ensure role and grant rules in the mapping does not have
-`*_attribute` keys. They will try to refer to an inexisting LDAP entry.
+from YAML. Ensure role and grant rules in the mapping do not have `*_attribute`
+keys. They will try to refer to an inexisting LDAP entry.
 
 Each LDAP search is done once and only once. There is no loop neither
 deduplication of LDAP searches.
@@ -281,25 +280,25 @@ Grant rule is a bit simpler than role rule. It tells `ldap2pg` to ensure a
 particular role has one defined ACL granted. An ACL assignment is identified
 by an ACL name, a database, a schema and a role.
 
-`acl` key references an ACL by it's name.
+`acl` key references an ACL by its name.
 
 `database` allows to scope the grant to a database. By default, `database` is
 inherited from the synchronization map. The special database name `__all__`
 means **all** databases. `ldap2pg` will loop every databases in the cluster but
 `template0` and apply the `grant` or `revoke` query on it.
 
-The same way, `schema` allows to scope the grant to a schema, regardless of
+In the same way, `schema` allows to scope the grant to a schema, regardless of
 database. If `schema` is `__any__` or `null`, the `grant` or `revoke` query will
 receive `None` as schema.
 
-`role` or `roles` key allow to specify statically one or more role to grant the
-ACL to. `role` must be a string or a list of string. Referenced roles must be
-created in the cluster and wont be implicitly created.
+`role` or `roles` keys allow to specify statically one or more role to grant the
+ACL to. `role` must be a string or a list of strings. Referenced roles must be
+created in the cluster and won't be implicitly created.
 
 `role_attribute` specifies how to fetch role name from LDAP entries. Just like
-any `*_attribute` key, it accept a `DN` attribute as well e.g: `name.cn`.
+any `*_attribute` key, it accepts a `DN` attribute as well e.g: `name.cn`.
 
-`role_match` is a pattern allowing you to limit de grant to roles whom name
+`role_match` is a pattern allowing you to limit the grant to roles whom name
 matches `role_match`.
 
 Here is a full example:
@@ -325,17 +324,17 @@ Actually, the simplest sync map is the following:
 -  role: alice
 ```
 
-Yep. This is enough for `ldap2pg`! It's just a list with a single static
+Yep. This is enough for `ldap2pg` ! It's just a list with a single static
 mapping. It tells `ldap2pg` to ensure the role `alice` is defined with `CREATE
 USER` defaults in the cluster. For the sake of simplicity, we'll use only static
 mapping in this section to explain the various structures of sync map.
 
-Unlike roles, ACL are not cluster wide. Actually, Postgres allow you to define
+Unlike roles, ACL are not cluster wide. Actually, Postgres allows you to define
 ACL per columns in a table in a schema in a database. `ldap2pg` deal is to ease
 to scope ACL up to schema. Deeper distinction is left to the user.
 
 You can group mapping per database and per schema in the synchronization map,
-using simple dictionnary. This avoid you to repeat `database` and `schema` key
+using simple dictionnary. This avoids you to repeat `database` and `schema` key
 in grant rules.
 
 For example, here is the way to grant `connect` ACL to one database named
@@ -389,11 +388,11 @@ sync_map:
     - role: alice
 ```
 
-Beware that queries are not cached. If you copy a query from database to
+Beware that queries are not cached. If you copy a query from a database to
 another, the LDAP search will be issued twice. As stated above, each `ldap:`
 entry in the sync map will trigger **one** LDAP search, no less no more.
-However, don't worry, `ldap2pg` deduplicate roles and grant produced by sync
-map. You wont hit `ERROR: role alice already exists`.
+However, don't worry, `ldap2pg` deduplicates roles and grants produced by sync
+map. You won't hit `ERROR: role alice already exists`.
 
 
 ### Sample
