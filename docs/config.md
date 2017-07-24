@@ -79,6 +79,10 @@ Inspecting Postgres...
 ...
 ```
 
+`ldap2pg` accepts two extras variables: `LADPPASSWORD` and `LDAPUSER`.
+`LDAPPASSWORD` is self explanatory. `LDAPUSER` triggers SASL authentication.
+Without `LDAPUSER`, `ldap2pg` switches to simple authentication.
+
 See `ldap.conf(1)` for further details on how to configure.
 
 A few other environment variables are available and described in
@@ -140,6 +144,7 @@ readable `ldap2pg.yml`.
 ldap:
   uri: ldap://ldap2pg.local:389
   binddn: cn=admin,dc=ldap2pg,dc=local
+  user: saslusername
   password: SECRET
 
 postgres:

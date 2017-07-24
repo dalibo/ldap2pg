@@ -28,6 +28,8 @@ ldap:
   uri: ldaps://ldap.ldap2pg.docker:636
   # env var: LDAPBINDDN
   binddn: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
+  # Set SASL username and enable SASL. env var: LDAPUSER
+  # user: saslusername
   # env var: LDAPPASSWORD
   password: SECRET
 
