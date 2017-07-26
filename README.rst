@@ -1,6 +1,6 @@
 |ldap2pg|
 
-| |CircleCI| |Codecov| |RTD| |PyPI|
+| |CircleCI| |Codecov| |Quality| |RTD| |PyPI|
 
 Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
 
@@ -82,6 +82,10 @@ More details can be found in documentation_.
 .. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
+
+.. |Quality| image:: https://landscape.io/github/dalibo/ldap2pg/master/landscape.svg?style=flat
+   :target: https://landscape.io/github/dalibo/ldap2pg/master
+   :alt: Code Health
 
 .. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
    :target: https://github.com/dalibo/ldap2pg
