@@ -303,3 +303,5 @@ class SyncManager(object):
 
         if not count:
             logger.info("Nothing to do.")
+
+        return count

@@ -5,7 +5,8 @@ import pytest
 
 def test_main(mocker):
     mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
-    mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
+    wm = mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
+    wm.return_value = 0
 
     from ldap2pg.script import main
 
@@ -81,6 +82,7 @@ def test_wrapped_main(mocker):
     RM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     rm = RM.return_value
     rm.inspect.return_value = [mocker.Mock()] * 5
+    rm.sync.return_value = 0
 
     from ldap2pg.script import wrapped_main
 
