@@ -20,7 +20,6 @@ python setup.py bdist_rpm --release ${CIRCLE_BUILD_NUM-1}
 
 # Test it
 yum install -y dist/ldap2pg*.noarch.rpm
-pip install --no-deps ldap3
 
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
