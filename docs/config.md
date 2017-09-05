@@ -460,5 +460,4 @@ with it and adapt it to your needs.
 
 If you have trouble finding the right configuration for your needs,
 please [file an issue](https://github.com/dalibo/ldap2pg/issues/new) to get
-help. We would like to ship a Cookbook with well known use case as well as some
-tricky corner case. Your contribution is welcome!
+help.
