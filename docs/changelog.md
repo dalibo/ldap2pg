@@ -8,6 +8,12 @@ follow
 [merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 2.1 (alpha)
+
+- Add check mode: exits with 1 if changes. Juste like diff.
+- Support old setuptools.
+
+
 # ldap2pg 2.0
 
 - Adopt new logo.
