@@ -44,25 +44,13 @@ class SyncManager(object):
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, blacklist=[],
-            dry=False):
+            roles_query=';', dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
         self._blacklist = blacklist
+        self._roles_query = roles_query
         self.dry = dry
-
-    # See https://www.postgresql.org/docs/current/static/view-pg-roles.html and
-    # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
-    _roles_query = """
-    SELECT
-        role.rolname, array_agg(members.rolname) AS members, %(options)s
-    FROM
-        pg_catalog.pg_roles AS role
-    LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
-    LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-    GROUP BY role.rolname, %(options)s
-    ORDER BY 1;
-    """.replace("\n    ", "\n").strip()
 
     def fetch_database_list(self, psql):
         select = """
@@ -75,7 +63,7 @@ class SyncManager(object):
     def fetch_pg_roles(self, psql):
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
-        qry = self._roles_query % dict(options=', '.join(row_cols[1:]))
+        qry = self._roles_query.format(options=', '.join(row_cols[1:]))
         for row in psql(qry):
             yield row
 

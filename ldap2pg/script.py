@@ -41,6 +41,7 @@ def wrapped_main(config=None):
         ldapconn=ldapconn, psql=psql,
         acl_dict=config['acl_dict'],
         blacklist=config['postgres']['blacklist'],
+        roles_query=config['postgres']['roles_query'],
         dry=config['dry'],
     )
     try:

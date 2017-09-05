@@ -438,6 +438,21 @@ class Configuration(dict):
         'postgres': {
             'dsn': '',
             'blacklist': ['pg_*', 'postgres'],
+            # SQL Query to inspect roles in cluster. See
+            # https://www.postgresql.org/docs/current/static/view-pg-roles.html
+            # and
+            # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
+            'roles_query': """
+            SELECT
+                role.rolname, array_agg(members.rolname) AS members,
+                {options}
+            FROM
+                pg_catalog.pg_roles AS role
+            LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
+            LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
+            GROUP BY role.rolname, {options}
+            ORDER BY 1;
+            """.replace("\n" + ' ' * 12, "\n").strip()
         },
         'acl_dict': {},
         'sync_map': [],
@@ -459,6 +474,7 @@ class Configuration(dict):
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:blacklist', env=None),
+        Mapping('postgres:roles_query', env=None),
         Mapping('acl_dict', processor=acldict),
         Mapping('sync_map', env=None, processor=syncmap)
     ]
