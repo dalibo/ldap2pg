@@ -10,7 +10,7 @@ readme-sample:
 
 release:
 	python setup.py egg_info
-	git commit ldap2pg/__init__.py -m "Version $(VERSION)"
+	git commit setup.py -m "Version $(VERSION)"
 	git tag $(VERSION)
 	@echo
 	@echo Now push with
