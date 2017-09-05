@@ -50,9 +50,11 @@ def wrapped_main(config=None):
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
 
-    manager.sync(*sync_data)
+    count = manager.sync(*sync_data)
 
     logger.info("Synchronization complete.")
+
+    return int(count > 0) if config['check'] else 0
 
 
 def main():
@@ -67,8 +69,7 @@ def main():
     logger.debug("Debug mode enabled.")
 
     try:
-        wrapped_main(config)
-        exit(0)
+        exit(wrapped_main(config))
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")
     except UserError as e:

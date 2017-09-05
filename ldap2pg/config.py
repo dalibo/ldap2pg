@@ -269,6 +269,11 @@ def define_arguments(parser):
         )
     )
     parser.add_argument(
+        '-C', '--check',
+        action='store_true', dest='check',
+        help='check mode: exits with 1 on changes in cluster',
+    )
+    parser.add_argument(
         '-n', '--dry',
         action='store_true', dest='dry',
         help="don't touch Postgres, just print what to do (env: DRY=1)"
@@ -413,6 +418,7 @@ yaml.Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
 class Configuration(dict):
     DEFAULTS = {
+        'check': False,
         'dry': True,
         'verbose': False,
         'color': False,
@@ -439,6 +445,7 @@ class Configuration(dict):
 
     MAPPINGS = [
         Mapping('color'),
+        Mapping('check'),
         Mapping('dry'),
         Mapping('verbose', env=['VERBOSE', 'DEBUG']),
         Mapping('ldap:uri'),

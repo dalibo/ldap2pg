@@ -15,6 +15,12 @@ def test_dry_run(dev, ldap, psql):
     assert 'alice' in superusers
 
 
+def test_check_mode(dev, ldap, psql):
+    from sh import ldap2pg
+
+    ldap2pg('--check', '--config', 'tests/func/ldap2pg.yml', _ok_code=1)
+
+
 def test_real_mode(dev, ldap, psql):
     from sh import ErrorReturnCode, ldap2pg
 
