@@ -60,6 +60,7 @@ jobs:
     docker: [{image: "centos:7"}]
     working_directory: /tmp/ldap2pg
     steps:
+    - run: yum install -y git ssh
     - checkout
     - run: ./packaging/build_rpm.sh
     - persist_to_workspace:
@@ -83,6 +84,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: communication
     steps:
+    - run: yum install -y git ssh
     - checkout
     - run:
         name: Clean checkout from embedded circleci git client
