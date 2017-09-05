@@ -14,6 +14,10 @@ yum_install epel-release
 yum_install python python2-pip rpm-build
 pip install -U pip setuptools
 
+if rpm --query --queryformat= ldap2pg ; then
+    yum remove -y ldap2pg
+fi
+
 rm -rf build/bdist*/rpm
 # Build it
 python setup.py bdist_rpm --release ${CIRCLE_BUILD_NUM-1}
