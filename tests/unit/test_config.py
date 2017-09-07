@@ -277,6 +277,9 @@ def test_process_ldapquery():
     assert 'attribute' not in v
     assert 'filter' in v
 
+    with pytest.raises(ValueError):
+        ldapquery(dict(raw, scope='unkqdsfq'))
+
 
 def test_process_rolerule():
     from ldap2pg.config import rolerule

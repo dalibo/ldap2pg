@@ -218,6 +218,7 @@ Here is a sample:
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=organizationalRole)"
+    scope: sub
     attribute: cn
   role:
     name_attribute: cn
@@ -229,9 +230,9 @@ Here is a sample:
 
 
 `ldap` define the LDAP query. `base`, `filter` and either `attribute` or
-`attributes` must be defined. Their meaning is the same as in `ldapsearch`.
-`attribute` can be either a string or a list of strings. You need at least one
-attribute, an empty entry is useless.
+`attributes` must be defined. `scope` defaults to `sub`. Their meaning is the
+same as in `ldapsearch`. `attribute` can be either a string or a list of
+strings. You need at least one attribute, an empty entry is useless.
 
 `role` or `roles` contains one or more rules to
 generate
