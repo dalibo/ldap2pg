@@ -114,7 +114,7 @@ def gather_options(environ=None, **kw):
         PORT=389,
         BINDDN=None,
         USER=None,
-        PASSWORD=None,
+        PASSWORD='',
     )
 
     environ = environ or os.environ

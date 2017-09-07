@@ -428,7 +428,7 @@ class Configuration(dict):
             'port': 389,
             'binddn': None,
             'user': None,
-            'password': None,
+            'password': '',
             'default_query': {
                 'base': '',
                 'filter': '(objectClass=organizationalRole)',
