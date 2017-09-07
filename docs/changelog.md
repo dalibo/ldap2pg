@@ -13,6 +13,7 @@ follow
 - Add check mode: exits with 1 if changes. Juste like diff.
 - Allow to customize query to inspect roles in cluster.
 - Support old setuptools.
+- Fix undefined LDAP password traceback
 
 
 # ldap2pg 2.0

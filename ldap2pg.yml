@@ -31,7 +31,7 @@ ldap:
   # Set SASL username and enable SASL. env var: LDAPUSER
   # user: saslusername
   # env var: LDAPPASSWORD
-  password: SECRET
+  # password: SECRET
 
 #
 # **Postgres connection**
