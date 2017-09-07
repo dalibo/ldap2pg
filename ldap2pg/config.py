@@ -13,6 +13,7 @@ import yaml
 
 from . import __version__
 from .acl import Acl
+from .ldap import parse_scope
 from .utils import (
     deepget,
     deepset,
@@ -83,6 +84,8 @@ def ldapquery(value):
         del query['attribute']
     if isinstance(query['attributes'], string_types):
         query['attributes'] = [query['attributes']]
+
+    query['scope'] = parse_scope(query['scope'])
 
     return query
 
@@ -432,6 +435,7 @@ class Configuration(dict):
             'default_query': {
                 'base': '',
                 'filter': '(objectClass=organizationalRole)',
+                'scope': 'sub',
                 'attributes': ['cn'],
             },
         },

@@ -82,7 +82,7 @@ def test_query_ldap(mocker):
 
     entries = manager.query_ldap(
         base='ou=people,dc=global', filter='(objectClass=*)',
-        attributes=['cn'],
+        scope=2, attributes=['cn'],
     )
 
     assert 2 == len(entries)
@@ -95,7 +95,9 @@ def test_query_ldap_bad_filter(mocker):
     manager.ldapconn.search_s.side_effect = LDAPError()
 
     with pytest.raises(UserError):
-        manager.query_ldap(base='dc=unit', filter='(broken', attributes=[])
+        manager.query_ldap(
+            base='dc=unit', filter='(broken', scope=2, attributes=[],
+        )
 
     assert manager.ldapconn.search_s.called is True
 

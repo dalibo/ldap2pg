@@ -5,7 +5,13 @@ from collections import namedtuple
 import logging
 import os
 
-from ldap import initialize as ldap_initialize, SCOPE_SUBTREE, LDAPError
+from ldap import initialize as ldap_initialize, LDAPError
+from ldap import (
+    SCOPE_BASE,
+    SCOPE_ONELEVEL,
+    SCOPE_SUBORDINATE,
+    SCOPE_SUBTREE,
+)
 from ldap.dn import str2dn
 from ldap import sasl
 
@@ -14,7 +20,27 @@ from .utils import PY2
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['SCOPE_SUBTREE', 'LDAPError', 'str2dn']
+__all__ = ['LDAPError', 'str2dn']
+
+
+SCOPES = {
+    'base': SCOPE_BASE,
+    'one': SCOPE_ONELEVEL,
+    'sub': SCOPE_SUBTREE,
+    'children': SCOPE_SUBORDINATE,
+}
+
+SCOPES_STR = {v: k for k, v in SCOPES.items()}
+
+
+def parse_scope(raw):
+    if raw in SCOPES_STR:
+        return raw
+
+    try:
+        return SCOPES[raw]
+    except KeyError:
+        raise ValueError("Unknown scope %r" % (raw,))
 
 
 def fi_encode(value):  # pragma: nocover_py3
