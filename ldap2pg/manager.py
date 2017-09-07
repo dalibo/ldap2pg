@@ -104,6 +104,7 @@ class SyncManager(object):
             message = "Failed to query LDAP: %s." % (e,)
             raise UserError(message)
 
+        logger.debug('Got %d entries from LDAP.', len(entries))
         return entries
 
     def process_ldap_entry(self, entry, **kw):
