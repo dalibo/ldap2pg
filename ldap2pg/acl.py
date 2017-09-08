@@ -22,7 +22,7 @@ class Acl(object):
         return Query(
             "Grant %s." % (item,),
             item.dbname,
-            self.grant_sql % dict(
+            self.grant_sql.format(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,
@@ -33,7 +33,7 @@ class Acl(object):
         return Query(
             "Revoke %s." % (item,),
             item.dbname,
-            self.revoke_sql % dict(
+            self.revoke_sql.format(
                 database=item.dbname,
                 schema=item.schema,
                 role=item.role,

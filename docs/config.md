@@ -171,7 +171,8 @@ synchronized: `ldap2pg` will always re-grant the ACL.
 `grant` and `revoke` provide queries to respectively grant and revoke the ACL.
 The query is formatted with three parameters: `database`, `schema` and `role`.
 `database` strictly equals to `CURRENT_DATABASE`, it's just there to help
-putting identifier in the query. `ldap2pg` uses named printf-style formatting.
+putting identifier in the query. `ldap2pg` uses Python's [*Format String
+Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings).
 See example below. In verbose mode, you will see the formatted queries.
 
 Here is an example of a simple ACL which is not schema-aware:
@@ -191,9 +192,9 @@ acl_dict:
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
-      GRANT CONNECT ON DATABASE %(database)s TO %(role)s;
+      GRANT CONNECT ON DATABASE {database} TO {role};
     revoke: |
-      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+      REVOKE CONNECT ON DATABASE {database} FROM {role}
 ```
 
 Writing `inspect` queries requires a deep knowledge of Postgres internals.
@@ -420,9 +421,9 @@ acl_dict:
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
-      GRANT CONNECT ON DATABASE %(database)s TO %(role)s;
+      GRANT CONNECT ON DATABASE {database} TO {role};
     revoke: |
-      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+      REVOKE CONNECT ON DATABASE {database} FROM {role}
 
 sync_map:
 - role:

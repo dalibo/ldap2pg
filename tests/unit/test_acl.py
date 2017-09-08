@@ -31,7 +31,7 @@ def test_items():
 def test_grant():
     from ldap2pg.acl import Acl, AclItem
 
-    acl = Acl(name='connect', grant='GRANT %(database)s TO %(role)s;')
+    acl = Acl(name='connect', grant='GRANT {database} TO {role};')
     item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
     qry = acl.grant(item)
 
@@ -42,7 +42,7 @@ def test_grant():
 def test_revoke():
     from ldap2pg.acl import Acl, AclItem
 
-    acl = Acl(name='connect', revoke='REVOKE %(database)s FROM %(role)s;')
+    acl = Acl(name='connect', revoke='REVOKE {database} FROM {role};')
     item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
     qry = acl.revoke(item)
 

@@ -318,7 +318,7 @@ def test_diff_acls(mocker):
     from ldap2pg.acl import Acl, AclItem
     from ldap2pg.manager import SyncManager
 
-    acl = Acl(name='connect', revoke='REVOKE %(role)s', grant='GRANT %(role)s')
+    acl = Acl(name='connect', revoke='REVOKE {role}', grant='GRANT {role}')
     nogrant = Acl(name='nogrant', revoke='REVOKE')
     norvk = Acl(name='norvk', grant='GRANT')
     m = SyncManager(acl_dict={a.name: a for a in [acl, nogrant, norvk]})
