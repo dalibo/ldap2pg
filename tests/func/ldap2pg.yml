@@ -66,7 +66,7 @@ acl_dict:
       LEFT OUTER JOIN acls ON acls.grantee = 0
       WHERE acls.grantee IS NULL;
     revoke: |
-      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+      REVOKE CONNECT ON DATABASE {database} FROM {role}
 
   connect:
     inspect: |
@@ -81,9 +81,9 @@ acl_dict:
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
-      GRANT CONNECT ON DATABASE %(database)s TO %(role)s;
+      GRANT CONNECT ON DATABASE {database} TO {role};
     revoke: |
-      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+      REVOKE CONNECT ON DATABASE {database} FROM {role}
 
 
 #

@@ -42,7 +42,7 @@ roles in different sets with different policies.
 The query must return a set of row with the rolname as first column, an array
 with the name of all members of the role as second column, followed by columns
 defined in `{options}` template variable. `{options}` contains the ordered
-columns of managed role options as supported by `ldap2pg`. `ldpa2pg` user
+columns of managed role options as supported by `ldap2pg`. `ldpa2pg` uses
 Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
