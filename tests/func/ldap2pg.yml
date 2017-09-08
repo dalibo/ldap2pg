@@ -105,7 +105,7 @@ sync_map:
       options: NOLOGIN
   # Static ACL definition: allows backend team to connect to legacy database.
   - grant:
-      role: backend
+      role: Backend
       acl: connect
       database: legacy
   # Second mapping, from an LDAP query.

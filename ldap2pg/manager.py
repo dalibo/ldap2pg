@@ -169,6 +169,7 @@ class SyncManager(object):
                 else:
                     roles = get_ldap_attribute(entry, rule['role_attribute'])
                 for role in roles:
+                    role = role.lower()
                     if pattern and not fnmatch(role, pattern):
                         logger.debug(
                             "Don't grand %s to %s not matching %s",
