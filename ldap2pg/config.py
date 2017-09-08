@@ -287,6 +287,11 @@ def define_arguments(parser):
         help="real mode, apply changes to Postgres (env: DRY='')"
     )
     parser.add_argument(
+        '-q', '--quiet',
+        action='store_false', dest='verbose',
+        help="hide debugging messages",
+    )
+    parser.add_argument(
         '-v', '--verbose',
         action='store_true', dest='verbose',
         help="add debug messages including SQL and LDAP queries (env: VERBOSE)"

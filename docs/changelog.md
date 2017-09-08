@@ -14,6 +14,7 @@ follow
 - Allow to customize query to inspect roles in cluster.
 - Support old setuptools.
 - Fix undefined LDAP password traceback
+- Add `--quiet` option.
 
 
 # ldap2pg 2.0
