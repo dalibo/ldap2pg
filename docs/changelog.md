@@ -15,6 +15,7 @@ follow
 - Allow to customize query to inspect roles in cluster.
 - Support old setuptools.
 - Fix undefined LDAP password traceback
+- Fix case sensitivity in grant rule.
 - Add `--quiet` option.
 
 
