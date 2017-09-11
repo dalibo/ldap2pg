@@ -10,14 +10,17 @@ follow
 
 # ldap2pg 3.0 (unreleased)
 
-- Breakage: Use Python `{}` format string for ACL queries instead of printf style.
-- ACL inspect query should now return a new column indicating partial grant.
-- Add check mode: exits with 1 if changes. Juste like diff.
-- Allow to customize query to inspect roles in cluster.
+- Breakage: Use Python `{}` format string for ACL queries instead of named
+  printf style.
 - Support old setuptools.
-- Fix undefined LDAP password traceback
+- Fix undefined LDAP password traceback.
 - Fix case sensitivity in grant rule.
+- ACL inspect query should now return a new column indicating partial grant.
+- Allow to customize query to inspect roles in cluster.
+- Add check mode: exits with 1 if changes. Juste like diff.
 - Add `--quiet` option.
+- Add `__all__` schema wildcard for looping all schema in databases.
+- Add Cookbook in documentation.
 
 
 # ldap2pg 2.0
