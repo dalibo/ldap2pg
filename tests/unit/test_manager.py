@@ -23,6 +23,24 @@ def test_fetch_databases(mocker):
     assert 'template1' in rows
 
 
+def test_fetch_schema(mocker):
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+    psql = mocker.Mock(name='psql')
+    psql.return_value = mocker.MagicMock()
+    psql.return_value.__iter__.return_value = [
+        ('information_schema',), ('custom',),
+    ]
+
+    rows = manager.fetch_schema_list(psql)
+    rows = list(rows)
+
+    assert 2 == len(rows)
+    assert 'information_schema' in rows
+    assert 'custom' in rows
+
+
 def test_fetch_roles(mocker):
     from ldap2pg.manager import SyncManager
 
@@ -195,6 +213,31 @@ def test_apply_grant_rule_ok(mocker):
     # Ensure __any__ schema is mapped to None
     assert items[0].schema is None
     assert 'bob' == items[1].role
+
+
+def test_apply_grant_rule_all_schema(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+
+    gla.side_effect = [['alice']]
+    items = manager.apply_grant_rules(
+        grant=[dict(
+            acl='connect',
+            database='postgres',
+            schema='__all__',
+            role_attribute='cn',
+        )],
+        entries=[None],
+    )
+    items = list(items)
+    assert 1 == len(items)
+    assert 'alice' == items[0].role
+    assert 'postgres' == items[0].dbname
+    # Ensure __all__ schema is mapped to object
+    assert items[0].schema != '__all__'
 
 
 def test_apply_grant_rule_filter(mocker):

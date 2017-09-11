@@ -195,7 +195,7 @@ def syncmap(value):
     # A sync map has the following canonical schema:
     #
     # <__all__|dbname>:
-    #   <__any__|schema>:
+    #   <__all__|__any__|schema>:
     #   - ldap: <ldapquery>
     #     roles:
     #     - <rolerule>

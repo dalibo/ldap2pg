@@ -1,0 +1,106 @@
+# File dedicated to test real ACL use cases. This allow to test documentation
+# exemple.
+
+acl_dict:
+  # CONNECT ACL on database
+  connect:
+    inspect: |
+      WITH d AS (
+          SELECT
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      )
+      SELECT NULL as namespace, r.rolname
+      FROM pg_catalog.pg_roles AS r
+      JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
+    grant: |
+      GRANT CONNECT ON DATABASE {database} TO {role};
+    revoke: |
+      REVOKE CONNECT ON DATABASE {database} FROM {role};
+
+  # CONNECT ACL on PUBLIC role database
+  public:
+    inspect: |
+      -- Returns public if no ACLs are defined in this database.
+      WITH
+      acls AS (
+          SELECT
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      ),
+      static AS (
+          SELECT NULL AS namespace, 'public' AS rolname
+      )
+      SELECT static.* FROM static
+      LEFT OUTER JOIN acls ON acls.grantee = 0
+      WHERE acls.grantee IS NULL;
+    revoke: |
+      REVOKE CONNECT ON DATABASE {database} FROM {role}
+
+  # SELECT on TABLES
+  ro:
+    inspect: |
+      WITH
+        nsp AS (
+          -- All namespace and role having grant on it, and array of available
+          -- relations in the namespace.
+          SELECT
+            nsp.oid, nsp.nspname,
+            (aclexplode(nspacl)).grantee AS grantee,
+            (aclexplode(nspacl)).privilege_type,
+            ARRAY(SELECT UNNEST(array_agg(rel.relname)) ORDER BY 1) AS relname
+          FROM pg_catalog.pg_namespace nsp
+          LEFT OUTER JOIN pg_catalog.pg_class rel
+            ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v')
+          WHERE nsp.nspname NOT LIKE 'pg_%'
+          GROUP BY 1, 2, 3, 4
+        ),
+        rel AS (
+          -- All namespace, role and relation privilege granted to what relation
+          -- in the namespace.
+          SELECT
+            table_schema as "schema",
+            grantee, privilege_type,
+            -- Aggregate the relation grant for this privilege.
+            ARRAY(SELECT UNNEST(array_agg(table_name::name)) ORDER BY 1) as tables
+          FROM information_schema.role_table_grants
+          GROUP BY 1, 2, 3
+        )
+
+      -- Now list all users who have USAGE on schema and SELECT to **all**
+      -- relations in the schema.
+      SELECT nsp.nspname, rol.rolname
+      FROM nsp
+      JOIN pg_catalog.pg_roles rol ON rol.oid = nsp.grantee
+      LEFT OUTER JOIN rel AS select_
+        ON select_.privilege_type = 'SELECT' AND
+           select_."schema" = nsp.nspname AND
+           select_.grantee = rol.rolname
+      WHERE nsp.privilege_type = 'USAGE'
+            -- Here, compare arrays to ensure SELECT grant is for all relation in
+            -- namespace.
+            AND coalesce(select_.tables, ARRAY[NULL]::name[]) = nsp.relname
+      ORDER BY 1, 2;
+    grant: |
+      GRANT USAGE ON SCHEMA {schema} TO {role};
+      GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
+    revoke: |
+      REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
+      REVOKE USAGE ON SCHEMA {schema} FROM {role};
+
+sync_map:
+- roles: [alice, daniel, oscar]
+- grant:
+    role: daniel
+    acl: connect
+    database: frontend
+    schema: __any__
+- grant:
+    role: daniel
+    acl: ro
+    database: frontend
+    schema: __all__

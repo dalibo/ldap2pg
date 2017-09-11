@@ -31,10 +31,34 @@ CREATE DATABASE legacy;
 
 -- daniel was a backend developer and is now a frontend. He add access to
 -- backend database. We have to revoke.
+REVOKE CONNECT ON DATABASE frontend FROM daniel;
 GRANT CONNECT ON DATABASE backend TO daniel;
 EOSQL
 
 # Create a legacy table owned by a legacy user.
 PGDATABASE=legacy PGUSER=oscar psql <<EOSQL
 CREATE TABLE keepme (id serial PRIMARY KEY);
+EOSQL
+
+# grant some privileges to daniel, to be revoked.
+PGDATABASE=backend psql <<EOSQL
+CREATE SCHEMA backend;
+GRANT SELECT ON ALL TABLES IN SCHEMA backend TO daniel;
+GRANT USAGE ON SCHEMA backend TO daniel;
+GRANT SELECT ON ALL TABLES IN SCHEMA information_schema TO daniel;
+GRANT USAGE ON SCHEMA information_schema TO daniel;
+EOSQL
+
+# Ensure daniel has no privileges on frontend, for grant.
+PGDATABASE=frontend psql <<EOSQL
+CREATE SCHEMA frontend;
+CREATE TABLE frontend.table1 (id INTEGER);
+CREATE SCHEMA empty;
+
+REVOKE SELECT ON ALL TABLES IN SCHEMA empty FROM daniel;
+REVOKE USAGE ON SCHEMA empty FROM daniel;
+REVOKE SELECT ON ALL TABLES IN SCHEMA frontend FROM daniel;
+REVOKE USAGE ON SCHEMA frontend FROM daniel;
+REVOKE SELECT ON ALL TABLES IN SCHEMA information_schema FROM daniel;
+REVOKE USAGE ON SCHEMA information_schema FROM daniel;
 EOSQL

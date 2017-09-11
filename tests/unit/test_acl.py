@@ -53,8 +53,19 @@ def test_revoke():
 def test_expand():
     from ldap2pg.acl import AclItem
 
-    item = AclItem(acl='ro', dbname=AclItem.ALL_DATABASES)
-    items = list(item.expand(['postgres', 'template1']))
+    item = AclItem(
+        acl=['ro'], dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
+    )
+
+    assert repr(item.schema)
+
+    items = sorted(
+        item.expand(dict(
+            postgres=['information_schema'],
+            template1=['information_schema'],
+        )),
+        key=lambda x: x.dbname,
+    )
 
     assert 2 == len(items)
     assert 'postgres' == items[0].dbname
