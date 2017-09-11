@@ -1,6 +1,10 @@
 # File dedicated to test real ACL use cases. This allow to test documentation
 # exemple.
 
+postgres:
+  roles_query: null
+
+
 acl_dict:
   # CONNECT ACL on database
   connect:
@@ -93,7 +97,6 @@ acl_dict:
       REVOKE USAGE ON SCHEMA {schema} FROM {role};
 
 sync_map:
-- roles: [alice, daniel, oscar]
 - grant:
     role: daniel
     acl: connect

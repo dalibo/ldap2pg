@@ -54,6 +54,16 @@ def test_fetch_roles(mocker):
 
     assert r == rows
 
+    manager = SyncManager(roles_query=None)
+    psql = mocker.Mock(name='psql')
+    psql.return_value = cur = mocker.MagicMock()
+
+    rows = manager.fetch_pg_roles(psql)
+    rows = list(rows)
+
+    assert cur.called is False
+    assert [] == rows
+
 
 def test_process_roles_rows():
     from ldap2pg.manager import SyncManager
