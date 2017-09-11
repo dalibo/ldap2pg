@@ -69,6 +69,10 @@ class SyncManager(object):
             yield row[0]
 
     def fetch_pg_roles(self, psql):
+        if not self._roles_query:
+            logger.warn("Roles introspection disabled.")
+            return
+
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
         qry = self._roles_query.format(options=', '.join(row_cols[1:]))

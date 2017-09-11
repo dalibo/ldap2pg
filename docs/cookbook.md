@@ -46,3 +46,35 @@ columns of managed role options as supported by `ldap2pg`. `ldpa2pg` uses
 Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
+
+
+# Synchronize only ACL
+
+You may want to trigger `GRANT` and `REVOKE` without touching roles. e.g. you
+update privileges after a schema upgrade.
+
+To do this, create a distinct configuration file. You must first disable roles
+introspection, so that `ldap2pg` will never try to drop a role. Then you must
+ban any `role` rule from the file. You can still trigger LDAP searches to
+determine to which role you want to grant an ACL.
+
+``` yaml
+# File `ldap2pg.acl.yml`
+
+postgres:
+  # Disable roles introspection by setting query to null
+  roles_query: null
+
+acl_dict:
+  rw: {}  # here define your ACLs
+
+sync_map:
+- ldap:
+    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    filter: "(objectClass=groupOfNames)"
+    scope: sub
+    attribute: member
+  grant:
+    role_attribute: member
+    acl: rw
+```
