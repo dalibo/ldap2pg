@@ -18,17 +18,9 @@ def test_check_mode(dev, ldap, psql):
 def test_real_mode(dev, ldap, psql):
     from sh import ldap2pg
 
-    # synchronize all
-    ldap2pg('-N', c='tests/func/ldap2pg.acl.yml')
-    # Ensure ACL inspects are ok
-    ldap2pg('-C', c='tests/func/ldap2pg.acl.yml')
-
-    # Create a new table.
-    psql(d='frontend', c='CREATE TABLE frontend.nt(id INTEGER PRIMARY KEY);')
     # Ensure GRANT ON ALL TABLES IN SCHEMA must be reexecuted.
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml', _ok_code=1)
-
-    # resynchronize all
+    # Synchronize all
     ldap2pg('-N', c='tests/func/ldap2pg.acl.yml')
-    # Ensure ACL inspects are ok again
+    # Ensure ACL inspects are ok
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml')
