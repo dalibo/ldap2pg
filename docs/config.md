@@ -159,9 +159,10 @@ defined in `ldap2pg`. It's actually just a name associated with three queries:
 `inspect`, `grant` and `revoke`.
 
 `inspect` query is called **once** per database in the cluster. It must return a
-rowset with two columns: the first is the schema name, the second is the role.
-Schema name can be `NULL` if the schema is irrelevant. Each tuple in the rowset
-references a grant of this ACL to a role on a schema (or none).
+rowset with three columns: the first is the schema name, the second is the role
+and the last is a boolean indicating whether **every** ACL covered by the GRANT
+are granted. Schema name can be `NULL` if the schema is irrelevant. Each tuple
+in the rowset references a grant of this ACL to a role on a schema (or none).
 
 `inspect` can be undefined. This is just as if the query returns an empty
 rowset. It's actually a bad idea no to provide `inspect`. This won't allow
@@ -188,7 +189,7 @@ acl_dict:
           FROM pg_catalog.pg_database
           WHERE datname = current_database()
       )
-      SELECT NULL as namespace, r.rolname
+      SELECT NULL as namespace, r.rolname, TRUE AS complete
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
@@ -197,11 +198,11 @@ acl_dict:
       REVOKE CONNECT ON DATABASE {database} FROM {role}
 ```
 
-Writing `inspect` queries requires a deep knowledge of Postgres internals.
-See
+Writing `inspect` queries requires a deep knowledge of Postgres internals. See
 [System Catalogs](https://www.postgresql.org/docs/current/static/catalogs.html)
 section in PostgreSQL documentation to see how ACL are actually stored in
-Postgres.
+Postgres. Checking whether a `GRANT SELECT ON ALL TABLES IN SCHEMA` is complete
+is rather tricky. See [Cookbook](cookbook.md) for detailed and real use case.
 
 
 ## Synchronization map

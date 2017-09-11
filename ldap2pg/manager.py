@@ -97,10 +97,16 @@ class SyncManager(object):
                 yield role
 
     def process_pg_acl_items(self, acl, dbname, rows):
-        for schema, role in rows:
+        for row in rows:
+            try:
+                schema, role, full = row
+            except ValueError:
+                schema, role, full = row + (True,)
+
             if match(role, self._blacklist):
                 continue
-            yield AclItem.from_row(acl, dbname, schema, role)
+
+            yield AclItem.from_row(acl, dbname, schema, role, full)
 
     def query_ldap(self, base, filter, attributes, scope):
         logger.debug(
@@ -284,7 +290,7 @@ class SyncManager(object):
                 yield qry
 
         # Finally, grant ACL when all roles are ok.
-        missing = ldapacls - pgacls
+        missing = ldapacls - {a for a in pgacls if a.full}
         missing = sorted(list(missing))
         for aclname, aclitems in groupby(missing, lambda i: i.acl):
             acl = self.acl_dict[aclname]

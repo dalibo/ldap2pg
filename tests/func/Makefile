@@ -13,7 +13,7 @@ clean:
 	docker-compose down -v
 
 debug:
-	docker-compose exec runner /bin/bash
+	docker-compose exec runner /usr/bin/env $(shell sed 's/^/LDAP/;s/ \+/=/g' ../../ldaprc) /bin/bash
 
 pytest:
 	cd ../..
