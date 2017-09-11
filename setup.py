@@ -7,7 +7,7 @@ PY3 = sys.version_info > (3,)
 
 setup(
     name='ldap2pg',
-    version='2.1a1',
+    version='3.0a1',
     description='Synchronize PostgreSQL roles from LDAP',
     url='https://github.com/dalibo/ldap2pg',
     author='Dalibo',
