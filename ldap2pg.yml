@@ -4,10 +4,6 @@
 # ldap2pg file is a regular YAML file. File mode must be 0600 if you store a
 # password in it.
 #
-# This file is tested under CI with real OpenLDAP and Postgres services. To test
-# it: clone the repository, run pip install -e ., run docker-compose -d then
-# just run ldap2pg. See fixtures/ for details on data migrated.
-#
 # See also full documenation on how to configure ldap2pg at
 # http://ldap2pg.readthedocs.io/en/latest/config/.
 
@@ -48,6 +44,18 @@ postgres:
 
   # List of glob patterns to exclude external roles.
   blacklist: [postgres, pg_*]
+
+  # SQL Query to inspect roles in cluster.
+  # roles_query: |
+  #   SELECT
+  #       role.rolname, array_agg(members.rolname) AS members,
+  #       {options}
+  #   FROM
+  #       pg_catalog.pg_roles AS role
+  #   LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
+  #   LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
+  #   GROUP BY role.rolname, {options}
+  #   ORDER BY 1;
 
 #
 # **ACL definitions**
@@ -94,6 +102,7 @@ acl_dict:
       WHERE acls.grantee IS NULL;
     revoke: |
       REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+
 
 #
 # **Synchronization map**
