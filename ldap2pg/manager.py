@@ -286,7 +286,11 @@ class SyncManager(object):
                 if self.dry:
                     logger.debug("Would execute: %s", sql)
                 else:
-                    psql(sql)
+                    try:
+                        psql(sql)
+                    except Exception as e:
+                        msg = "Error while executing SQL query:\n%s" % (e,)
+                        raise UserError(msg)
         logger.debug("Generated %d querie(s).", count)
 
         if not count:

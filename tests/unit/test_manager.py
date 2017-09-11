@@ -377,3 +377,29 @@ def test_sync(mocker):
     manager.dry = False
     manager.sync(**sync_kw)
     assert cursor.called is True
+
+
+def test_sync_sql_error(mocker):
+    diff = mocker.patch('ldap2pg.manager.SyncManager.diff')
+
+    from ldap2pg.manager import SyncManager
+
+    psql = mocker.MagicMock()
+    cursor = psql.return_value.__enter__.return_value
+    cursor.side_effect = Exception()
+
+    manager = SyncManager(psql=psql)
+
+    # Simple diff with one query
+    diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    qry[0].expand.return_value = [qry[0]]
+
+    sync_kw = dict(
+        databases=['postgres', 'template1'],
+        pgroles=set(), pgacls=set(), ldaproles=set(), ldapacls=set(),
+    )
+
+    manager.dry = False
+    with pytest.raises(Exception):
+        manager.sync(**sync_kw)
+    assert cursor.called is True
