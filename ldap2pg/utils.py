@@ -7,7 +7,7 @@ from fnmatch import fnmatch
 PY2 = sys.version_info < (3,)
 
 if PY2:
-    string_types = (str, unicode)
+    string_types = (str, unicode)  # noqa
 else:
     string_types = (str,)
 
