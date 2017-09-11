@@ -23,6 +23,24 @@ def test_fetch_databases(mocker):
     assert 'template1' in rows
 
 
+def test_fetch_schema(mocker):
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+    psql = mocker.Mock(name='psql')
+    psql.return_value = mocker.MagicMock()
+    psql.return_value.__iter__.return_value = [
+        ('information_schema',), ('custom',),
+    ]
+
+    rows = manager.fetch_schema_list(psql)
+    rows = list(rows)
+
+    assert 2 == len(rows)
+    assert 'information_schema' in rows
+    assert 'custom' in rows
+
+
 def test_fetch_roles(mocker):
     from ldap2pg.manager import SyncManager
 
@@ -195,6 +213,31 @@ def test_apply_grant_rule_ok(mocker):
     # Ensure __any__ schema is mapped to None
     assert items[0].schema is None
     assert 'bob' == items[1].role
+
+
+def test_apply_grant_rule_all_schema(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+
+    gla.side_effect = [['alice']]
+    items = manager.apply_grant_rules(
+        grant=[dict(
+            acl='connect',
+            database='postgres',
+            schema='__all__',
+            role_attribute='cn',
+        )],
+        entries=[None],
+    )
+    items = list(items)
+    assert 1 == len(items)
+    assert 'alice' == items[0].role
+    assert 'postgres' == items[0].dbname
+    # Ensure __all__ schema is mapped to object
+    assert items[0].schema != '__all__'
 
 
 def test_apply_grant_rule_filter(mocker):
@@ -376,4 +419,30 @@ def test_sync(mocker):
     diff.return_value = []
     manager.dry = False
     manager.sync(**sync_kw)
+    assert cursor.called is True
+
+
+def test_sync_sql_error(mocker):
+    diff = mocker.patch('ldap2pg.manager.SyncManager.diff')
+
+    from ldap2pg.manager import SyncManager
+
+    psql = mocker.MagicMock()
+    cursor = psql.return_value.__enter__.return_value
+    cursor.side_effect = Exception()
+
+    manager = SyncManager(psql=psql)
+
+    # Simple diff with one query
+    diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    qry[0].expand.return_value = [qry[0]]
+
+    sync_kw = dict(
+        databases=['postgres', 'template1'],
+        pgroles=set(), pgacls=set(), ldaproles=set(), ldapacls=set(),
+    )
+
+    manager.dry = False
+    with pytest.raises(Exception):
+        manager.sync(**sync_kw)
     assert cursor.called is True

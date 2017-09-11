@@ -294,9 +294,11 @@ inherited from the synchronization map. The special database name `__all__`
 means **all** databases. `ldap2pg` will loop every databases in the cluster but
 `template0` and apply the `grant` or `revoke` query on it.
 
-In the same way, `schema` allows to scope the grant to a schema, regardless of
-database. If `schema` is `__any__` or `null`, the `grant` or `revoke` query will
-receive `None` as schema.
+In the same way, `schema` allows to scope the grant to one or more schema,
+regardless of database. If `schema` is `__any__` or `null`, the `grant` or
+`revoke` query will receive `None` as schema. If `schema` is `__all__`,
+`ldap2pg` will loop all schema including `information_scema` and yield a revoke
+or grant on each.
 
 `role` or `roles` keys allow to specify statically one or more role to grant the
 ACL to. `role` must be a string or a list of strings. Referenced roles must be

@@ -60,6 +60,14 @@ class SyncManager(object):
         for row in psql(select):
             yield row[0]
 
+    def fetch_schema_list(self, psql):
+        select = """
+        SELECT nspname FROM pg_catalog.pg_namespace
+        WHERE nspname NOT LIKE 'pg_%' AND nspname != 'public' ORDER BY 1;
+        """.strip().replace(8 * ' ', '')
+        for row in psql(select):
+            yield row[0]
+
     def fetch_pg_roles(self, psql):
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
@@ -155,12 +163,17 @@ class SyncManager(object):
     def apply_grant_rules(self, grant, dbname=None, schema=None, entries=[]):
         for rule in grant:
             acl = rule.get('acl')
+
             database = rule.get('database', dbname)
             if database == '__all__':
                 database = AclItem.ALL_DATABASES
+
             schema = rule.get('schema', schema)
-            if schema == '__any__':
+            if schema == '__all__':
+                schema = AclItem.ALL_SCHEMAS
+            elif schema == '__any__':
                 schema = None
+
             pattern = rule.get('role_match')
 
             for entry in entries:
@@ -185,17 +198,19 @@ class SyncManager(object):
             rows = self.fetch_pg_roles(psql)
             pgroles = RoleSet(self.process_pg_roles(rows))
 
+        schemas = {k: [] for k in databases}
+        for dbname, psql in self.psql.itersessions(databases):
+            schemas[dbname] = list(self.fetch_schema_list(psql))
+
         # Inspect ACLs
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
+            if not acl.inspect:
+                logger.warn("Can't inspect ACL %s: query not defined.", acl)
+                continue
+
             logger.debug("Searching items of ACL %s.", acl)
             for dbname, psql in self.psql.itersessions(databases):
-                if not acl.inspect:
-                    logger.warn(
-                        "Can't inspect ACL %s: query not defined.", acl,
-                    )
-                    continue
-
                 rows = psql(acl.inspect)
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     logger.debug("Found ACL item %s.", aclitem)
@@ -223,7 +238,7 @@ class SyncManager(object):
 
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
-        ldapacls = AclSet(list(ldapacls.expanditems(databases)))
+        ldapacls = AclSet(list(ldapacls.expanditems(schemas)))
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 
@@ -288,7 +303,11 @@ class SyncManager(object):
                 if self.dry:
                     logger.debug("Would execute: %s", sql)
                 else:
-                    psql(sql)
+                    try:
+                        psql(sql)
+                    except Exception as e:
+                        msg = "Error while executing SQL query:\n%s" % (e,)
+                        raise UserError(msg)
         logger.debug("Generated %d querie(s).", count)
 
         if not count:

@@ -2,6 +2,12 @@ from .psql import Query
 from .utils import AllDatabases
 
 
+class AllSchemas(object):
+    # Simple object to represent schema wildcard.
+    def __repr__(self):
+        return '__ALL_SCHEMAS__'
+
+
 class Acl(object):
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
@@ -43,6 +49,7 @@ class Acl(object):
 
 class AclItem(object):
     ALL_DATABASES = AllDatabases()
+    ALL_SCHEMAS = AllSchemas()
 
     @classmethod
     def from_row(cls, *args):
@@ -77,15 +84,22 @@ class AclItem(object):
 
     def expand(self, databases):
         if self.dbname is self.ALL_DATABASES:
-            for dbname in databases:
+            dbnames = databases.keys()
+        else:
+            dbnames = [self.dbname]
+
+        for dbname in dbnames:
+            if self.schema is self.ALL_SCHEMAS:
+                schemas = databases[dbname]
+            else:
+                schemas = [self.schema]
+            for schema in schemas:
                 yield self.__class__(
                     acl=self.acl,
                     dbname=dbname,
-                    schema=self.schema,
+                    schema=schema,
                     role=self.role,
                 )
-        else:
-            yield self
 
 
 class AclSet(set):
