@@ -52,6 +52,7 @@ EOSQL
 PGDATABASE=frontend psql <<EOSQL
 CREATE SCHEMA frontend;
 CREATE TABLE frontend.table1 (id INTEGER);
+CREATE TABLE frontend.table2 (id INTEGER);
 CREATE SCHEMA empty;
 
 REVOKE SELECT ON ALL TABLES IN SCHEMA empty FROM daniel;

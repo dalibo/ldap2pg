@@ -55,11 +55,12 @@ class AclItem(object):
     def from_row(cls, *args):
         return cls(*args)
 
-    def __init__(self, acl, dbname=None, schema=None, role=None):
+    def __init__(self, acl, dbname=None, schema=None, role=None, full=True):
         self.acl = acl
         self.dbname = dbname
         self.schema = schema
         self.role = role
+        self.full = full
 
     def __lt__(self, other):
         return self.as_tuple() < other.as_tuple()

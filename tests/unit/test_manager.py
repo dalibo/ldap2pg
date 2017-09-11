@@ -87,9 +87,9 @@ def test_process_acl_rows():
 
     manager = SyncManager(blacklist=['pg_*', 'postgres'])
     rows = [
-        (None, 'postgres'),
-        (None, 'pg_signal_backend'),
-        ('public', 'alice'),
+        (None, 'postgres', True),
+        (None, 'pg_signal_backend'),  # Old signature, fallback to True
+        ('public', 'alice', True),
     ]
 
     items = list(manager.process_pg_acl_items('connect', 'postgres', rows))

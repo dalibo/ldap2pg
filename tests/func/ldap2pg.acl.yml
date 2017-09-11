@@ -16,7 +16,7 @@ acl_dict:
           FROM pg_catalog.pg_database
           WHERE datname = current_database()
       )
-      SELECT NULL as namespace, r.rolname
+      SELECT NULL as namespace, r.rolname, TRUE as "full"
       FROM pg_catalog.pg_roles AS r
       JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
     grant: |
@@ -39,7 +39,7 @@ acl_dict:
       static AS (
           SELECT NULL AS namespace, 'public' AS rolname
       )
-      SELECT static.* FROM static
+      SELECT static.*, TRUE as "full" FROM static
       LEFT OUTER JOIN acls ON acls.grantee = 0
       WHERE acls.grantee IS NULL;
     revoke: |
@@ -50,7 +50,6 @@ acl_dict:
     inspect: |
       WITH
         def AS (
-          -- All default table privileges per schema
           SELECT
             nsp.oid, nsp.nspname,
             (aclexplode(defaclacl)).grantee,
@@ -59,7 +58,7 @@ acl_dict:
           JOIN pg_catalog.pg_namespace nsp ON nsp.oid = def.defaclnamespace
           WHERE defaclobjtype = 'r'
         ),
-        nsp AS (
+        nspacl AS (
           -- All namespace and role having grant on it, and array of available
           -- relations in the namespace.
           SELECT
@@ -85,23 +84,32 @@ acl_dict:
           GROUP BY 1, 2, 3
         )
 
-      -- Now list all users who have USAGE on schema and SELECT to **all**
-      -- relations in the schema.
-      SELECT nsp.nspname, rol.rolname
-      FROM nsp
-      JOIN pg_catalog.pg_roles rol ON rol.oid = nsp.grantee
-      JOIN def
-        ON def.oid = nsp.oid AND
-           def.grantee = rol.oid AND
-           def.privilege_type = 'SELECT'
+      -- Now list all users per schema who have USAGE or SELECT to any
+      -- relations or have SELECT default privilege.
+      SELECT
+        nsp.nspname,
+        rol.rolname,
+        (
+          nspacl.oid IS NOT NULL AND
+          def.oid IS NOT NULL AND
+          -- Here, compare arrays to ensure SELECT grant is for all relation in
+          -- namespace.
+          coalesce(select_.tables, ARRAY[NULL]::name[]) = nspacl.relname
+        )
+      FROM pg_catalog.pg_roles rol
+      CROSS JOIN pg_catalog.pg_namespace nsp
+      LEFT OUTER JOIN nspacl
+        ON nspacl.grantee = rol.oid AND
+           nspacl.oid = nsp.oid
+      LEFT OUTER JOIN def
+        ON def.grantee = rol.oid AND
+           def.privilege_type = 'SELECT' AND
+           def.oid = nsp.oid
       LEFT OUTER JOIN rel AS select_
         ON select_.privilege_type = 'SELECT' AND
            select_."schema" = nsp.nspname AND
            select_.grantee = rol.rolname
-      WHERE nsp.privilege_type = 'USAGE' AND
-            -- Here, compare arrays to ensure SELECT grant is for all relation in
-            -- namespace.
-            coalesce(select_.tables, ARRAY[NULL]::name[]) = nsp.relname
+      WHERE nspacl.oid IS NOT NULL OR def.oid IS NOT NULL OR select_."schema" IS NOT NULL
       ORDER BY 1, 2;
     grant: |
       GRANT USAGE ON SCHEMA {schema} TO {role};

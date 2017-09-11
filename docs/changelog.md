@@ -8,9 +8,10 @@ follow
 [merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
-# ldap2pg 2.1 (alpha)
+# ldap2pg 3.0 (unreleased)
 
-- Breakage: Use format string for ACL queries instead of printf style.
+- Breakage: Use Python `{}` format string for ACL queries instead of printf style.
+- ACL inspect query should now return a new column indicating partial grant.
 - Add check mode: exits with 1 if changes. Juste like diff.
 - Allow to customize query to inspect roles in cluster.
 - Support old setuptools.
