@@ -300,6 +300,7 @@ def test_inspect_acls(mocker):
 
     from ldap2pg.manager import SyncManager, AclItem
     from ldap2pg.acl import Acl
+    from ldap2pg.utils import make_group_map
 
     acl_dict = dict(
         noinspect=Acl(name='noinspect'),
@@ -308,7 +309,10 @@ def test_inspect_acls(mocker):
     pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
     la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
 
-    manager = SyncManager(psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict)
+    manager = SyncManager(
+        psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
+        acl_aliases=make_group_map(acl_dict)
+    )
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)

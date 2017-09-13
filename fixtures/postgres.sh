@@ -43,6 +43,7 @@ EOSQL
 # grant some privileges to daniel, to be revoked.
 PGDATABASE=backend psql <<EOSQL
 CREATE SCHEMA backend;
+CREATE TABLE backend.table1 (id INTEGER);
 GRANT SELECT ON ALL TABLES IN SCHEMA backend TO daniel;
 GRANT USAGE ON SCHEMA backend TO daniel;
 ALTER DEFAULT PRIVILEGES IN SCHEMA backend GRANT SELECT ON TABLES TO daniel;
@@ -50,10 +51,11 @@ EOSQL
 
 # Ensure daniel has no privileges on frontend, for grant.
 PGDATABASE=frontend psql <<EOSQL
+CREATE TABLE public.table1 (id INTEGER);
+
 CREATE SCHEMA frontend;
 CREATE TABLE frontend.table1 (id INTEGER);
 CREATE TABLE frontend.table2 (id INTEGER);
-CREATE SCHEMA empty;
 
 REVOKE SELECT ON ALL TABLES IN SCHEMA empty FROM daniel;
 REVOKE USAGE ON SCHEMA empty FROM daniel;

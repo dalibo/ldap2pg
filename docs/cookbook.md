@@ -47,91 +47,79 @@ Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
 
-# RO ACLs
+# Read-only ACLs
 
-Say you want to manage `GRANT SELECT` privileges based on LDAP directory. Here is an implementation of `inspect`, `grant` and `revoke` queries.
+Say you want to manage `SELECT` privileges based on LDAP directory. The easiest
+way is to define `inspect`, `grant` and `revoke` for each `PRIVILEGES` : grant
+on all tables in schema, default privileges on schema. Then group these ACL
+under the `ro` name and use this group as a regular ACL in sync map.
 
 ``` yaml
 acl_dict:
-  # SELECT on TABLES
-  ro:
+  default-tables-select:
     inspect: |
-      WITH
-        def AS (
-          SELECT
-            nsp.oid, nsp.nspname,
-            (aclexplode(defaclacl)).grantee,
-            (aclexplode(defaclacl)).privilege_type
-          FROM pg_catalog.pg_default_acl def
-          JOIN pg_catalog.pg_namespace nsp ON nsp.oid = def.defaclnamespace
-          WHERE defaclobjtype = 'r'
-        ),
-        nspacl AS (
-          -- All namespace and role having grant on it, and array of available
-          -- relations in the namespace.
-          SELECT
-            nsp.oid, nsp.nspname,
-            (aclexplode(nspacl)).grantee,
-            (aclexplode(nspacl)).privilege_type,
-            ARRAY(SELECT UNNEST(array_agg(rel.relname)) ORDER BY 1) AS relname
-          FROM pg_catalog.pg_namespace nsp
-          LEFT OUTER JOIN pg_catalog.pg_class rel
-            ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v')
-          WHERE nsp.nspname NOT LIKE 'pg_%'
-          GROUP BY 1, 2, 3, 4
-        ),
-        rel AS (
-          -- All namespace, role and relation privilege granted to what relation
-          -- in the namespace.
-          SELECT
-            table_schema as "schema",
-            grantee, privilege_type,
-            -- Aggregate the relation grant for this privilege.
-            ARRAY(SELECT UNNEST(array_agg(table_name::name)) ORDER BY 1) as tables
-          FROM information_schema.role_table_grants
-          GROUP BY 1, 2, 3
-        )
-
-      -- Now list all users per schema who have USAGE or SELECT to any
-      -- relations or have SELECT default privilege.
+      WITH acls AS (
+        SELECT
+          defaclnamespace AS oid,
+          (aclexplode(defaclacl)).grantee,
+          (aclexplode(defaclacl)).privilege_type
+        FROM pg_catalog.pg_default_acl
+        WHERE defaclobjtype = 'r'
+      )
       SELECT
-        nsp.nspname,
-        rol.rolname,
-        (
-          nspacl.oid IS NOT NULL AND
-          def.oid IS NOT NULL AND
-          -- Here, compare arrays to ensure SELECT grant is for all relation in
-          -- namespace.
-          coalesce(select_.tables, ARRAY[NULL]::name[]) = nspacl.relname
-        )
-      -- First, produce all combination of roles and namespace in database.
-      FROM pg_catalog.pg_roles rol
-      CROSS JOIN pg_catalog.pg_namespace nsp
-      -- inspect any schema privileges
-      LEFT OUTER JOIN nspacl
-        ON nspacl.grantee = rol.oid AND
-           nspacl.oid = nsp.oid
-      -- inspect default privileges on schema
-      LEFT OUTER JOIN def
-        ON def.grantee = rol.oid AND
-           def.privilege_type = 'SELECT' AND
-           def.oid = nsp.oid
-      -- inspect tables privileges in schema.
-      LEFT OUTER JOIN rel AS select_
-        ON select_.privilege_type = 'SELECT' AND
-           select_."schema" = nsp.nspname AND
-           select_.grantee = rol.rolname
-      -- filter only if at lease one privileges is granted.
-      WHERE nspacl.oid IS NOT NULL OR def.oid IS NOT NULL OR select_."schema" IS NOT NULL
-      ORDER BY 1, 2;
+        nspname, rolname
+      FROM acls
+      JOIN pg_catalog.pg_namespace nsp ON nsp.oid = acls.oid
+      JOIN pg_catalog.pg_roles rol ON rol.oid = grantee
     grant: |
-      GRANT USAGE ON SCHEMA {schema} TO {role};
-      GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
       ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role};
     revoke: |
       ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} REVOKE SELECT ON TABLES FROM {role};
+
+  all-tables-select:
+    # Warning: schema with no tables are never granted!
+    inspect: |
+      WITH
+      namespace_tables AS (
+        -- All namespace and role having grant on it, and array of available
+        -- relations in the namespace.
+        SELECT
+          nsp.nspname,
+          ARRAY(
+            SELECT UNNEST(array_agg(rel.relname)
+            FILTER (WHERE rel.relname IS NOT NULL))
+            ORDER BY 1
+          ) AS tables
+        FROM pg_catalog.pg_namespace nsp
+        LEFT OUTER JOIN pg_catalog.pg_class rel
+          ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v')
+        WHERE nspname NOT LIKE 'pg_%'
+        GROUP BY 1
+      ),
+      tables_grants AS (
+        SELECT
+          table_schema AS "schema",
+          grantee,
+          -- Aggregate the relation grant for this privilege.
+          ARRAY(SELECT UNNEST(array_agg(table_name::name)) ORDER BY 1) AS tables
+        FROM information_schema.role_table_grants
+        WHERE privilege_type = 'SELECT'
+        GROUP BY 1, 2
+      )
+      SELECT
+        nspname, rolname,
+        rels.tables = nsp.tables AS "full"
+      FROM namespace_tables nsp
+      CROSS JOIN pg_catalog.pg_roles rol
+      JOIN tables_grants rels
+        ON rels."schema" = nsp.nspname AND rels.grantee = rolname
+    grant: |
+      GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
+    revoke: |
       REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
-      REVOKE USAGE ON SCHEMA {schema} FROM {role};
+
+acl_groups:
+  ro: [default-tables-select, all-tables-select]
 
 sync_map:
 - grant:

@@ -20,6 +20,7 @@ follow
 - Add check mode: exits with 1 if changes. Juste like diff.
 - Add `--quiet` option.
 - Add `__all__` schema wildcard for looping all schema in databases.
+- Add ACL group to ease managing complex ACL setup.
 - Add Cookbook in documentation.
 
 

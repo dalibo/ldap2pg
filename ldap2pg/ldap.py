@@ -115,7 +115,7 @@ class Options(dict):
         try:
             parser = getattr(self, 'parse_' + option.lower())
         except AttributeError:
-            logger.debug("Unkown option %s", option)
+            logger.debug("Unknown option %s", option)
             return None
         else:
             value = parser(raw)
