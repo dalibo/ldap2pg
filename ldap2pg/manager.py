@@ -63,7 +63,7 @@ class SyncManager(object):
     def fetch_schema_list(self, psql):
         select = """
         SELECT nspname FROM pg_catalog.pg_namespace
-        WHERE nspname NOT LIKE 'pg_%' AND nspname != 'public' ORDER BY 1;
+        WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
         """.strip().replace(8 * ' ', '')
         for row in psql(select):
             yield row[0]
