@@ -83,6 +83,14 @@ class AclItem(object):
     def as_tuple(self):
         return (self.acl, self.dbname, self.schema, self.role)
 
+    def expandaliases(self, aliases):
+        for acl in aliases[self.acl]:
+            yield self.__class__(
+                acl,
+                self.dbname, self.schema, self.role,
+                self.full,
+            )
+
     def expand(self, databases):
         if self.dbname is self.ALL_DATABASES:
             dbnames = databases.keys()

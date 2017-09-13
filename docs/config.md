@@ -205,6 +205,26 @@ Postgres. Checking whether a `GRANT SELECT ON ALL TABLES IN SCHEMA` is complete
 is rather tricky. See [Cookbook](cookbook.md) for detailed and real use case.
 
 
+## Grouping ACL
+
+Privileges are often granted together. E.g. you grant `SELECT ON ALL TABLES IN
+SCHEMA` along `ALTER DEFAULT PRIVILEGES IN SCHEMA SELECT ON ALL TABLES`. This
+can be very tricky to aggregate all ACL inspection in a single query. To help in
+this situation, `ldap2pg` manage *groups* of ACL, defined in `acl_groups` entry.
+
+```
+acl_dict:
+  select: {...}
+  default-select: {...}
+
+acl_groups:
+  ro: [select, default-select]
+```
+
+Now you can use `ro` as a regular ACL in synchronization map. See the
+[Cookbook](cookbook.md) for examples.
+
+
 ## Synchronization map
 
 The synchronization map is a complex and polyform setting. The core element of

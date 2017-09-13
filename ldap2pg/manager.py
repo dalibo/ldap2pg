@@ -43,11 +43,12 @@ def get_ldap_attribute(entry, attribute):
 class SyncManager(object):
 
     def __init__(
-            self, ldapconn=None, psql=None, acl_dict=None, blacklist=[],
-            roles_query=';', dry=False):
+            self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
+            blacklist=[], roles_query=';', dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
+        self.acl_aliases = acl_aliases or {}
         self._blacklist = blacklist
         self._roles_query = roles_query
         self.dry = dry
@@ -245,7 +246,8 @@ class SyncManager(object):
             aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
             for aclitem in aclitems:
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
-                ldapacls.add(aclitem)
+                for realitem in aclitem.expandaliases(self.acl_aliases):
+                    ldapacls.add(realitem)
 
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
@@ -284,7 +286,7 @@ class SyncManager(object):
             for qry in my.alter(its):
                 yield qry
 
-        # Don't forket trash all spurious roles!
+        # Don't forget to trash all spurious roles!
         spurious = RoleSet(pgroles - ldaproles)
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():

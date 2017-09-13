@@ -52,3 +52,31 @@ def deepset(mapping, path, value):
         key, sub = path.split(':', 1)
         submapping = mapping.setdefault(key, {})
         deepset(submapping, sub, value)
+
+
+def list_descendant(groups, name):
+    # Returns the recursive list of all descendant of name in hierarchy
+    # `groups`. `groups` is a flat dict of `groups`
+    for child in groups[name]:
+        if child in groups:
+            for grandchild in list_descendant(groups, child):
+                yield grandchild
+        else:
+            yield child
+
+
+def make_group_map(values, groups=None):
+    # Resolve `groups` including other `groups`, and ungrouped values in a
+    # single dict mapping either value name or group name to a list of
+    # effective values name.
+
+    groups = groups or {}
+
+    # First, add simple map for value -> value
+    aliases = {k: [k] for k in values}
+    # Now resolve groups descendant to value list and update map.
+    aliases.update({
+        k: sorted(list_descendant(groups, k))
+        for k in groups
+    })
+    return aliases

@@ -19,6 +19,7 @@ from .utils import (
     deepset,
     UserError,
     string_types,
+    make_group_map,
 )
 from .role import RoleOptions
 
@@ -464,6 +465,7 @@ class Configuration(dict):
             """.replace("\n" + ' ' * 12, "\n").strip()
         },
         'acl_dict': {},
+        'acl_groups': {},
         'sync_map': [],
     }
 
@@ -485,6 +487,7 @@ class Configuration(dict):
         Mapping('postgres:blacklist', env=None),
         Mapping('postgres:roles_query', env=None),
         Mapping('acl_dict', processor=acldict),
+        Mapping('acl_groups', env=None),
         Mapping('sync_map', env=None, processor=syncmap)
     ]
 
@@ -587,6 +590,11 @@ class Configuration(dict):
             self.merge(file_config=file_config, environ=os.environ, args=args)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
+
+        # Postprocess ACL groups
+        self['acl_aliases'] = make_group_map(
+            self['acl_dict'], self['acl_groups'],
+        )
 
         logger.debug("Configuration loaded.")
 

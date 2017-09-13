@@ -15,3 +15,22 @@ def test_deep_getset():
 
     with pytest.raises(KeyError):
         deepget(a, 'toto:titi')
+
+
+def test_make_map():
+    from ldap2pg.utils import make_group_map
+
+    values = dict(v0=0, v1=1)
+    groups = dict(g0=['v0'], g1=['v1', 'g0'], g2=['g1'])
+
+    aliases = make_group_map(values, groups)
+
+    wanted = dict(
+        v0=['v0'],
+        v1=['v1'],
+        g0=['v0'],
+        g1=['v0', 'v1'],
+        g2=['v0', 'v1'],
+    )
+
+    assert wanted == aliases
