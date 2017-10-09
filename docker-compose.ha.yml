@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+  secondaryldap:
+    image: osixia/openldap:1.1.9
+    environment:
+      # To debug slapd configuration:
+      # LDAP_LOG_LEVEL: 33768
+      LDAP_DOMAIN: ldap.ldap2pg.docker
+      LDAP_ADMIN_PASSWORD: integral
+      LDAP_CONFIG_PASSWORD: territorial
+      LDAP_TLS_VERIFY_CLIENT: try
+    volumes:
+    - ./fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ./fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
+    hostname: secondary.ldap.ldap2pg.docker
+    domainname: secondary.ldap.ldap2pg.docker
+    command: [--copy-service, --loglevel, debug]
+    labels:
+      com.dnsdock.alias: secondary.ldap.ldap2pg.docker
