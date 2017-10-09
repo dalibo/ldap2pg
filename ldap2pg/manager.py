@@ -230,6 +230,8 @@ class SyncManager(object):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
+        logger.debug("Postgres inspection done.")
+
         # Gather wanted roles
         ldaproles = RoleSet()
         ldapacls = AclSet()
