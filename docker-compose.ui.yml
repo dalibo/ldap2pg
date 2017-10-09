@@ -1,0 +1,7 @@
+version: '2'
+
+services:
+  admin:
+    image: dinkel/phpldapadmin
+    environment:
+      LDAP_SERVER_HOST: ldap
