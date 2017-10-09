@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
-from .ldap import LDAPError, str2dn, SCOPES_STR
+from .ldap import LDAPError, str2dn
 
 from .acl import AclItem, AclSet
 from .role import (
@@ -116,11 +116,6 @@ class SyncManager(object):
             yield AclItem.from_row(acl, dbname, schema, role, full)
 
     def query_ldap(self, base, filter, attributes, scope):
-        logger.debug(
-            "Doing: ldapsearch -W -b %s -s %s '%s' %s",
-            base, SCOPES_STR[scope], filter, ' '.join(attributes or []),
-        )
-
         try:
             entries = self.ldapconn.search_s(
                 base, scope, filter, attributes,

@@ -77,6 +77,38 @@ class UnicodeModeLDAPObject(object):  # pragma: nocover_py3
         return EncodedParamsCallable(getattr(self.wrapped, name))
 
 
+class LDAPLogger(object):
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+        self.connect_opts = ''
+
+    def __getattr__(self, name):
+        return getattr(self.wrapped, name)
+
+    def search_s(self, base, scope, filter, attributes):
+        logger.debug(
+            "Doing: ldapsearch%s -b %s -s %s '%s' %s",
+            self.connect_opts,
+            base, SCOPES_STR[scope], filter, ' '.join(attributes or []),
+        )
+        return self.wrapped.search_s(base, scope, filter, attributes)
+
+    def simple_bind_s(self, binddn, password):
+        self.connect_opts = ' -x'
+        if password:
+            self.connect_opts += ' -W'
+        return self.wrapped.simple_bind_s(binddn, password)
+
+    def sasl_interactive_bind_s(self, who, auth, *a, **kw):
+        self.connect_opts = ' -Y %s' % (auth.mech.decode('ascii'),)
+        if sasl.CB_AUTHNAME in auth.cb_value_dict:
+            self.connect_opts += ' -U %s' % (
+                auth.cb_value_dict[sasl.CB_AUTHNAME],)
+        if sasl.CB_PASS in auth.cb_value_dict:
+            self.connect_opts += ' -W'
+        return self.wrapped.sasl_interactive_bind_s(who, auth, *a, **kw)
+
+
 def connect(**kw):
     # Sources order, see ldap.conf(3)
     #   variable     $LDAPNOINIT, and if that is not set:
@@ -94,6 +126,8 @@ def connect(**kw):
     l = ldap_initialize(options['URI'])
     if PY2:  # pragma: nocover_py3
         l = UnicodeModeLDAPObject(l)
+
+    l = LDAPLogger(l)
 
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
