@@ -22,7 +22,10 @@ logger = logging.getLogger(__name__)
 def get_ldap_attribute(entry, attribute):
     _, attributes = entry
     path = attribute.split('.')
-    values = attributes[path[0]]
+    try:
+        values = attributes[path[0]]
+    except KeyError:
+        raise ValueError("Unknown attribute %r" % (path[0],))
     path = path[1:]
     for value in values:
         if path:
@@ -32,7 +35,10 @@ def get_ldap_attribute(entry, attribute):
                 names = value.setdefault(type_, [])
                 names.append(name)
             logger.debug("Parsed DN: %s", value)
-            value = value[path[0]][0]
+            try:
+                value = value[path[0]][0]
+            except KeyError:
+                raise ValueError("Unknown attribute %s" % (path[0],))
 
         if hasattr(value, 'decode'):
             value = value.decode('utf-8')
@@ -168,8 +174,12 @@ class SyncManager(object):
     def apply_role_rules(self, rules, entries):
         for rule in rules:
             for entry in entries:
-                for role in self.process_ldap_entry(entry=entry, **rule):
-                    yield role
+                try:
+                    for role in self.process_ldap_entry(entry=entry, **rule):
+                        yield role
+                except ValueError as e:
+                    msg = "Failed to process %.32s: %s" % (entry, e,)
+                    raise UserError(msg)
 
     def apply_grant_rules(self, grant, dbname=None, schema=None, entries=[]):
         for rule in grant:
@@ -191,7 +201,13 @@ class SyncManager(object):
                 if 'roles' in rule:
                     roles = rule['roles']
                 else:
-                    roles = get_ldap_attribute(entry, rule['role_attribute'])
+                    try:
+                        roles = get_ldap_attribute(
+                            entry, rule['role_attribute'])
+                    except ValueError as e:
+                        msg = "Failed to process %.32s: %s" % (entry, e,)
+                        raise UserError(msg)
+
                 for role in roles:
                     role = role.lower()
                     if pattern and not fnmatch(role, pattern):
