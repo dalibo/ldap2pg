@@ -13,7 +13,7 @@ follow
 - Fix unhandled exception when attribute does not exists in LDAP.
 
 
-# ldap2pg 3.0 (unreleased)
+# ldap2pg 3.0
 
 - Breakage: Use Python `{}` format string for ACL queries instead of named
   printf style.
