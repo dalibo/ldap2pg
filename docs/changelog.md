@@ -12,6 +12,7 @@ follow
 
 - Fix unhandled exception when attribute does not exists in LDAP.
 - Use LDAP standard default filter `(objectClass=*)`.
+- Add auth CLI arguments to logged ldapsearch commands.
 
 
 # ldap2pg 3.0

@@ -134,3 +134,13 @@ def test_get_ldap_attr():
             entry=('dn', {'cn': ['cn=pouet']}),
             attribute='cn.pouet',
         ))
+
+
+def test_logger(mocker):
+    from ldap2pg.ldap import LDAPLogger, SCOPE_SUBTREE
+
+    l = LDAPLogger(mocker.Mock(name='toto', pouet='toto'))
+
+    assert 'toto' == l.pouet
+
+    l.search_s('base', scope=SCOPE_SUBTREE, filter='', attributes='cn')
