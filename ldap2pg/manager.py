@@ -212,7 +212,7 @@ class SyncManager(object):
                     role = role.lower()
                     if pattern and not fnmatch(role, pattern):
                         logger.debug(
-                            "Don't grand %s to %s not matching %s",
+                            "Don't grant %s to %s not matching %s",
                             acl, role, pattern,
                         )
                         continue
