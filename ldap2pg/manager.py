@@ -212,7 +212,9 @@ class SyncManager(object):
         schemas = {k: [] for k in databases}
         for dbname, psql in self.psql.itersessions(databases):
             schemas[dbname] = list(self.fetch_schema_list(psql))
-            logger.debug("Found schemas %s in %s.", ', '.join(schemas[dbname]), dbname)
+            logger.debug(
+                "Found schemas %s in %s.", ', '.join(schemas[dbname]), dbname,
+            )
 
         # Inspect ACLs
         pgacls = AclSet()
@@ -227,6 +229,8 @@ class SyncManager(object):
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
+
+        logger.debug("Postgres inspection done.")
 
         # Gather wanted roles
         ldaproles = RoleSet()
