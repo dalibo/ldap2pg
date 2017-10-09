@@ -8,6 +8,11 @@ follow
 [merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 3.1 (unreleased)
+
+- Fix unhandled exception when attribute does not exists in LDAP.
+
+
 # ldap2pg 3.0 (unreleased)
 
 - Breakage: Use Python `{}` format string for ACL queries instead of named

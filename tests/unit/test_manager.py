@@ -199,6 +199,24 @@ def test_process_entry_members(mocker):
     assert 'bob' in role.members
 
 
+def test_apply_role_rule_ko(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+
+    from ldap2pg.manager import SyncManager, UserError
+
+    manager = SyncManager()
+
+    gla.side_effect = ValueError
+    items = manager.apply_role_rules(
+        entries=[None, None],
+        rules=[dict(
+            name_attribute='cn',
+        )],
+    )
+    with pytest.raises(UserError):
+        list(items)
+
+
 def test_apply_grant_rule_ok(mocker):
     gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
 
@@ -223,6 +241,20 @@ def test_apply_grant_rule_ok(mocker):
     # Ensure __any__ schema is mapped to None
     assert items[0].schema is None
     assert 'bob' == items[1].role
+
+
+def test_apply_grant_rule_wrong_attr(mocker):
+    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute')
+
+    from ldap2pg.manager import SyncManager, UserError
+
+    gla.side_effect = ValueError('POUET')
+    items = SyncManager().apply_grant_rules(
+        grant=[dict(role_attribute='cn')],
+        entries=[None, None],
+    )
+    with pytest.raises(UserError):
+        list(items)
 
 
 def test_apply_grant_rule_all_schema(mocker):
