@@ -11,6 +11,7 @@ follow
 # ldap2pg 3.1 (unreleased)
 
 - Fix unhandled exception when attribute does not exists in LDAP.
+- Use LDAP standard default filter `(objectClass=*)`.
 
 
 # ldap2pg 3.0
