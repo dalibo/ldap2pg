@@ -440,7 +440,7 @@ class Configuration(dict):
             'password': '',
             'default_query': {
                 'base': '',
-                'filter': '(objectClass=organizationalRole)',
+                'filter': '(objectClass=*)',
                 'scope': 'sub',
                 'attributes': ['cn'],
             },
