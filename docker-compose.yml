@@ -1,11 +1,6 @@
 version: '2'
 
 services:
-  admin:
-    image: dinkel/phpldapadmin
-    environment:
-      LDAP_SERVER_HOST: ldap
-
   ldap:
     image: osixia/openldap:1.1.9
     environment:
