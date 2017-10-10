@@ -146,6 +146,36 @@ Read further on how to control role creation from LDAP entry in
 real with `--real`.
 
 
+# Don't Drop Role not in Directory
+
+Usualy, you have roles in the cluster not defined in LDAP directory. At least
+`postgres` superuser. You may have other roles that ldap2pg will treat as
+spurious roles and would simply drop, because these are not in the directory.
+
+You can define statically the role as if it were in the directory. This makes
+sense especially when you require this role to synchronize the others.
+
+``` yaml
+sync_map:
+- role:
+    name: ldap_users
+    options: NOLOGIN
+- ldap:
+    base: ...
+  role:
+    name_attribute: ...
+    parent: ldap_users
+```
+
+Another solution is to blacklist the role. `ldap2pg` will always consider this
+role as missing in the cluster.
+
+``` yaml
+postgres:
+  blacklist: [postgres, pg_*, ldap_users]
+```
+
+
 # Don't Synchronize Superusers
 
 Say you don't want to manage superusers in the cluser with `ldap2pg`, just
