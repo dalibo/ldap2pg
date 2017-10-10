@@ -176,6 +176,19 @@ postgres:
 ```
 
 
+# Using LDAP High-Availability
+
+`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
+space separated list of URI to tells all servers.
+
+``` console
+$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
+```
+
+See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
+for further details.
+
+
 # Don't Synchronize Superusers
 
 Say you don't want to manage superusers in the cluser with `ldap2pg`, just
@@ -333,16 +346,3 @@ sync_map:
     role_attribute: member
     acl: rw
 ```
-
-
-# Using LDAP High-Availability
-
-`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
-space separated list of URI to tells all servers.
-
-``` console
-$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
-```
-
-See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
-for further details.
