@@ -8,6 +8,36 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes ! Your contribution is welcome!
 
 
+# How to Configure Postgres Authentication ?
+
+`ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
+[PostgreSQL
+documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#auth-ldap)
+about LDAP authentication for this point. Having PostgreSQL properly configured
+**before** writing `ldap2pg.yml` is a good start. Here is the steps to setup
+PostgreSQL with LDAP in the right order:
+
+- Write the LDAP query and test it with `ldapsearch(1)`. This way, you can also
+  check how you connect to your LDAP directory.
+- In PostgreSQL cluster, **manually** create a single role having its password
+  in LDAP directory.
+- Edit `pg_hba.conf` following [PostgreSQL
+  documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#auth-ldap)
+  until you can effectively login with the single role and the password from
+  LDAP.
+- Write a simple `ldap2pg.yml` with only one LDAP query just to setup `ldap2pg`
+  connection parameters for PostgreSQL and LDAP connection. `ldap2pg` always run
+  in dry mode by default, so you can safely loop `ldap2pg` execution until you
+  get it right.
+- Then, complete `ldap2pg.yml` to fit your needs following [ldap2pg
+  documentation](config.md). Run `ldap2pg` for real and check that ldap2pg
+  maintain your single test role, and that you can still connect to the cluster
+  with it.
+- Finally, you must decide when and how you want to trigger synchronization: a
+  regular cron tab ? An ansible task ? Manually ? Other ? Ensure `ldap2pg`
+  execution is frequent, on purpose and notified !
+
+
 # Don't Synchronize Superusers
 
 Say you don't want to manage superusers in the cluser with `ldap2pg`, just
