@@ -8,7 +8,7 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes ! Your contribution is welcome!
 
 
-# How to Configure Postgres Authentication ?
+# How to Configure Postgres Authentication with LDAP ?
 
 `ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
 [PostgreSQL
