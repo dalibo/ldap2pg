@@ -228,6 +228,7 @@ Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
 
+
 # Read-only ACLs
 
 Say you want to manage `SELECT` privileges based on LDAP directory. The easiest
