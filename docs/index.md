@@ -11,7 +11,7 @@ state of the art code **quality** and nice **user experience**.
 
 ## Highlighted features
 
-- Configure multiples LDAP queries.
+- Configure multiple LDAP queries.
 - Customize Postgres role options (`LOGIN`, `SUPERUSER`, `REPLICATION`, etc.).
 - Create, alter and drop roles.
 - Manage role members.
@@ -29,7 +29,7 @@ Just use PyPI as any regular Python project:
 # ldap2pg --help
 ```
 
-Now you **must** configure Postgres and LDAP connexions as well as the
+Now you **must** configure Postgres and LDAP connections as well as the
 synchronization map.
 The
 [dumb but tested `ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is
@@ -40,4 +40,4 @@ a good way to start.
 # editor ldap2pg.yml
 ```
 
-Finally, it's up to you to use `ldap2pg` in a crontab or a playbook. Have fun !
+Finally, it's up to you to use `ldap2pg` in a crontab or a playbook. Have fun!

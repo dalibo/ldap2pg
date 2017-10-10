@@ -106,7 +106,7 @@ acl_dict:
 #
 
 # This sync map is a dict associating mappings to databases. Each mapping
-# describes an optionnal LDAP query and a set of rules to generate roles or
+# describes an optional LDAP query and a set of rules to generate roles or
 # grant ACL from entries returned by LDAP.
 sync_map:
   # Mappings globale to cluster.

@@ -41,7 +41,7 @@ Arguments can be defined multiple times. On conflict, the last argument is used.
 
 # Environment variables
 
-`ldap2pg` has no CLI switch to configure LDAP and Postgres connexion. However,
+`ldap2pg` has no CLI switch to configure LDAP and Postgres connection. However,
 `ldap2pg` supports `libpq` `PG*` env vars:
 
 ```
@@ -79,7 +79,7 @@ Inspecting Postgres...
 ...
 ```
 
-`ldap2pg` accepts two extras variables: `LADPPASSWORD` and `LDAPUSER`.
+`ldap2pg` accepts two extra variables: `LADPPASSWORD` and `LDAPUSER`.
 `LDAPPASSWORD` is self explanatory. `LDAPUSER` triggers SASL authentication.
 Without `LDAPUSER`, `ldap2pg` switches to simple authentication.
 
@@ -136,7 +136,7 @@ verbose: no
 dry: yes
 ```
 
-The next two sections define connexion parameters for LDAP and Postgres. Beware
+The next two sections define connection parameters for LDAP and Postgres. Beware
 that `ldap2pg` refuses to read a password from a group readable or world
 readable `ldap2pg.yml`.
 
@@ -165,14 +165,14 @@ are granted. Schema name can be `NULL` if the schema is irrelevant. Each tuple
 in the rowset references a grant of this ACL to a role on a schema (or none).
 
 `inspect` can be undefined. This is just as if the query returns an empty
-rowset. It's actually a bad idea no to provide `inspect`. This won't allow
+rowset. It's actually a bad idea not to provide `inspect`. This won't allow
 `ldap2pg` to revoke ACL. Also, this prevents you to check that a cluster is
 synchronized: `ldap2pg` will always re-grant the ACL.
 
 `grant` and `revoke` provide queries to respectively grant and revoke the ACL.
 The query is formatted with three parameters: `database`, `schema` and `role`.
 `database` strictly equals to `CURRENT_DATABASE`, it's just there to help
-putting identifier in the query. `ldap2pg` uses Python's [*Format String
+put identifier in the query. `ldap2pg` uses Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings).
 See example below. In verbose mode, you will see the formatted queries.
 
@@ -198,7 +198,7 @@ acl_dict:
       REVOKE CONNECT ON DATABASE {database} FROM {role}
 ```
 
-Writing `inspect` queries requires a deep knowledge of Postgres internals. See
+Writing `inspect` queries requires deep knowledge of Postgres internals. See
 [System Catalogs](https://www.postgresql.org/docs/current/static/catalogs.html)
 section in PostgreSQL documentation to see how ACL are actually stored in
 Postgres. Checking whether a `GRANT SELECT ON ALL TABLES IN SCHEMA` is complete
@@ -210,7 +210,7 @@ is rather tricky. See [Cookbook](cookbook.md) for detailed and real use case.
 Privileges are often granted together. E.g. you grant `SELECT ON ALL TABLES IN
 SCHEMA` along `ALTER DEFAULT PRIVILEGES IN SCHEMA SELECT ON ALL TABLES`. This
 can be very tricky to aggregate all ACL inspection in a single query. To help in
-this situation, `ldap2pg` manage *groups* of ACL, defined in `acl_groups` entry.
+this situation, `ldap2pg` manages *groups* of ACL, defined in `acl_groups` entry.
 
 ```
 acl_dict:
@@ -233,7 +233,7 @@ associated with either the cluster, a database within the cluster or a single
 schema in one database.
 
 A mapping is a dict with three kind of rules: `ldap`, `roles` and `grant`.
-`ldap` entry is optionnal, however either one of `roles` or `grant` is required.
+`ldap` entry is optional, however either one of `roles` or `grant` is required.
 Here is a sample:
 
 ``` yaml
@@ -268,17 +268,17 @@ An LDAP search is not mandatory. `ldap2pg` can create roles defined statically
 from YAML. Ensure role and grant rules in the mapping do not have `*_attribute`
 keys. They will try to refer to an inexisting LDAP entry.
 
-Each LDAP search is done once and only once. There is no loop neither
+Each LDAP search is done once and only once. There is neither loop nor
 deduplication of LDAP searches.
 
 
 ### `role` parameters
 
 `name` or `names` contains one or more static name of role you want to define in
-Postgres. This is usefull to e.g. define a `ldap_users` group. `names` parameter
+Postgres. This is useful to e.g. define a `ldap_users` group. `names` parameter
 overrides `name_attribute` parameter.
 
-`name_attribute` parameter reference an attribute of an LDAP entry. If the
+`name_attribute` parameter references an attribute of an LDAP entry. If the
 attribute is of type `distinguishedName`, you can specify the field of the DN to
 use. e.g. `name.cn` targets the first `cn` RDN of the `name` attribute. If an
 attribute is defined multiple times, one role is generated for each value.
