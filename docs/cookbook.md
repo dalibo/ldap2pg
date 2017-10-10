@@ -60,6 +60,92 @@ complete*. `ldap2pg` suggests to drop everything. Go on and write the
 synchronization map to tell `ldap2pg` the required roles for the cluster.
 
 
+# Query LDAP
+
+The first step is to query your LDAP server with `ldapsearch`, the CLI tool from
+OpenLDAP. Like this:
+
+``` console
+$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b dc=ldap,dc=ldap2pg,dc=docker
+Enter LDAP Password:
+SASL/DIGEST-MD5 authentication started
+SASL username: testsasl
+SASL SSF: 128
+SASL data security layer installed.
+# extended LDIF
+#
+# LDAPv3
+...
+# search result
+search: 4
+result: 0 Success
+
+# numResponses: 16
+# numEntries: 15
+$
+```
+
+Now save the settings in `ldap2pg.yml`:
+
+``` yaml
+ldap:
+  uri: ldaps://ldap.ldap2pg.docker
+  user: testsasl
+  password: "*secret*"
+```
+
+Next, update your `ldapsearch` to properly match role entries in LDAP server:
+
+``` console
+$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker '' member
+...
+# dba, groups, ldap.ldap2pg.docker
+dn: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+# search result
+search: 4
+result: 0 Success
+
+...
+$
+```
+
+Now save the query in `ldap2pg.yml` in the `sync_map` setting and associate a
+role mapping to produce roles from each values of each entries returned by the
+LDAP search:
+
+``` yaml
+sync_map:
+- ldap:
+    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    attributes: member
+  role:
+    name_attribute: member.cn
+    options: LOGIN SUPERUSER
+```
+
+Test it:
+
+``` console
+$ ldap2pg
+...
+Querying LDAP cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
+Would create alan.
+Would create albert.
+Would update options of alice.
+...
+Comparison complete.
+$
+```
+
+Read further on how to control role creation from LDAP entry in
+[Configuration](config.md). Once you're satisfied with the comparison output, go
+real with `--real`.
+
+
 # Don't Synchronize Superusers
 
 Say you don't want to manage superusers in the cluser with `ldap2pg`, just
