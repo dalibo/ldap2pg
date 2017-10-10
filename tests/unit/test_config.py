@@ -385,8 +385,7 @@ def test_merge_and_mappings():
 
     # Noop
     config = Configuration()
-    with pytest.raises(ValueError):
-        config.merge(file_config={}, environ={})
+    config.merge(file_config={}, environ={})
 
     # Minimal configuration
     minimal_config = dict(
@@ -470,7 +469,7 @@ def test_load_badfiles(mocker):
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
-    o = mocker.patch('ldap2pg.config.open', create=True)
+    merge = mocker.patch('ldap2pg.config.Configuration.merge')
 
     from ldap2pg.config import (
         Configuration,
@@ -481,14 +480,17 @@ def test_load_badfiles(mocker):
 
     config = Configuration()
 
+    # No file specified
     ff.side_effect = NoConfigurationError()
-    # Missing sync_map
-    with pytest.raises(ConfigurationError):
-        config.load(argv=[])
+    config.load(argv=[])
 
     ff.side_effect = None
-    # Find `filename.yml`
+    # Invalid file
     ff.return_value = ['filename.yml', 0o0]
+    merge.side_effect = ValueError()
+    o = mocker.patch('ldap2pg.config.open', mocker.mock_open(), create=True)
+    with pytest.raises(ConfigurationError):
+        config.load(argv=[])
 
     # Not readable.
     o.side_effect = OSError("failed to open")

@@ -8,7 +8,7 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes ! Your contribution is welcome!
 
 
-# How to Configure Postgres Authentication ?
+# How to Configure Postgres Authentication with LDAP ?
 
 `ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
 [PostgreSQL
@@ -36,6 +36,157 @@ PostgreSQL with LDAP in the right order:
 - Finally, you must decide when and how you want to trigger synchronization: a
   regular cron tab ? An ansible task ? Manually ? Other ? Ensure `ldap2pg`
   execution is frequent, on purpose and notified !
+
+
+# Configure Postgres Connection
+
+The simplest case is to save the connection settings in `ldap2pg.yml`, section
+`postgres`:
+
+``` yaml
+postgres:
+  dsn: postgres://user:password@host:port/
+```
+
+`ldap2pg` checks for file mode and refuse to read password in world readable
+files. Ensure it is not world readable by setting a proper file mode:
+
+``` console
+$ chmod 0600 ldap2pg.yml
+```
+
+`ldap2pg` will warn about *Empty synchronization map* and ends with *Comparison
+complete*. `ldap2pg` suggests to drop everything. Go on and write the
+synchronization map to tell `ldap2pg` the required roles for the cluster.
+
+
+# Query LDAP
+
+The first step is to query your LDAP server with `ldapsearch`, the CLI tool from
+OpenLDAP. Like this:
+
+``` console
+$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b dc=ldap,dc=ldap2pg,dc=docker
+Enter LDAP Password:
+SASL/DIGEST-MD5 authentication started
+SASL username: testsasl
+SASL SSF: 128
+SASL data security layer installed.
+# extended LDIF
+#
+# LDAPv3
+...
+# search result
+search: 4
+result: 0 Success
+
+# numResponses: 16
+# numEntries: 15
+$
+```
+
+Now save the settings in `ldap2pg.yml`:
+
+``` yaml
+ldap:
+  uri: ldaps://ldap.ldap2pg.docker
+  user: testsasl
+  password: "*secret*"
+```
+
+Next, update your `ldapsearch` to properly match role entries in LDAP server:
+
+``` console
+$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker '' member
+...
+# dba, groups, ldap.ldap2pg.docker
+dn: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+# search result
+search: 4
+result: 0 Success
+
+...
+$
+```
+
+Now save the query in `ldap2pg.yml` in the `sync_map` setting and associate a
+role mapping to produce roles from each values of each entries returned by the
+LDAP search:
+
+``` yaml
+sync_map:
+- ldap:
+    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    attributes: member
+  role:
+    name_attribute: member.cn
+    options: LOGIN SUPERUSER
+```
+
+Test it:
+
+``` console
+$ ldap2pg
+...
+Querying LDAP cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
+Would create alan.
+Would create albert.
+Would update options of alice.
+...
+Comparison complete.
+$
+```
+
+Read further on how to control role creation from LDAP entry in
+[Configuration](config.md). Once you're satisfied with the comparison output, go
+real with `--real`.
+
+
+# Don't Drop Role not in Directory
+
+Usualy, you have roles in the cluster not defined in LDAP directory. At least
+`postgres` superuser. You may have other roles that ldap2pg will treat as
+spurious roles and would simply drop, because these are not in the directory.
+
+You can define statically the role as if it were in the directory. This makes
+sense especially when you require this role to synchronize the others.
+
+``` yaml
+sync_map:
+- role:
+    name: ldap_users
+    options: NOLOGIN
+- ldap:
+    base: ...
+  role:
+    name_attribute: ...
+    parent: ldap_users
+```
+
+Another solution is to blacklist the role. `ldap2pg` will always consider this
+role as missing in the cluster.
+
+``` yaml
+postgres:
+  blacklist: [postgres, pg_*, ldap_users]
+```
+
+
+# Using LDAP High-Availability
+
+`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
+space separated list of URI to tells all servers.
+
+``` console
+$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
+```
+
+See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
+for further details.
 
 
 # Don't Synchronize Superusers
@@ -76,6 +227,7 @@ columns of managed role options as supported by `ldap2pg`. `ldpa2pg` uses
 Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
+
 
 # Read-only ACLs
 
@@ -195,16 +347,3 @@ sync_map:
     role_attribute: member
     acl: rw
 ```
-
-
-# Using LDAP High-Availability
-
-`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
-space separated list of URI to tells all servers.
-
-``` console
-$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
-```
-
-See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
-for further details.

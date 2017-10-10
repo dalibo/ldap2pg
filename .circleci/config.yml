@@ -22,13 +22,15 @@ version: 2
       paths:
       - "~/.cache/pip/"
       - ".venv"
-  - run: |
-      . .venv/bin/activate
-      sort --check .gitignore
-      flake8 . tests/*/
-      python setup.py --long-description | rst2html.py --strict >/dev/null
-      pytest tests/unit/
-      codecov
+  - run:
+      name: Python tests
+      command: |
+        . .venv/bin/activate
+        sort --check .gitignore
+        flake8 . tests/*/
+        python setup.py --long-description | rst2html.py --strict >/dev/null
+        pytest tests/unit/
+        codecov
 
 jobs:
   0-docs:

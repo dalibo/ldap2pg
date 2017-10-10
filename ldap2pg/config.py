@@ -236,7 +236,7 @@ def syncmap(value):
     #     roles: <rolerule>
 
     if not value:
-        raise ValueError("Empty mapping.")
+        return {}
 
     if ismapping(value):
         value = [value]
@@ -466,7 +466,7 @@ class Configuration(dict):
         },
         'acl_dict': {},
         'acl_groups': {},
-        'sync_map': [],
+        'sync_map': {},
     }
 
     MAPPINGS = [
@@ -597,6 +597,9 @@ class Configuration(dict):
         )
 
         logger.debug("Configuration loaded.")
+
+        if not self['sync_map']:
+            logger.warn("Empty synchronization map!")
 
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:

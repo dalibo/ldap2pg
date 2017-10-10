@@ -54,7 +54,8 @@ def wrapped_main(config=None):
 
     count = manager.sync(*sync_data)
 
-    logger.info("Synchronization complete.")
+    action = "Comparison" if config['dry'] else "Synchronization"
+    logger.info("%s complete.", action)
 
     return int(count > 0) if config['check'] else 0
 
