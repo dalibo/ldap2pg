@@ -38,6 +38,28 @@ PostgreSQL with LDAP in the right order:
   execution is frequent, on purpose and notified !
 
 
+# Configure Postgres Connection
+
+The simplest case is to save the connection settings in `ldap2pg.yml`, section
+`postgres`:
+
+``` yaml
+postgres:
+  dsn: postgres://user:password@host:port/
+```
+
+`ldap2pg` checks for file mode and refuse to read password in world readable
+files. Ensure it is not world readable by setting a proper file mode:
+
+``` console
+$ chmod 0600 ldap2pg.yml
+```
+
+`ldap2pg` will warn about *Empty synchronization map* and ends with *Comparison
+complete*. `ldap2pg` suggests to drop everything. Go on and write the
+synchronization map to tell `ldap2pg` the required roles for the cluster.
+
+
 # Don't Synchronize Superusers
 
 Say you don't want to manage superusers in the cluser with `ldap2pg`, just
