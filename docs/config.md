@@ -32,7 +32,7 @@ optional arguments:
   -V, --version         show version and exit
 
 ldap2pg requires a configuration file to describe LDAP queries and role
-mappings. See https://ldap2pg.readthedocs.org/ for further details. By
+mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further details. By
 default, ldap2pg runs in dry mode.
 ```
 
@@ -236,7 +236,7 @@ A mapping is a dict with three kind of rules: `ldap`, `roles` and `grant`.
 `ldap` entry is optionnal, however either one of `roles` or `grant` is required.
 Here is a sample:
 
-``` yaml 
+``` yaml
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=organizationalRole)"

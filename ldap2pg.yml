@@ -5,7 +5,7 @@
 # password in it.
 #
 # See also full documenation on how to configure ldap2pg at
-# http://ldap2pg.readthedocs.io/en/latest/config/.
+# https://ldap2pg.readthedocs.io/en/latest/config/.
 
 # Colorization. env var: COLOR=<anything>
 color: yes
