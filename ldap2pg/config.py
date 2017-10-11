@@ -535,7 +535,7 @@ class Configuration(dict):
     EPILOG = """\
 
     ldap2pg requires a configuration file to describe LDAP queries and role
-    mappings. See https://ldap2pg.readthedocs.org/ for further details.
+    mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further details.
 
     By default, ldap2pg runs in dry mode.
     """.replace(4 * ' ', '')

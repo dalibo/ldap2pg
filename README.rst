@@ -4,7 +4,7 @@
 
 Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
 
-.. _documentation: http://ldap2pg.readthedocs.io/
+.. _documentation: https://ldap2pg.readthedocs.io/en/latest/
 .. _license:       https://opensource.org/licenses/postgresql
 
 
@@ -96,5 +96,5 @@ More details can be found in documentation_.
    :alt: Version on PyPI
 
 .. |RTD| image:: https://readthedocs.org/projects/ldap2pg/badge/?version=latest
-   :target: http://ldap2pg.readthedocs.io/en/latest/?badge=latest
+   :target: https://ldap2pg.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation

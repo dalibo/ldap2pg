@@ -27,7 +27,7 @@ dependencies.
 
 Note that wheel package uses [pyldap](https://github.com/pyldap/pyldap) which is
 not packaged on CentOS. Installing from source will fallback
-to [python-ldap](https://www.python-ldap.org/). Installing from source require a
+to [python-ldap](https://www.python-ldap.org/). Installing from source requires a
 recent setuptools version.
 
 
