@@ -10,7 +10,8 @@ readme-sample:
 
 release:
 	python setup.py egg_info
-	git commit setup.py -m "Version $(VERSION)"
+	sed -i 's/ \+(unreleased)$$//' docs/changelog.md
+	git commit setup.py docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	@echo
 	@echo Now push with
