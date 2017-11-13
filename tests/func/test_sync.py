@@ -68,31 +68,6 @@ def test_nothing_to_do():
     assert b'Nothing to do' in out.stderr
 
 
-YAML = """\
-postgres:
-  roles_query: |
-    SELECT
-        role.rolname, array_agg(members.rolname) AS members,
-        {options}
-    FROM
-        pg_catalog.pg_roles AS role
-    LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
-    LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-    WHERE role.rolname LIKE 'd%'
-    GROUP BY role.rolname, {options}
-    ORDER BY 1;
-
-sync_map:
-  ldap:
-      base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
-      filter: "(cn=d*)"
-      attribute: cn
-  role:
-    name_attribute: cn
-    options: LOGIN
-"""
-
-
 def test_custom_query(psql):
     from sh import ldap2pg
 
@@ -100,7 +75,8 @@ def test_custom_query(psql):
     roles = list(psql.roles())
     assert 'alan' in roles
 
-    out = ldap2pg('-v', '--config=-', _in=YAML)
+    yaml = open('tests/func/ldap2pg.custom_inspect.yml')
+    out = ldap2pg('-v', '--config=-', _in=yaml)
 
     # However, alan is not dopped.
     assert b'Nothing to do' in out.stderr
