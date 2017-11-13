@@ -70,7 +70,6 @@ class LDAP(object):
             '-w', os.environ['LDAPPASSWORD'],
         )
 
-        self.add = sh.ldapadd.bake(*self.common_args)
         self.search = sh.ldapsearch.bake(*self.common_args)
         self.delete = sh.ldapdelete.bake(*self.common_args)
 
