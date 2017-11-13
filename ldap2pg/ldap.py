@@ -15,7 +15,7 @@ from ldap import (
 from ldap.dn import str2dn
 from ldap import sasl
 
-from .utils import PY2
+from .utils import decode_value, PY2
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class EncodedParamsCallable(object):  # pragma: nocover_py3
         self.callable_ = callable_
 
     def __call__(self, *a, **kw):
-        return self.callable_(*fi_encode(a), **fi_encode(kw))
+        return decode_value(self.callable_(*fi_encode(a), **fi_encode(kw)))
 
 
 class UnicodeModeLDAPObject(object):  # pragma: nocover_py3

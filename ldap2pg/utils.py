@@ -54,6 +54,22 @@ def deepset(mapping, path, value):
         deepset(submapping, sub, value)
 
 
+def decode_value(value):
+    if hasattr(value, 'decode'):
+        return value.decode('utf-8')
+    elif hasattr(value, 'items'):
+        return {
+            decode_value(k): decode_value(v)
+            for k, v in value.items()
+        }
+    elif isinstance(value, list):
+        return [decode_value(v) for v in value]
+    elif isinstance(value, tuple):
+        return tuple([decode_value(v) for v in value])
+    else:
+        return value
+
+
 def list_descendant(groups, name):
     # Returns the recursive list of all descendant of name in hierarchy
     # `groups`. `groups` is a flat dict of `groups`

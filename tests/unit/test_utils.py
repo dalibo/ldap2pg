@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from __future__ import unicode_literals
 
 import pytest
@@ -15,6 +17,19 @@ def test_deep_getset():
 
     with pytest.raises(KeyError):
         deepget(a, 'toto:titi')
+
+
+def test_decode():
+    from ldap2pg.utils import decode_value
+
+    decoded = {'é': [('é', 0xcafe)], 0xdead: None}
+    eacute = 'é'.encode('utf-8')
+    encoded = {
+        eacute: [(eacute, 0xcafe)],
+        0xdead: None,
+    }
+
+    assert decoded == decode_value(encoded)
 
 
 def test_make_map():
