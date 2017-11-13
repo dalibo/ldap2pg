@@ -56,12 +56,12 @@ def test_logging_config():
     config = Configuration()
 
     config['verbose'] = True
-    l = config.logging_dict()
-    assert 'DEBUG' == l['loggers']['ldap2pg']['level']
+    dict_ = config.logging_dict()
+    assert 'DEBUG' == dict_['loggers']['ldap2pg']['level']
 
     config['verbose'] = False
-    l = config.logging_dict()
-    assert 'INFO' == l['loggers']['ldap2pg']['level']
+    dict_ = config.logging_dict()
+    assert 'INFO' == dict_['loggers']['ldap2pg']['level']
 
 
 def test_mapping():

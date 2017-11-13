@@ -355,14 +355,14 @@ def test_inspect_acls(mocker):
 
 def test_inspect_roles(mocker):
     p = mocker.patch('ldap2pg.manager.SyncManager.process_pg_roles')
-    l = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
+    ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.SyncManager.process_ldap_entry')
     psql = mocker.MagicMock()
 
     from ldap2pg.manager import SyncManager, Role
 
     p.return_value = {Role(name='spurious')}
-    l.return_value = [mocker.Mock(name='entry')]
+    ql.return_value = [mocker.Mock(name='entry')]
     r.side_effect = [{Role(name='alice')}, {Role(name='bob')}]
 
     manager = SyncManager(psql=psql, ldapconn=mocker.Mock())
