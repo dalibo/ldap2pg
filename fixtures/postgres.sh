@@ -19,6 +19,7 @@ CREATE ROLE daniel LOGIN;
 -- Create spurious roles, for DROP.
 CREATE ROLE legacy WITH NOLOGIN;
 CREATE ROLE oscar WITH LOGIN IN ROLE legacy, backend;
+CREATE ROLE œdipe WITH LOGIN;
 -- Create alice superuser without login, for ALTER.
 CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE backend;
 
