@@ -151,7 +151,7 @@ def test_process_entry_user():
 
     manager = SyncManager()
 
-    entry = ('dn', {'cn': ['alice', b'bob']})
+    entry = ('dn', {'cn': ['alice', 'bob']})
 
     roles = manager.process_ldap_entry(
         entry, name_attribute='cn',

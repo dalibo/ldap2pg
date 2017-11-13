@@ -4,6 +4,7 @@ from collections import OrderedDict
 import logging
 
 from .psql import Query
+from .utils import unicode
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class Role(object):
         self.parents = parents or []
 
     def __eq__(self, other):
-        return self.name == str(other)
+        return self.name == unicode(other)
 
     def __hash__(self):
         return hash(self.name)
@@ -29,7 +30,7 @@ class Role(object):
         return self.name
 
     def __lt__(self, other):
-        return str(self) < str(other)
+        return unicode(self) < unicode(other)
 
     @classmethod
     def from_row(cls, name, members, *row):

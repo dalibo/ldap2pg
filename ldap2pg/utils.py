@@ -6,10 +6,12 @@ from fnmatch import fnmatch
 
 PY2 = sys.version_info < (3,)
 
-if PY2:
+if PY2:  # pragma: nocover_py3
     string_types = (str, unicode)  # noqa
+    unicode = unicode
 else:
     string_types = (str,)
+    unicode = str
 
 
 class AllDatabases(object):
