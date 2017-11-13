@@ -151,7 +151,7 @@ def test_process_entry_user():
 
     manager = SyncManager()
 
-    entry = ('dn', {'cn': ['alice', b'bob']})
+    entry = ('dn', {'cn': ['alice', 'bob']})
 
     roles = manager.process_ldap_entry(
         entry, name_attribute='cn',
@@ -442,7 +442,7 @@ def test_sync(mocker):
     manager = SyncManager(psql=psql)
 
     # Simple diff with one query
-    diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    diff.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
     qry[0].expand.return_value = [qry[0]]
 
     sync_kw = dict(

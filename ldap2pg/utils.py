@@ -6,10 +6,12 @@ from fnmatch import fnmatch
 
 PY2 = sys.version_info < (3,)
 
-if PY2:
+if PY2:  # pragma: nocover_py3
     string_types = (str, unicode)  # noqa
+    unicode = unicode
 else:
     string_types = (str,)
+    unicode = str
 
 
 class AllDatabases(object):
@@ -52,6 +54,37 @@ def deepset(mapping, path, value):
         key, sub = path.split(':', 1)
         submapping = mapping.setdefault(key, {})
         deepset(submapping, sub, value)
+
+
+def decode_value(value):
+    if hasattr(value, 'decode'):
+        return value.decode('utf-8')
+    elif hasattr(value, 'items'):
+        return {
+            decode_value(k): decode_value(v)
+            for k, v in value.items()
+        }
+    elif isinstance(value, list):
+        return [decode_value(v) for v in value]
+    elif isinstance(value, tuple):
+        return tuple([decode_value(v) for v in value])
+    else:
+        return value
+
+
+def encode_value(value):
+    # Encode everyting in value. value can be of any types. Actually, tuple and
+    # sets are not preserved.
+    if hasattr(value, 'encode'):
+        return value.encode('utf-8')
+    elif hasattr(value, 'items'):
+        return {encode_value(k): encode_value(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [encode_value(v) for v in value]
+    elif isinstance(value, tuple):
+        return tuple([encode_value(v) for v in value])
+    else:
+        return value
 
 
 def list_descendant(groups, name):

@@ -40,9 +40,6 @@ def get_ldap_attribute(entry, attribute):
             except KeyError:
                 raise ValueError("Unknown attribute %s" % (path[0],))
 
-        if hasattr(value, 'decode'):
-            value = value.decode('utf-8')
-
         yield value
 
 
@@ -324,8 +321,10 @@ class SyncManager(object):
         for query in expandqueries(queries, databases):
             with self.psql(query.dbname) as psql:
                 count += 1
-                msg = str(query)
-                logger.info('Would ' + lower1(msg) if self.dry else msg)
+                if self.dry:
+                    logger.info('Would ' + lower1(query.message))
+                else:
+                    logger.info(query.message)
 
                 sql = psql.mogrify(*query.args).decode('UTF-8')
                 if self.dry:

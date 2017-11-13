@@ -1,5 +1,5 @@
 from .psql import Query
-from .utils import AllDatabases
+from .utils import AllDatabases, unicode
 
 
 class AllSchemas(object):
@@ -16,7 +16,7 @@ class Acl(object):
         self.revoke_sql = revoke
 
     def __lt__(self, other):
-        return str(self) < str(other)
+        return unicode(self) < unicode(other)
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self)
