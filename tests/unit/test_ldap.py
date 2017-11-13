@@ -42,8 +42,8 @@ def test_connect_sasl(mocker):
 
     connect()
 
-    l = li.return_value
-    assert l.sasl_interactive_bind_s.called is True
+    ldap = li.return_value
+    assert ldap.sasl_interactive_bind_s.called is True
 
 
 def test_options_dict():
@@ -139,8 +139,8 @@ def test_get_ldap_attr():
 def test_logger(mocker):
     from ldap2pg.ldap import LDAPLogger, SCOPE_SUBTREE
 
-    l = LDAPLogger(mocker.Mock(name='toto', pouet='toto'))
+    ldap = LDAPLogger(mocker.Mock(name='toto', pouet='toto'))
 
-    assert 'toto' == l.pouet
+    assert 'toto' == ldap.pouet
 
-    l.search_s('base', scope=SCOPE_SUBTREE, filter='', attributes='cn')
+    ldap.search_s('base', scope=SCOPE_SUBTREE, filter='', attributes='cn')
