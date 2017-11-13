@@ -40,9 +40,6 @@ def get_ldap_attribute(entry, attribute):
             except KeyError:
                 raise ValueError("Unknown attribute %s" % (path[0],))
 
-        if hasattr(value, 'decode'):
-            value = value.decode('utf-8')
-
         yield value
 
 
