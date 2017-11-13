@@ -70,6 +70,21 @@ def decode_value(value):
         return value
 
 
+def encode_value(value):
+    # Encode everyting in value. value can be of any types. Actually, tuple and
+    # sets are not preserved.
+    if hasattr(value, 'encode'):
+        return value.encode('utf-8')
+    elif hasattr(value, 'items'):
+        return {encode_value(k): encode_value(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [encode_value(v) for v in value]
+    elif isinstance(value, tuple):
+        return tuple([encode_value(v) for v in value])
+    else:
+        return value
+
+
 def list_descendant(groups, name):
     # Returns the recursive list of all descendant of name in hierarchy
     # `groups`. `groups` is a flat dict of `groups`

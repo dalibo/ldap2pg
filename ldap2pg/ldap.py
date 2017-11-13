@@ -15,7 +15,7 @@ from ldap import (
 from ldap.dn import str2dn
 from ldap import sasl
 
-from .utils import decode_value, PY2
+from .utils import decode_value, encode_value, PY2
 
 
 logger = logging.getLogger(__name__)
@@ -43,26 +43,14 @@ def parse_scope(raw):
         raise ValueError("Unknown scope %r" % (raw,))
 
 
-def fi_encode(value):  # pragma: nocover_py3
-    # Encode everyting in value. value can be of any types. Actually, tuple and
-    # sets are not preserved.
-    if hasattr(value, 'encode'):
-        return value.encode('utf-8')
-    elif hasattr(value, 'items'):
-        return {k: fi_encode(v) for k, v in value.items()}
-    elif hasattr(value, '__iter__'):
-        return [fi_encode(v) for v in value]
-    else:
-        return value
-
-
 class EncodedParamsCallable(object):  # pragma: nocover_py3
     # Wrap a callable not accepting unicode to encode all arguments.
     def __init__(self, callable_):
         self.callable_ = callable_
 
     def __call__(self, *a, **kw):
-        return decode_value(self.callable_(*fi_encode(a), **fi_encode(kw)))
+        a, kw = encode_value((a, kw))
+        return decode_value(self.callable_(*a, **kw))
 
 
 class UnicodeModeLDAPObject(object):  # pragma: nocover_py3
