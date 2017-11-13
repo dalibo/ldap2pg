@@ -12,7 +12,7 @@ from ldap import (
     SCOPE_SUBORDINATE,
     SCOPE_SUBTREE,
 )
-from ldap.dn import str2dn
+from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
 from .utils import decode_value, encode_value, PY2
@@ -20,7 +20,7 @@ from .utils import decode_value, encode_value, PY2
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['LDAPError', 'str2dn']
+__all__ = ['LDAPError']
 
 
 SCOPES = {
@@ -41,6 +41,15 @@ def parse_scope(raw):
         return SCOPES[raw]
     except KeyError:
         raise ValueError("Unknown scope %r" % (raw,))
+
+
+if PY2:  # pragma: nocover_py3
+    def str2dn(value):
+        # Workaround buggy unicode managmenent in upstream python-ldap. This is
+        # not necessary with pyldap on Python3.
+        return decode_value(native_str2dn(value.encode('utf-8')))
+else:
+    str2dn = native_str2dn
 
 
 class EncodedParamsCallable(object):  # pragma: nocover_py3
