@@ -2,12 +2,16 @@ from __future__ import unicode_literals
 
 import logging
 
-import psycopg2
+import psycopg2.extensions
 
 from .utils import AllDatabases, UserError
 
 
 logger = logging.getLogger(__name__)
+
+
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 
 class PSQL(object):
