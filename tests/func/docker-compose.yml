@@ -16,7 +16,7 @@ services:
     command: [--copy-service, --loglevel, trace]
 
   postgres:
-    image: postgres:9.6
+    image: postgres:10
 
   runner:
     image: centos:7
