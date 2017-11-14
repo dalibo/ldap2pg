@@ -81,7 +81,7 @@ jobs:
           LDAP_ADMIN_PASSWORD: communication
           LDAP_CONFIG_PASSWORD: communication
           LDAP_TLS_VERIFY_CLIENT: try
-      - image: postgres:9.6
+      - image: postgres:10
         environment:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: communication

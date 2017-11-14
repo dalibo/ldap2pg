@@ -11,6 +11,7 @@ follow
 # ldap2pg 3.2
 
 - Manage unicode in role name.
+- Tested on Postgres 10.
 
 
 # ldap2pg 3.1
