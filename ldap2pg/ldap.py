@@ -48,7 +48,7 @@ if PY2:  # pragma: nocover_py3
         # Workaround buggy unicode managmenent in upstream python-ldap. This is
         # not necessary with pyldap on Python3.
         return decode_value(native_str2dn(value.encode('utf-8')))
-else:
+else:  # pragma: nocover_py2
     str2dn = native_str2dn
 
 

@@ -12,7 +12,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, lower1, match
+from .utils import UserError, decode_value, lower1, match
 from .psql import expandqueries
 
 
@@ -34,7 +34,6 @@ def get_ldap_attribute(entry, attribute):
             for (type_, name, _), in dn:
                 names = value.setdefault(type_, [])
                 names.append(name)
-            logger.debug("Parsed DN: %s", value)
             try:
                 value = value[path[0]][0]
             except KeyError:
@@ -122,7 +121,7 @@ class SyncManager(object):
             raise UserError(message)
 
         logger.debug('Got %d entries from LDAP.', len(entries))
-        return entries
+        return decode_value(entries)
 
     def process_ldap_entry(self, entry, **kw):
         if 'names' in kw:
@@ -218,11 +217,14 @@ class SyncManager(object):
             pgroles = RoleSet(self.process_pg_roles(rows))
 
         schemas = {k: [] for k in databases}
-        for dbname, psql in self.psql.itersessions(databases):
-            schemas[dbname] = list(self.fetch_schema_list(psql))
-            logger.debug(
-                "Found schemas %s in %s.", ', '.join(schemas[dbname]), dbname,
-            )
+        # Only introspection schemas if ACL are defined.
+        if len(self.acl_dict):
+            for dbname, psql in self.psql.itersessions(databases):
+                schemas[dbname] = list(self.fetch_schema_list(psql))
+                logger.debug(
+                    "Found schemas %s in %s.",
+                    ', '.join(schemas[dbname]), dbname,
+                )
 
         # Inspect ACLs
         pgacls = AclSet()

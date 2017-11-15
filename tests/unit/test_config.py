@@ -267,9 +267,9 @@ def test_process_mapping_grant():
 
 
 def test_process_ldapquery():
-    from ldap2pg.config import ldapquery
+    from ldap2pg.config import ldapquery, parse_scope
 
-    raw = dict(base='dc=unit', attribute='cn')
+    raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
 
     v = ldapquery(raw)
 
@@ -291,21 +291,23 @@ def test_process_rolerule():
     assert ['rolname'] == rule['names']
     assert ['parent'] == rule['parents']
 
-    rule = rolerule(dict(options='LOGIN SUPERUSER'))
-    assert rule['options']['LOGIN'] is True
-    assert rule['options']['SUPERUSER'] is True
-    assert 'names' not in rule
+    with pytest.raises(ValueError):
+        rolerule(dict(missing_name='noname'))
 
-    rule = rolerule(dict(options=['LOGIN', 'SUPERUSER']))
+    rule = rolerule(dict(name='r', options='LOGIN SUPERUSER'))
     assert rule['options']['LOGIN'] is True
     assert rule['options']['SUPERUSER'] is True
 
-    rule = rolerule(dict(options=['NOLOGIN', 'SUPERUSER']))
+    rule = rolerule(dict(name='r', options=['LOGIN', 'SUPERUSER']))
+    assert rule['options']['LOGIN'] is True
+    assert rule['options']['SUPERUSER'] is True
+
+    rule = rolerule(dict(name='r', options=['NOLOGIN', 'SUPERUSER']))
     assert rule['options']['LOGIN'] is False
     assert rule['options']['SUPERUSER'] is True
 
     with pytest.raises(ValueError) as ei:
-        rolerule(dict(options='OLOLOL'))
+        rolerule(dict(name='r', options='OLOLOL'))
     assert 'OLOLOL' in str(ei.value)
 
 
@@ -380,17 +382,14 @@ def test_find_filename_stdin():
     assert 0o400 == mode
 
 
-def test_merge_and_mappings():
+def test_merge():
     from ldap2pg.config import Configuration
 
     # Noop
     config = Configuration()
     config.merge(file_config={}, environ={})
 
-    # Minimal configuration
-    minimal_config = dict(
-        sync_map=dict(ldap=dict(), role=dict()),
-    )
+    minimal_config = dict(sync_map=[])
     config.merge(
         file_config=minimal_config,
         environ=dict(),
@@ -408,11 +407,7 @@ def test_security():
 
     config = Configuration()
 
-    minimal_config = dict(
-        ldap=dict(host='confighost'),
-        sync_map=dict(ldap=dict(), role=dict()),
-    )
-
+    minimal_config = dict(sync_map=[])
     with pytest.raises(ValueError):
         config.merge(environ=dict(), file_config=dict(
             minimal_config,

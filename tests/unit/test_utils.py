@@ -31,6 +31,7 @@ def test_decode_decode():
 
     assert decoded == decode_value(encoded)
     assert encoded == encode_value(decoded)
+    assert 'décoded' == decode_value('décoded')
 
 
 def test_make_map():

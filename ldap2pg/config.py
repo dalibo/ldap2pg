@@ -102,6 +102,9 @@ def rolerule(value):
     if 'names' in rule and isinstance(rule['names'], string_types):
         rule['names'] = [rule['names']]
 
+    if 'names' not in rule and 'name_attribute' not in rule:
+        raise ValueError("Missing role name")
+
     if 'parent' in rule:
         rule['parents'] = rule.pop('parent')
     rule.setdefault('parents', [])

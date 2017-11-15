@@ -2,6 +2,9 @@ VERSION=$(shell python setup.py --version)
 
 default:
 
+clean-pyc:
+	find . -name __pycache__ -name "*.pyc" | xargs -rt rm -rf
+
 readme-sample:
 	@echo -n '$$ '
 	cat ldap2pg.minimal.yml

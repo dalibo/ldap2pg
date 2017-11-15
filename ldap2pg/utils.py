@@ -9,7 +9,8 @@ PY2 = sys.version_info < (3,)
 if PY2:  # pragma: nocover_py3
     string_types = (str, unicode)  # noqa
     unicode = unicode
-else:
+    bytes = str
+else:  # pragma: nocover_py2
     string_types = (str,)
     unicode = str
 
@@ -57,7 +58,7 @@ def deepset(mapping, path, value):
 
 
 def decode_value(value):
-    if hasattr(value, 'decode'):
+    if isinstance(value, bytes):
         return value.decode('utf-8')
     elif hasattr(value, 'items'):
         return {
