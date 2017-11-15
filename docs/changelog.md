@@ -11,6 +11,8 @@ follow
 # ldap2pg 3.4 (unreleased)
 
 - Support psycopg2 2.0.
+- Support Python 2.6.
+- Tested on CentOS 6.
 
 
 # ldap2pg 3.3
