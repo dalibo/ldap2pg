@@ -267,9 +267,9 @@ def test_process_mapping_grant():
 
 
 def test_process_ldapquery():
-    from ldap2pg.config import ldapquery
+    from ldap2pg.config import ldapquery, parse_scope
 
-    raw = dict(base='dc=unit', attribute='cn')
+    raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
 
     v = ldapquery(raw)
 
