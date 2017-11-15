@@ -103,11 +103,9 @@ def dev():
 
 @pytest.fixture(scope='module', autouse=True)
 def flushall(ldap, psql):
-    from sh import dropdb
-
     # Flush PostgreSQL and OpenLDAP from any data.
-    dropdb('--if-exists', 'app0')
-    dropdb('--if-exists', 'app1')
+    psql('-tc', "DROP DATABASE IF EXISTS app0;")
+    psql('-tc', "DROP DATABASE IF EXISTS app1;")
     psql('-tc', "DELETE FROM pg_catalog.pg_auth_members;")
     psql(
         '-tc',
