@@ -10,6 +10,17 @@ version: 2
       . .venv/bin/activate
       pip install -U -r requirements-ci.txt -e .
 
+.rpm_tpl: &rpm_tpl
+  working_directory: /tmp/ldap2pg
+  steps:
+  - checkout
+  - run: ./packaging/build_rpm.sh
+  - persist_to_workspace:
+      root: /tmp/ldap2pg
+      paths: ["dist/"]
+  - store_artifacts:
+      path: /tmp/ldap2pg/dist/
+
 .unit_tpl: &unit_tpl
   working_directory: ~/ldap2pg
   steps:
@@ -58,18 +69,13 @@ jobs:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.4"}]
 
+  0-rpm-centos6:
+    <<: *rpm_tpl
+    docker: [{image: "centos:6"}]
+
   0-rpm-centos7:
+    <<: *rpm_tpl
     docker: [{image: "centos:7"}]
-    working_directory: /tmp/ldap2pg
-    steps:
-    - run: yum install -y git ssh
-    - checkout
-    - run: ./packaging/build_rpm.sh
-    - persist_to_workspace:
-        root: /tmp/ldap2pg
-        paths: ["dist/"]
-    - store_artifacts:
-        path: /tmp/ldap2pg/dist/
 
   1-func-centos7:
     working_directory: /tmp/ldap2pg
@@ -109,6 +115,7 @@ workflows:
     - 0-docs
     - 0-unit-py27
     - 0-unit-py34
+    - 0-rpm-centos6
     - 0-rpm-centos7
     - 1-func-centos7:
         requires: [0-unit-py27, 0-rpm-centos7]
