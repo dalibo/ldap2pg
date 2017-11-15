@@ -29,8 +29,13 @@ if rpm --query --queryformat= ldap2pg ; then
 fi
 
 rm -rf build/bdist*/rpm
+
+requires="python-psycopg2 python-ldap PyYAML"
+
 # Build it
-python setup.py sdist bdist_rpm --release ${CIRCLE_BUILD_NUM-1}%{dist}
+python setup.py sdist bdist_rpm \
+       --release ${CIRCLE_BUILD_NUM-1}%{dist} \
+       --requires "${requires}"
 
 # Test it
 yum install -y dist/ldap2pg*.noarch.rpm
