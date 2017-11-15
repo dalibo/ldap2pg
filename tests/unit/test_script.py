@@ -4,7 +4,7 @@ import pytest
 
 
 def test_main(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     wm = mocker.patch('ldap2pg.script.wrapped_main', autospec=True)
     wm.return_value = 0
 
@@ -17,7 +17,7 @@ def test_main(mocker):
 
 
 def test_bdb_quit(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, pdb
@@ -31,7 +31,7 @@ def test_bdb_quit(mocker):
 
 
 def test_unhandled_error(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main
@@ -45,7 +45,7 @@ def test_unhandled_error(mocker):
 
 
 def test_user_error(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     w = mocker.patch('ldap2pg.script.wrapped_main')
 
     from ldap2pg.script import main, UserError
@@ -59,7 +59,7 @@ def test_user_error(mocker):
 
 
 def test_pdb(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.os.environ', {'DEBUG': '1'})
     isatty = mocker.patch('ldap2pg.script.sys.stdout.isatty')
     isatty.return_value = True
@@ -77,7 +77,7 @@ def test_pdb(mocker):
 
 
 def test_wrapped_main(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     clc = mocker.patch('ldap2pg.script.ldap.connect')
     RM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     rm = RM.return_value
@@ -99,7 +99,7 @@ def test_wrapped_main(mocker):
 
 
 def test_conn_errors(mocker):
-    mocker.patch('ldap2pg.script.logging.config.dictConfig', autospec=True)
+    mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.Configuration', autospec=True)
     SyncManager = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     SyncManager.return_value.inspect.return_value = [mocker.Mock()] * 3

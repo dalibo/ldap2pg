@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import logging.config
+import logging
 import os
 import pdb
 import sys
@@ -9,7 +9,7 @@ import sys
 import psycopg2
 
 from . import ldap
-from .config import Configuration, ConfigurationError
+from .config import Configuration, ConfigurationError, dictConfig
 from .manager import SyncManager
 from .psql import PSQL
 from .utils import UserError
@@ -23,7 +23,7 @@ def wrapped_main(config=None):
     config.load()
 
     logging_config = config.logging_dict()
-    logging.config.dictConfig(logging_config)
+    dictConfig(logging_config)
 
     try:
         ldapconn = ldap.connect(**config['ldap'])
@@ -61,14 +61,14 @@ def wrapped_main(config=None):
 
 
 def main():
-    debug = os.environ.get('DEBUG', '').lower() in {'1', 'y'}
-    verbose = os.environ.get('VERBOSE', '').lower() in {'1', 'y'}
+    debug = os.environ.get('DEBUG', '').lower() in ('1', 'y')
+    verbose = os.environ.get('VERBOSE', '').lower() in ('1', 'y')
 
     config = Configuration()
     config['debug'] = debug
     config['verbose'] = debug or verbose
     config['color'] = sys.stderr.isatty()
-    logging.config.dictConfig(config.logging_dict())
+    dictConfig(config.logging_dict())
     logger.debug("Debug mode enabled.")
 
     try:

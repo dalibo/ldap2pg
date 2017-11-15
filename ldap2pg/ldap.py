@@ -9,9 +9,15 @@ from ldap import initialize as ldap_initialize, LDAPError
 from ldap import (
     SCOPE_BASE,
     SCOPE_ONELEVEL,
-    SCOPE_SUBORDINATE,
     SCOPE_SUBTREE,
 )
+
+# On CentOS 6, python-ldap does not manage SCOPE_SUBORDINATE
+try:
+    from ldap import SCOPE_SUBORDINATE
+except ImportError:  # pragma: nocover
+    SCOPE_SUBORDINATE = None
+
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
@@ -27,10 +33,12 @@ SCOPES = {
     'base': SCOPE_BASE,
     'one': SCOPE_ONELEVEL,
     'sub': SCOPE_SUBTREE,
-    'children': SCOPE_SUBORDINATE,
 }
 
-SCOPES_STR = {v: k for k, v in SCOPES.items()}
+if SCOPE_SUBORDINATE:
+    SCOPES['children'] = SCOPE_SUBORDINATE
+
+SCOPES_STR = dict((v, k) for k, v in SCOPES.items())
 
 
 def parse_scope(raw):
@@ -175,11 +183,11 @@ def gather_options(environ=None, **kw):
     )
 
     environ = environ or os.environ
-    environ = {
-        k[4:]: v.decode('utf-8') if hasattr(v, 'decode') else v
+    environ = dict([
+        (k[4:], v.decode('utf-8') if hasattr(v, 'decode') else v)
         for k, v in environ.items()
         if k.startswith('LDAP') and not k.startswith('LDAP2PG')
-    }
+    ])
 
     if 'NOINIT' in environ:
         logger.debug("LDAPNOINIT defined. Disabled ldap.conf loading.")
@@ -194,11 +202,11 @@ def gather_options(environ=None, **kw):
             logger.debug('Read %s from env.', option)
             options.set_raw(option, value)
 
-    options.update({
-        k.upper(): v
+    options.update(dict(
+        (k.upper(), v)
         for k, v in kw.items()
         if k.upper() in options and v
-    })
+    ))
 
     if not options['URI']:
         options['URI'] = 'ldap://%(HOST)s:%(PORT)s' % options
