@@ -218,11 +218,14 @@ class SyncManager(object):
             pgroles = RoleSet(self.process_pg_roles(rows))
 
         schemas = {k: [] for k in databases}
-        for dbname, psql in self.psql.itersessions(databases):
-            schemas[dbname] = list(self.fetch_schema_list(psql))
-            logger.debug(
-                "Found schemas %s in %s.", ', '.join(schemas[dbname]), dbname,
-            )
+        # Only introspection schemas if ACL are defined.
+        if len(self.acl_dict):
+            for dbname, psql in self.psql.itersessions(databases):
+                schemas[dbname] = list(self.fetch_schema_list(psql))
+                logger.debug(
+                    "Found schemas %s in %s.",
+                    ', '.join(schemas[dbname]), dbname,
+                )
 
         # Inspect ACLs
         pgacls = AclSet()
