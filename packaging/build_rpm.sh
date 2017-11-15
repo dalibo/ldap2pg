@@ -1,6 +1,8 @@
 #!/bin/bash -eux
 
 teardown() {
+    chown --changes --recursive $(stat -c %u:%g setup.py) dist/ build/
+
     # If not on CI, wait for user interrupt on exit
     if [ -z "${CI-}" -a $? -gt 0 -a $$ = 1 ] ; then
         tail -f /dev/null
@@ -36,5 +38,3 @@ yum install -y dist/ldap2pg*.noarch.rpm
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
 ldap2pg --help
-
-chown --changes --recursive $(stat -c %u:%g setup.py) dist/ build/
