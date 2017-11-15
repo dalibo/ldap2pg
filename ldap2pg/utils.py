@@ -9,7 +9,7 @@ PY2 = sys.version_info < (3,)
 if PY2:  # pragma: nocover_py3
     string_types = (str, unicode)  # noqa
     unicode = unicode
-else:
+else:  # pragma: nocover_py2
     string_types = (str,)
     unicode = str
 
