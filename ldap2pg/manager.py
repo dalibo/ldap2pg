@@ -12,7 +12,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, lower1, match
+from .utils import UserError, decode_value, lower1, match
 from .psql import expandqueries
 
 
@@ -122,7 +122,7 @@ class SyncManager(object):
             raise UserError(message)
 
         logger.debug('Got %d entries from LDAP.', len(entries))
-        return entries
+        return decode_value(entries)
 
     def process_ldap_entry(self, entry, **kw):
         if 'names' in kw:
