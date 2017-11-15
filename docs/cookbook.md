@@ -22,7 +22,7 @@ PostgreSQL with LDAP in the right order:
 - In PostgreSQL cluster, **manually** create a single role having its password
   in LDAP directory.
 - Edit `pg_hba.conf` following [PostgreSQL
-  documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#auth-ldap)
+  documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#AUTH-LDAP)
   until you can effectively login with the single role and the password from
   LDAP.
 - Write a simple `ldap2pg.yml` with only one LDAP query just to setup `ldap2pg`
