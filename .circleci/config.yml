@@ -108,7 +108,7 @@ workflows:
   pipeline:
     jobs:
     - 0-docs
-    - 0-unit-py27
+    - 0-unit-py26
     - 0-unit-py34
     - 0-rpm
     - 1-func-centos7:
