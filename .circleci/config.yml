@@ -58,7 +58,7 @@ jobs:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.4"}]
 
-  0-rpm:
+  0-rpm-centos7:
     docker: [{image: "centos:7"}]
     working_directory: /tmp/ldap2pg
     steps:
@@ -110,6 +110,6 @@ workflows:
     - 0-docs
     - 0-unit-py27
     - 0-unit-py34
-    - 0-rpm
+    - 0-rpm-centos7
     - 1-func-centos7:
-        requires: [0-unit-py27, 0-rpm]
+        requires: [0-unit-py27, 0-rpm-centos7]
