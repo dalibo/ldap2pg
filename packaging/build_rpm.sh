@@ -20,7 +20,7 @@ yum_install() {
 }
 
 yum_install epel-release
-yum_install python python2-pip rpm-build
+yum_install python python-setuptools rpm-build
 
 if rpm --query --queryformat= ldap2pg ; then
     yum remove -y ldap2pg
