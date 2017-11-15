@@ -34,7 +34,6 @@ def get_ldap_attribute(entry, attribute):
             for (type_, name, _), in dn:
                 names = value.setdefault(type_, [])
                 names.append(name)
-            logger.debug("Parsed DN: %s", value)
             try:
                 value = value[path[0]][0]
             except KeyError:
