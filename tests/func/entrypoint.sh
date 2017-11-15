@@ -12,11 +12,14 @@ trap teardown EXIT TERM
 top_srcdir=$(readlink -m $0/../../..)
 cd $top_srcdir
 test -f setup.py
-test -f dist/ldap2pg-*.noarch.rpm
 
 if [ -z "${LDAPBINDDN-}" ] ; then
     exec env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) $0 $@
 fi
+
+# Search for the proper RPM package
+rpmdist=$(rpm --eval '%dist')
+test -f dist/ldap2pg-*${rpmdist}.noarch.rpm
 
 yum_install() {
     local packages=$*
@@ -35,7 +38,7 @@ yum_install \
     ${NULL-}
 
 if ! rpm --query --queryformat= ldap2pg ; then
-    yum install -y dist/ldap2pg*.noarch.rpm
+    yum install -y dist/ldap2pg-*${rpmdist}.noarch.rpm
     rpm --query --queryformat= ldap2pg
 fi
 
