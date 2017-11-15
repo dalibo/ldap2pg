@@ -11,6 +11,7 @@ follow
 # ldap2pg 3.3 (unreleased)
 
 - Fix unicode management in Python3.
+- Check for name or name_attribute in role rule.
 
 
 # ldap2pg 3.2
