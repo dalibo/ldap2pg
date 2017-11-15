@@ -216,7 +216,7 @@ class SyncManager(object):
             rows = self.fetch_pg_roles(psql)
             pgroles = RoleSet(self.process_pg_roles(rows))
 
-        schemas = {k: [] for k in databases}
+        schemas = dict([(k, []) for k in databases])
         # Only introspection schemas if ACL are defined.
         if len(self.acl_dict):
             for dbname, psql in self.psql.itersessions(databases):
@@ -307,7 +307,7 @@ class SyncManager(object):
                 yield qry
 
         # Finally, grant ACL when all roles are ok.
-        missing = ldapacls - {a for a in pgacls if a.full}
+        missing = ldapacls - set([a for a in pgacls if a.full])
         missing = sorted(list(missing))
         for aclname, aclitems in groupby(missing, lambda i: i.acl):
             acl = self.acl_dict[aclname]

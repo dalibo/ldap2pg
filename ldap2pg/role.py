@@ -172,7 +172,7 @@ class RoleSet(set):
                 parent.members.append(role.name)
 
     def reindex(self):
-        return {role.name: role for role in self}
+        return dict([(role.name, role) for role in self])
 
     def flatten(self):
         # Generates the flatten tree of roles, children first.

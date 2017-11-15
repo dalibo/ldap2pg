@@ -3,7 +3,12 @@ from __future__ import unicode_literals
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
 from codecs import open
 import errno
-import logging.config
+import logging
+try:
+    from logging.config import dictConfig
+except ImportError:  # pragma: nocover
+    from logutils.dictconfig import dictConfig
+
 import os.path
 from os import stat
 import re
@@ -67,10 +72,10 @@ def acldict(value):
     if not hasattr(value, 'items'):
         raise ValueError('acl_dict must be a dict')
 
-    return {
-        k: Acl(k, **v)
+    return dict([
+        (k, Acl(k, **v))
         for k, v in value.items()
-    }
+    ])
 
 
 def raw(v):
@@ -117,10 +122,10 @@ def rolerule(value):
         options = options.split()
 
     if isinstance(options, list):
-        options = {
-            o[2:] if o.startswith('NO') else o: not o.startswith('NO')
+        options = dict(
+            (o[2:] if o.startswith('NO') else o, not o.startswith('NO'))
             for o in options
-        }
+        )
 
     rule['options'] = RoleOptions(**options)
     return rule
@@ -159,7 +164,7 @@ def ismapping(value):
     # Check whether a YAML value is supposed to be a single mapping.
     if not isinstance(value, dict):
         return False
-    return bool({'grant', 'ldap', 'role', 'roles'} >= set(value.keys()))
+    return bool(set(['grant', 'ldap', 'role', 'roles']) >= set(value.keys()))
 
 
 def mapping(value):
@@ -562,7 +567,7 @@ class Configuration(dict):
             # Switch to verbose before loading file.
             self['verbose'] = getattr(args, 'verbose', self['verbose'])
             self['color'] = getattr(args, 'color', self['color'])
-            logging.config.dictConfig(self.logging_dict())
+            dictConfig(self.logging_dict())
 
         logger.info("Starting ldap2pg %s.", __version__)
 

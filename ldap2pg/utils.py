@@ -61,10 +61,10 @@ def decode_value(value):
     if isinstance(value, bytes):
         return value.decode('utf-8')
     elif hasattr(value, 'items'):
-        return {
-            decode_value(k): decode_value(v)
+        return dict([
+            (decode_value(k), decode_value(v))
             for k, v in value.items()
-        }
+        ])
     elif isinstance(value, list):
         return [decode_value(v) for v in value]
     elif isinstance(value, tuple):
@@ -79,7 +79,8 @@ def encode_value(value):
     if hasattr(value, 'encode'):
         return value.encode('utf-8')
     elif hasattr(value, 'items'):
-        return {encode_value(k): encode_value(v) for k, v in value.items()}
+        return dict(
+            (encode_value(k), encode_value(v)) for k, v in value.items())
     elif isinstance(value, list):
         return [encode_value(v) for v in value]
     elif isinstance(value, tuple):
@@ -107,10 +108,10 @@ def make_group_map(values, groups=None):
     groups = groups or {}
 
     # First, add simple map for value -> value
-    aliases = {k: [k] for k in values}
+    aliases = dict((k, [k]) for k in values)
     # Now resolve groups descendant to value list and update map.
-    aliases.update({
-        k: sorted(list_descendant(groups, k))
+    aliases.update(dict(
+        (k, sorted(list_descendant(groups, k)))
         for k in groups
-    })
+    ))
     return aliases
