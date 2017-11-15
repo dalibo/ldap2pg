@@ -35,5 +35,6 @@ yum install -y dist/ldap2pg*.noarch.rpm
 
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
+ldap2pg --help
 
 chown --changes --recursive $(stat -c %u:%g setup.py) dist/ build/
