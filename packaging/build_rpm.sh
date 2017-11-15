@@ -28,7 +28,7 @@ fi
 
 rm -rf build/bdist*/rpm
 # Build it
-python setup.py bdist_rpm --release ${CIRCLE_BUILD_NUM-1}%{dist}
+python setup.py sdist bdist_rpm --release ${CIRCLE_BUILD_NUM-1}%{dist}
 
 # Test it
 yum install -y dist/ldap2pg*.noarch.rpm
