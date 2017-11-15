@@ -112,4 +112,4 @@ workflows:
     - 0-unit-py34
     - 0-rpm
     - 1-func-centos7:
-        requires: [0-unit-py27, 0-rpm]
+        requires: [0-unit-py26, 0-rpm]
