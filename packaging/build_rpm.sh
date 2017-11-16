@@ -30,6 +30,7 @@ fi
 
 rm -rf build/bdist*/rpm
 
+rpmdist=$(rpm --eval '%dist')
 requires="python-psycopg2 python-ldap PyYAML"
 
 # Build it
@@ -38,7 +39,7 @@ python setup.py sdist bdist_rpm \
        --requires "${requires}"
 
 # Test it
-yum install -y dist/ldap2pg*.noarch.rpm
+yum install -y dist/ldap2pg*${rpmdist}.noarch.rpm
 
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
