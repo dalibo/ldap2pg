@@ -328,7 +328,7 @@ class SyncManager(object):
                 else:
                     logger.info(query.message)
 
-                sql = psql.mogrify(*query.args).decode('UTF-8')
+                sql = psql.mogrify(*query.args)
                 if self.dry:
                     logger.debug("Would execute: %s", sql)
                 else:

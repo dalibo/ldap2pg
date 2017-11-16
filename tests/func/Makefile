@@ -1,4 +1,3 @@
-.ONESHELL:
 default:
 
 rpm:
@@ -16,10 +15,9 @@ debug:
 	docker-compose exec runner /usr/bin/env $(shell sed 's/^/LDAP/;s/ \+/=/g' ../../ldaprc) /bin/bash
 
 pytest:
-	cd ../..
-	find . -name "*.pyc" -delete
+	find ../.. -name "*.pyc" -delete
 # Looks like ./ldaprc is ignored in CentOS7 by libldap and tools. Put it in envs.
-	env $(shell sed 's/^/LDAP/;s/ \+/=/g' ../../ldaprc) pytest tests/func/ $(filter-out $@,$(MAKECMDGOALS))
+	cd ../.. && env $(shell sed 's/^/LDAP/;s/ \+/=/g' ../../ldaprc) pytest tests/func/ $(filter-out $@,$(MAKECMDGOALS))
 
 %:
 	@echo Passing $@ as argument.

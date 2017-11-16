@@ -32,6 +32,13 @@ rm -rf build/bdist*/rpm
 
 rpmdist=$(rpm --eval '%dist')
 requires="python-psycopg2 python-ldap PyYAML"
+case $(rpm --eval '%dist') in
+    .el6*)
+        requires="${requires} python-logutils python-argparse"
+        ;;
+    *)
+        ;;
+esac
 
 # Build it
 python setup.py sdist bdist_rpm \

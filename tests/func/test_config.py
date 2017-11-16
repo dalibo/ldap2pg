@@ -45,12 +45,12 @@ def test_custom_yaml():
         fo.write(yaml)
 
     # Purge env from value set in file. Other are reads from ldaprc.
-    blacklist = {'LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD'}
-    ldapfree_env = {
-        k: v
+    blacklist = ('LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD')
+    ldapfree_env = dict(
+        (k, v)
         for k, v in os.environ.items()
         if k not in blacklist
-    }
+    )
 
     # Ensure world readable password is denied
     with pytest.raises(ErrorReturnCode):

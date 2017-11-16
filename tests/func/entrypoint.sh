@@ -34,8 +34,16 @@ yum_install \
     openldap-clients \
     postgresql \
     python \
-    python2-pip \
     ${NULL-}
+
+case $rpmdist in
+    .el6*)
+        yum_install python-pip
+        ;;
+    *)
+        yum_install python2-pip
+        ;;
+esac
 
 if ! rpm --query --queryformat= ldap2pg ; then
     yum install -y dist/ldap2pg-*${rpmdist}.noarch.rpm

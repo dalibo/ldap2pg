@@ -88,9 +88,15 @@ class PSQLSession(object):
         self.conn.commit()
         return self.cursor
 
-    @property
-    def mogrify(self):
-        return self.cursor.mogrify
+    if psycopg2.__version__.startswith('2.0'):  # pragma: nocover
+        def mogrify(self, qry, *a, **kw):
+            qry = qry.encode('utf-8')
+            qry = self.cursor.mogrify(qry, *a, **kw)
+            return qry.decode('utf-8')
+    else:
+        @property
+        def mogrify(self):
+            return self.cursor.mogrify
 
 
 class Query(object):

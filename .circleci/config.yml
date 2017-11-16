@@ -1,5 +1,19 @@
 version: 2
 
+.openldap_container: &openldap_container
+  image: osixia/openldap@sha256:443571790e7db8dd7072d31003089fbec1acf490340173c34a39cd6f4aa345e5
+  environment:
+    LDAP_DOMAIN: ldap.ldap2pg.docker
+    LDAP_ADMIN_PASSWORD: communication
+    LDAP_CONFIG_PASSWORD: communication
+    LDAP_TLS_VERIFY_CLIENT: try
+
+.postgres_container: &postgres_container
+  image: postgres:10
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: communication
+
 .install_reqs: &install_reqs
   run:
     name: Install requirements
@@ -9,6 +23,26 @@ version: 2
       virtualenv .venv/
       . .venv/bin/activate
       pip install -U -r requirements-ci.txt -e .
+
+.run_func_tests: &run_func_tests
+  run:
+    name: Exécuting functionnal tests
+    command: |
+      echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
+      export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
+      export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
+      tests/func/entrypoint.sh
+
+.rpm_tpl: &rpm_tpl
+  working_directory: /tmp/ldap2pg
+  steps:
+  - checkout
+  - run: ./packaging/build_rpm.sh
+  - persist_to_workspace:
+      root: /tmp/ldap2pg
+      paths: ["dist/"]
+  - store_artifacts:
+      path: /tmp/ldap2pg/dist/
 
 .unit_tpl: &unit_tpl
   working_directory: ~/ldap2pg
@@ -58,49 +92,38 @@ jobs:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.4"}]
 
+  0-rpm-centos6:
+    <<: *rpm_tpl
+    docker: [{image: "centos:6"}]
+
   0-rpm-centos7:
+    <<: *rpm_tpl
     docker: [{image: "centos:7"}]
+
+  1-func-centos6:
     working_directory: /tmp/ldap2pg
+    docker:
+      - image: centos:6
+      - *openldap_container
+      - *postgres_container
     steps:
-    - run: yum install -y git ssh
     - checkout
-    - run: ./packaging/build_rpm.sh
-    - persist_to_workspace:
-        root: /tmp/ldap2pg
-        paths: ["dist/"]
-    - store_artifacts:
-        path: /tmp/ldap2pg/dist/
+    - attach_workspace:
+        at: /tmp/ldap2pg/
+    - *run_func_tests
 
   1-func-centos7:
     working_directory: /tmp/ldap2pg
     docker:
       - image: centos:7
-      - image: osixia/openldap@sha256:443571790e7db8dd7072d31003089fbec1acf490340173c34a39cd6f4aa345e5
-        environment:
-          LDAP_DOMAIN: ldap.ldap2pg.docker
-          LDAP_ADMIN_PASSWORD: communication
-          LDAP_CONFIG_PASSWORD: communication
-          LDAP_TLS_VERIFY_CLIENT: try
-      - image: postgres:10
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: communication
+      - *openldap_container
+      - *postgres_container
     steps:
     - run: yum install -y git ssh
     - checkout
-    - run:
-        name: Clean checkout from embedded circleci git client
-        command: |
-          git clean -df
     - attach_workspace:
         at: /tmp/ldap2pg/
-    - run:
-        name: Exécuting functionnal tests
-        command: |
-          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
-          export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
-          tests/func/entrypoint.sh
+    - *run_func_tests
 
 workflows:
   version: 2
@@ -109,6 +132,9 @@ workflows:
     - 0-docs
     - 0-unit-py27
     - 0-unit-py34
+    - 0-rpm-centos6
     - 0-rpm-centos7
+    - 1-func-centos6:
+        requires: [0-unit-py27, 0-rpm-centos6]
     - 1-func-centos7:
         requires: [0-unit-py27, 0-rpm-centos7]
