@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   ldap:
@@ -19,7 +19,7 @@ services:
     image: postgres:10
 
   runner:
-    image: centos:7
+    image: ${DIST-centos:7}
     links: [ldap, postgres]
     volumes:
     - ../../:/workspace

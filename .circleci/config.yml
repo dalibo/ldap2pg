@@ -91,7 +91,6 @@ jobs:
     - run:
         name: Clean checkout from embedded circleci git client
         command: |
-          yum install -y git
           git clean -df
     - attach_workspace:
         at: /tmp/ldap2pg/
