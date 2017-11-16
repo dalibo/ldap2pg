@@ -13,7 +13,6 @@ follow
 - Fix unicode management in Python3.
 - Check for name or name_attribute in role rule.
 - Avoid inspecting schema if only synchronizing roles.
-- Python2.6 support. Requires argparse and logutils.
 
 
 # ldap2pg 3.2
