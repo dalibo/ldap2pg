@@ -120,10 +120,6 @@ jobs:
     steps:
     - run: yum install -y git ssh
     - checkout
-    - run:
-        name: Clean checkout from embedded circleci git client
-        command: |
-          git clean -df
     - attach_workspace:
         at: /tmp/ldap2pg/
     - run:
