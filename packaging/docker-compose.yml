@@ -1,8 +1,8 @@
-version: "2"
+version: "3"
 
 services:
   rpm:
-    image: centos:7
+    image: ${DIST-centos:7}
     volumes:
     - ../:/workspace
     entrypoint: /workspace/packaging/build_rpm.sh
