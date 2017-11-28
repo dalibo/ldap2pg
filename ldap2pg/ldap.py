@@ -99,9 +99,10 @@ class LDAPLogger(object):
         return self.wrapped.search_s(base, scope, filter, attributes)
 
     def simple_bind_s(self, binddn, password):
-        self.connect_opts = ' -x'
+        self.connect_opts = ' -x -D %s' % (binddn,)
         if password:
             self.connect_opts += ' -W'
+        self.log_connect()
         return self.wrapped.simple_bind_s(binddn, password)
 
     def sasl_interactive_bind_s(self, who, auth, *a, **kw):
@@ -111,7 +112,11 @@ class LDAPLogger(object):
                 auth.cb_value_dict[sasl.CB_AUTHNAME],)
         if sasl.CB_PASS in auth.cb_value_dict:
             self.connect_opts += ' -W'
+        self.log_connect()
         return self.wrapped.sasl_interactive_bind_s(who, auth, *a, **kw)
+
+    def log_connect(self):
+        logger.debug("Doing: ldapwhoami%s", self.connect_opts)
 
 
 def connect(**kw):
