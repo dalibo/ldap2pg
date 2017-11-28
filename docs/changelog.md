@@ -15,6 +15,7 @@ follow
 - Tested on CentOS 6.
 - Fix unicode error on logging SQL query.
 - Fix traceback on inexistant database in ACL.
+- Avoid reading ldaprc twice.
 
 
 # ldap2pg 3.3
