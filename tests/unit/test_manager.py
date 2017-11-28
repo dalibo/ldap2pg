@@ -353,6 +353,38 @@ def test_inspect_acls(mocker):
     assert 1 == len(ldapacls)
 
 
+def test_inspect_acls_bad_database(mocker):
+    mod = 'ldap2pg.manager.'
+    psql = mocker.MagicMock()
+    psql.itersessions.return_value = [('postgres', psql)]
+
+    mocker.patch(
+        mod + 'SyncManager.fetch_database_list',
+        autospec=True, return_value=['postgres'])
+    mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
+    mocker.patch(
+        mod + 'SyncManager.process_pg_acl_items',
+        autospec=True, return_value=[])
+    la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
+
+    from ldap2pg.manager import SyncManager, AclItem, UserError
+    from ldap2pg.acl import Acl
+    from ldap2pg.utils import make_group_map
+
+    acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
+    la.return_value = [AclItem('ro', 'inexistantdb', None, 'alice')]
+
+    manager = SyncManager(
+        psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
+        acl_aliases=make_group_map(acl_dict)
+    )
+    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
+
+    with pytest.raises(UserError) as ei:
+        manager.inspect(syncmap=syncmap)
+    assert 'inexistantdb' in str(ei.value)
+
+
 def test_inspect_roles(mocker):
     p = mocker.patch('ldap2pg.manager.SyncManager.process_pg_roles')
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
