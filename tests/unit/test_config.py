@@ -535,3 +535,11 @@ def test_load_file(mocker):
     maplist = config['sync_map']['__all__']['__any__']
     assert 1 == len(maplist)
     assert config['verbose'] is True
+
+
+def test_show_versions(mocker):
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+    with pytest.raises(SystemExit):
+        config.load(argv=['--version'])

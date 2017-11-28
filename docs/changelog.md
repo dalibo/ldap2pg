@@ -13,6 +13,10 @@ follow
 - Support psycopg2 2.0.
 - Support Python 2.6.
 - Tested on CentOS 6.
+- Fix unicode error on logging SQL query.
+- Fix traceback on inexistant database in ACL.
+- Avoid reading ldaprc twice.
+- Show detailed version informations.
 
 
 # ldap2pg 3.3

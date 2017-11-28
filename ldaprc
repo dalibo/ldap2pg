@@ -1,3 +1,4 @@
 BINDDN  cn=admin,dc=ldap,dc=ldap2pg,dc=docker
 BASE    dc=ldap,dc=ldap2pg,dc=docker
 TLS_REQCERT allow
+NETWORK_TIMEOUT 5

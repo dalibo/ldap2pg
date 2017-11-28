@@ -5,12 +5,7 @@ from collections import namedtuple
 import logging
 import os
 
-from ldap import initialize as ldap_initialize, LDAPError
-from ldap import (
-    SCOPE_BASE,
-    SCOPE_ONELEVEL,
-    SCOPE_SUBTREE,
-)
+import ldap
 
 # On CentOS 6, python-ldap does not manage SCOPE_SUBORDINATE
 try:
@@ -21,18 +16,18 @@ except ImportError:  # pragma: nocover
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
-from .utils import decode_value, encode_value, PY2
+from .utils import decode_value, encode_value, PY2, uniq
 
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['LDAPError']
+LDAPError = ldap.LDAPError
 
 
 SCOPES = {
-    'base': SCOPE_BASE,
-    'one': SCOPE_ONELEVEL,
-    'sub': SCOPE_SUBTREE,
+    'base': ldap.SCOPE_BASE,
+    'one': ldap.SCOPE_ONELEVEL,
+    'sub': ldap.SCOPE_SUBTREE,
 }
 
 if SCOPE_SUBORDINATE:
@@ -133,7 +128,7 @@ def connect(**kw):
 
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
-    l = ldap_initialize(options['URI'])
+    l = ldap.initialize(options['URI'])
     if PY2:  # pragma: nocover_py3
         l = UnicodeModeLDAPObject(l)
 
@@ -225,9 +220,12 @@ def read_files(conf, rc):
         candidates.append(conf)
     if rc:
         candidates.extend(['~/%s' % rc, '~/.%s' % rc, rc])
+    candidates = uniq(map(
+        lambda p: os.path.realpath(os.path.expanduser(p)),
+        candidates,
+    ))
 
     for candidate in candidates:
-        candidate = os.path.expanduser(candidate)
         try:
             with open(candidate, 'r', encoding='utf-8') as fo:
                 logger.debug('Found rcfile %s.', candidate)

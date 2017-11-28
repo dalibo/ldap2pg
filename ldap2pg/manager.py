@@ -259,6 +259,10 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
             for aclitem in aclitems:
+                if aclitem.dbname not in ['__all__'] + databases:
+                    msg = "Database %s does not exists or is not managed." % (
+                        aclitem.dbname,)
+                    raise UserError(msg)
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 for realitem in aclitem.expandaliases(self.acl_aliases):
                     ldapacls.add(realitem)

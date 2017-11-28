@@ -115,3 +115,9 @@ def make_group_map(values, groups=None):
         for k in groups
     ))
     return aliases
+
+
+def uniq(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]

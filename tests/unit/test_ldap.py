@@ -15,7 +15,7 @@ base  ou=IT staff,o="Example, Inc",c=US
 
 def test_connect_from_env(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
-    li = mocker.patch('ldap2pg.ldap.ldap_initialize', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
 
     from ldap2pg.ldap import connect
 
@@ -34,7 +34,7 @@ def test_connect_from_env(mocker):
 
 def test_connect_sasl(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
-    li = mocker.patch('ldap2pg.ldap.ldap_initialize', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
 
     from ldap2pg.ldap import connect
 
@@ -137,7 +137,8 @@ def test_get_ldap_attr():
 
 
 def test_logger(mocker):
-    from ldap2pg.ldap import LDAPLogger, SCOPE_SUBTREE
+    from ldap2pg.ldap import LDAPLogger
+    from ldap import SCOPE_SUBTREE
 
     ldap = LDAPLogger(mocker.Mock(name='toto', pouet='toto'))
 
