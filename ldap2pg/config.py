@@ -1,6 +1,9 @@
+from __future__ import print_function
 from __future__ import unicode_literals
 
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
+from argparse import _VersionAction
+from pkg_resources import get_distribution
 from codecs import open
 import errno
 import logging
@@ -271,6 +274,29 @@ def syncmap(value):
     return value
 
 
+class VersionAction(_VersionAction):
+    def __call__(self, parser, *a):
+        try:
+            pyldap = get_distribution('pyldap')
+        except Exception:  # pragma: nocover_py3
+            pyldap = get_distribution('python-ldap')
+
+        version = (
+            "%(package)s %(version)s\n"
+            "%(pyldap)s %(ldapversion)s\n"
+            "Python %(pyversion)s\n"
+        ) % dict(
+            package=__package__,
+            version=__version__,
+            pyversion=sys.version,
+            pyldap=pyldap.project_name,
+            ldapversion=pyldap.version,
+
+        )
+        print(version.strip())
+        parser.exit()
+
+
 def define_arguments(parser):
     parser.add_argument(
         '-c', '--config',
@@ -319,11 +345,11 @@ def define_arguments(parser):
         '-?', '--help',
         action='help',
         help='show this help message and exit')
+
     parser.add_argument(
         '-V', '--version',
-        action='version',
+        action=VersionAction,
         help='show version and exit',
-        version=__package__ + ' ' + __version__,
     )
 
 
