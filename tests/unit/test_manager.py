@@ -136,7 +136,7 @@ def test_process_entry_static():
     manager = SyncManager()
 
     roles = manager.process_ldap_entry(
-        entry=None, names=['ALICE'], parents=['postgres'],
+        entry=('dn',), names=['ALICE'], parents=['postgres'],
         options=dict(LOGIN=True),
     )
     roles = list(roles)
@@ -200,7 +200,7 @@ def test_process_entry_members(mocker):
 
 
 def test_apply_role_rule_ko(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
 
     from ldap2pg.manager import SyncManager, UserError
 
@@ -208,7 +208,7 @@ def test_apply_role_rule_ko(mocker):
 
     gla.side_effect = ValueError
     items = manager.apply_role_rules(
-        entries=[None, None],
+        entries=[('dn0',), ('dn1',)],
         rules=[dict(
             name_attribute='cn',
         )],
@@ -218,7 +218,7 @@ def test_apply_role_rule_ko(mocker):
 
 
 def test_apply_grant_rule_ok(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
 
     from ldap2pg.manager import SyncManager
 
@@ -244,7 +244,7 @@ def test_apply_grant_rule_ok(mocker):
 
 
 def test_apply_grant_rule_wrong_attr(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute')
+    gla = mocker.patch('ldap2pg.manager.get_attribute')
 
     from ldap2pg.manager import SyncManager, UserError
 
@@ -258,7 +258,7 @@ def test_apply_grant_rule_wrong_attr(mocker):
 
 
 def test_apply_grant_rule_all_schema(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
 
     from ldap2pg.manager import SyncManager
 
@@ -301,7 +301,7 @@ def test_apply_grant_rule_filter(mocker):
 
 
 def test_apply_grant_rule_nodb(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_ldap_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
 
     from ldap2pg.manager import AclItem, SyncManager
 
