@@ -113,12 +113,10 @@ result: 0 Success
 $
 ```
 
-Now save the query in `ldap2pg.yml` in the `sync_map` setting and associate a
-role mapping to produce roles from each values of each entries returned by the
-LDAP search:
+Now translate the query in `ldap2pg.yml` and associate a role mapping to produce
+roles from each values of each entries returned by the LDAP search:
 
 ``` yaml
-sync_map:
 - ldap:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     attributes: member
