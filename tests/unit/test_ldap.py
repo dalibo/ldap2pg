@@ -133,20 +133,20 @@ def test_parse_rc():
     assert 3 == items[0].lineno
 
 
-def test_get_ldap_attr():
-    from ldap2pg.manager import get_ldap_attribute
+def test_get_attribute():
+    from ldap2pg.manager import get_attribute
 
     with pytest.raises(ValueError):
-        list(get_ldap_attribute(entry=('dn', {}), attribute='pouet'))
+        list(get_attribute(entry=('dn', {}), attribute='pouet'))
 
     with pytest.raises(ValueError):
-        list(get_ldap_attribute(
+        list(get_attribute(
             entry=('dn', {'cn': ['cn=pouet']}),
             attribute='cn.pouet',
         ))
 
     with pytest.raises(ValueError):
-        list(get_ldap_attribute(
+        list(get_attribute(
             entry=('dn', {'cn': 'not a dn'}),
             attribute='cn.pouet',
         ))

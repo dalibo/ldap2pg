@@ -58,6 +58,34 @@ def str2dn(value):
         raise ValueError("Can't parse DN '%s'" % (value,))
 
 
+def get_attribute(entry, attribute):
+    _, attributes = entry
+    path = attribute.split('.')
+    try:
+        values = attributes[path[0]]
+    except KeyError:
+        raise ValueError("Unknown attribute %r" % (path[0],))
+    path = path[1:]
+    for value in values:
+        if path:
+            try:
+                dn = str2dn(value)
+            except ValueError:
+                msg = "Can't parse DN from attribute %s=%s" % (
+                    attribute, value)
+                raise ValueError(msg)
+            value = dict()
+            for (type_, name, _), in dn:
+                names = value.setdefault(type_, [])
+                names.append(name)
+            try:
+                value = value[path[0]][0]
+            except KeyError:
+                raise ValueError("Unknown attribute %s" % (path[0],))
+
+        yield value
+
+
 class EncodedParamsCallable(object):  # pragma: nocover_py3
     # Wrap a callable not accepting unicode to encode all arguments.
     def __init__(self, callable_):

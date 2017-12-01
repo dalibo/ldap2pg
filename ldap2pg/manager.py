@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
-from .ldap import LDAPError, str2dn
+from .ldap import LDAPError, get_attribute
 
 from .acl import AclItem, AclSet
 from .role import (
@@ -17,34 +17,6 @@ from .psql import expandqueries
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_ldap_attribute(entry, attribute):
-    _, attributes = entry
-    path = attribute.split('.')
-    try:
-        values = attributes[path[0]]
-    except KeyError:
-        raise ValueError("Unknown attribute %r" % (path[0],))
-    path = path[1:]
-    for value in values:
-        if path:
-            try:
-                dn = str2dn(value)
-            except ValueError:
-                msg = "Can't parse DN from attribute %s=%s" % (
-                    attribute, value)
-                raise ValueError(msg)
-            value = dict()
-            for (type_, name, _), in dn:
-                names = value.setdefault(type_, [])
-                names.append(name)
-            try:
-                value = value[path[0]][0]
-            except KeyError:
-                raise ValueError("Unknown attribute %s" % (path[0],))
-
-        yield value
 
 
 class SyncManager(object):
@@ -134,11 +106,11 @@ class SyncManager(object):
             log_source = " from YAML"
         else:
             name_attribute = kw['name_attribute']
-            names = get_ldap_attribute(entry, name_attribute)
+            names = get_attribute(entry, name_attribute)
             log_source = " from %s %s" % (entry[0], name_attribute)
 
         if kw.get('members_attribute'):
-            members = get_ldap_attribute(entry, kw['members_attribute'])
+            members = get_attribute(entry, kw['members_attribute'])
             members = [m.lower() for m in members]
         else:
             members = []
@@ -198,8 +170,7 @@ class SyncManager(object):
                     roles = rule['roles']
                 else:
                     try:
-                        roles = get_ldap_attribute(
-                            entry, rule['role_attribute'])
+                        roles = get_attribute(entry, rule['role_attribute'])
                     except ValueError as e:
                         msg = "Failed to process %.32s: %s" % (entry, e,)
                         raise UserError(msg)
