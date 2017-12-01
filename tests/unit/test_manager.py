@@ -136,7 +136,7 @@ def test_process_entry_static():
     manager = SyncManager()
 
     roles = manager.process_ldap_entry(
-        entry=None, names=['ALICE'], parents=['postgres'],
+        entry=('dn',), names=['ALICE'], parents=['postgres'],
         options=dict(LOGIN=True),
     )
     roles = list(roles)
@@ -208,7 +208,7 @@ def test_apply_role_rule_ko(mocker):
 
     gla.side_effect = ValueError
     items = manager.apply_role_rules(
-        entries=[None, None],
+        entries=[('dn0',), ('dn1',)],
         rules=[dict(
             name_attribute='cn',
         )],

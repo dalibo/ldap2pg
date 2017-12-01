@@ -13,6 +13,16 @@ base  ou=IT staff,o="Example, Inc",c=US
 """
 
 
+def test_str2dn():
+    from ldap2pg.ldap import str2dn
+
+    value = str2dn('cn=toto,dc=with space,dc=pouet')
+    assert 3 == len(value)
+
+    with pytest.raises(ValueError):
+        str2dn('not a dn')
+
+
 def test_connect_from_env(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
     li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
@@ -132,6 +142,12 @@ def test_get_ldap_attr():
     with pytest.raises(ValueError):
         list(get_ldap_attribute(
             entry=('dn', {'cn': ['cn=pouet']}),
+            attribute='cn.pouet',
+        ))
+
+    with pytest.raises(ValueError):
+        list(get_ldap_attribute(
+            entry=('dn', {'cn': 'not a dn'}),
             attribute='cn.pouet',
         ))
 

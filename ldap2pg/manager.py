@@ -29,7 +29,12 @@ def get_ldap_attribute(entry, attribute):
     path = path[1:]
     for value in values:
         if path:
-            dn = str2dn(value)
+            try:
+                dn = str2dn(value)
+            except ValueError:
+                msg = "Can't parse DN from attribute %s=%s" % (
+                    attribute, value)
+                raise ValueError(msg)
             value = dict()
             for (type_, name, _), in dn:
                 names = value.setdefault(type_, [])
@@ -169,7 +174,7 @@ class SyncManager(object):
                     for role in self.process_ldap_entry(entry=entry, **rule):
                         yield role
                 except ValueError as e:
-                    msg = "Failed to process %.32s: %s" % (entry, e,)
+                    msg = "Failed to process %.48s: %s" % (entry[0], e,)
                     raise UserError(msg)
 
     def apply_grant_rules(self, grant, dbname=None, schema=None, entries=[]):

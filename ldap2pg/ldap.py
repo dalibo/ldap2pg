@@ -46,13 +46,16 @@ def parse_scope(raw):
         raise ValueError("Unknown scope %r" % (raw,))
 
 
-if PY2:  # pragma: nocover_py3
-    def str2dn(value):
-        # Workaround buggy unicode managmenent in upstream python-ldap. This is
-        # not necessary with pyldap on Python3.
-        return decode_value(native_str2dn(value.encode('utf-8')))
-else:  # pragma: nocover_py2
-    str2dn = native_str2dn
+def str2dn(value):
+    try:
+        if PY2:  # pragma: nocover_py3
+            # Workaround buggy unicode managmenent in upstream python-ldap.
+            # This is not necessary with pyldap on Python3.
+            return decode_value(native_str2dn(value.encode('utf-8')))
+        else:  # pragma: nocover_py2
+            return native_str2dn(value)
+    except ldap.DECODING_ERROR:
+        raise ValueError("Can't parse DN '%s'" % (value,))
 
 
 class EncodedParamsCallable(object):  # pragma: nocover_py3
