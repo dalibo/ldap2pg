@@ -606,12 +606,12 @@ class Configuration(dict):
         else:
             if filename == '-':
                 logger.info("Reading configuration from stdin.")
-                file_config = self.read(sys.stdin, mode)
+                file_config = self.read(sys.stdin, 'stdin', mode)
             else:
                 logger.info("Using %s.", filename)
                 try:
                     with open(filename, encoding='utf-8') as fo:
-                        file_config = self.read(fo, mode)
+                        file_config = self.read(fo, filename, mode)
                 except OSError as e:
                     msg = "Failed to read configuration: %s" % (e,)
                     raise UserError(msg)
@@ -646,8 +646,13 @@ class Configuration(dict):
             )
             deepset(self, mapping.path, value)
 
-    def read(self, fo, mode):
-        payload = yaml.load(fo) or {}
+    def read(self, fo, name, mode):
+        try:
+            payload = yaml.load(fo) or {}
+        except yaml.error.YAMLError as e:
+            msg = "YAML error with %s: %s" % (name, e)
+            raise ConfigurationError(msg)
+
         if isinstance(payload, list):
             payload = dict(sync_map=payload)
         if not isinstance(payload, dict):

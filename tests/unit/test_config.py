@@ -442,22 +442,26 @@ def test_read_yml():
     config = Configuration()
 
     fo = StringIO("- role: alice")
-    payload = config.read(fo, mode=0o0)
+    payload = config.read(fo, 'memory', mode=0o0)
     assert 'sync_map' in payload
 
     fo = StringIO("entry: value")
-    payload = config.read(fo, mode=0o644)
+    payload = config.read(fo, 'memory', mode=0o644)
     assert 'entry' in payload
     assert payload['world_readable'] is True
 
     # Accept empty file (e.g. /dev/null)
     fo = StringIO("")
-    payload = config.read(fo, mode=0o600)
+    payload = config.read(fo, 'memory', mode=0o600)
     assert payload['world_readable'] is False
 
     with pytest.raises(ConfigurationError):
         fo = StringIO("bad_value")
-        payload = config.read(fo, mode=0o600)
+        payload = config.read(fo, 'memory', mode=0o600)
+
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("bad: { yaml ] *&")
+        payload = config.read(fo, 'memory', mode=0o600)
 
 
 def test_load_badfiles(mocker):

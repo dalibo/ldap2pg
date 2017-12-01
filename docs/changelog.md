@@ -17,6 +17,7 @@ follow
 - Fix traceback on inexistant database in ACL.
 - Avoid reading ldaprc twice.
 - Show detailed version informations.
+- Show YAML parsing error.
 
 
 # ldap2pg 3.3
