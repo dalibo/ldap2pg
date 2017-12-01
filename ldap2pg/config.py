@@ -102,6 +102,9 @@ def ldapquery(value):
 def rolerule(value):
     rule = value
 
+    if value is None:
+        raise ValueError("Empty role rule. Wrong indentation?")
+
     if isinstance(rule, string_types):
         rule = dict(names=[rule])
 
@@ -181,10 +184,10 @@ def mapping(value):
         value['ldap'] = ldapquery(value['ldap'])
 
     if 'role' in value:
-        value['roles'] = value['role']
+        value['roles'] = value.pop('role')
     if 'roles' not in value:
         value['roles'] = []
-    if isinstance(value['roles'], string_types + (dict,)):
+    if not isinstance(value['roles'], list):
         value['roles'] = [value['roles']]
 
     value['roles'] = [rolerule(r) for r in value['roles']]

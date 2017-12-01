@@ -284,6 +284,9 @@ def test_process_ldapquery():
 def test_process_rolerule():
     from ldap2pg.config import rolerule
 
+    with pytest.raises(ValueError):
+        rolerule(None)
+
     rule = rolerule('aline')
     assert 'aline' == rule['names'][0]
 
