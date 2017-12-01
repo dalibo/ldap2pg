@@ -18,6 +18,7 @@ follow
 - Avoid reading ldaprc twice.
 - Show detailed version informations.
 - Show YAML parsing error.
+- Fix various configuration loading errors.
 
 
 # ldap2pg 3.3
