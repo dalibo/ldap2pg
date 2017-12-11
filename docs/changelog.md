@@ -21,6 +21,7 @@ follow
 - Fix various configuration loading errors.
 - Quote role name in SQL queries.
 - Documentation and sample update.
+- Merge `acl_dict` and `acl_groups` in `acls`.
 
 
 # ldap2pg 3.3

@@ -15,6 +15,9 @@ class Acl(object):
         self.grant_sql = grant
         self.revoke_sql = revoke
 
+    def __eq__(self, other):
+        return unicode(self) == unicode(other)
+
     def __lt__(self, other):
         return unicode(self) < unicode(other)
 

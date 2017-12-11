@@ -5,7 +5,7 @@ postgres:
   roles_query: null
 
 
-acl_dict:
+acls:
   # CONNECT ACL on database
   connect:
     inspect: |
@@ -123,16 +123,19 @@ acl_dict:
     revoke: |
       REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
 
-acl_groups:
-  ro: [schema-usage, default-tables-select, all-tables-select]
+  ro:
+  - schema-usage
+  - default-tables-select
+  - all-tables-select
 
 sync_map:
-  frontend:
-  - grant:
-      role: daniel
-      acl: connect
-      schema: __any__
-  - grant:
-      role: daniel
-      acl: ro
-      schema: __all__
+- grant:
+    role: daniel
+    acl: connect
+    database: frontend
+    schema: __any__
+- grant:
+    role: daniel
+    acl: ro
+    database: frontend
+    schema: __all__
