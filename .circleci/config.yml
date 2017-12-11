@@ -9,7 +9,7 @@ version: 2
     LDAP_TLS_VERIFY_CLIENT: try
 
 .postgres_container: &postgres_container
-  image: postgres:10
+  image: postgres:10-alpine
   environment:
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: communication

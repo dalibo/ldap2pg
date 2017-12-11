@@ -1,6 +1,12 @@
 <h1>Hacking</h1>
 
-# Development environment
+You are welcome to contribute to `ldap2pg` with patch to code, documentation or
+configuration sample ! Here is an extended documentation on how to setup *a*
+development environment. Feel free to adapt to your cumfort. Automatic tests on
+CircleCI will take care of validating regressions.
+
+
+# Docker Development Environment
 
 A `docker-compose.yml` file is provided to launch an OpenLDAP and a PostgreSQL
 instances as well as a phpLDAPAdmin to help you manage OpenLDAP.
@@ -79,10 +85,10 @@ Failed to query LDAP: {'matched': 'dc=ldap,dc=ldap2pg,dc=docker', 'desc': 'No su
 $
 ```
 
-# Development fixtures
+# Development Fixtures
 
-OpenLDAP is starts with `fixture/openldap-data.ldif` loaded. `fixture/openldap-data.ldif`
-is well commented.
+OpenLDAP starts with `fixture/openldap-data.ldif` loaded.
+`fixture/openldap-data.ldif` is well commented.
 
 Some users, database and ACLs are provided for testing purpose in
 `./fixtures/postgres.sh`. Postgres instance is initialized with this
@@ -105,7 +111,7 @@ $ DEBUG=1 ldap2pg
 ...
 [ldap2pg.script      ERROR] Unhandled error:
 [ldap2pg.script      ERROR] Traceback (most recent call last):
-[ldap2pg.script      ERROR]   File "/home/bersace/src/dalibo/ldap2pg/ldap2pg/script.py", line 70, in main
+[ldap2pg.script      ERROR]   File ".../ldap2pg/script.py", line 70, in main
 [ldap2pg.script      ERROR]     wrapped_main(config)
 ...
 [ldap2pg.script      ERROR]     raise ValueError(...)
@@ -140,12 +146,13 @@ TOTAL                   870      0   100%
 $
 ```
 
-Unit tests must cover all code in `ldap2pg`.
+Unit tests must cover all code in `ldap2pg`. We use
+[CodeCov](https://codecov.io/) to enforce this.
 
 
 # Functionnal tests
 
-Functionnal tests tend to integrate `ldap2pg` in real world. No mocks. We put
+Functionnal tests tend to validate `ldap2pg` in real world : **no mocks**. We put
 func tests in `tests/func/`. You can run func tests right from you development
 environment:
 
@@ -163,7 +170,7 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in a CentOS7 container, with ldap2pg and its
+On CI, func tests are executed in a CentOS 7 container, with ldap2pg and its
 dependencies installed from rpm. You can reproduce this setup with
 `docker-compose.yml` and some `make` calls. Run `make clean rpm tests` in
 `tests/func/` to recreate rpm and test env.
@@ -211,23 +218,24 @@ docker-compose exec runner /bin/bash
 (Pdb)
 ```
 
-Tests are written with the great [pytest](https://doc.pytest.org)
-and [sh](https://amoffat.github.io/sh/) projects. `conftest.py` provides various
+Tests are written with the great [pytest](https://doc.pytest.org) and
+[sh](https://amoffat.github.io/sh/) projects. `conftest.py` provides various
 specific fixtures. The most important is that Postgres database and OpenLDAP
-base are purged between each module. Func tests are executed in definition
+base are purged between each **module**. Func tests are executed in definition
 order. If a test modifies Postgres, the following tests will have this
 modification kept. This allows to split a big scenario in severals steps without
 loosing context and CPU cycle.
 
 Two main fixtures are very useful when testing: `psql` and `ldap`. These little
-helpers provide fastpath to recurrent inspection of Postgres database on LDAP
+helpers provide fastpath to frequent inspection of Postgres database on LDAP
 base with `sh.py`-style API. Also `dev` fixture resets Postgres database and
-LDAP base, load the dev fixtures exposed above.
+LDAP base and loads the dev fixtures exposed above.
 
 There is no code coverage in func tests, and you can't enter a debugger inside
 `ldap2pg` like you do with unit tests. This is on purpose to run `ldap2pg` in
 real situation. When you need to debug `ldap2pg` itself, just run it outside
 pytest! **Never import `ldap2pg` in func tests**. Call it like a subprocess.
+Logs should be enough to diagnose errors.
 
 
 # Documenting
@@ -255,4 +263,4 @@ $
 ```
 
 You will find `.rpm` package in `dist/`. There is no repository yet, nor debian
-package.
+package. Feel free to contribute !

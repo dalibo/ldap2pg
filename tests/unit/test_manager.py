@@ -458,9 +458,9 @@ def test_diff_acls(mocker):
 
     queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]
 
-    assert not fnfilter(queries, "REVOKE daniel*")
-    assert fnfilter(queries, "REVOKE alice*")
-    assert fnfilter(queries, "GRANT david*")
+    assert not fnfilter(queries, 'REVOKE "daniel"*')
+    assert fnfilter(queries, 'REVOKE "alice"*')
+    assert fnfilter(queries, 'GRANT "david"*')
 
 
 def test_sync(mocker):
