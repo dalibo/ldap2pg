@@ -19,6 +19,7 @@ follow
 - Show detailed version informations.
 - Show YAML parsing error.
 - Fix various configuration loading errors.
+- Quote role name in SQL queries.
 
 
 # ldap2pg 3.3

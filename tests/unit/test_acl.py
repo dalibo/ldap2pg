@@ -35,7 +35,7 @@ def test_grant():
     item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
     qry = acl.grant(item)
 
-    assert 'GRANT backend' in qry.args[0]
+    assert 'GRANT "backend"' in qry.args[0]
     assert 'daniel' in qry.args[0]
 
 
@@ -46,7 +46,7 @@ def test_revoke():
     item = AclItem(acl=acl.name, dbname='backend', schema=None, role='daniel')
     qry = acl.revoke(item)
 
-    assert 'REVOKE backend' in qry.args[0]
+    assert 'REVOKE "backend"' in qry.args[0]
     assert 'daniel' in qry.args[0]
 
 

@@ -29,9 +29,9 @@ class Acl(object):
             "Grant %s." % (item,),
             item.dbname,
             self.grant_sql.format(
-                database=item.dbname,
-                schema=item.schema,
-                role=item.role,
+                database='"%s"' % item.dbname,
+                schema='"%s"' % item.schema,
+                role='"%s"' % item.role,
             ),
         )
 
@@ -40,9 +40,9 @@ class Acl(object):
             "Revoke %s." % (item,),
             item.dbname,
             self.revoke_sql.format(
-                database=item.dbname,
-                schema=item.schema,
-                role=item.role,
+                database='"%s"' % item.dbname,
+                schema='"%s"' % item.schema,
+                role='"%s"' % item.role,
             ),
         )
 

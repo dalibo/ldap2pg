@@ -46,6 +46,13 @@ objectclass: organizationalRole
 objectclass: top
 cn: albert
 
+# Alter has no luck, his name is a SQL literal ^^
+dn: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: organizationalRole
+objectclass: top
+cn: alter
+
 # Our developers: d*
 dn: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
