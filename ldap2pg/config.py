@@ -20,6 +20,7 @@ import sys
 import yaml
 
 from . import __version__
+from .acl import Acl
 from .utils import (
     deepget,
     deepset,
@@ -145,6 +146,36 @@ def define_arguments(parser):
         '-V', '--version',
         action=VersionAction,
         help='show version and exit',
+    )
+
+
+def merge_acl_options(acls, acl_dict, acl_groups):
+    final = dict()
+    final.update(acl_dict)
+    final.update(acl_groups)
+    final.update(acls)
+    return V.acls(final)
+
+
+def postprocess_acl_options(self):
+    # Compat with user defined acl_dict and acl_groups
+    acls = merge_acl_options(
+        self.pop('acls', {}),
+        self.get('acl_dict', {}),
+        self.get('acl_groups', {}),
+    )
+    # Now split acls by type
+    self['acl_dict'] = dict([
+        (k, Acl(k, **v)) for k, v in acls.items()
+        if isinstance(v, dict)]
+    )
+    self['acl_groups'] = dict([
+        (k, v) for k, v in acls.items()
+        if isinstance(v, list)]
+    )
+    # Finally, compute flat map from acl name to ACL
+    self['acl_aliases'] = make_group_map(
+        self['acl_dict'], self['acl_groups'],
     )
 
 
@@ -287,6 +318,7 @@ class Configuration(dict):
             ORDER BY 1;
             """.replace("\n" + ' ' * 12, "\n").strip()
         },
+        'acls': {},
         'acl_dict': {},
         'acl_groups': {},
         'sync_map': {},
@@ -309,6 +341,7 @@ class Configuration(dict):
         ),
         Mapping('postgres:blacklist', env=None),
         Mapping('postgres:roles_query', env=None),
+        Mapping('acls', env=None, processor=V.acls),
         Mapping('acl_dict', processor=V.acldict),
         Mapping('acl_groups', env=None),
         Mapping('sync_map', env=None, processor=V.syncmap)
@@ -412,13 +445,9 @@ class Configuration(dict):
         # Now merge all config sources.
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
+            postprocess_acl_options(self)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
-
-        # Postprocess ACL groups
-        self['acl_aliases'] = make_group_map(
-            self['acl_dict'], self['acl_groups'],
-        )
 
         logger.debug("Configuration loaded.")
 

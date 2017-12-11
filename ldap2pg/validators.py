@@ -1,4 +1,3 @@
-from .acl import Acl
 from .ldap import parse_scope
 from .role import RoleOptions
 from .utils import string_types
@@ -8,10 +7,7 @@ def acldict(value):
     if not hasattr(value, 'items'):
         raise ValueError('acl_dict must be a dict')
 
-    return dict([
-        (k, Acl(k, **v))
-        for k, v in value.items()
-    ])
+    return value
 
 
 default_ldap_query = {
@@ -34,6 +30,34 @@ def ldapquery(value):
     query['scope'] = parse_scope(query['scope'])
 
     return query
+
+
+def acl(raw):
+    allowed_keys = set(['grant', 'inspect', 'revoke'])
+    defined_keys = set(raw.keys())
+    spurious_keys = defined_keys - allowed_keys
+
+    if spurious_keys:
+        msg = "Unknown keys %s" % (', '.join(spurious_keys),)
+        raise ValueError(msg)
+
+    return raw
+
+
+def acls(raw):
+    if not isinstance(raw, dict):
+        raise ValueError('acls must be a dict')
+
+    value = {}
+    for k, v in raw.items():
+        if isinstance(v, list):
+            value[k] = v
+        elif isinstance(v, dict):
+            value[k] = acl(v)
+        else:
+            msg = "Unknown value %.32s for %s" % (v, k,)
+            raise ValueError(msg)
+    return value
 
 
 def rolerule(value):

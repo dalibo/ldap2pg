@@ -402,3 +402,25 @@ def test_show_versions(mocker):
     config = Configuration()
     with pytest.raises(SystemExit):
         config.load(argv=['--version'])
+
+
+def test_acl_options():
+    from ldap2pg.config import postprocess_acl_options
+
+    config_v33 = dict(
+        acl_dict=dict(
+            select=dict(inspect='INSPECT'),
+        ),
+        acl_groups=dict(ro=['select'])
+    )
+
+    postprocess_acl_options(config_v33)
+
+    config_v34 = dict(acls=dict(
+        select=dict(inspect='INSPECT'),
+        ro=['select'],
+    ))
+
+    postprocess_acl_options(config_v34)
+
+    assert config_v33 == config_v34

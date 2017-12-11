@@ -147,3 +147,30 @@ def test_process_rolerule():
     with pytest.raises(ValueError) as ei:
         rolerule(dict(name='r', options='OLOLOL'))
     assert 'OLOLOL' in str(ei.value)
+
+
+def test_acls():
+    from ldap2pg.validators import acls
+
+    with pytest.raises(ValueError):
+        acls(None)
+
+    with pytest.raises(ValueError):
+        acls([])
+
+    with pytest.raises(ValueError):
+        acls(dict(select=dict(iinspect_type="INSPECT")))
+
+    with pytest.raises(ValueError):
+        acls(dict(select=None))
+
+    raw = dict(
+        __select_on_tables__=dict(
+            inspect="INSPECT",
+            grant="GRANT",
+            revoke="REVOKE",
+        ),
+        ro=['__select_on_tables__'],
+    )
+    value = acls(raw)
+    assert raw == value
