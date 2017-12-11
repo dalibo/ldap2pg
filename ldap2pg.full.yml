@@ -1,0 +1,182 @@
+#
+# **LDAP2PG CONFIGURATION**
+#
+# ldap2pg file is a regular YAML file. File mode must be 0600 if you store a
+# password in it.
+#
+# See also full documenation on how to configure ldap2pg at
+# https://ldap2pg.readthedocs.io/en/latest/config/.
+
+# Colorization. env var: COLOR=<anything>
+color: yes
+
+# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSE
+verbose: no
+
+#
+# **LDAP connection**
+#
+ldap:
+  # env var: LDAPURI
+  uri: ldaps://ldap.ldap2pg.docker:636
+  # env var: LDAPBINDDN
+  binddn: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
+  # Set SASL username and enable SASL. env var: LDAPUSER
+  # user: saslusername
+  # env var: LDAPPASSWORD
+  # password: SECRET
+
+#
+# **Postgres connection**
+#
+# Standard libpq env vars are supported: PGHOST, PGPORT, PGUSER, PGPASSWORD,
+# .pgpass, etc.
+#
+postgres:
+  # libpq connection string. env var: PGDSN
+  dsn: ""
+  # dsn: postgres://user:SECRET@host:port/dbname
+  # dsn: postgres://user@%2Fvar%2Frun%2Fpostgresql:port/dbname
+  # dsn: host=host port=port user=postgres password=secret dbname=postgres
+
+  # List of glob patterns to exclude external roles.
+  blacklist: [postgres, pg_*]
+
+  # SQL Query to inspect roles in cluster.
+  # roles_query: |
+  #   SELECT
+  #       role.rolname, array_agg(members.rolname) AS members,
+  #       {options}
+  #   FROM
+  #       pg_catalog.pg_roles AS role
+  #   LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
+  #   LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
+  #   GROUP BY role.rolname, {options}
+  #   ORDER BY 1;
+
+#
+# **ACL definitions**
+#
+acl_dict:
+  # Simple ACL to manage CONNECT on a database.
+  connect:
+    inspect: |
+      WITH d AS (
+          SELECT
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      )
+      SELECT NULL as namespace, r.rolname
+      FROM pg_catalog.pg_roles AS r
+      JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
+    grant: |
+      GRANT CONNECT ON DATABASE %(database)s TO %(role)s;
+    revoke: |
+      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+
+  # This ACL is very special. It has only a revoke query. The inspect query
+  # returns only `(NULL, 'public')` if connect has not been revoked to public.
+  # The inspect query is always executed, even if no grant is defined in YAML.
+  # grant introspected will be revoked.
+  public:
+    inspect: |
+      -- Returns public if no ACLs are defined in this database.
+      WITH
+      acls AS (
+          SELECT
+              (aclexplode(datacl)).grantee AS grantee,
+              (aclexplode(datacl)).privilege_type AS priv
+          FROM pg_catalog.pg_database
+          WHERE datname = current_database()
+      ),
+      static AS (
+          SELECT NULL AS namespace, 'public' AS rolname
+      )
+      SELECT static.* FROM static
+      LEFT OUTER JOIN acls ON acls.grantee = 0
+      WHERE acls.grantee IS NULL;
+    revoke: |
+      REVOKE CONNECT ON DATABASE %(database)s FROM %(role)s
+
+
+#
+# **Synchronization map**
+#
+
+# This sync map is a dict associating mappings to databases. Each mapping
+# describes an optional LDAP query and a set of rules to generate roles or
+# grant ACL from entries returned by LDAP.
+sync_map:
+  # Mappings globale to cluster.
+  __all__:
+  - role:
+      # Static rule to create an extra roles not in LDAP. Here we create a
+      # ldap_users role in which all roles defined here will belong to. See below.
+      # Note that role names are lowercase in Postgres. ldap2pg takes care of
+      # lowering inputs.
+      name: LDAP_USERS
+      options: NOLOGIN
+  # Second mapping, generate DBA roles from an LDAP query.
+  - ldap:
+      base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+      filter: "(objectClass=groupOfNames)"
+      attribute: member
+    # A single rule to generate roles for each entries.
+    role:
+      # *_attribute means the value is the name of an attribute in the entry. A
+      # role is generated for each value of the attribute. If the attribute is a
+      # distinguishedName, you can specify which part of the DN to read instead of
+      # all the attribute value.
+      #
+      #
+      # e.g. `member: cn=alice,dc=company,dc=com` generates `CREATE ROLE alice;`
+      #
+      name_attribute: member.cn
+      # Postgres role options: Can be a regular SQL snippet, a list or a dict.
+      options: LOGIN SUPERUSER NOBYPASSRLS
+      # Define static parents
+      parent: LDAP_USERS
+
+  # Mapping for database `backend`.
+  backend:
+    ldap:
+      base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+      filter: "(&(objectClass=groupOfNames)(cn=backend))"
+      attributes: [cn, member]
+    roles:
+    # Creates a *group* role with cn for role name, and member.cn as member list.
+    - name_attribute: cn
+      members_attribute: member.cn
+      options: [NOLOGIN]
+    # Creates a role for each member.cn
+    - name_attribute: member.cn
+      options:
+        LOGIN: yes
+      parents: [LDAP_USERS]
+    # Grant connect ACL to each members
+    grant:
+      acl: connect
+      role_attribute: cn
+
+  # Mapping for database `frontend`.
+  frontend:
+    ldap:
+      base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+      filter: "(&(objectClass=groupOfNames)(cn=frontend))"
+      attributes: [cn, member]
+    roles:
+    # Creates a *group* role with cn for role name, and member.cn as member list.
+    - name_attribute: cn
+      members_attribute: member.cn
+      options: [NOLOGIN]
+    # Creates a role for each member.cn
+    - name_attribute: member.cn
+      options:
+        LOGIN: yes
+      parents: [LDAP_USERS]
+    # Grant connect ACL to each members on *this* database.
+    grant:
+      acl: connect
+      role_attribute: cn

@@ -14,6 +14,7 @@ def test_various_arguments(dev):
     from sh import ldap2pg
 
     ldap2pg('-vn', '--color', '--config', 'ldap2pg.yml')
+    ldap2pg('-vn', '--color', '--config', 'ldap2pg.full.yml')
 
 
 YAML_FMT = """\
