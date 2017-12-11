@@ -19,6 +19,7 @@ follow
 - Show detailed version informations.
 - Show YAML parsing error.
 - Fix various configuration loading errors.
+- Fix Distinguished Name case sensitivity.
 - Quote role name in SQL queries.
 - Documentation and sample update.
 
