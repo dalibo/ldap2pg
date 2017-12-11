@@ -20,6 +20,7 @@ follow
 - Show YAML parsing error.
 - Fix various configuration loading errors.
 - Quote role name in SQL queries.
+- Documentation and sample update.
 
 
 # ldap2pg 3.3
