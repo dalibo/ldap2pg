@@ -1,10 +1,11 @@
 #!/bin/bash -eux
 
 teardown() {
-    chown --changes --recursive $(stat -c %u:%g setup.py) dist/ build/
+    exit_code=$?
+    sudo chown --changes --recursive $(stat -c %u:%g setup.py) dist/ build/
 
     # If not on CI, wait for user interrupt on exit
-    if [ -z "${CI-}" -a $? -gt 0 -a $$ = 1 ] ; then
+    if [ -z "${CI-}" -a $exit_code -gt 0 -a $$ = 1 ] ; then
         tail -f /dev/null
     fi
 }
