@@ -20,7 +20,7 @@ services:
       com.dnsdock.alias: ldap.ldap2pg.docker
 
   postgres:
-    image: postgres:10
+    image: postgres:10-alpine
     volumes:
     - ./fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
     labels:

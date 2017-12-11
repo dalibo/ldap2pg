@@ -16,7 +16,7 @@ services:
     command: [--copy-service, --loglevel, trace]
 
   postgres:
-    image: postgres:10
+    image: postgres:10-alpine
 
   runner:
     image: ${DIST-centos:7}
