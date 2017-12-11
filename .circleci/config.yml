@@ -36,6 +36,13 @@ version: 2
 .rpm_tpl: &rpm_tpl
   working_directory: /tmp/ldap2pg
   steps:
+  - run:
+      name: Disable old git
+      command: |
+        git=/usr/bin/git
+        if ${git} --version | grep -q 1.7; then
+            sudo mv ${git} ${git}.disabled
+        fi
   - checkout
   - run: ./packaging/build_rpm.sh
   - persist_to_workspace:
@@ -95,11 +102,11 @@ jobs:
 
   0-rpm-centos6:
     <<: *rpm_tpl
-    docker: [{image: "centos:6"}]
+    docker: [{image: "rpmbuild/centos6"}]
 
   0-rpm-centos7:
     <<: *rpm_tpl
-    docker: [{image: "centos:7"}]
+    docker: [{image: "rpmbuild/centos7"}]
 
   1-func-centos6:
     working_directory: /tmp/ldap2pg
