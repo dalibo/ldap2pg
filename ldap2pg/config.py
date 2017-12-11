@@ -405,7 +405,7 @@ class Configuration(dict):
                     msg = "Failed to read configuration: %s" % (e,)
                     raise UserError(msg)
 
-        # Now close stdin. To m(ake SASL non-interactive.
+        # Now close stdin. To make SASL non-interactive.
         if not self.get('debug'):
             sys.stdin.close()
 
