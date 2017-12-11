@@ -51,11 +51,16 @@ def str2dn(value):
         if PY2:  # pragma: nocover_py3
             # Workaround buggy unicode managmenent in upstream python-ldap.
             # This is not necessary with pyldap on Python3.
-            return decode_value(native_str2dn(value.encode('utf-8')))
+            value = decode_value(native_str2dn(value.encode('utf-8')))
         else:  # pragma: nocover_py2
-            return native_str2dn(value)
+            value = native_str2dn(value)
     except ldap.DECODING_ERROR:
         raise ValueError("Can't parse DN '%s'" % (value,))
+
+    return [
+        [(k.lower(), v, _) for k, v, _ in t]
+        for t in value
+    ]
 
 
 def get_attribute(entry, attribute):
