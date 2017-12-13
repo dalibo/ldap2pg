@@ -39,7 +39,7 @@ class Acl(object):
             else:
                 schemas = [item.schema]
             for schema in schemas:
-                yield item.copy(dbname=dbname, schema=schema)
+                yield item.copy(acl=self.name, dbname=dbname, schema=schema)
 
     def grant(self, item):
         return Query(
@@ -100,14 +100,6 @@ class AclItem(object):
     def as_tuple(self):
         return (self.acl, self.dbname, self.schema, self.role)
 
-    def expandaliases(self, aliases):
-        for acl in aliases[self.acl]:
-            yield self.__class__(
-                acl,
-                self.dbname, self.schema, self.role,
-                self.full,
-            )
-
     def copy(self, **kw):
         return self.__class__(**dict(dict(
             acl=self.acl,
@@ -119,8 +111,9 @@ class AclItem(object):
 
 
 class AclSet(set):
-    def expanditems(self, acls, databases):
+    def expanditems(self, aliases, acl_dict, databases):
         for item in self:
-            acl = acls[item.acl]
-            for expansion in acl.expand(item, databases):
-                yield expansion
+            for aclname in aliases[item.acl]:
+                acl = acl_dict[aclname]
+                for expansion in acl.expand(item, databases):
+                    yield expansion

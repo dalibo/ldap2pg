@@ -64,7 +64,8 @@ def test_expand():
 
     items = sorted(
         set_.expanditems(
-            acls={acl.name: acl},
+            aliases=dict(usage=['usage']),
+            acl_dict={acl.name: acl},
             databases=dict(
                 postgres=['information_schema'],
                 template1=['information_schema'],

@@ -240,12 +240,16 @@ class SyncManager(object):
                         aclitem.dbname,)
                     raise UserError(msg)
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
-                for realitem in aclitem.expandaliases(self.acl_aliases):
-                    ldapacls.add(realitem)
+                ldapacls.add(aclitem)
 
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
-        ldapacls = AclSet(list(ldapacls.expanditems(self.acl_dict, schemas)))
+        expanded_acls = ldapacls.expanditems(
+            aliases=self.acl_aliases,
+            acl_dict=self.acl_dict,
+            databases=schemas,
+        )
+        ldapacls = AclSet(list(expanded_acls))
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 
