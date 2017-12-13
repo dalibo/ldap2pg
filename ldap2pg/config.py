@@ -29,6 +29,7 @@ from .utils import (
     make_group_map,
 )
 from . import validators as V
+from .defaults import make_well_known_acls
 
 
 logger = logging.getLogger(__name__)
@@ -157,10 +158,12 @@ def merge_acl_options(acls, acl_dict, acl_groups):
     return V.acls(final)
 
 
-def postprocess_acl_options(self):
+def postprocess_acl_options(self, defaults=None):
     # Compat with user defined acl_dict and acl_groups
+    acls = defaults or {}
+    acls.update(self.pop('acls', {}))
     acls = merge_acl_options(
-        self.pop('acls', {}),
+        acls,
         self.get('acl_dict', {}),
         self.get('acl_groups', {}),
     )
@@ -449,9 +452,10 @@ class Configuration(dict):
             sys.stdin.close()
 
         # Now merge all config sources.
+        acl_defaults = make_well_known_acls()
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
-            postprocess_acl_options(self)
+            postprocess_acl_options(self, acl_defaults)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 

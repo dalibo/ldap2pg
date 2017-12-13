@@ -6,26 +6,6 @@ postgres:
 
 
 acls:
-  # CONNECT ACL on database
-  connect:
-    type: datacl
-    inspect: |
-      WITH d AS (
-          SELECT
-              (aclexplode(datacl)).grantee AS grantee,
-              (aclexplode(datacl)).privilege_type AS priv
-          FROM pg_catalog.pg_database
-          WHERE datname = current_database()
-      )
-      SELECT NULL as namespace, r.rolname, TRUE as "full"
-      FROM pg_catalog.pg_roles AS r
-      JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
-    grant: |
-      GRANT CONNECT ON DATABASE {database} TO {role};
-    revoke: |
-      REVOKE CONNECT ON DATABASE {database} FROM {role};
-
-  # CONNECT ACL on PUBLIC role database
   public:
     type: datacl
     inspect: |
@@ -47,85 +27,23 @@ acls:
     revoke: |
       REVOKE CONNECT ON DATABASE {database} FROM {role}
 
-  schema-usage:
-    inspect: |
-      WITH namespace_acl AS (
-        SELECT
-          nsp.nspname,
-          (aclexplode(nspacl)).grantee,
-          (aclexplode(nspacl)).privilege_type
-        FROM pg_catalog.pg_namespace nsp
-      )
-      SELECT
-        nspname, rolname
-      FROM namespace_acl
-      JOIN pg_catalog.pg_roles rol ON rol.oid = grantee
-      WHERE privilege_type = 'USAGE'
-    grant: GRANT USAGE ON SCHEMA {schema} TO {role}
-    revoke: REVOKE USAGE ON SCHEMA {schema} FROM {role}
-
-  default-tables-select:
-    type: defacl
-    inspect: |
-      SELECT
-        nspname,
-        pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
-        TRUE AS full,
-        pg_catalog.pg_get_userbyid(defaclrole) AS owner
-      FROM pg_catalog.pg_default_acl
-      JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-      WHERE defaclobjtype = 'r'
-    grant: |
-      ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role};
-    revoke: |
-      ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} REVOKE SELECT ON TABLES FROM {role};
-
-  all-tables-select:
-    inspect: |
-      WITH
-      namespace_tables AS (
-        -- All namespace and role having grant on it, and array of available
-        -- relations in the namespace.
-        SELECT
-          nsp.nspname,
-          ARRAY(
-            SELECT UNNEST(array_agg(rel.relname)
-            FILTER (WHERE rel.relname IS NOT NULL))
-            ORDER BY 1
-          ) AS tables
-        FROM pg_catalog.pg_namespace nsp
-        LEFT OUTER JOIN pg_catalog.pg_class rel
-          ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v')
-        WHERE nspname NOT LIKE 'pg_%'
-        GROUP BY 1
-      ),
-      tables_grants AS (
-        SELECT
-          table_schema AS "schema",
-          grantee,
-          -- Aggregate the relation grant for this privilege.
-          ARRAY(SELECT UNNEST(array_agg(table_name::name)) ORDER BY 1) AS tables
-        FROM information_schema.role_table_grants
-        WHERE privilege_type = 'SELECT'
-        GROUP BY 1, 2
-      )
-      SELECT
-        nspname, rolname,
-        rels.tables = nsp.tables AS "full"
-      FROM namespace_tables nsp
-      CROSS JOIN pg_catalog.pg_roles rol
-      JOIN tables_grants rels
-        ON rels."schema" = nsp.nspname AND rels.grantee = rolname
-    grant: |
-      GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
-    revoke: |
-      REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
-
   ro:
-  - connect
-  - schema-usage
-  - default-tables-select
-  - all-tables-select
+  - __connect__
+  - __select_on_tables__
+  - __select_on_sequences__
+  - __usage_on_schema__
+  - __usage_on_types__
+
+  rw:
+  - __delete__
+  - __execute__
+  - __insert__
+  - __references__
+  - ro
+  - __truncate__
+  - __update_on_tables__
+  - __update_on_sequences__
+
 
 sync_map:
 - grant:
