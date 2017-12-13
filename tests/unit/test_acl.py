@@ -51,11 +51,11 @@ def test_revoke():
 
 
 def test_expand():
-    from ldap2pg.acl import NspAcl, AclSet, AclItem
+    from ldap2pg.acl import DefAcl, AclSet, AclItem
 
-    acl = NspAcl('usage', grant='GRANT USAGE')
+    acl = DefAcl('select', grant='ALTER FOR GRANT SELECT')
     item = AclItem(
-        acl='usage', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
+        acl='select', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
     )
 
     assert repr(item.schema)
@@ -64,12 +64,13 @@ def test_expand():
 
     items = sorted(
         set_.expanditems(
-            aliases=dict(usage=['usage']),
+            aliases=dict(select=['select']),
             acl_dict={acl.name: acl},
             databases=dict(
                 postgres=['information_schema'],
                 template1=['information_schema'],
             ),
+            owners=['postgres'],
         ),
         key=lambda x: x.dbname,
     )

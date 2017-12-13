@@ -20,16 +20,19 @@ logger = logging.getLogger(__name__)
 
 
 class SyncManager(object):
+    empty_sql = 'SELECT NULL LIMIT 0;'
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
-            blacklist=[], roles_query=';', dry=False):
+            blacklist=[], roles_query=empty_sql, owners_query=empty_sql,
+            dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
         self.acl_aliases = acl_aliases or {}
         self._blacklist = blacklist
         self._roles_query = roles_query
+        self._owners_query = owners_query
         self.dry = dry
 
     def fetch_database_list(self, psql):
@@ -46,6 +49,11 @@ class SyncManager(object):
         WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
         """.strip().replace(8 * ' ', '')
         for row in psql(select):
+            yield row[0]
+
+    def fetch_pg_owners(self, psql):
+        logger.debug("Inspecting owners...")
+        for row in psql(self._owners_query):
             yield row[0]
 
     def fetch_pg_roles(self, psql):
@@ -78,15 +86,12 @@ class SyncManager(object):
 
     def process_pg_acl_items(self, acl, dbname, rows):
         for row in rows:
-            try:
-                schema, role, full = row
-            except ValueError:
-                schema, role, full = row + (True,)
+            role = row[1]
 
             if match(role, self._blacklist):
                 continue
 
-            yield AclItem.from_row(acl, dbname, schema, role, full)
+            yield AclItem.from_row(acl, dbname, *row)
 
     def query_ldap(self, base, filter, attributes, scope):
         try:
@@ -200,6 +205,9 @@ class SyncManager(object):
                     "Found schemas %s in %s.",
                     ', '.join(schemas[dbname]), dbname,
                 )
+            owners = list(self.fetch_pg_owners(psql))
+        else:
+            owners = []
 
         # Inspect ACLs
         pgacls = AclSet()
@@ -215,7 +223,7 @@ class SyncManager(object):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
-        return schemas, pgroles, pgacls
+        return schemas, owners, pgroles, pgacls
 
     def inspect_ldap(self, syncmap):
         ldaproles = RoleSet()
@@ -239,12 +247,18 @@ class SyncManager(object):
 
         return ldaproles, ldapacls
 
-    def postprocess_inspection(self, schemas, ldaproles, ldapacls):
+    def postprocess_inspection(self, schemas, pgowners, ldaproles, ldapacls):
         ldaproles.resolve_membership()
+        owners = set(pgowners)
+        for role in ldaproles:
+            if role.options['SUPERUSER']:
+                owners.add(role)
+
         expanded_acls = ldapacls.expanditems(
             aliases=self.acl_aliases,
             acl_dict=self.acl_dict,
             databases=schemas,
+            owners=owners,
         )
 
         ldapacls = AclSet()
@@ -258,12 +272,12 @@ class SyncManager(object):
 
     def inspect(self, syncmap):
         logger.info("Inspecting Postgres...")
-        schemas, pgroles, pgacls = self.inspect_pg(syncmap)
+        schemas, pgowners, pgroles, pgacls = self.inspect_pg(syncmap)
         logger.debug("Postgres inspection done.")
         ldaproles, ldapacls = self.inspect_ldap(syncmap)
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles, ldapacls = self.postprocess_inspection(
-            schemas, ldaproles, ldapacls)
+            schemas, pgowners, ldaproles, ldapacls)
         return schemas, pgroles, pgacls, ldaproles, ldapacls
 
     def diff(self, pgroles=None, pgacls=set(), ldaproles=None, ldapacls=set()):
