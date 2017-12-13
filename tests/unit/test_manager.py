@@ -368,10 +368,10 @@ def test_inspect_acls_bad_database(mocker):
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
     from ldap2pg.manager import SyncManager, AclItem, UserError
-    from ldap2pg.acl import Acl
+    from ldap2pg.acl import NspAcl
     from ldap2pg.utils import make_group_map
 
-    acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
+    acl_dict = dict(ro=NspAcl(name='ro', inspect='SQL'))
     la.return_value = [AclItem('ro', 'inexistantdb', None, 'alice')]
 
     manager = SyncManager(

@@ -185,8 +185,7 @@ class SyncManager(object):
                         continue
                     yield AclItem(acl, database, schema, role)
 
-    def inspect(self, syncmap):
-        logger.info("Inspecting Postgres...")
+    def inspect_pg(self, syncmap):
         with self.psql('postgres') as psql:
             databases = list(self.fetch_database_list(psql))
             rows = self.fetch_pg_roles(psql)
@@ -216,9 +215,9 @@ class SyncManager(object):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
-        logger.debug("Postgres inspection done.")
+        return schemas, pgroles, pgacls
 
-        # Gather wanted roles
+    def inspect_ldap(self, syncmap):
         ldaproles = RoleSet()
         ldapacls = AclSet()
         for dbname, schema, mapping in self.itermappings(syncmap):
@@ -235,23 +234,37 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
             for aclitem in aclitems:
-                if aclitem.dbname not in [AclItem.ALL_DATABASES] + databases:
-                    msg = "Database %s does not exists or is not managed." % (
-                        aclitem.dbname,)
-                    raise UserError(msg)
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)
 
-        logger.debug("LDAP inspection completed. Post processing.")
+        return ldaproles, ldapacls
+
+    def postprocess_inspection(self, schemas, ldaproles, ldapacls):
         ldaproles.resolve_membership()
         expanded_acls = ldapacls.expanditems(
             aliases=self.acl_aliases,
             acl_dict=self.acl_dict,
             databases=schemas,
         )
-        ldapacls = AclSet(list(expanded_acls))
 
-        return databases, pgroles, pgacls, ldaproles, ldapacls
+        ldapacls = AclSet()
+        for aclitem in expanded_acls:
+            if aclitem.dbname not in schemas:
+                msg = "Database %s does not exists or is not managed." % (
+                    aclitem.dbname,)
+                raise UserError(msg)
+            ldapacls.add(aclitem)
+        return ldaproles, ldapacls
+
+    def inspect(self, syncmap):
+        logger.info("Inspecting Postgres...")
+        schemas, pgroles, pgacls = self.inspect_pg(syncmap)
+        logger.debug("Postgres inspection done.")
+        ldaproles, ldapacls = self.inspect_ldap(syncmap)
+        logger.debug("LDAP inspection completed. Post processing.")
+        ldaproles, ldapacls = self.postprocess_inspection(
+            schemas, ldaproles, ldapacls)
+        return schemas, pgroles, pgacls, ldaproles, ldapacls
 
     def diff(self, pgroles=None, pgacls=set(), ldaproles=None, ldapacls=set()):
         pgroles = pgroles or RoleSet()
