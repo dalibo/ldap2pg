@@ -10,6 +10,7 @@ class AllSchemas(object):
 
 class Acl(object):
     TYPES = {}
+    itemfmt = "%(dbname)s.%(schema)s for %(owner)s"
 
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
@@ -40,8 +41,9 @@ class Acl(object):
         return subclass
 
     def grant(self, item):
+        fmt = "Grant %(acl)s on " + self.itemfmt + " to %(role)s."
         return Query(
-            "Grant %s." % (item,),
+            fmt % item.__dict__,
             item.dbname,
             self.grant_sql.format(
                 database='"%s"' % item.dbname,
@@ -52,8 +54,9 @@ class Acl(object):
         )
 
     def revoke(self, item):
+        fmt = "Revoke %(acl)s on " + self.itemfmt + " from %(role)s."
         return Query(
-            "Revoke %s." % (item,),
+            fmt % item.__dict__,
             item.dbname,
             self.revoke_sql.format(
                 database='"%s"' % item.dbname,
@@ -66,6 +69,8 @@ class Acl(object):
 
 @Acl.register
 class DatAcl(Acl):
+    itemfmt = '%(dbname)s'
+
     def expanddb(self, item, databases):
         if item.dbname is AclItem.ALL_DATABASES:
             dbnames = databases.keys()
@@ -82,6 +87,8 @@ class DatAcl(Acl):
 
 @Acl.register
 class NspAcl(DatAcl):
+    itemfmt = '%(dbname)s.%(schema)s'
+
     def expandschema(self, item, databases):
         if item.schema is AclItem.ALL_SCHEMAS:
             schemas = databases[item.dbname]
@@ -98,6 +105,8 @@ class NspAcl(DatAcl):
 
 @Acl.register
 class DefAcl(NspAcl):
+    itemfmt = '%(dbname)s.%(schema)s for %(owner)s'
+
     def expand(self, item, databases, owners):
         for expand in super(DefAcl, self).expand(item, databases, []):
             for owner in owners:
