@@ -316,7 +316,13 @@ class Configuration(dict):
             LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
             GROUP BY role.rolname, {options}
             ORDER BY 1;
-            """.replace("\n" + ' ' * 12, "\n").strip()
+            """.replace("\n" + ' ' * 12, "\n").strip(),
+            'owners_query': """
+            SELECT role.rolname
+            FROM pg_catalog.pg_roles AS role
+            WHERE role.rolsuper IS TRUE
+            ORDER BY 1;
+            """.replace("\n" + ' ' * 12, "\n").strip(),
         },
         'acls': {},
         'acl_dict': {},

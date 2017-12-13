@@ -65,6 +65,20 @@ def test_fetch_roles(mocker):
     assert [] == rows
 
 
+def test_fetch_owners(mocker):
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+    psql = mocker.Mock(name='psql')
+    psql.return_value = mocker.MagicMock()
+    psql.return_value.__iter__.return_value = r = [('postgres',)]
+
+    rows = manager.fetch_pg_owners(psql)
+    rows = list(rows)
+
+    assert r[0][0] == rows[0]
+
+
 def test_process_roles_rows():
     from ldap2pg.manager import SyncManager
 
@@ -326,6 +340,8 @@ def test_inspect_acls(mocker):
 
     dbl = mocker.patch(mod + 'SyncManager.fetch_database_list', autospec=True)
     dbl.return_value = ['postgres']
+    sl = mocker.patch(mod + 'SyncManager.fetch_schema_list', autospec=True)
+    sl.return_value = ['public']
     mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
     pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
@@ -368,10 +384,10 @@ def test_inspect_acls_bad_database(mocker):
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
     from ldap2pg.manager import SyncManager, AclItem, UserError
-    from ldap2pg.acl import Acl
+    from ldap2pg.acl import NspAcl
     from ldap2pg.utils import make_group_map
 
-    acl_dict = dict(ro=Acl(name='ro', inspect='SQL'))
+    acl_dict = dict(ro=NspAcl(name='ro', inspect='SQL'))
     la.return_value = [AclItem('ro', 'inexistantdb', None, 'alice')]
 
     manager = SyncManager(
@@ -395,7 +411,10 @@ def test_inspect_roles(mocker):
 
     p.return_value = {Role(name='spurious')}
     ql.return_value = [mocker.Mock(name='entry')]
-    r.side_effect = [{Role(name='alice')}, {Role(name='bob')}]
+    r.side_effect = [
+        {Role(name='alice', options=dict(SUPERUSER=True))},
+        {Role(name='bob')},
+    ]
 
     manager = SyncManager(psql=psql, ldapconn=mocker.Mock())
     # Minimal effective syncmap

@@ -8,6 +8,7 @@ postgres:
 acls:
   # CONNECT ACL on database
   connect:
+    type: datacl
     inspect: |
       WITH d AS (
           SELECT
@@ -26,6 +27,7 @@ acls:
 
   # CONNECT ACL on PUBLIC role database
   public:
+    type: datacl
     inspect: |
       -- Returns public if no ACLs are defined in this database.
       WITH
@@ -63,24 +65,20 @@ acls:
     revoke: REVOKE USAGE ON SCHEMA {schema} FROM {role}
 
   default-tables-select:
+    type: defacl
     inspect: |
-      WITH acls AS (
-        SELECT
-          defaclnamespace AS oid,
-          (aclexplode(defaclacl)).grantee,
-          (aclexplode(defaclacl)).privilege_type
-        FROM pg_catalog.pg_default_acl
-        WHERE defaclobjtype = 'r'
-      )
       SELECT
-        nspname, rolname
-      FROM acls
-      JOIN pg_catalog.pg_namespace nsp ON nsp.oid = acls.oid
-      JOIN pg_catalog.pg_roles rol ON rol.oid = grantee
+        nspname,
+        pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
+        TRUE AS full,
+        pg_catalog.pg_get_userbyid(defaclrole) AS owner
+      FROM pg_catalog.pg_default_acl
+      JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
+      WHERE defaclobjtype = 'r'
     grant: |
-      ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role};
+      ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role};
     revoke: |
-      ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} REVOKE SELECT ON TABLES FROM {role};
+      ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} REVOKE SELECT ON TABLES FROM {role};
 
   all-tables-select:
     inspect: |
@@ -124,16 +122,12 @@ acls:
       REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
 
   ro:
+  - connect
   - schema-usage
   - default-tables-select
   - all-tables-select
 
 sync_map:
-- grant:
-    role: daniel
-    acl: connect
-    database: frontend
-    schema: __any__
 - grant:
     role: daniel
     acl: ro

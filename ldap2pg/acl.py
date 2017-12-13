@@ -1,15 +1,10 @@
 from .psql import Query
-from .utils import AllDatabases, unicode
-
-
-class AllSchemas(object):
-    # Simple object to represent schema wildcard.
-    def __repr__(self):
-        return '__ALL_SCHEMAS__'
+from .utils import AllDatabases, UserError, unicode
 
 
 class Acl(object):
     TYPES = {}
+    itemfmt = "%(dbname)s.%(schema)s for %(owner)s"
 
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
@@ -40,23 +35,27 @@ class Acl(object):
         return subclass
 
     def grant(self, item):
+        fmt = "Grant %(acl)s on " + self.itemfmt + " to %(role)s."
         return Query(
-            "Grant %s." % (item,),
+            fmt % item.__dict__,
             item.dbname,
             self.grant_sql.format(
                 database='"%s"' % item.dbname,
                 schema='"%s"' % item.schema,
+                owner='"%s"' % item.owner,
                 role='"%s"' % item.role,
             ),
         )
 
     def revoke(self, item):
+        fmt = "Revoke %(acl)s on " + self.itemfmt + " from %(role)s."
         return Query(
-            "Revoke %s." % (item,),
+            fmt % item.__dict__,
             item.dbname,
             self.revoke_sql.format(
                 database='"%s"' % item.dbname,
                 schema='"%s"' % item.schema,
+                owner='"%s"' % item.owner,
                 role='"%s"' % item.role,
             ),
         )
@@ -64,6 +63,8 @@ class Acl(object):
 
 @Acl.register
 class DatAcl(Acl):
+    itemfmt = '%(dbname)s'
+
     def expanddb(self, item, databases):
         if item.dbname is AclItem.ALL_DATABASES:
             dbnames = databases.keys()
@@ -73,47 +74,69 @@ class DatAcl(Acl):
         for dbname in dbnames:
             yield item.copy(acl=self.name, dbname=dbname)
 
-    expand = expanddb
+    def expand(self, item, databases, owners):
+        for exp in self.expanddb(item, databases):
+            yield exp
 
 
 @Acl.register
 class NspAcl(DatAcl):
+    itemfmt = '%(dbname)s.%(schema)s'
+
     def expandschema(self, item, databases):
         if item.schema is AclItem.ALL_SCHEMAS:
-            schemas = databases[item.dbname]
+            try:
+                schemas = databases[item.dbname]
+            except KeyError:
+                fmt = "Database %s does not exists or is not managed."
+                raise UserError(fmt % (item.dbname))
         else:
             schemas = [item.schema]
         for schema in schemas:
             yield item.copy(acl=self.name, schema=schema)
 
-    def expand(self, item, databases):
-        for datexp in self.expanddb(item, databases):
+    def expand(self, item, databases, owners):
+        for datexp in super(NspAcl, self).expand(item, databases, owners):
             for nspexp in self.expandschema(datexp, databases):
                 yield nspexp
 
 
+@Acl.register
+class DefAcl(NspAcl):
+    itemfmt = '%(dbname)s.%(schema)s for %(owner)s'
+
+    def expand(self, item, databases, owners):
+        for expand in super(DefAcl, self).expand(item, databases, []):
+            for owner in owners:
+                yield expand.copy(owner=owner)
+
+
 class AclItem(object):
     ALL_DATABASES = AllDatabases()
-    ALL_SCHEMAS = AllSchemas()
+    ALL_SCHEMAS = None
 
     @classmethod
     def from_row(cls, *args):
         return cls(*args)
 
-    def __init__(self, acl, dbname=None, schema=None, role=None, full=True):
+    def __init__(self, acl, dbname=None, schema=None, role=None, full=True,
+                 owner=None):
         self.acl = acl
         self.dbname = dbname
         self.schema = schema
         self.role = role
         self.full = full
+        self.owner = owner
 
     def __lt__(self, other):
         return self.as_tuple() < other.as_tuple()
 
     def __str__(self):
-        return '%(acl)s on %(dbname)s.%(schema)s to %(role)s' % dict(
+        fmt = '%(acl)s on %(dbname)s.%(schema)s for %(owner)s to %(role)s'
+        return fmt % dict(
             self.__dict__,
-            schema=self.schema or '*'
+            schema=self.schema or '*',
+            owner=self.owner or '*',
         )
 
     def __repr__(self):
@@ -126,7 +149,7 @@ class AclItem(object):
         return self.as_tuple() == other.as_tuple()
 
     def as_tuple(self):
-        return (self.acl, self.dbname, self.schema, self.role)
+        return (self.acl, self.dbname, self.schema, self.role, self.owner)
 
     def copy(self, **kw):
         return self.__class__(**dict(dict(
@@ -135,13 +158,14 @@ class AclItem(object):
             dbname=self.dbname,
             schema=self.schema,
             full=self.full,
+            owner=self.owner,
         ), **kw))
 
 
 class AclSet(set):
-    def expanditems(self, aliases, acl_dict, databases):
+    def expanditems(self, aliases, acl_dict, databases, owners):
         for item in self:
             for aclname in aliases[item.acl]:
                 acl = acl_dict[aclname]
-                for expansion in acl.expand(item, databases):
+                for expansion in acl.expand(item, databases, owners):
                     yield expansion

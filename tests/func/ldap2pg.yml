@@ -50,6 +50,7 @@ postgres:
 #
 acl_dict:
   connect:
+    type: datacl
     inspect: |
       WITH d AS (
           SELECT
