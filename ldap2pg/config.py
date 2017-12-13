@@ -166,7 +166,7 @@ def postprocess_acl_options(self):
     )
     # Now split acls by type
     self['acl_dict'] = dict([
-        (k, Acl(k, **v)) for k, v in acls.items()
+        (k, Acl.factory(k, **v)) for k, v in acls.items()
         if isinstance(v, dict)]
     )
     self['acl_groups'] = dict([

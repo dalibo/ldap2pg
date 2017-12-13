@@ -9,6 +9,8 @@ class AllSchemas(object):
 
 
 class Acl(object):
+    TYPES = {}
+
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
         self.inspect = inspect
@@ -26,6 +28,16 @@ class Acl(object):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def factory(cls, name, **kw):
+        implcls = cls.TYPES[kw.pop('type')]
+        return implcls(name, **kw)
+
+    @classmethod
+    def register(cls, subclass):
+        cls.TYPES[subclass.__name__.lower()] = subclass
+        return subclass
 
     def grant(self, item):
         return Query(
@@ -48,6 +60,36 @@ class Acl(object):
                 role='"%s"' % item.role,
             ),
         )
+
+
+@Acl.register
+class DatAcl(Acl):
+    def expanddb(self, item, databases):
+        if item.dbname is AclItem.ALL_DATABASES:
+            dbnames = databases.keys()
+        else:
+            dbnames = [item.dbname]
+
+        for dbname in dbnames:
+            yield item.copy(acl=self.name, dbname=dbname)
+
+    expand = expanddb
+
+
+@Acl.register
+class NspAcl(DatAcl):
+    def expandschema(self, item, databases):
+        if item.schema is AclItem.ALL_SCHEMAS:
+            schemas = databases[item.dbname]
+        else:
+            schemas = [item.schema]
+        for schema in schemas:
+            yield item.copy(acl=self.name, schema=schema)
+
+    def expand(self, item, databases):
+        for datexp in self.expanddb(item, databases):
+            for nspexp in self.expandschema(datexp, databases):
+                yield nspexp
 
 
 class AclItem(object):
@@ -86,36 +128,20 @@ class AclItem(object):
     def as_tuple(self):
         return (self.acl, self.dbname, self.schema, self.role)
 
-    def expandaliases(self, aliases):
-        for acl in aliases[self.acl]:
-            yield self.__class__(
-                acl,
-                self.dbname, self.schema, self.role,
-                self.full,
-            )
-
-    def expand(self, databases):
-        if self.dbname is self.ALL_DATABASES:
-            dbnames = databases.keys()
-        else:
-            dbnames = [self.dbname]
-
-        for dbname in dbnames:
-            if self.schema is self.ALL_SCHEMAS:
-                schemas = databases[dbname]
-            else:
-                schemas = [self.schema]
-            for schema in schemas:
-                yield self.__class__(
-                    acl=self.acl,
-                    dbname=dbname,
-                    schema=schema,
-                    role=self.role,
-                )
+    def copy(self, **kw):
+        return self.__class__(**dict(dict(
+            acl=self.acl,
+            role=self.role,
+            dbname=self.dbname,
+            schema=self.schema,
+            full=self.full,
+        ), **kw))
 
 
 class AclSet(set):
-    def expanditems(self, databases):
+    def expanditems(self, aliases, acl_dict, databases):
         for item in self:
-            for expansion in item.expand(databases):
-                yield expansion
+            for aclname in aliases[item.acl]:
+                acl = acl_dict[aclname]
+                for expansion in acl.expand(item, databases):
+                    yield expansion

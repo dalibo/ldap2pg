@@ -33,13 +33,15 @@ def ldapquery(value):
 
 
 def acl(raw):
-    allowed_keys = set(['grant', 'inspect', 'revoke'])
+    allowed_keys = set(['grant', 'inspect', 'revoke', 'type'])
     defined_keys = set(raw.keys())
     spurious_keys = defined_keys - allowed_keys
 
     if spurious_keys:
         msg = "Unknown keys %s" % (', '.join(spurious_keys),)
         raise ValueError(msg)
+
+    raw.setdefault('type', 'nspacl')
 
     return raw
 
