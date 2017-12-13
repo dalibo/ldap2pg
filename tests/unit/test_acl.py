@@ -51,9 +51,9 @@ def test_revoke():
 
 
 def test_expand():
-    from ldap2pg.acl import Acl, AclSet, AclItem
+    from ldap2pg.acl import NspAcl, AclSet, AclItem
 
-    acl = Acl('usage', grant='GRANT USAGE')
+    acl = NspAcl('usage', grant='GRANT USAGE')
     item = AclItem(
         acl='usage', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
     )

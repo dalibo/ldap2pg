@@ -409,7 +409,7 @@ def test_acl_options():
 
     config_v33 = dict(
         acl_dict=dict(
-            select=dict(inspect='INSPECT'),
+            select=dict(type='nspacl', inspect='INSPECT'),
         ),
         acl_groups=dict(ro=['select'])
     )
@@ -417,7 +417,7 @@ def test_acl_options():
     postprocess_acl_options(config_v33)
 
     config_v34 = dict(acls=dict(
-        select=dict(inspect='INSPECT'),
+        select=dict(type='nspacl', inspect='INSPECT'),
         ro=['select'],
     ))
 

@@ -331,12 +331,12 @@ def test_inspect_acls(mocker):
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
     from ldap2pg.manager import SyncManager, AclItem
-    from ldap2pg.acl import Acl
+    from ldap2pg.acl import NspAcl
     from ldap2pg.utils import make_group_map
 
     acl_dict = dict(
-        noinspect=Acl(name='noinspect'),
-        ro=Acl(name='ro', inspect='SQL'),
+        noinspect=NspAcl(name='noinspect'),
+        ro=NspAcl(name='ro', inspect='SQL'),
     )
     pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
     la.return_value = [AclItem('ro', 'postgres', None, 'alice')]

@@ -9,6 +9,8 @@ class AllSchemas(object):
 
 
 class Acl(object):
+    TYPES = {}
+
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
         self.inspect = inspect
@@ -27,19 +29,15 @@ class Acl(object):
     def __str__(self):
         return self.name
 
-    def expand(self, item, databases):
-        if item.dbname is AclItem.ALL_DATABASES:
-            dbnames = databases.keys()
-        else:
-            dbnames = [item.dbname]
+    @classmethod
+    def factory(cls, name, **kw):
+        implcls = cls.TYPES[kw.pop('type')]
+        return implcls(name, **kw)
 
-        for dbname in dbnames:
-            if item.schema is AclItem.ALL_SCHEMAS:
-                schemas = databases[dbname]
-            else:
-                schemas = [item.schema]
-            for schema in schemas:
-                yield item.copy(acl=self.name, dbname=dbname, schema=schema)
+    @classmethod
+    def register(cls, subclass):
+        cls.TYPES[subclass.__name__.lower()] = subclass
+        return subclass
 
     def grant(self, item):
         return Query(
@@ -62,6 +60,36 @@ class Acl(object):
                 role='"%s"' % item.role,
             ),
         )
+
+
+@Acl.register
+class DatAcl(Acl):
+    def expanddb(self, item, databases):
+        if item.dbname is AclItem.ALL_DATABASES:
+            dbnames = databases.keys()
+        else:
+            dbnames = [item.dbname]
+
+        for dbname in dbnames:
+            yield item.copy(acl=self.name, dbname=dbname)
+
+    expand = expanddb
+
+
+@Acl.register
+class NspAcl(DatAcl):
+    def expandschema(self, item, databases):
+        if item.schema is AclItem.ALL_SCHEMAS:
+            schemas = databases[item.dbname]
+        else:
+            schemas = [item.schema]
+        for schema in schemas:
+            yield item.copy(acl=self.name, schema=schema)
+
+    def expand(self, item, databases):
+        for datexp in self.expanddb(item, databases):
+            for nspexp in self.expandschema(datexp, databases):
+                yield nspexp
 
 
 class AclItem(object):
