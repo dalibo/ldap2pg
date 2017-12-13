@@ -181,6 +181,20 @@ def postprocess_acl_options(self, defaults=None):
         self['acl_dict'], self['acl_groups'],
     )
 
+    # Clean _*
+    used = set()
+    for name, aliases in self['acl_aliases'].items():
+        if name[0] not in ('_', '.'):
+            used.add(name)
+            used.update(aliases)
+    all_ = set(self['acl_aliases'].keys())
+    unused = all_ - used
+    for k in unused:
+        logger.debug("Drop unused alias %s", k)
+        del self['acl_aliases'][k]
+        if k in self['acl_dict']:
+            del self['acl_dict'][k]
+
 
 class Mapping(object):
     """Fetch value from either file or env var."""
