@@ -245,7 +245,7 @@ class SyncManager(object):
 
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles.resolve_membership()
-        ldapacls = AclSet(list(ldapacls.expanditems(schemas)))
+        ldapacls = AclSet(list(ldapacls.expanditems(self.acl_dict, schemas)))
 
         return databases, pgroles, pgacls, ldaproles, ldapacls
 

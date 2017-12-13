@@ -27,6 +27,20 @@ class Acl(object):
     def __str__(self):
         return self.name
 
+    def expand(self, item, databases):
+        if item.dbname is AclItem.ALL_DATABASES:
+            dbnames = databases.keys()
+        else:
+            dbnames = [item.dbname]
+
+        for dbname in dbnames:
+            if item.schema is AclItem.ALL_SCHEMAS:
+                schemas = databases[dbname]
+            else:
+                schemas = [item.schema]
+            for schema in schemas:
+                yield item.copy(dbname=dbname, schema=schema)
+
     def grant(self, item):
         return Query(
             "Grant %s." % (item,),
@@ -94,28 +108,19 @@ class AclItem(object):
                 self.full,
             )
 
-    def expand(self, databases):
-        if self.dbname is self.ALL_DATABASES:
-            dbnames = databases.keys()
-        else:
-            dbnames = [self.dbname]
-
-        for dbname in dbnames:
-            if self.schema is self.ALL_SCHEMAS:
-                schemas = databases[dbname]
-            else:
-                schemas = [self.schema]
-            for schema in schemas:
-                yield self.__class__(
-                    acl=self.acl,
-                    dbname=dbname,
-                    schema=schema,
-                    role=self.role,
-                )
+    def copy(self, **kw):
+        return self.__class__(**dict(dict(
+            acl=self.acl,
+            role=self.role,
+            dbname=self.dbname,
+            schema=self.schema,
+            full=self.full,
+        ), **kw))
 
 
 class AclSet(set):
-    def expanditems(self, databases):
+    def expanditems(self, acls, databases):
         for item in self:
-            for expansion in item.expand(databases):
+            acl = acls[item.acl]
+            for expansion in acl.expand(item, databases):
                 yield expansion
