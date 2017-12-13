@@ -163,9 +163,7 @@ class SyncManager(object):
                 database = AclItem.ALL_DATABASES
 
             schema = rule.get('schema', schema)
-            if schema == '__all__':
-                schema = AclItem.ALL_SCHEMAS
-            elif schema == '__any__':
+            if schema in (None, '__all__', '__any__'):
                 schema = None
 
             pattern = rule.get('role_match')
@@ -197,7 +195,7 @@ class SyncManager(object):
             pgroles = RoleSet(self.process_pg_roles(rows))
 
         schemas = dict([(k, []) for k in databases])
-        # Only introspection schemas if ACL are defined.
+        # Only inspect schemas and owners if ACL are defined.
         if len(self.acl_dict):
             for dbname, psql in self.psql.itersessions(databases):
                 schemas[dbname] = list(self.fetch_schema_list(psql))
@@ -263,10 +261,6 @@ class SyncManager(object):
 
         ldapacls = AclSet()
         for aclitem in expanded_acls:
-            if aclitem.dbname not in schemas:
-                msg = "Database %s does not exists or is not managed." % (
-                    aclitem.dbname,)
-                raise UserError(msg)
             ldapacls.add(aclitem)
         return ldaproles, ldapacls
 

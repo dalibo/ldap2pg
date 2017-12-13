@@ -1,11 +1,5 @@
 from .psql import Query
-from .utils import AllDatabases, unicode
-
-
-class AllSchemas(object):
-    # Simple object to represent schema wildcard.
-    def __repr__(self):
-        return '__ALL_SCHEMAS__'
+from .utils import AllDatabases, UserError, unicode
 
 
 class Acl(object):
@@ -91,7 +85,11 @@ class NspAcl(DatAcl):
 
     def expandschema(self, item, databases):
         if item.schema is AclItem.ALL_SCHEMAS:
-            schemas = databases[item.dbname]
+            try:
+                schemas = databases[item.dbname]
+            except KeyError:
+                fmt = "Database %s does not exists or is not managed."
+                raise UserError(fmt % (item.dbname))
         else:
             schemas = [item.schema]
         for schema in schemas:
@@ -115,7 +113,7 @@ class DefAcl(NspAcl):
 
 class AclItem(object):
     ALL_DATABASES = AllDatabases()
-    ALL_SCHEMAS = AllSchemas()
+    ALL_SCHEMAS = None
 
     @classmethod
     def from_row(cls, *args):

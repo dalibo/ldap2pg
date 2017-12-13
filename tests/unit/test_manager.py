@@ -340,6 +340,8 @@ def test_inspect_acls(mocker):
 
     dbl = mocker.patch(mod + 'SyncManager.fetch_database_list', autospec=True)
     dbl.return_value = ['postgres']
+    sl = mocker.patch(mod + 'SyncManager.fetch_schema_list', autospec=True)
+    sl.return_value = ['public']
     mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
     pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)

@@ -54,13 +54,16 @@ def test_expand():
     from ldap2pg.acl import DefAcl, AclSet, AclItem
 
     acl = DefAcl('select', grant='ALTER FOR GRANT SELECT')
-    item = AclItem(
+    item0 = AclItem(
         acl='select', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
     )
+    item1 = AclItem(
+        acl='select', dbname='postgres', schema='public',
+    )
 
-    assert repr(item.schema)
+    assert repr(item0.schema)
 
-    set_ = AclSet([item])
+    set_ = AclSet([item0, item1])
 
     items = sorted(
         set_.expanditems(
@@ -75,6 +78,6 @@ def test_expand():
         key=lambda x: x.dbname,
     )
 
-    assert 2 == len(items)
+    assert 3 == len(items)
     assert 'postgres' == items[0].dbname
-    assert 'template1' == items[1].dbname
+    assert 'template1' == items[2].dbname
