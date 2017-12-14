@@ -19,7 +19,7 @@ fi
 
 # Search for the proper RPM package
 rpmdist=$(rpm --eval '%dist')
-test -f dist/ldap2pg-*${rpmdist}.noarch.rpm
+test -f dist/noarch/ldap2pg-*${rpmdist}.noarch.rpm
 
 yum_install() {
     local packages=$*
@@ -46,7 +46,7 @@ case $rpmdist in
 esac
 
 if ! rpm --query --queryformat= ldap2pg ; then
-    yum install -y dist/ldap2pg-*${rpmdist}.noarch.rpm
+    yum install -y dist/noarch/ldap2pg-*${rpmdist}.noarch.rpm
     rpm --query --queryformat= ldap2pg
 fi
 

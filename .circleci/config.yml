@@ -24,18 +24,43 @@ version: 2
       . .venv/bin/activate
       pip install -U -r requirements-ci.txt -e .
 
-.run_func_tests: &run_func_tests
-  run:
+.func_steps: &func_steps
+- checkout
+- attach_workspace:
+    at: /tmp/ldap2pg/
+- restore_cache:
+    keys: [ldap2pg-func]
+- run:
     name: Exécuting functionnal tests
     command: |
       echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
       export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
       export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
       tests/func/entrypoint.sh
+- save_cache:
+    key: ldap2pg-func-{{ epoch }}
+    paths:
+    - /root/.cache/pip
+
+
+.save_cache: &save_cache
+  save_cache:
+    key: ldap2pg-{{ epoch }}
+    paths:
+    - /root/.cache/pip
+    - "~/.cache/pip/"
+    - ".venv"
 
 .rpm_tpl: &rpm_tpl
   working_directory: /tmp/ldap2pg
   steps:
+  - run:
+      name: Disable old git
+      command: |
+        git=/usr/bin/git
+        if ${git} --version | grep -q 1.7; then
+            sudo mv ${git} ${git}.disabled
+        fi
   - checkout
   - run: ./packaging/build_rpm.sh
   - persist_to_workspace:
@@ -49,10 +74,10 @@ version: 2
   steps:
   - checkout
   - restore_cache:
-      keys: [ldap2pg]
+      keys: [ldap2pg-unit]
   - <<: *install_reqs
   - save_cache:
-      key: ldap2pg-{{ epoch }}
+      key: ldap2pg-unit-{{ epoch }}
       paths:
       - /root/.cache/pip
       - "~/.cache/pip/"
@@ -73,13 +98,8 @@ jobs:
     steps:
     - checkout
     - restore_cache:
-        keys: [ldap2pg]
+        keys: [ldap2pg-unit]
     - <<: *install_reqs
-    - save_cache:
-        key: ldap2pg
-        paths:
-        - "~/.cache/pip/"
-        - ".venv"
     - run: |
         . .venv/bin/activate
         python setup.py --long-description | rst2html.py --strict >/dev/null
@@ -95,11 +115,11 @@ jobs:
 
   0-rpm-centos6:
     <<: *rpm_tpl
-    docker: [{image: "centos:6"}]
+    docker: [{image: "rpmbuild/centos6"}]
 
   0-rpm-centos7:
     <<: *rpm_tpl
-    docker: [{image: "centos:7"}]
+    docker: [{image: "rpmbuild/centos7"}]
 
   1-func-centos6:
     working_directory: /tmp/ldap2pg
@@ -107,11 +127,7 @@ jobs:
       - image: centos:6
       - *openldap_container
       - *postgres_container
-    steps:
-    - checkout
-    - attach_workspace:
-        at: /tmp/ldap2pg/
-    - *run_func_tests
+    steps: *func_steps
 
   1-func-centos7:
     working_directory: /tmp/ldap2pg
@@ -119,12 +135,7 @@ jobs:
       - image: centos:7
       - *openldap_container
       - *postgres_container
-    steps:
-    - run: yum install -y git ssh
-    - checkout
-    - attach_workspace:
-        at: /tmp/ldap2pg/
-    - *run_func_tests
+    steps: *func_steps
 
 workflows:
   version: 2
