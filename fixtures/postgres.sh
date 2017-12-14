@@ -31,6 +31,11 @@ CREATE ROLE œdipe;
 -- Create databases
 CREATE DATABASE olddb;
 CREATE DATABASE appdb WITH OWNER app;
+
+-- Revoke connect on group app so that revoke connect from public wont grant it
+-- back.
+REVOKE CONNECT ON DATABASE "appdb" FROM "app" ;
+
 EOSQL
 
 # Create a legacy table owned by a legacy user. For reassign before drop
