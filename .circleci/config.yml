@@ -52,7 +52,7 @@ version: 2
       keys: [ldap2pg]
   - <<: *install_reqs
   - save_cache:
-      key: ldap2pg
+      key: ldap2pg-{{ epoch }}
       paths:
       - "~/.cache/pip/"
       - ".venv"
