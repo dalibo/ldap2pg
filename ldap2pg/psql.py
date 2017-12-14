@@ -83,7 +83,7 @@ class PSQLSession(object):
         pass
 
     def __call__(self, query, *args):
-        logger.debug("Doing: %s", query)
+        logger.debug("Doing:\n%s", query)
         self.cursor.execute(query, *args)
         self.conn.commit()
         return self.cursor
