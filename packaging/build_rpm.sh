@@ -20,6 +20,8 @@ yum_install() {
     rpm --query --queryformat= $packages
 }
 
+# Fasten yum by disabling updates repository
+sudo sed -i '/^\[updates\]/,/^gpgkey=/d' /etc/yum.repos.d/CentOS-Base.repo
 yum_install epel-release
 yum_install python-setuptools
 
