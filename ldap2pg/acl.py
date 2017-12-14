@@ -132,11 +132,16 @@ class AclItem(object):
         return self.as_tuple() < other.as_tuple()
 
     def __str__(self):
-        fmt = '%(acl)s on %(dbname)s.%(schema)s for %(owner)s to %(role)s'
+        full_map = {None: 'n/a', True: 'granted', False: 'incomplete'}
+        fmt = (
+            '%(acl)s on %(dbname)s.%(schema)s for %(owner)s'
+            ' to %(role)s (%(full)s)'
+        )
         return fmt % dict(
             self.__dict__,
             schema=self.schema or '*',
             owner=self.owner or '*',
+            full=full_map[self.full],
         )
 
     def __repr__(self):

@@ -69,7 +69,7 @@ _tblacl_tpl = dict(
     SELECT
       nspname,
       rolname,
-      nsp.tables = coalesce(rels.tables, ARRAY[NULL]) AS "full"
+      nsp.tables = rels.tables AS "full"
     FROM namespace_tables AS nsp
     CROSS JOIN pg_catalog.pg_roles AS rol
     LEFT OUTER JOIN all_grants AS rels
