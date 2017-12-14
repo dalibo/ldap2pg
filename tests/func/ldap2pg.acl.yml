@@ -2,10 +2,12 @@
 # exemple.
 
 postgres:
+  # Disable role management.
   roles_query: null
 
 
 acls:
+  # Provide a custom ACL
   public:
     type: datacl
     inspect: |
@@ -27,6 +29,7 @@ acls:
     revoke: |
       REVOKE CONNECT ON DATABASE {database} FROM {role}
 
+  # Use **some** well-known ACLs. Other must be ignored.
   ro:
   - __connect__
   - __select_on_tables__
@@ -34,20 +37,13 @@ acls:
   - __usage_on_schema__
   - __usage_on_types__
 
-  rw:
-  - __delete__
-  - __execute__
-  - __insert__
-  - __references__
-  - ro
-  - __truncate__
-  - __update_on_tables__
-  - __update_on_sequences__
-
-
 sync_map:
 - grant:
-    role: daniel
+    # Grant ro to some developers
+    database: appdb
+    schema: appns
     acl: ro
-    database: frontend
-    schema: __all__
+    roles:
+    - daniel  # in fixture/postgres.sh: has partial grant
+    - david   # in f/p.sh: already has full grant
+    - denis   # has no grant
