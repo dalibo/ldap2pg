@@ -42,15 +42,6 @@ version: 2
     paths:
     - /root/.cache/pip
 
-
-.save_cache: &save_cache
-  save_cache:
-    key: ldap2pg-{{ epoch }}
-    paths:
-    - /root/.cache/pip
-    - "~/.cache/pip/"
-    - ".venv"
-
 .rpm_tpl: &rpm_tpl
   working_directory: /tmp/ldap2pg
   steps:
@@ -68,6 +59,12 @@ version: 2
       paths: ["dist/"]
   - store_artifacts:
       path: /tmp/ldap2pg/dist/
+  - save_cache:
+      key: ldap2pg-{{ epoch }}
+      paths:
+      - /root/.cache/pip
+      - "~/.cache/pip/"
+      - ".venv"
 
 .unit_tpl: &unit_tpl
   working_directory: ~/ldap2pg
@@ -87,24 +84,13 @@ version: 2
       command: |
         . .venv/bin/activate
         sort --check .gitignore
+        python setup.py --long-description | rst2html.py --strict >/dev/null
+        mkdocs build --clean --strict
         flake8 . tests/*/
         pytest tests/unit/
         codecov
 
 jobs:
-  0-docs:
-    docker: [{image: "circleci/python:3.4"}]
-    working_directory: ~/ldap2pg
-    steps:
-    - checkout
-    - restore_cache:
-        keys: [ldap2pg-unit]
-    - <<: *install_reqs
-    - run: |
-        . .venv/bin/activate
-        python setup.py --long-description | rst2html.py --strict >/dev/null
-        mkdocs build --clean --strict
-
   0-unit-py27:
     <<: *unit_tpl
     docker: [{image: "circleci/python:2.7"}]
@@ -141,7 +127,6 @@ workflows:
   version: 2
   pipeline:
     jobs:
-    - 0-docs
     - 0-unit-py27
     - 0-unit-py34
     - 0-rpm-centos6
