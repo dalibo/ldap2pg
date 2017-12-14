@@ -100,7 +100,6 @@ jobs:
     - restore_cache:
         keys: [ldap2pg-unit]
     - <<: *install_reqs
-    - *save_cache
     - run: |
         . .venv/bin/activate
         python setup.py --long-description | rst2html.py --strict >/dev/null
