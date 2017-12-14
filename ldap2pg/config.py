@@ -190,7 +190,7 @@ def postprocess_acl_options(self, defaults=None):
     all_ = set(self['acl_aliases'].keys())
     unused = all_ - used
     for k in unused:
-        logger.debug("Drop unused alias %s", k)
+        logger.debug("Drop unused hidden ACL %s", k)
         del self['acl_aliases'][k]
         if k in self['acl_dict']:
             del self['acl_dict'][k]
