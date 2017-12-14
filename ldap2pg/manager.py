@@ -312,7 +312,7 @@ class SyncManager(object):
                 yield qry
 
         # Finally, grant ACL when all roles are ok.
-        missing = ldapacls - set([a for a in pgacls if a.full])
+        missing = ldapacls - set([a for a in pgacls if a.full in (None, True)])
         missing = sorted(list(missing))
         for aclname, aclitems in groupby(missing, lambda i: i.acl):
             acl = self.acl_dict[aclname]
