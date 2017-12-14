@@ -280,15 +280,13 @@ class SyncManager(object):
 
         # First, revoke spurious ACLs
         spurious = pgacls - ldapacls
-        spurious = sorted(list(spurious))
+        spurious = sorted([i for i in spurious if i.full is not None])
         for aclname, aclitems in groupby(spurious, lambda i: i.acl):
             acl = self.acl_dict[aclname]
             if not acl.revoke_sql:
                 logger.warn("Can't revoke ACL %s: query not defined.", acl)
                 continue
             for aclitem in aclitems:
-                if aclitem.full is None:
-                    continue
                 yield acl.revoke(aclitem)
 
         # Then create missing roles
