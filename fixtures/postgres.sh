@@ -5,68 +5,75 @@
 
 psql <<EOSQL
 -- Purge everything.
-DROP DATABASE IF EXISTS legacy;
-DROP DATABASE IF EXISTS backend;
-DROP DATABASE IF EXISTS frontend;
+DROP DATABASE IF EXISTS olddb;
+DROP DATABASE IF EXISTS appdb;
 DELETE FROM pg_catalog.pg_auth_members;
 DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
 REVOKE TEMPORARY ON DATABASE postgres FROM PUBLIC;
 REVOKE TEMPORARY ON DATABASE template1 FROM PUBLIC;
 
 -- Create role as it should be. for NOOP
-CREATE ROLE backend NOLOGIN;
-CREATE ROLE daniel LOGIN;
--- Create spurious roles, for DROP.
-CREATE ROLE legacy WITH NOLOGIN;
-CREATE ROLE oscar WITH LOGIN IN ROLE legacy, backend;
-CREATE ROLE œdipe WITH LOGIN;
+CREATE ROLE app WITH NOLOGIN;
+CREATE ROLE daniel WITH LOGIN;
+CREATE ROLE david WITH LOGIN;
+CREATE ROLE denis WITH LOGIN;
+CREATE ROLE alan WITH SUPERUSER LOGIN;
 -- Create alice superuser without login, for ALTER.
-CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE backend;
+CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE app;
+
+-- Create spurious roles, for DROP.
+CREATE ROLE old WITH LOGIN;
+CREATE ROLE omar;
+CREATE ROLE olivier;
+CREATE ROLE oscar WITH LOGIN IN ROLE app, old;
+CREATE ROLE œdipe;
 
 -- Create databases
-CREATE DATABASE backend WITH OWNER backend;
-REVOKE CONNECT ON DATABASE backend FROM PUBLIC;
-CREATE DATABASE frontend;
-REVOKE CONNECT ON DATABASE frontend FROM PUBLIC;
-CREATE DATABASE legacy;
+CREATE DATABASE olddb;
+CREATE DATABASE appdb WITH OWNER app;
 
--- daniel was a backend developer and is now a frontend. He add access to
--- backend database. We have to revoke.
-REVOKE CONNECT ON DATABASE frontend FROM daniel;
-GRANT CONNECT ON DATABASE backend TO daniel;
+-- Revoke connect on group app so that revoke connect from public wont grant it
+-- back.
+REVOKE CONNECT ON DATABASE "appdb" FROM "app" ;
+
 EOSQL
 
-# Create a legacy table owned by a legacy user.
-PGDATABASE=legacy PGUSER=oscar psql <<EOSQL
+# Create a legacy table owned by a legacy user. For reassign before drop
+# cascade.
+PGDATABASE=olddb PGUSER=oscar psql <<EOSQL
 CREATE TABLE keepme (id serial PRIMARY KEY);
 EOSQL
 
 # grant some privileges to daniel, to be revoked.
-PGDATABASE=backend psql <<EOSQL
-CREATE SCHEMA backend;
-CREATE TABLE backend.table1 (id INTEGER);
-GRANT SELECT ON ALL TABLES IN SCHEMA backend TO daniel;
-GRANT USAGE ON SCHEMA backend TO daniel;
-ALTER DEFAULT PRIVILEGES IN SCHEMA backend GRANT SELECT ON TABLES TO daniel;
+PGDATABASE=olddb psql <<EOSQL
+CREATE SCHEMA oldns;
+CREATE TABLE oldns.table1 (id INTEGER);
+GRANT SELECT ON ALL TABLES IN SCHEMA oldns TO daniel;
+
+-- For REVOKE
+GRANT USAGE ON SCHEMA oldns TO daniel;
+ALTER DEFAULT PRIVILEGES IN SCHEMA oldns GRANT SELECT ON TABLES TO daniel;
 EOSQL
 
-# Ensure daniel has no privileges on frontend, for grant.
-PGDATABASE=frontend psql <<EOSQL
+# Ensure daniel has no privileges on appdb, for grant.
+PGDATABASE=appdb psql <<EOSQL
 CREATE TABLE public.table1 (id INTEGER);
 
-CREATE SCHEMA frontend;
-CREATE TABLE frontend.table1 (id INTEGER);
-CREATE TABLE frontend.table2 (id INTEGER);
+CREATE SCHEMA appns;
+CREATE TABLE appns.table1 (id INTEGER);
+CREATE TABLE appns.table2 (id INTEGER);
 
-REVOKE SELECT ON ALL TABLES IN SCHEMA empty FROM daniel;
-REVOKE USAGE ON SCHEMA empty FROM daniel;
-ALTER DEFAULT PRIVILEGES IN SCHEMA empty REVOKE SELECT ON TABLES FROM daniel;
+CREATE SCHEMA empty;
 
-REVOKE SELECT ON ALL TABLES IN SCHEMA frontend FROM daniel;
-REVOKE USAGE ON SCHEMA frontend FROM daniel;
-ALTER DEFAULT PRIVILEGES IN SCHEMA frontend REVOKE SELECT ON TABLES FROM daniel;
+-- No grant to olivier.
+-- Partial grant for revoke
+GRANT SELECT ON TABLE appns.table1 TO omar;
+-- full grant for revoke
+GRANT SELECT ON ALL TABLES IN SCHEMA appns TO oscar;
 
-REVOKE SELECT ON ALL TABLES IN SCHEMA information_schema FROM daniel;
-REVOKE USAGE ON SCHEMA information_schema FROM daniel;
-ALTER DEFAULT PRIVILEGES IN SCHEMA information_schema REVOKE SELECT ON TABLES FROM daniel;
+-- No grant to denis, for first grant.
+-- Partial grant for regrant
+GRANT SELECT ON TABLE appns.table1 TO daniel;
+-- Full grant for noop
+GRANT SELECT ON ALL TABLES IN SCHEMA appns TO david;
 EOSQL

@@ -31,8 +31,8 @@ def test_re_grant(dev, ldap, psql):
 
     # Ensure db is sync
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml')
-    # Revoke on one table. This should trigger a re-GRANT
-    psql(d=b'frontend', c=b'REVOKE SELECT ON frontend.table2 FROM daniel;')
+    # Revoke on one table. This must trigger a re-GRANT
+    psql(d=b'appdb', c=b'REVOKE SELECT ON appns.table2 FROM daniel;')
     # Ensure database is not sync.
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml', _ok_code=1)
     # Synchronize all
@@ -46,7 +46,7 @@ def test_re_revoke(dev, ldap, psql):
     # Ensure db is sync
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml')
     # Partial GRANT to oscar. This must trigger a re-REVOKE
-    psql(d=b'frontend', c=b'GRANT SELECT ON frontend.table1 TO oscar;')
+    psql(d=b'appdb', c=b'GRANT SELECT ON appns.table1 TO oscar;')
     # Ensure database is not sync.
     ldap2pg('-C', c='tests/func/ldap2pg.acl.yml', _ok_code=1)
     # Synchronize all

@@ -74,8 +74,11 @@ class DatAcl(Acl):
         for dbname in dbnames:
             yield item.copy(acl=self.name, dbname=dbname)
 
-    def expand(self, item, databases, owners):
+    def expand(self, item, databases, owners=None):
         for exp in self.expanddb(item, databases):
+            # inspect query will return AclItem with NULL schema, so ensure we
+            # have schema None.
+            exp.schema = None
             yield exp
 
 
@@ -96,7 +99,7 @@ class NspAcl(DatAcl):
             yield item.copy(acl=self.name, schema=schema)
 
     def expand(self, item, databases, owners):
-        for datexp in super(NspAcl, self).expand(item, databases, owners):
+        for datexp in self.expanddb(item, databases):
             for nspexp in self.expandschema(datexp, databases):
                 yield nspexp
 

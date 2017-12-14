@@ -1,8 +1,8 @@
 #
 # Dév fixture tries to mimic ACME DB access policy.
 #
-# ACME has three apps: legacy, backend and frontend. Each app has a dedicated
-# team. ACME also have a big DBA team. That have access to everything.
+# ACME has two apps: old and app. Each app has a dedicated team. ACME also have
+# a big DBA team. That have access to everything.
 #
 # Users are in UO people. Groups in groups. Each team is defined in a groups,
 # referencing peoples entries.
@@ -54,11 +54,11 @@ objectclass: top
 cn: alter
 
 # Our developers: d*
-dn: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectclass: organizationalRole
 objectclass: top
-cn: dave
+cn: daniel
 
 dn: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
@@ -66,17 +66,17 @@ objectclass: organizationalRole
 objectclass: top
 cn: david
 
-dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectclass: organizationalRole
 objectclass: top
-cn: daniel
+cn: denis
 
-dn: cn=donald,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=didier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectclass: organizationalRole
 objectclass: top
-cn: donald
+cn: didier
 
 # For unicode test
 dn:: Y249ZG9yb3Row6llLG91PXBlb3BsZSxkYz1sZGFwLGRjPWxkYXAycGcsZGM9ZG9ja2Vy
@@ -88,17 +88,30 @@ cn:: ZG9yb3Row6ll
 uid: dorothee
 
 # Our outsiders: o*
-# dn: cn=oscar,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+# dn: cn=œdipe,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 # changetype: add
 # objectclass: organizationalRole
 # objectclass: top
-# cn: oscar
+# cn: œdipe
 
 # dn: cn=olivier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 # changetype: add
 # objectclass: organizationalRole
 # objectclass: top
 # cn: olivier
+
+# dn: cn=omar,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+# changetype: add
+# objectclass: organizationalRole
+# objectclass: top
+# cn: omar
+
+# dn: cn=oscar,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+# changetype: add
+# objectclass: organizationalRole
+# objectclass: top
+# cn: oscar
 
 dn: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
@@ -118,27 +131,20 @@ member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 # Our apps, with their developers.
 
 # An old app
-# dn: cn=legacy,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+# dn: cn=old,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 # changetype: add
 # objectClass: groupOfNames
 # objectClass: top
-# cn: legacy
+# cn: old
 
-dn: cn=backend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=app,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectClass: groupOfNames
 objectClass: top
-cn: backend
-member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-member: cn=dave,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-
-dn: cn=frontend,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectClass: groupOfNames
-objectClass: top
-cn: frontend
+cn: app
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-member: cn=donald,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=didier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member:: Y249ZG9yb3Row6llLG91PXBlb3BsZSxkYz1sZGFwLGRjPWxkYXAycGcsZGM9ZG9ja2Vy

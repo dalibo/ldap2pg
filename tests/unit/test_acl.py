@@ -50,7 +50,7 @@ def test_revoke():
     assert 'daniel' in qry.args[0]
 
 
-def test_expand():
+def test_expand_defacl():
     from ldap2pg.acl import DefAcl, AclSet, AclItem
 
     acl = DefAcl('select', grant='ALTER FOR GRANT SELECT')
@@ -81,3 +81,20 @@ def test_expand():
     assert 3 == len(items)
     assert 'postgres' == items[0].dbname
     assert 'template1' == items[2].dbname
+
+
+def test_expand_datacl():
+    from ldap2pg.acl import DatAcl, AclItem
+
+    acl = DatAcl('c', grant='GRANT CONNECT')
+    item = AclItem(acl='c', dbname=AclItem.ALL_DATABASES, schema=None)
+
+    items = sorted(acl.expand(
+        item, databases=dict(postgres=0xbad, template1="ignored value"),
+    ),    key=lambda x: x.dbname)
+
+    assert 2 == len(items)
+    assert 'postgres' == items[0].dbname
+    assert items[0].schema is None
+    assert 'template1' == items[1].dbname
+    assert items[1].schema is None

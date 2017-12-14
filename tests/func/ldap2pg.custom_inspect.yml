@@ -7,7 +7,7 @@ postgres:
         pg_catalog.pg_roles AS role
     LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
     LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-    WHERE role.rolname LIKE 'd%'
+    WHERE role.rolname LIKE 'd%' AND role.rolcanlogin
     GROUP BY role.rolname, {options}
     ORDER BY 1;
 
