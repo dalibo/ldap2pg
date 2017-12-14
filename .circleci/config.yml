@@ -24,8 +24,11 @@ version: 2
       . .venv/bin/activate
       pip install -U -r requirements-ci.txt -e .
 
-.run_func_tests: &run_func_tests
-  run:
+.func_steps: &func_steps
+- checkout
+- attach_workspace:
+    at: /tmp/ldap2pg/
+- run:
     name: Exécuting functionnal tests
     command: |
       echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
@@ -114,11 +117,7 @@ jobs:
       - image: centos:6
       - *openldap_container
       - *postgres_container
-    steps:
-    - checkout
-    - attach_workspace:
-        at: /tmp/ldap2pg/
-    - *run_func_tests
+    steps: *func_steps
 
   1-func-centos7:
     working_directory: /tmp/ldap2pg
@@ -126,12 +125,7 @@ jobs:
       - image: centos:7
       - *openldap_container
       - *postgres_container
-    steps:
-    - run: yum install -y git ssh
-    - checkout
-    - attach_workspace:
-        at: /tmp/ldap2pg/
-    - *run_func_tests
+    steps: *func_steps
 
 workflows:
   version: 2
