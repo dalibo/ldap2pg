@@ -29,6 +29,7 @@ from .utils import (
     make_group_map,
 )
 from . import validators as V
+from .defaults import make_well_known_acls
 
 
 logger = logging.getLogger(__name__)
@@ -157,10 +158,12 @@ def merge_acl_options(acls, acl_dict, acl_groups):
     return V.acls(final)
 
 
-def postprocess_acl_options(self):
+def postprocess_acl_options(self, defaults=None):
     # Compat with user defined acl_dict and acl_groups
+    acls = defaults or {}
+    acls.update(self.pop('acls', {}))
     acls = merge_acl_options(
-        self.pop('acls', {}),
+        acls,
         self.get('acl_dict', {}),
         self.get('acl_groups', {}),
     )
@@ -177,6 +180,20 @@ def postprocess_acl_options(self):
     self['acl_aliases'] = make_group_map(
         self['acl_dict'], self['acl_groups'],
     )
+
+    # Clean _*
+    used = set()
+    for name, aliases in self['acl_aliases'].items():
+        if name[0] not in ('_', '.'):
+            used.add(name)
+            used.update(aliases)
+    all_ = set(self['acl_aliases'].keys())
+    unused = all_ - used
+    for k in unused:
+        logger.debug("Drop unused alias %s", k)
+        del self['acl_aliases'][k]
+        if k in self['acl_dict']:
+            del self['acl_dict'][k]
 
 
 class Mapping(object):
@@ -449,9 +466,10 @@ class Configuration(dict):
             sys.stdin.close()
 
         # Now merge all config sources.
+        acl_defaults = make_well_known_acls()
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
-            postprocess_acl_options(self)
+            postprocess_acl_options(self, acl_defaults)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 

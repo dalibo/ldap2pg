@@ -287,6 +287,8 @@ class SyncManager(object):
                 logger.warn("Can't revoke ACL %s: query not defined.", acl)
                 continue
             for aclitem in aclitems:
+                if aclitem.full is None:
+                    continue
                 yield acl.revoke(aclitem)
 
         # Then create missing roles

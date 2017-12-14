@@ -467,6 +467,7 @@ def test_diff_acls(mocker):
     pgacls = set([
         item0,
         AclItem(acl=acl.name, dbname='backend', role='alice'),
+        AclItem(acl=acl.name, dbname='backend', role='irrelevant', full=None),
         AclItem(acl=norvk.name, role='torevoke'),
     ])
     ldapacls = set([
