@@ -54,6 +54,7 @@ version: 2
   - save_cache:
       key: ldap2pg-{{ epoch }}
       paths:
+      - /root/.cache/pip
       - "~/.cache/pip/"
       - ".venv"
   - run:
