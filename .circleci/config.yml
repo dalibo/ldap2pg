@@ -28,6 +28,8 @@ version: 2
 - checkout
 - attach_workspace:
     at: /tmp/ldap2pg/
+- restore_cache:
+    keys: [ldap2pg-func]
 - run:
     name: Exécuting functionnal tests
     command: |
@@ -35,6 +37,19 @@ version: 2
       export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
       export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
       tests/func/entrypoint.sh
+- save_cache:
+    key: ldap2pg-func-{{ epoch }}
+    paths:
+    - /root/.cache/pip
+
+
+.save_cache: &save_cache
+  save_cache:
+    key: ldap2pg-{{ epoch }}
+    paths:
+    - /root/.cache/pip
+    - "~/.cache/pip/"
+    - ".venv"
 
 .rpm_tpl: &rpm_tpl
   working_directory: /tmp/ldap2pg
@@ -59,10 +74,10 @@ version: 2
   steps:
   - checkout
   - restore_cache:
-      keys: [ldap2pg]
+      keys: [ldap2pg-unit]
   - <<: *install_reqs
   - save_cache:
-      key: ldap2pg-{{ epoch }}
+      key: ldap2pg-unit-{{ epoch }}
       paths:
       - /root/.cache/pip
       - "~/.cache/pip/"
@@ -83,13 +98,9 @@ jobs:
     steps:
     - checkout
     - restore_cache:
-        keys: [ldap2pg]
+        keys: [ldap2pg-unit]
     - <<: *install_reqs
-    - save_cache:
-        key: ldap2pg
-        paths:
-        - "~/.cache/pip/"
-        - ".venv"
+    - *save_cache
     - run: |
         . .venv/bin/activate
         python setup.py --long-description | rst2html.py --strict >/dev/null
