@@ -44,11 +44,11 @@ _tblacl_tpl = dict(
     inspect="""\
     WITH
     namespace_tables AS (
-      -- All namespaces and available relations aggregated.
       SELECT
         nsp.oid,
         nsp.nspname,
-        array_agg(rel.relname ORDER BY rel.relname) AS tables
+        array_agg(rel.relname ORDER BY rel.relname)
+          FILTER (WHERE rel.relname IS NOT NULL) AS tables
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class rel
         ON rel.relnamespace = nsp.oid AND relkind = 'r'
@@ -56,7 +56,6 @@ _tblacl_tpl = dict(
       GROUP BY 1, 2
     ),
     all_grants AS (
-      -- All grants on tables, aggregated by relname
       SELECT
         relnamespace,
         (aclexplode(relacl)).privilege_type,
@@ -69,13 +68,46 @@ _tblacl_tpl = dict(
     SELECT
       nspname,
       rolname,
-      nsp.tables = rels.tables AS "full"
+
+      -- ALL TABLES is tricky because we have to manage partial grant. But the
+      -- trickiest comes when there is no tables in a namespace. In this case,
+      -- is it granted or revoked ? We have to tell ldap2pg that this ACL is
+      -- irrelevant on this schema.
+      --
+      -- Here is a truth table:
+      --
+      --  FOR GRANT | no grant | partial grant | fully granted
+      -- -----------+----------+---------------+---------------
+      --  no tables |   NOOP   |      N/D      |      N/D
+      -- -----------+----------+---------------+---------------
+      --  1+ tables |   GRANT  |     GRANT     |      NOOP
+      -- -----------+----------+---------------+---------------
+      --
+      -- FOR REVOKE | no grant | partial grant | fully granted
+      -- -----------+----------+---------------+---------------
+      --  no tables |   NOOP   |      N/D      |      N/D
+      -- -----------+----------+---------------+---------------
+      --  1+ tables |   NOOP   |     REVOKE    |     REVOKE
+      -- -----------+----------+---------------+---------------
+      --
+      -- When namespace has NO tables, we always return a row with full as
+      -- NULL, meaning ACL is irrelevant : it is both granted and revoked.
+      --
+      -- When namespace has tables, we compare grants to availables tables to
+      -- determine if ACL is fully granted. If the ACL is not granted at all,
+      -- we drop the row in WHERE clause to ensure the ACL is considered as
+      -- revoked.
+      CASE
+        WHEN nsp.tables IS NULL THEN NULL
+        ELSE nsp.tables = COALESCE(grants.tables, ARRAY[]::name[])
+      END AS "full"
     FROM namespace_tables AS nsp
     CROSS JOIN pg_catalog.pg_roles AS rol
-    LEFT OUTER JOIN all_grants AS rels
+    LEFT OUTER JOIN all_grants AS grants
       ON relnamespace = nsp.oid
          AND grantee = rol.oid
-         AND privilege_type = '%(privilege)s'
+         AND privilege_type = 'SELECT'
+    WHERE NOT (nsp.tables IS NOT NULL AND grants.tables IS NULL)
     ORDER BY 1, 2
     """.replace('\n    ', '\n'),
     grant="GRANT %(privilege)s ON ALL TABLES IN SCHEMA {schema} TO {role}",
