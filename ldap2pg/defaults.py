@@ -89,7 +89,7 @@ _nspacl_tpl = dict(
 # determine if ACL is fully granted. If the ACL is not granted at all, we drop
 # the row in WHERE clause to ensure the ACL is considered as revoked.
 #
-_allacl_tpl = dict(
+_allrelacl_tpl = dict(
     type='nspacl',
     inspect="""WITH
     namespace_rels AS (
@@ -136,6 +136,52 @@ _allacl_tpl = dict(
 )
 
 
+_allprocacl_tpl = dict(
+    type='nspacl',
+    inspect="""WITH
+    namespace_procs AS (
+      SELECT
+        nsp.oid,
+        nsp.nspname,
+        array_agg(pro.proname ORDER BY pro.proname)
+          FILTER (WHERE pro.proname IS NOT NULL) AS procs
+      FROM pg_catalog.pg_namespace nsp
+      LEFT OUTER JOIN pg_catalog.pg_proc AS pro
+        ON pro.pronamespace = nsp.oid
+      WHERE nspname NOT LIKE 'pg_%%'
+      GROUP BY 1, 2
+    ),
+    all_grants AS (
+      SELECT
+        pronamespace,
+        (aclexplode(proacl)).privilege_type,
+        (aclexplode(proacl)).grantee,
+        array_agg(proname ORDER BY proname) AS procs
+      FROM pg_catalog.pg_proc
+      GROUP BY 1, 2, 3
+    )
+    SELECT
+      nspname,
+      rolname,
+      CASE
+        WHEN nsp.procs IS NULL THEN NULL
+        ELSE nsp.procs = COALESCE(grants.procs, ARRAY[]::name[])
+      END AS "full"
+    FROM namespace_procs AS nsp
+    CROSS JOIN pg_catalog.pg_roles AS rol
+    LEFT OUTER JOIN all_grants AS grants
+      ON pronamespace = nsp.oid
+         AND grantee = rol.oid
+         AND privilege_type = '%(privilege)s'
+    WHERE NOT (nsp.procs IS NOT NULL AND grants.procs IS NULL)
+    ORDER BY 1, 2
+    """.replace('\n    ', '\n'),
+    grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
+    revoke=(
+        "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
+)
+
+
 _types = {
     'f': 'FUNCTIONS',
     'r': 'TABLES',
@@ -151,13 +197,25 @@ def make_acl(tpl, name, t, privilege):
     )
 
 
-def make_all_acls(privilege, t, namefmt='__%(privilege)s_on_%(type)s__'):
+def make_proc_acls(privilege, t='f', namefmt='__%(privilege)s_on_%(type)s__'):
     fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
-        make_acl(_allacl_tpl, all_, t, privilege),
+        make_acl(_allprocacl_tpl, all_, t, privilege),
+        make_acl(_defacl_tpl, default, t, privilege),
+        (name, [all_, default]),
+    ])
+
+
+def make_rel_acls(privilege, t, namefmt='__%(privilege)s_on_%(type)s__'):
+    fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
+    all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
+    default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
+    name = namefmt % fmtkw
+    return dict([
+        make_acl(_allrelacl_tpl, all_, t, privilege),
         make_acl(_defacl_tpl, default, t, privilege),
         (name, [all_, default]),
     ])
@@ -167,15 +225,16 @@ def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__execute__', 'f', 'EXECUTE'),
         make_acl(_defacl_tpl, '__usage_on_types__', 't', 'USAGE'),
     ])
 
+    acls.update(make_proc_acls('EXECUTE', 'f', namefmt='__%(privilege)s__'))
+
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRUNCATE':
-        acls.update(make_all_acls(privilege, 'r', namefmt='__%(privilege)s__'))
+        acls.update(make_rel_acls(privilege, 'r', namefmt='__%(privilege)s__'))
 
     for privilege in 'SELECT', 'UPDATE':
-        acls.update(make_all_acls(privilege, 'r'))
-        acls.update(make_all_acls(privilege, 'S'))
+        acls.update(make_rel_acls(privilege, 'r'))
+        acls.update(make_rel_acls(privilege, 'S'))
 
     return acls

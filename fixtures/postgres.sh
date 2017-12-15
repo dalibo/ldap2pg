@@ -56,12 +56,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA oldns GRANT SELECT ON TABLES TO daniel;
 EOSQL
 
 # Ensure daniel has no privileges on appdb, for grant.
-PGDATABASE=appdb psql <<EOSQL
+PGDATABASE=appdb psql <<'EOSQL'
 CREATE TABLE public.table1 (id SERIAL);
 
 CREATE SCHEMA appns;
 CREATE TABLE appns.table1 (id SERIAL);
 CREATE TABLE appns.table2 (id SERIAL);
+
+CREATE FUNCTION appns.func1() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
+CREATE FUNCTION appns.func2() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
 
 CREATE SCHEMA empty;
 
