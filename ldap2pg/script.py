@@ -43,6 +43,7 @@ def wrapped_main(config=None):
         acl_aliases=config['acl_aliases'],
         blacklist=config['postgres']['blacklist'],
         roles_query=config['postgres']['roles_query'],
+        owners_query=config['postgres']['owners_query'],
         dry=config['dry'],
     )
     try:

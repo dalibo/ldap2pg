@@ -245,12 +245,19 @@ class SyncManager(object):
 
         return ldaproles, ldapacls
 
-    def postprocess_inspection(self, schemas, pgowners, ldaproles, ldapacls):
+    def postprocess_inspection(self, schemas, pgowners, pgroles, ldaproles,
+                               ldapacls):
         ldaproles.resolve_membership()
         owners = set(pgowners)
         for role in ldaproles:
             if role.options['SUPERUSER']:
                 owners.add(role)
+        spurious = pgroles - ldaproles
+        owners = owners - spurious
+
+        if not owners:
+            logger.warn(
+                "No owners found. Can't issue ALTER DEFAULT PRIVILEGES.")
 
         expanded_acls = ldapacls.expanditems(
             aliases=self.acl_aliases,
@@ -275,7 +282,7 @@ class SyncManager(object):
         ldaproles, ldapacls = self.inspect_ldap(syncmap)
         logger.debug("LDAP inspection completed. Post processing.")
         ldaproles, ldapacls = self.postprocess_inspection(
-            schemas, pgowners, ldaproles, ldapacls)
+            schemas, pgowners, pgroles, ldaproles, ldapacls)
         return schemas, pgroles, pgacls, ldaproles, ldapacls
 
     def diff(self, pgroles=None, pgacls=set(), ldaproles=None, ldapacls=set()):
