@@ -84,7 +84,7 @@ def get_attribute(entry, attribute):
                 names = value.setdefault(type_, [])
                 names.append(name)
             try:
-                value = value[path[0]][0]
+                value = value[path[0].lower()][0]
             except KeyError:
                 raise ValueError("Unknown attribute %s" % (path[0],))
 
