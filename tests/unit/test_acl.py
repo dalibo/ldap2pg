@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import pytest
+
 
 def test_acl():
     from ldap2pg.acl import Acl
@@ -98,3 +100,27 @@ def test_expand_datacl():
     assert items[0].schema is None
     assert 'template1' == items[1].dbname
     assert items[1].schema is None
+
+
+def test_expand_nok():
+    from ldap2pg.acl import AclSet, AclItem
+
+    set_ = AclSet([AclItem('inexistant')])
+
+    with pytest.raises(ValueError):
+        list(set_.expanditems(
+            aliases=dict(),
+            acl_dict=dict(),
+            databases=dict(),
+            owners=[],
+        ))
+
+    set_ = AclSet([AclItem('inexistant_dep')])
+
+    with pytest.raises(ValueError):
+        list(set_.expanditems(
+            aliases=dict(inexistant_dep=['inexistant']),
+            acl_dict=dict(),
+            databases=dict(),
+            owners=[],
+        ))
