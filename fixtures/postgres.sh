@@ -40,8 +40,9 @@ EOSQL
 
 # Create a legacy table owned by a legacy user. For reassign before drop
 # cascade.
-PGDATABASE=olddb PGUSER=oscar psql <<EOSQL
+PGDATABASE=olddb psql <<EOSQL
 CREATE TABLE keepme (id serial PRIMARY KEY);
+ALTER TABLE keepme OWNER TO oscar;
 EOSQL
 
 # grant some privileges to daniel, to be revoked.
