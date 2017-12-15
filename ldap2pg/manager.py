@@ -252,6 +252,10 @@ class SyncManager(object):
             if role.options['SUPERUSER']:
                 owners.add(role)
 
+        if not owners:
+            logger.warn(
+                "No owners found. Can't issue ALTER DEFAULT PRIVILEGES.")
+
         expanded_acls = ldapacls.expanditems(
             aliases=self.acl_aliases,
             acl_dict=self.acl_dict,
