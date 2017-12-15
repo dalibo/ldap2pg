@@ -187,13 +187,11 @@ def postprocess_acl_options(self, defaults=None):
         if name[0] not in ('_', '.'):
             used.add(name)
             used.update(aliases)
-    all_ = set(self['acl_aliases'].keys())
+    all_ = set(self['acl_dict'].keys())
     unused = all_ - used
     for k in sorted(unused):
         logger.debug("Drop unused hidden ACL %s", k)
-        del self['acl_aliases'][k]
-        if k in self['acl_dict']:
-            del self['acl_dict'][k]
+        del self['acl_dict'][k]
 
 
 class Mapping(object):
