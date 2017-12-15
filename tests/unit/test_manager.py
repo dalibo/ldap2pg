@@ -464,9 +464,9 @@ def test_diff_roles(mocker):
     ])
     queries = [q.args[0] for q in m.diff(pgroles, set(), ldaproles, set())]
 
-    assert fnfilter(queries, "ALTER ROLE alter-me WITH* LOGIN*;")
-    assert fnfilter(queries, "CREATE ROLE create-me *;")
-    assert fnfilter(queries, '*DROP ROLE drop-me;*')
+    assert fnfilter(queries, 'ALTER ROLE "alter-me" WITH* LOGIN*;')
+    assert fnfilter(queries, 'CREATE ROLE "create-me" *;')
+    assert fnfilter(queries, '*DROP ROLE "drop-me";*')
     assert not fnfilter(queries, '*nothing*')
 
 

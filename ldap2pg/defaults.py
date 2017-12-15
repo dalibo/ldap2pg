@@ -20,14 +20,24 @@ _datacl_tpl = dict(
 _defacl_tpl = dict(
     type="defacl",
     inspect="""\
+    WITH
+    grants AS (
+      SELECT
+        defaclnamespace,
+        defaclrole,
+        (aclexplode(defaclacl)).grantee AS grantee,
+        (aclexplode(defaclacl)).privilege_type
+      FROM pg_catalog.pg_default_acl
+      WHERE defaclobjtype = '%(t)s'
+    )
     SELECT
       nspname,
-      pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
+      pg_catalog.pg_get_userbyid(grantee) AS grantee,
       TRUE AS full,
       pg_catalog.pg_get_userbyid(defaclrole) AS owner
-    FROM pg_catalog.pg_default_acl
+    FROM grants
     JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    WHERE defaclobjtype = '%(t)s'
+    WHERE privilege_type = '%(privilege)s'
     ORDER BY 1, 2, 4;
     """.replace(' ' * 4, ''),
     grant="""\
@@ -185,7 +195,7 @@ _allprocacl_tpl = dict(
 _types = {
     'f': 'FUNCTIONS',
     'r': 'TABLES',
-    't': 'TYPES',
+    'T': 'TYPES',
     'S': 'SEQUENCES',
 }
 
@@ -225,7 +235,7 @@ def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__usage_on_types__', 't', 'USAGE'),
+        make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
     ])
 
     acls.update(make_proc_acls('EXECUTE', 'f', namefmt='__%(privilege)s__'))

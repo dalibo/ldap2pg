@@ -42,14 +42,14 @@ class Role(object):
         yield Query(
             'Create %s.' % (self.name,),
             'postgres',
-            'CREATE ROLE %s WITH %s;' % (self.name, self.options)
+            'CREATE ROLE "%s" WITH %s;' % (self.name, self.options)
         )
         if self.members:
             yield Query(
                 'Add %s members.' % (self.name,),
                 'postgres',
-                "GRANT %(role)s TO %(members)s;" % dict(
-                    members=", ".join(self.members),
+                'GRANT "%(role)s" TO %(members)s;' % dict(
+                    members=", ".join(map(lambda x: '"%s"' % x, self.members)),
                     role=self.name,
                 ),
             )
@@ -61,7 +61,7 @@ class Role(object):
             yield Query(
                 'Update options of %s.' % (self.name,),
                 'postgres',
-                'ALTER ROLE %s WITH %s;' % (self.name, other.options),
+                'ALTER ROLE "%s" WITH %s;' % (self.name, other.options),
             )
 
         if self.members != other.members:
@@ -74,8 +74,8 @@ class Role(object):
                 yield Query(
                     'Add missing %s members.' % (self.name,),
                     'postgres',
-                    "GRANT %(role)s TO %(members)s;" % dict(
-                        members=", ".join(missing),
+                    "GRANT \"%(role)s\" TO %(members)s;" % dict(
+                        members=", ".join(map(lambda x: '"%s"' % x, missing)),
                         role=self.name,
                     ),
                 )
@@ -88,15 +88,15 @@ class Role(object):
                 yield Query(
                     'Delete spurious %s members.' % (self.name,),
                     'postgres',
-                    "REVOKE %(role)s FROM %(members)s;" % dict(
-                        members=", ".join(spurious),
+                    "REVOKE \"%(role)s\" FROM %(members)s;" % dict(
+                        members=", ".join(map(lambda x: '"%s"' % x, spurious)),
                         role=self.name,
                     ),
                 )
 
     _drop_objects_sql = """
-    REASSIGN OWNED BY %(role)s TO SESSION_USER;
-    DROP OWNED BY %(role)s;
+    REASSIGN OWNED BY "%(role)s" TO SESSION_USER;
+    DROP OWNED BY "%(role)s";
     """.strip().replace(4 * ' ', '')
 
     def drop(self):
@@ -108,7 +108,7 @@ class Role(object):
         yield Query(
             'Drop %s.' % (self.name,),
             'postgres',
-            "DROP ROLE %(role)s;" % dict(role=self.name),
+            "DROP ROLE \"%(role)s\";" % dict(role=self.name),
         )
 
 
