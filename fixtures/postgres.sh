@@ -47,7 +47,7 @@ EOSQL
 # grant some privileges to daniel, to be revoked.
 PGDATABASE=olddb psql <<EOSQL
 CREATE SCHEMA oldns;
-CREATE TABLE oldns.table1 (id INTEGER);
+CREATE TABLE oldns.table1 (id SERIAL);
 GRANT SELECT ON ALL TABLES IN SCHEMA oldns TO daniel;
 
 -- For REVOKE
@@ -57,11 +57,11 @@ EOSQL
 
 # Ensure daniel has no privileges on appdb, for grant.
 PGDATABASE=appdb psql <<EOSQL
-CREATE TABLE public.table1 (id INTEGER);
+CREATE TABLE public.table1 (id SERIAL);
 
 CREATE SCHEMA appns;
-CREATE TABLE appns.table1 (id INTEGER);
-CREATE TABLE appns.table2 (id INTEGER);
+CREATE TABLE appns.table1 (id SERIAL);
+CREATE TABLE appns.table2 (id SERIAL);
 
 CREATE SCHEMA empty;
 

@@ -89,19 +89,18 @@ _nspacl_tpl = dict(
 # determine if ACL is fully granted. If the ACL is not granted at all, we drop
 # the row in WHERE clause to ensure the ACL is considered as revoked.
 #
-_tblacl_tpl = dict(
+_allacl_tpl = dict(
     type='nspacl',
-    inspect="""\
-    WITH
-    namespace_tables AS (
+    inspect="""WITH
+    namespace_rels AS (
       SELECT
         nsp.oid,
         nsp.nspname,
         array_agg(rel.relname ORDER BY rel.relname)
-          FILTER (WHERE rel.relname IS NOT NULL) AS tables
+          FILTER (WHERE rel.relname IS NOT NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
-      LEFT OUTER JOIN pg_catalog.pg_class rel
-        ON rel.relnamespace = nsp.oid AND relkind = 'r'
+      LEFT OUTER JOIN pg_catalog.pg_class AS rel
+        ON rel.relnamespace = nsp.oid AND relkind = '%(t)s'
       WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
@@ -110,29 +109,30 @@ _tblacl_tpl = dict(
         relnamespace,
         (aclexplode(relacl)).privilege_type,
         (aclexplode(relacl)).grantee,
-        array_agg(relname ORDER BY relname) AS tables
+        array_agg(relname ORDER BY relname) AS rels
       FROM pg_catalog.pg_class
-      WHERE relkind = 'r'
+      WHERE relkind = '%(t)s'
       GROUP BY 1, 2, 3
     )
     SELECT
       nspname,
       rolname,
       CASE
-        WHEN nsp.tables IS NULL THEN NULL
-        ELSE nsp.tables = COALESCE(grants.tables, ARRAY[]::name[])
+        WHEN nsp.rels IS NULL THEN NULL
+        ELSE nsp.rels = COALESCE(grants.rels, ARRAY[]::name[])
       END AS "full"
-    FROM namespace_tables AS nsp
+    FROM namespace_rels AS nsp
     CROSS JOIN pg_catalog.pg_roles AS rol
     LEFT OUTER JOIN all_grants AS grants
       ON relnamespace = nsp.oid
          AND grantee = rol.oid
          AND privilege_type = '%(privilege)s'
-    WHERE NOT (nsp.tables IS NOT NULL AND grants.tables IS NULL)
+    WHERE NOT (nsp.rels IS NOT NULL AND grants.rels IS NULL)
     ORDER BY 1, 2
     """.replace('\n    ', '\n'),
-    grant="GRANT %(privilege)s ON ALL TABLES IN SCHEMA {schema} TO {role}",
-    revoke="REVOKE %(privilege)s ON ALL TABLES IN SCHEMA {schema} FROM {role}",
+    grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
+    revoke=(
+        "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
 )
 
 
@@ -146,19 +146,19 @@ _types = {
 
 def make_acl(tpl, name, t, privilege):
     return name, dict(
-        (k, v % (dict(t=t, TYPE=_types.get(t), privilege=privilege)))
+        (k, v % (dict(t=t, TYPE=_types.get(t), privilege=privilege.upper())))
         for k, v in tpl.items()
     )
 
 
-def make_table_acls(privilege, namefmt='__%s__'):
-    fmtargs = (privilege.lower(),)
-    all_ = '__%s_all__' % fmtargs
-    default = '__%s_default__' % fmtargs
-    name = namefmt % fmtargs
+def make_all_acls(privilege, t, namefmt='__%(privilege)s_on_%(type)s__'):
+    fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
+    all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
+    default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
+    name = namefmt % fmtkw
     return dict([
-        make_acl(_tblacl_tpl, all_, 'r', privilege.upper()),
-        make_acl(_defacl_tpl, default, 'r', privilege.upper()),
+        make_acl(_allacl_tpl, all_, t, privilege),
+        make_acl(_defacl_tpl, default, t, privilege),
         (name, [all_, default]),
     ])
 
@@ -168,14 +168,14 @@ def make_well_known_acls():
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
         make_acl(_defacl_tpl, '__execute__', 'f', 'EXECUTE'),
-        make_acl(_defacl_tpl, '__select_on_sequences__', 'S', 'SELECT'),
         make_acl(_defacl_tpl, '__usage_on_types__', 't', 'USAGE'),
-        make_acl(_defacl_tpl, '__update_on_sequences__', 'S', 'UPDATE'),
     ])
 
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRUNCATE':
-        acls.update(make_table_acls(privilege))
+        acls.update(make_all_acls(privilege, 'r', namefmt='__%(privilege)s__'))
+
     for privilege in 'SELECT', 'UPDATE':
-        acls.update(make_table_acls(privilege, '__%s_on_tables__'))
+        acls.update(make_all_acls(privilege, 'r'))
+        acls.update(make_all_acls(privilege, 'S'))
 
     return acls
