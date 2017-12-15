@@ -27,3 +27,8 @@ release:
 upload:
 	git describe --exact-match --tags
 	python3 setup.py sdist bdist_wheel upload -r pypi
+
+reset-pg:
+	docker-compose stop postgres
+	docker-compose rm -vf postgres
+	docker-compose up -d postgres
