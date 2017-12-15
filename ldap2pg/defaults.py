@@ -105,7 +105,7 @@ _tblacl_tpl = dict(
     LEFT OUTER JOIN all_grants AS grants
       ON relnamespace = nsp.oid
          AND grantee = rol.oid
-         AND privilege_type = 'SELECT'
+         AND privilege_type = '%(privilege)s'
     WHERE NOT (nsp.tables IS NOT NULL AND grants.tables IS NULL)
     ORDER BY 1, 2
     """.replace('\n    ', '\n'),
