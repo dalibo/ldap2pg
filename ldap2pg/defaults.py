@@ -20,14 +20,24 @@ _datacl_tpl = dict(
 _defacl_tpl = dict(
     type="defacl",
     inspect="""\
+    WITH
+    grants AS (
+      SELECT
+        defaclnamespace,
+        defaclrole,
+        (aclexplode(defaclacl)).grantee AS grantee,
+        (aclexplode(defaclacl)).privilege_type
+      FROM pg_catalog.pg_default_acl
+      WHERE defaclobjtype = '%(t)s'
+    )
     SELECT
       nspname,
-      pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
+      pg_catalog.pg_get_userbyid(grantee) AS grantee,
       TRUE AS full,
       pg_catalog.pg_get_userbyid(defaclrole) AS owner
-    FROM pg_catalog.pg_default_acl
+    FROM grants
     JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    WHERE defaclobjtype = '%(t)s'
+    WHERE privilege_type = '%(privilege)s'
     ORDER BY 1, 2, 4;
     """.replace(' ' * 4, ''),
     grant="""\
