@@ -39,6 +39,34 @@ _nspacl_tpl = dict(
 )
 
 
+# ALL TABLES is tricky because we have to manage partial grant. But the
+# trickiest comes when there is no tables in a namespace. In this case, is it
+# granted or revoked ? We have to tell ldap2pg that this ACL is irrelevant on
+# this schema.
+#
+# Here is a truth table:
+#
+#  FOR GRANT | no grant | partial grant | fully granted
+# -----------+----------+---------------+---------------
+#  no tables |   NOOP   |      N/D      |      N/D
+# -----------+----------+---------------+---------------
+#  1+ tables |   GRANT  |     GRANT     |      NOOP
+# -----------+----------+---------------+---------------
+#
+# FOR REVOKE | no grant | partial grant | fully granted
+# -----------+----------+---------------+---------------
+#  no tables |   NOOP   |      N/D      |      N/D
+# -----------+----------+---------------+---------------
+#  1+ tables |   NOOP   |     REVOKE    |     REVOKE
+# -----------+----------+---------------+---------------
+#
+# When namespace has NO tables, we always return a row with full as NULL,
+# meaning ACL is irrelevant : it is both granted and revoked.
+#
+# When namespace has tables, we compare grants to availables tables to
+# determine if ACL is fully granted. If the ACL is not granted at all, we drop
+# the row in WHERE clause to ensure the ACL is considered as revoked.
+#
 _tblacl_tpl = dict(
     type='nspacl',
     inspect="""\
@@ -68,35 +96,6 @@ _tblacl_tpl = dict(
     SELECT
       nspname,
       rolname,
-
-      -- ALL TABLES is tricky because we have to manage partial grant. But the
-      -- trickiest comes when there is no tables in a namespace. In this case,
-      -- is it granted or revoked ? We have to tell ldap2pg that this ACL is
-      -- irrelevant on this schema.
-      --
-      -- Here is a truth table:
-      --
-      --  FOR GRANT | no grant | partial grant | fully granted
-      -- -----------+----------+---------------+---------------
-      --  no tables |   NOOP   |      N/D      |      N/D
-      -- -----------+----------+---------------+---------------
-      --  1+ tables |   GRANT  |     GRANT     |      NOOP
-      -- -----------+----------+---------------+---------------
-      --
-      -- FOR REVOKE | no grant | partial grant | fully granted
-      -- -----------+----------+---------------+---------------
-      --  no tables |   NOOP   |      N/D      |      N/D
-      -- -----------+----------+---------------+---------------
-      --  1+ tables |   NOOP   |     REVOKE    |     REVOKE
-      -- -----------+----------+---------------+---------------
-      --
-      -- When namespace has NO tables, we always return a row with full as
-      -- NULL, meaning ACL is irrelevant : it is both granted and revoked.
-      --
-      -- When namespace has tables, we compare grants to availables tables to
-      -- determine if ACL is fully granted. If the ACL is not granted at all,
-      -- we drop the row in WHERE clause to ensure the ACL is considered as
-      -- revoked.
       CASE
         WHEN nsp.tables IS NULL THEN NULL
         ELSE nsp.tables = COALESCE(grants.tables, ARRAY[]::name[])
