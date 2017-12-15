@@ -412,7 +412,7 @@ def test_inspect_acls_inexistant():
         manager.postprocess_inspection(
             schemas=dict(postgres=['public']),
             pgowners=[],
-            ldaproles=RoleSet(),
+            pgroles=RoleSet(), ldaproles=RoleSet(),
             ldapacls=AclSet([AclItem('inexistant')]),
         )
 
