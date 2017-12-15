@@ -153,28 +153,31 @@ def make_acl(tpl, name, t, privilege):
     )
 
 
+def make_table_acls(privilege, namefmt='__%s__'):
+    fmtargs = (privilege.lower(),)
+    all_ = '__%s_all__' % fmtargs
+    default = '__%s_default__' % fmtargs
+    name = namefmt % fmtargs
+    return dict([
+        make_acl(_tblacl_tpl, all_, 'r', privilege.upper()),
+        make_acl(_defacl_tpl, default, 'r', privilege.upper()),
+        (name, [all_, default]),
+    ])
+
+
 def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__delete__', 't', 'DELETE'),
         make_acl(_defacl_tpl, '__execute__', 'f', 'EXECUTE'),
-        make_acl(_defacl_tpl, '__insert__', 't', 'INSERT'),
-        make_acl(_defacl_tpl, '__references__', 'r', 'REFERENCES'),
-        make_acl(_defacl_tpl, '__truncate__', 'r', 'TRUNCATE'),
-        make_acl(_defacl_tpl, '__default_select_on_tables__', 'r', 'SELECT'),
         make_acl(_defacl_tpl, '__select_on_sequences__', 'S', 'SELECT'),
         make_acl(_defacl_tpl, '__usage_on_types__', 't', 'USAGE'),
         make_acl(_defacl_tpl, '__update_on_sequences__', 'S', 'UPDATE'),
-        make_acl(_defacl_tpl, '__update_on_tables__', 'r', 'UPDATE'),
-        make_acl(_tblacl_tpl, '__select_on_all_tables__', None, 'SELECT'),
     ])
 
-    acls.update(dict(
-        __select_on_tables__=[
-            '__default_select_on_tables__',
-            '__select_on_all_tables__',
-        ],
-    ))
+    for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRUNCATE':
+        acls.update(make_table_acls(privilege))
+    for privilege in 'SELECT', 'UPDATE':
+        acls.update(make_table_acls(privilege, '__%s_on_tables__'))
 
     return acls
