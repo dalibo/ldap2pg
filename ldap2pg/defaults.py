@@ -17,6 +17,29 @@ _datacl_tpl = dict(
 
 )
 
+_defacl_tpl = dict(
+    type="defacl",
+    inspect="""\
+    SELECT
+      nspname,
+      pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
+      TRUE AS full,
+      pg_catalog.pg_get_userbyid(defaclrole) AS owner
+    FROM pg_catalog.pg_default_acl
+    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
+    WHERE defaclobjtype = '%(t)s'
+    ORDER BY 1, 2, 4;
+    """.replace(' ' * 4, ''),
+    grant="""\
+    ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
+    GRANT %(privilege)s ON %(TYPE)s TO {role};
+    """.replace(' ' * 4, ''),
+    revoke="""\
+    ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
+    REVOKE %(privilege)s ON %(TYPE)s FROM {role};
+    """.replace(' ' * 4, ''),
+)
+
 _nspacl_tpl = dict(
     type="nspacl",
     inspect="""\
@@ -37,7 +60,6 @@ _nspacl_tpl = dict(
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
-
 
 # ALL TABLES is tricky because we have to manage partial grant. But the
 # trickiest comes when there is no tables in a namespace. In this case, is it
@@ -111,30 +133,6 @@ _tblacl_tpl = dict(
     """.replace('\n    ', '\n'),
     grant="GRANT %(privilege)s ON ALL TABLES IN SCHEMA {schema} TO {role}",
     revoke="REVOKE %(privilege)s ON ALL TABLES IN SCHEMA {schema} FROM {role}",
-)
-
-
-_defacl_tpl = dict(
-    type="defacl",
-    inspect="""\
-    SELECT
-      nspname,
-      pg_catalog.pg_get_userbyid((aclexplode(defaclacl)).grantee) AS grantee,
-      TRUE AS full,
-      pg_catalog.pg_get_userbyid(defaclrole) AS owner
-    FROM pg_catalog.pg_default_acl
-    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    WHERE defaclobjtype = '%(t)s'
-    ORDER BY 1, 2, 4;
-    """.replace(' ' * 4, ''),
-    grant="""\
-    ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
-    GRANT %(privilege)s ON %(TYPE)s TO {role};
-    """.replace(' ' * 4, ''),
-    revoke="""\
-    ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
-    REVOKE %(privilege)s ON %(TYPE)s FROM {role};
-    """.replace(' ' * 4, ''),
 )
 
 
