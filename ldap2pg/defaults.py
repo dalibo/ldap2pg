@@ -185,7 +185,7 @@ _allprocacl_tpl = dict(
 _types = {
     'f': 'FUNCTIONS',
     'r': 'TABLES',
-    't': 'TYPES',
+    'T': 'TYPES',
     'S': 'SEQUENCES',
 }
 
@@ -225,7 +225,7 @@ def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__usage_on_types__', 't', 'USAGE'),
+        make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
     ])
 
     acls.update(make_proc_acls('EXECUTE', 'f', namefmt='__%(privilege)s__'))
