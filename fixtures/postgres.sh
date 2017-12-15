@@ -3,7 +3,7 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
-psql <<EOSQL
+psql -v ON_ERROR_STOP=1 <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
