@@ -260,8 +260,12 @@ class SyncManager(object):
         )
 
         ldapacls = AclSet()
-        for aclitem in expanded_acls:
-            ldapacls.add(aclitem)
+        try:
+            for aclitem in expanded_acls:
+                ldapacls.add(aclitem)
+        except ValueError as e:
+            raise UserError(e)
+
         return ldaproles, ldapacls
 
     def inspect(self, syncmap):

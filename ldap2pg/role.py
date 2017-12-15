@@ -95,7 +95,7 @@ class Role(object):
                 )
 
     _drop_objects_sql = """
-    DO $$BEGIN EXECUTE 'REASSIGN OWNED BY %(role)s TO ' || session_user; END$$;
+    REASSIGN OWNED BY %(role)s TO SESSION_USER;
     DROP OWNED BY %(role)s;
     """.strip().replace(4 * ' ', '')
 

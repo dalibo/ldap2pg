@@ -401,6 +401,22 @@ def test_inspect_acls_bad_database(mocker):
     assert 'inexistantdb' in str(ei.value)
 
 
+def test_inspect_acls_inexistant():
+    from ldap2pg.manager import (
+        SyncManager, AclSet, AclItem, RoleSet, UserError,
+    )
+
+    manager = SyncManager()
+
+    with pytest.raises(UserError):
+        manager.postprocess_inspection(
+            schemas=dict(postgres=['public']),
+            pgowners=[],
+            ldaproles=RoleSet(),
+            ldapacls=AclSet([AclItem('inexistant')]),
+        )
+
+
 def test_inspect_roles(mocker):
     p = mocker.patch('ldap2pg.manager.SyncManager.process_pg_roles')
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')

@@ -173,7 +173,16 @@ class AclItem(object):
 class AclSet(set):
     def expanditems(self, aliases, acl_dict, databases, owners):
         for item in self:
-            for aclname in aliases[item.acl]:
-                acl = acl_dict[aclname]
+            try:
+                aclnames = aliases[item.acl]
+            except KeyError:
+                raise ValueError("Unknown ACL %s" % (item.acl,))
+
+            for aclname in aclnames:
+                try:
+                    acl = acl_dict[aclname]
+                except KeyError:
+                    raise ValueError("Unknown ACL %s" % (aclname,))
+
                 for expansion in acl.expand(item, databases, owners):
                     yield expansion

@@ -3,7 +3,7 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
-psql <<EOSQL
+psql -v ON_ERROR_STOP=1 <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
@@ -47,7 +47,7 @@ EOSQL
 # grant some privileges to daniel, to be revoked.
 PGDATABASE=olddb psql <<EOSQL
 CREATE SCHEMA oldns;
-CREATE TABLE oldns.table1 (id INTEGER);
+CREATE TABLE oldns.table1 (id SERIAL);
 GRANT SELECT ON ALL TABLES IN SCHEMA oldns TO daniel;
 
 -- For REVOKE
@@ -56,12 +56,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA oldns GRANT SELECT ON TABLES TO daniel;
 EOSQL
 
 # Ensure daniel has no privileges on appdb, for grant.
-PGDATABASE=appdb psql <<EOSQL
-CREATE TABLE public.table1 (id INTEGER);
+PGDATABASE=appdb psql <<'EOSQL'
+CREATE TABLE public.table1 (id SERIAL);
 
 CREATE SCHEMA appns;
-CREATE TABLE appns.table1 (id INTEGER);
-CREATE TABLE appns.table2 (id INTEGER);
+CREATE TABLE appns.table1 (id SERIAL);
+CREATE TABLE appns.table2 (id SERIAL);
+
+CREATE FUNCTION appns.func1() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
+CREATE FUNCTION appns.func2() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
 
 CREATE SCHEMA empty;
 
