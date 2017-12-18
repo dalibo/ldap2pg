@@ -23,6 +23,8 @@ follow
 - Quote role name in SQL queries.
 - Documentation and sample update.
 - Merge `acl_dict` and `acl_groups` in `acls`.
+- Manage `ALTER DEFAULT PRIVILEGES`.
+- Provide well known ACLs.
 
 
 # ldap2pg 3.3
