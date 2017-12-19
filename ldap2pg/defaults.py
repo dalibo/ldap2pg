@@ -275,4 +275,13 @@ def make_well_known_acls():
         acls.update(make_rel_acls(privilege, 'r'))
         acls.update(make_rel_acls(privilege, 'S'))
 
+    acls['__all_on_tables__'] = [
+        '__delete__',
+        '__insert__',
+        '__references__',
+        '__truncate__',
+        '__select_on_tables__',
+        '__update_on_tables__',
+    ]
+
     return acls
