@@ -11,10 +11,19 @@ GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
 EOSQL
 done
 
-psql -v ON_ERROR_STOP=1 <<EOSQL
+psql -v ON_ERROR_STOP=1 <<'EOSQL'
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
+DO $$
+  DECLARE r record;
+BEGIN
+  FOR r IN SELECT rolname FROM pg_catalog.pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname <> 'postgres'
+  LOOP
+    EXECUTE 'DROP OWNED BY ' || r.rolname;
+  END LOOP;
+END$$;
+
 DELETE FROM pg_catalog.pg_auth_members;
 DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
 UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
