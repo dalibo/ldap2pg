@@ -9,8 +9,7 @@ DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
 DELETE FROM pg_catalog.pg_auth_members;
 DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
-REVOKE TEMPORARY ON DATABASE postgres FROM PUBLIC;
-REVOKE TEMPORARY ON DATABASE template1 FROM PUBLIC;
+UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 
 -- Create role as it should be. for NOOP
 CREATE ROLE app WITH NOLOGIN;

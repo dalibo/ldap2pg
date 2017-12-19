@@ -1,16 +1,25 @@
 _datacl_tpl = dict(
     type='datacl',
     inspect="""\
-    WITH d AS (
-        SELECT
-            (aclexplode(datacl)).grantee AS grantee,
-            (aclexplode(datacl)).privilege_type AS priv
-        FROM pg_catalog.pg_database
-        WHERE datname = current_database()
+    WITH grants AS (
+      SELECT
+        (aclexplode(datacl)).grantee AS grantee,
+        (aclexplode(datacl)).privilege_type AS priv
+      FROM pg_catalog.pg_database
+      WHERE datname = current_database()
+      UNION
+      SELECT q.*
+      FROM (VALUES (0, 'CONNECT'), (0, 'TEMPORARY')) AS q
+      CROSS JOIN pg_catalog.pg_database
+      WHERE datacl IS NULL AND datname = current_database()
     )
-    SELECT NULL as namespace, r.rolname
-    FROM pg_catalog.pg_roles AS r
-    JOIN d ON d.grantee = r.oid AND d.priv = '%(privilege)s'
+    SELECT
+      NULL as namespace,
+      COALESCE(rolname, 'public')
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND grants.priv = '%(privilege)s';
     """.replace(' ' * 4, ''),
     grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
     revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
