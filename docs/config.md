@@ -11,11 +11,12 @@ configuration from several sources, in the following order:
 4. ldaprc, ldap.conf, etc.
 
 The `--help` switch shows regular online documentation for CLI arguments. As of
-version 2.0, this looks like:
+version 3.4, this looks like:
 
 ``` console
 $ ldap2pg --help
-usage: ldap2pg [-c PATH] [-n] [-N] [-v] [--color] [--no-color] [-?] [-V]
+usage: ldap2pg [-c PATH] [-C] [-n] [-N] [-q] [-v] [--color] [--no-color] [-?]
+               [-V]
 
 PostgreSQL roles and ACL management.
 
@@ -23,9 +24,11 @@ optional arguments:
   -c PATH, --config PATH
                         path to YAML configuration file (env: LDAP2PG_CONFIG).
                         Use - for stdin.
+  -C, --check           check mode: exits with 1 on changes in cluster
   -n, --dry             don't touch Postgres, just print what to do (env:
                         DRY=1)
   -N, --real            real mode, apply changes to Postgres (env: DRY='')
+  -q, --quiet           hide debugging messages
   -v, --verbose         add debug messages including SQL and LDAP queries
                         (env: VERBOSE)
   --color               force color output (env: COLOR=1)
@@ -34,8 +37,9 @@ optional arguments:
   -V, --version         show version and exit
 
 ldap2pg requires a configuration file to describe LDAP queries and role
-mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further details. By
-default, ldap2pg runs in dry mode.
+mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further details.
+By default, ldap2pg runs in dry mode.
+$
 ```
 
 Arguments can be defined multiple times. On conflict, the last argument is used.
