@@ -248,6 +248,7 @@ def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
+        make_acl(_nspacl_tpl, '__create_on_schema__', None, 'CREATE'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
         make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
     ])
