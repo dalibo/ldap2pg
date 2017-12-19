@@ -63,7 +63,7 @@ _defacl_tpl = dict(
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect="""\
+    inspect="""
     WITH grants AS (
       SELECT
         nspname,
@@ -79,7 +79,7 @@ _nspacl_tpl = dict(
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND grants.priv = '%(privilege)s'
     ORDER BY 1, 2;
-    """.replace(' ' * 4, ''),
+    """.replace('\n    ', '\n').strip(),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
