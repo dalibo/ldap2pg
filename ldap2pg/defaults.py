@@ -161,11 +161,31 @@ _allrelacl_tpl = dict(
 
 _allprocacl_tpl = dict(
     type='nspacl',
-    inspect="""WITH
-    namespace_procs AS (
+    inspect="""
+    WITH
+    grants AS (SELECT
+      pronamespace, grantee, priv,
+      array_agg(proname ORDER BY proname) AS procs
+      FROM (
+        SELECT
+          pronamespace,
+          proname,
+          (aclexplode(proacl)).grantee,
+          (aclexplode(proacl)).privilege_type AS priv
+        FROM pg_catalog.pg_proc
+        UNION
+        SELECT
+          pronamespace, proname,
+          0 AS grantee,
+          'EXECUTE' AS priv
+        FROM pg_catalog.pg_proc
+        WHERE proacl IS NULL
+      ) AS grants
+      GROUP BY 1, 2, 3
+    ),
+    namespaces AS (
       SELECT
-        nsp.oid,
-        nsp.nspname,
+        nsp.oid, nsp.nspname,
         array_agg(pro.proname ORDER BY pro.proname)
           FILTER (WHERE pro.proname IS NOT NULL) AS procs
       FROM pg_catalog.pg_namespace nsp
@@ -174,31 +194,26 @@ _allprocacl_tpl = dict(
       WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
-    all_grants AS (
-      SELECT
-        pronamespace,
-        (aclexplode(proacl)).privilege_type,
-        (aclexplode(proacl)).grantee,
-        array_agg(proname ORDER BY proname) AS procs
-      FROM pg_catalog.pg_proc
-      GROUP BY 1, 2, 3
+    roles AS (
+      SELECT oid, rolname
+      FROM pg_catalog.pg_roles
+      UNION
+      SELECT 0, 'public'
     )
     SELECT
-      nspname,
-      rolname,
+      nspname, rolname,
       CASE
         WHEN nsp.procs IS NULL THEN NULL
         ELSE nsp.procs = COALESCE(grants.procs, ARRAY[]::name[])
       END AS "full"
-    FROM namespace_procs AS nsp
-    CROSS JOIN pg_catalog.pg_roles AS rol
-    LEFT OUTER JOIN all_grants AS grants
-      ON pronamespace = nsp.oid
-         AND grantee = rol.oid
-         AND privilege_type = '%(privilege)s'
+    FROM namespaces AS nsp
+    CROSS JOIN roles
+    LEFT OUTER JOIN grants
+      ON pronamespace = nsp.oid AND grants.grantee = roles.oid
     WHERE NOT (nsp.procs IS NOT NULL AND grants.procs IS NULL)
-    ORDER BY 1, 2
-    """.replace('\n    ', '\n'),
+      AND (priv IS NULL OR priv = '%(privilege)s')
+    ORDER BY 1, 2;
+    """.replace('\n    ', '\n').strip(),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
         "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
