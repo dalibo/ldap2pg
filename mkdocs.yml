@@ -10,6 +10,7 @@ pages:
 - Home: index.md
 - Installation: install.md
 - Configuration: config.md
+- Managing ACL: acl.md
 - Well-known ACL: wellknown.md
 - Cookbook: cookbook.md
 - Hacking: hacking.md

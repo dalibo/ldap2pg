@@ -7,18 +7,16 @@
 warranty** of any kind on these ACLs. You have to check privileges configuration
 on your databases just like you should do with your own code.
 
-The true added-value of well-known ACLs is the `inspect` queries associated.
+The true added-value of well-known ACLs is the `inspect` queries associated and
+the boilerplate saved for declaring all `GRANT` queries.
 
 
 ## Using Well-known ACLs
 
-Well-known ACL starts and lasts with `__`. `ldap2pg` disables ACL starting with
-`_` or `.`, unless used in a group not starting with `_` or `.`. Thus you have
-to include well-known ACLs in a group to enable them. If two groups refer the
-same ACL, it will be deduplicated, don't worry.
-
-Once an ACL is used, `ldap2pg` starts inspecting cluster for `GRANT` and
-automatically *revokes* undefined grants.
+Well-known ACL starts and lasts with `__`. `ldap2pg` [disables
+ACL](acl.md#enabling-acl) starting with `_`. Thus you have to include well-known
+ACLs in a group to enable them. If two groups reference the same ACL, it will be
+deduplicated, don't worry.
 
 ``` yaml
 acls:
@@ -58,9 +56,9 @@ Well-known ACL name follows the following loose convention:
 
 ## ACL groups
 
-Next is an extensive, boring, list of all well known ACLs and ACL groups in
-`master`. Each group is documented by its name and the list of included ACL.
-Each ACL name point the the detail of ACL definition.
+Next is an extensive, boring, list of all well known ACL groups in `master`.
+Each group is documented by its name and the list of included ACL. Each ACL name
+point the the detail of ACL definition.
 
 Actually, a group like `__all_on_tables__` is implemented as group of groups.
 But for the sake of simplicity, the documentation lists the resolved list of

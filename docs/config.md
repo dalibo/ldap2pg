@@ -123,7 +123,7 @@ $
 
 ## YAML format
 
-The first section contains various parameters for `ldap2pg` behaviour.
+The first section contains various plain parameters for `ldap2pg` behaviour.
 
 ``` yaml
 # Colorization. env var: COLOR=<anything>
@@ -150,79 +150,6 @@ ldap:
 postgres:
   dsn: postgres://user@%2Fvar%2Frun%2Fpostgresql:port/
 ```
-
-
-## Defining ACL
-
-The key `acl_dict` references all known ACL definitions. An ACL is loosely
-defined in `ldap2pg`. It's actually just a name associated with three queries:
-`inspect`, `grant` and `revoke`.
-
-`inspect` query is called **once** per database in the cluster. It must return a
-rowset with three columns: the first is the schema name, the second is the role
-and the last is a boolean indicating whether **every** ACL covered by the GRANT
-are granted. Schema name can be `NULL` if the schema is irrelevant. Each tuple
-in the rowset references a grant of this ACL to a role on a schema (or none).
-
-`inspect` can be undefined. This is just as if the query returns an empty
-rowset. It's actually a bad idea not to provide `inspect`. This won't allow
-`ldap2pg` to revoke ACL. Also, this prevents you to check that a cluster is
-synchronized: `ldap2pg` will always re-grant the ACL.
-
-`grant` and `revoke` provide queries to respectively grant and revoke the ACL.
-The query is formatted with three parameters: `database`, `schema` and `role`.
-`database` strictly equals to `CURRENT_DATABASE`, it's just there to help
-put identifier in the query. `ldap2pg` uses Python's [*Format String
-Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings).
-See example below. In verbose mode, you will see the formatted queries.
-
-Here is an example of a simple ACL which is not schema-aware:
-
-``` yaml
-acl_dict:
-  connect:
-    inspect: |
-      WITH d AS (
-          SELECT
-              (aclexplode(datacl)).grantee AS grantee,
-              (aclexplode(datacl)).privilege_type AS priv
-          FROM pg_catalog.pg_database
-          WHERE datname = current_database()
-      )
-      SELECT NULL as namespace, r.rolname, TRUE AS complete
-      FROM pg_catalog.pg_roles AS r
-      JOIN d ON d.grantee = r.oid AND d.priv = 'CONNECT'
-    grant: |
-      GRANT CONNECT ON DATABASE {database} TO {role};
-    revoke: |
-      REVOKE CONNECT ON DATABASE {database} FROM {role}
-```
-
-Writing `inspect` queries requires deep knowledge of Postgres internals. See
-[System Catalogs](https://www.postgresql.org/docs/current/static/catalogs.html)
-section in PostgreSQL documentation to see how ACL are actually stored in
-Postgres. Checking whether a `GRANT SELECT ON ALL TABLES IN SCHEMA` is complete
-is rather tricky. See [Cookbook](cookbook.md) for detailed and real use case.
-
-
-## Grouping ACL
-
-Privileges are often granted together. E.g. you grant `SELECT ON ALL TABLES IN
-SCHEMA` along `ALTER DEFAULT PRIVILEGES IN SCHEMA SELECT ON ALL TABLES`. This
-can be very tricky to aggregate all ACL inspection in a single query. To help in
-this situation, `ldap2pg` manages *groups* of ACL, defined in `acl_groups` entry.
-
-```
-acl_dict:
-  select: {...}
-  default-select: {...}
-
-acl_groups:
-  ro: [select, default-select]
-```
-
-Now you can use `ro` as a regular ACL in synchronization map. See the
-[Cookbook](cookbook.md) for examples.
 
 
 ## Synchronization map
@@ -300,47 +227,6 @@ define a `role` rule for each member too, with their own options.
 `parent` or `parents` define one or more parent role. This is the reverse
 relation of `members`. Unlike `*_attribute` parameters, `parent` supports only
 static values.
-
-
-### `grant` parameters
-
-Grant rule is a bit simpler than role rule. It tells `ldap2pg` to ensure a
-particular role has one defined ACL granted. An ACL assignment is identified
-by an ACL name, a database, a schema and a role.
-
-`acl` key references an ACL by its name.
-
-`database` allows to scope the grant to a database. By default, `database` is
-inherited from the synchronization map. The special database name `__all__`
-means **all** databases. `ldap2pg` will loop every databases in the cluster but
-`template0` and apply the `grant` or `revoke` query on it.
-
-In the same way, `schema` allows to scope the grant to one or more schema,
-regardless of database. If `schema` is `__any__` or `null`, the `grant` or
-`revoke` query will receive `None` as schema. If `schema` is `__all__`,
-`ldap2pg` will loop all schema including `information_scema` and yield a revoke
-or grant on each.
-
-`role` or `roles` keys allow to specify statically one or more role to grant the
-ACL to. `role` must be a string or a list of strings. Referenced roles must be
-created in the cluster and won't be implicitly created.
-
-`role_attribute` specifies how to fetch role name from LDAP entries. Just like
-any `*_attribute` key, it accepts a `DN` attribute as well e.g: `name.cn`.
-
-`role_match` is a pattern allowing you to limit the grant to roles whom name
-matches `role_match`.
-
-Here is a full example:
-
-``` yaml
-grant:
-  acl: ddl
-  database: appdb
-  schema: __any__
-  role_attribute: cn
-  role_match: *_RW
-```
 
 
 ### Overall sync map structure
