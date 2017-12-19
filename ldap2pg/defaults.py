@@ -1,16 +1,25 @@
 _datacl_tpl = dict(
     type='datacl',
     inspect="""\
-    WITH d AS (
-        SELECT
-            (aclexplode(datacl)).grantee AS grantee,
-            (aclexplode(datacl)).privilege_type AS priv
-        FROM pg_catalog.pg_database
-        WHERE datname = current_database()
+    WITH grants AS (
+      SELECT
+        (aclexplode(datacl)).grantee AS grantee,
+        (aclexplode(datacl)).privilege_type AS priv
+      FROM pg_catalog.pg_database
+      WHERE datname = current_database()
+      UNION
+      SELECT q.*
+      FROM (VALUES (0, 'CONNECT'), (0, 'TEMPORARY')) AS q
+      CROSS JOIN pg_catalog.pg_database
+      WHERE datacl IS NULL AND datname = current_database()
     )
-    SELECT NULL as namespace, r.rolname
-    FROM pg_catalog.pg_roles AS r
-    JOIN d ON d.grantee = r.oid AND d.priv = '%(privilege)s'
+    SELECT
+      NULL as namespace,
+      COALESCE(rolname, 'public')
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND grants.priv = '%(privilege)s';
     """.replace(' ' * 4, ''),
     grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
     revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
@@ -26,18 +35,20 @@ _defacl_tpl = dict(
         defaclnamespace,
         defaclrole,
         (aclexplode(defaclacl)).grantee AS grantee,
-        (aclexplode(defaclacl)).privilege_type
+        (aclexplode(defaclacl)).privilege_type AS priv
       FROM pg_catalog.pg_default_acl
       WHERE defaclobjtype = '%(t)s'
     )
     SELECT
       nspname,
-      pg_catalog.pg_get_userbyid(grantee) AS grantee,
+      COALESCE(rolname, 'public') AS rolname,
       TRUE AS full,
       pg_catalog.pg_get_userbyid(defaclrole) AS owner
     FROM grants
     JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    WHERE privilege_type = '%(privilege)s'
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND priv = '%(privilege)s'
     ORDER BY 1, 2, 4;
     """.replace(' ' * 4, ''),
     grant="""\
@@ -52,21 +63,23 @@ _defacl_tpl = dict(
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect="""\
-    WITH n AS (
+    inspect="""
+    WITH grants AS (
       SELECT
-        n.nspname AS namespace,
+        nspname,
         (aclexplode(nspacl)).grantee AS grantee,
         (aclexplode(nspacl)).privilege_type AS priv
-      FROM pg_catalog.pg_namespace AS n
+      FROM pg_catalog.pg_namespace
     )
     SELECT
-      n.namespace,
-      r.rolname
-    FROM pg_catalog.pg_roles AS r
-    JOIN n ON n.grantee = r.oid AND n.priv = '%(privilege)s'
+      nspname,
+      COALESCE(rolname, 'public') AS rolname
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND grants.priv = '%(privilege)s'
     ORDER BY 1, 2;
-    """.replace(' ' * 4, ''),
+    """.replace('\n    ', '\n').strip(),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
@@ -111,7 +124,6 @@ _allrelacl_tpl = dict(
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
         ON rel.relnamespace = nsp.oid AND relkind = '%(t)s'
-      WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -148,44 +160,58 @@ _allrelacl_tpl = dict(
 
 _allprocacl_tpl = dict(
     type='nspacl',
-    inspect="""WITH
-    namespace_procs AS (
+    inspect="""
+    WITH
+    grants AS (SELECT
+      pronamespace, grantee, priv,
+      array_agg(proname ORDER BY proname) AS procs
+      FROM (
+        SELECT
+          pronamespace,
+          proname,
+          (aclexplode(proacl)).grantee,
+          (aclexplode(proacl)).privilege_type AS priv
+        FROM pg_catalog.pg_proc
+        UNION
+        SELECT
+          pronamespace, proname,
+          0 AS grantee,
+          'EXECUTE' AS priv
+        FROM pg_catalog.pg_proc
+        WHERE proacl IS NULL
+      ) AS grants
+      GROUP BY 1, 2, 3
+    ),
+    namespaces AS (
       SELECT
-        nsp.oid,
-        nsp.nspname,
+        nsp.oid, nsp.nspname,
         array_agg(pro.proname ORDER BY pro.proname)
           FILTER (WHERE pro.proname IS NOT NULL) AS procs
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_proc AS pro
         ON pro.pronamespace = nsp.oid
-      WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
-    all_grants AS (
-      SELECT
-        pronamespace,
-        (aclexplode(proacl)).privilege_type,
-        (aclexplode(proacl)).grantee,
-        array_agg(proname ORDER BY proname) AS procs
-      FROM pg_catalog.pg_proc
-      GROUP BY 1, 2, 3
+    roles AS (
+      SELECT oid, rolname
+      FROM pg_catalog.pg_roles
+      UNION
+      SELECT 0, 'public'
     )
     SELECT
-      nspname,
-      rolname,
+      nspname, rolname,
       CASE
         WHEN nsp.procs IS NULL THEN NULL
         ELSE nsp.procs = COALESCE(grants.procs, ARRAY[]::name[])
       END AS "full"
-    FROM namespace_procs AS nsp
-    CROSS JOIN pg_catalog.pg_roles AS rol
-    LEFT OUTER JOIN all_grants AS grants
-      ON pronamespace = nsp.oid
-         AND grantee = rol.oid
-         AND privilege_type = '%(privilege)s'
+    FROM namespaces AS nsp
+    CROSS JOIN roles
+    LEFT OUTER JOIN grants
+      ON pronamespace = nsp.oid AND grants.grantee = roles.oid
     WHERE NOT (nsp.procs IS NOT NULL AND grants.procs IS NULL)
-    ORDER BY 1, 2
-    """.replace('\n    ', '\n'),
+      AND (priv IS NULL OR priv = '%(privilege)s')
+    ORDER BY 1, 2;
+    """.replace('\n    ', '\n').strip(),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
         "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
@@ -234,6 +260,8 @@ def make_rel_acls(privilege, t, namefmt='__%(privilege)s_on_%(type)s__'):
 def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
+        make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
+        make_acl(_nspacl_tpl, '__create_on_schema__', None, 'CREATE'),
         make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
         make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
     ])

@@ -3,14 +3,30 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
-psql -v ON_ERROR_STOP=1 <<EOSQL
+for d in template1 postgres ; do
+    psql -v ON_ERROR_STOP=1 $d <<EOSQL
+UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
+GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+EOSQL
+done
+
+psql -v ON_ERROR_STOP=1 <<'EOSQL'
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
+DO $$
+  DECLARE r record;
+BEGIN
+  FOR r IN SELECT rolname FROM pg_catalog.pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname <> 'postgres'
+  LOOP
+    EXECUTE 'DROP OWNED BY ' || r.rolname;
+  END LOOP;
+END$$;
+
 DELETE FROM pg_catalog.pg_auth_members;
 DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
-REVOKE TEMPORARY ON DATABASE postgres FROM PUBLIC;
-REVOKE TEMPORARY ON DATABASE template1 FROM PUBLIC;
+UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 
 -- Create role as it should be. for NOOP
 CREATE ROLE app WITH NOLOGIN;
