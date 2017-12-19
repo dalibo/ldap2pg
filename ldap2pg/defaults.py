@@ -268,7 +268,7 @@ def make_well_known_acls():
 
     acls.update(make_proc_acls('EXECUTE', 'f', namefmt='__%(privilege)s__'))
 
-    for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRUNCATE':
+    for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRIGGER', 'TRUNCATE':
         acls.update(make_rel_acls(privilege, 'r', namefmt='__%(privilege)s__'))
 
     for privilege in 'SELECT', 'UPDATE':
@@ -279,8 +279,9 @@ def make_well_known_acls():
         '__delete__',
         '__insert__',
         '__references__',
-        '__truncate__',
         '__select_on_tables__',
+        '__trigger__',
+        '__truncate__',
         '__update_on_tables__',
     ]
 
