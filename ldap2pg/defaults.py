@@ -124,7 +124,6 @@ _allrelacl_tpl = dict(
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
         ON rel.relnamespace = nsp.oid AND relkind = '%(t)s'
-      WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -191,7 +190,6 @@ _allprocacl_tpl = dict(
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_proc AS pro
         ON pro.pronamespace = nsp.oid
-      WHERE nspname NOT LIKE 'pg_%%'
       GROUP BY 1, 2
     ),
     roles AS (
