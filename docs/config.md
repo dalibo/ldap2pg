@@ -1,3 +1,5 @@
+<!--*- markdown -*-->
+
 <h1>Configuration</h1>
 
 `ldap2pg` tries to be friendly regarding configuration. `ldap2pg` reads its
