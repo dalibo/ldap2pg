@@ -277,6 +277,11 @@ def make_well_known_acls():
 
     acls.update(make_rel_acls('USAGE', 'S'))
 
+    acls['__all_on_schemas'] = [
+        '__create_on_schemas__',
+        '__usage_on_sequences__',
+    ]
+
     acls['__all_on_sequences'] = [
         '__select_on_sequences',
         '__update_on_sequences',

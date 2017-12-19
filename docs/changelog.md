@@ -10,8 +10,9 @@ follow
 
 # ldap2pg 3.5 (unreleased)
 
-- Provide `__temporary__` well known ACL.
-- Provide `__create_on_schema__` well known ACL.
+- Provide new well known ACL for, `__temporary__`, `__create_on_schema__`.
+- Provide `__all_on_tables__`, `__all_on_schemas__` and `__all_on_sequences__`
+  well known ACL groups.
 - Manage grants to `public` role.
 
 
