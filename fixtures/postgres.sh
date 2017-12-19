@@ -3,6 +3,14 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
+for d in template1 postgres ; do
+    psql -v ON_ERROR_STOP=1 $d <<EOSQL
+UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
+GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+EOSQL
+done
+
 psql -v ON_ERROR_STOP=1 <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;

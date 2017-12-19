@@ -62,18 +62,20 @@ _defacl_tpl = dict(
 _nspacl_tpl = dict(
     type="nspacl",
     inspect="""\
-    WITH n AS (
+    WITH grants AS (
       SELECT
-        n.nspname AS namespace,
+        nspname,
         (aclexplode(nspacl)).grantee AS grantee,
         (aclexplode(nspacl)).privilege_type AS priv
-      FROM pg_catalog.pg_namespace AS n
+      FROM pg_catalog.pg_namespace
     )
     SELECT
-      n.namespace,
-      r.rolname
-    FROM pg_catalog.pg_roles AS r
-    JOIN n ON n.grantee = r.oid AND n.priv = '%(privilege)s'
+      nspname,
+      COALESCE(rolname, 'public') AS rolname
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND grants.priv = '%(privilege)s'
     ORDER BY 1, 2;
     """.replace(' ' * 4, ''),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
