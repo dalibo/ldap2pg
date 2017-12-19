@@ -35,18 +35,20 @@ _defacl_tpl = dict(
         defaclnamespace,
         defaclrole,
         (aclexplode(defaclacl)).grantee AS grantee,
-        (aclexplode(defaclacl)).privilege_type
+        (aclexplode(defaclacl)).privilege_type AS priv
       FROM pg_catalog.pg_default_acl
       WHERE defaclobjtype = '%(t)s'
     )
     SELECT
       nspname,
-      pg_catalog.pg_get_userbyid(grantee) AS grantee,
+      COALESCE(rolname, 'public') AS rolname,
       TRUE AS full,
       pg_catalog.pg_get_userbyid(defaclrole) AS owner
     FROM grants
     JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    WHERE privilege_type = '%(privilege)s'
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND priv = '%(privilege)s'
     ORDER BY 1, 2, 4;
     """.replace(' ' * 4, ''),
     grant="""\
