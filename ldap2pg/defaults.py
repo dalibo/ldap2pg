@@ -275,6 +275,14 @@ def make_well_known_acls():
         acls.update(make_rel_acls(privilege, 'r'))
         acls.update(make_rel_acls(privilege, 'S'))
 
+    acls.update(make_rel_acls('USAGE', 'S'))
+
+    acls['__all_on_sequences'] = [
+        '__select_on_sequences',
+        '__update_on_sequences',
+        '__usage_on_sequences__',
+    ]
+
     acls['__all_on_tables__'] = [
         '__delete__',
         '__insert__',
