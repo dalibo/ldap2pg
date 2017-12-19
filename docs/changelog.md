@@ -8,6 +8,13 @@ follow
 [merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 3.5 (unreleased)
+
+- Provide `__temporary__` well known ACL.
+- Provide `__create_on_schema__` well known ACL.
+- Manage grants to `public` role.
+
+
 # ldap2pg 3.4
 
 - Support psycopg2 2.0.
