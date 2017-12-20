@@ -86,7 +86,11 @@ class SyncManager(object):
 
     def process_pg_acl_items(self, acl, dbname, rows):
         for row in rows:
-            role = row[1]
+            try:
+                role = row[1]
+            except IndexError:
+                fmt = "%s ACL's inspect query doesn't return role as column 2"
+                raise UserError(fmt % (acl,))
 
             if match(role, self._blacklist):
                 continue

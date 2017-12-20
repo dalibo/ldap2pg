@@ -97,7 +97,7 @@ def test_process_roles_rows():
 
 
 def test_process_acl_rows():
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, UserError
 
     manager = SyncManager(blacklist=['pg_*', 'postgres'])
     rows = [
@@ -114,6 +114,9 @@ def test_process_acl_rows():
     assert 'postgres' == item.dbname
     assert 'public' == item.schema
     assert 'alice' == item.role
+
+    with pytest.raises(UserError):
+        list(manager.process_pg_acl_items('acl', 'db', [('incomplete',)]))
 
 
 def test_query_ldap(mocker):
