@@ -19,6 +19,9 @@ default_ldap_query = {
 
 
 def ldapquery(value):
+    if not isinstance(value, dict):
+        raise ValueError("ldap: is not a dict")
+
     query = dict(default_ldap_query, **value)
 
     if 'attribute' in query:
