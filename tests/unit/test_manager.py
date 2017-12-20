@@ -33,20 +33,6 @@ def test_format_roles_inspect_sql(mocker):
     assert 'rolsuper' in manager.format_roles_query()
 
 
-def test_fetch_owners(mocker):
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-    psql = mocker.Mock(name='psql')
-    psql.return_value = mocker.MagicMock()
-    psql.return_value.__iter__.return_value = r = [('postgres',)]
-
-    rows = manager.fetch_pg_owners(psql)
-    rows = list(rows)
-
-    assert r[0][0] == rows[0]
-
-
 def test_process_roles_rows():
     from ldap2pg.manager import SyncManager
 

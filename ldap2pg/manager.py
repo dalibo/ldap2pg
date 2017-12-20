@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 class SyncManager(object):
-    empty_sql = 'SELECT NULL LIMIT 0;'
     _databases_query = """
     SELECT datname FROM pg_catalog.pg_database
     WHERE datallowconn IS TRUE ORDER BY 1;
@@ -34,7 +33,7 @@ class SyncManager(object):
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
-            blacklist=[], roles_query=None, owners_query=empty_sql,
+            blacklist=[], roles_query=None, owners_query=None,
             dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
@@ -71,11 +70,6 @@ class SyncManager(object):
         except psycopg2.ProgrammingError as e:
             # Consider the query as user defined
             raise UserError(str(e))
-
-    def fetch_pg_owners(self, psql):
-        logger.debug("Inspecting owners...")
-        for row in psql(self._owners_query):
-            yield row[0]
 
     def format_roles_query(self, roles_query=None):
         roles_query = roles_query or self._roles_query
@@ -231,7 +225,8 @@ class SyncManager(object):
                 logger.debug(
                     "Found schemas %s in %s.",
                     ', '.join(schemas[dbname]), dbname)
-            owners = list(self.fetch_pg_owners(psql))
+            logger.debug("Inspecting owners...")
+            owners = self.pg_fetch(psql, self._owners_query, self.row1)
         else:
             owners = []
 
