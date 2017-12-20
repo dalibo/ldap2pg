@@ -27,6 +27,10 @@ class SyncManager(object):
     SELECT datname FROM pg_catalog.pg_database
     WHERE datallowconn IS TRUE ORDER BY 1;
     """.replace(4 * ' ', '').strip()
+    _schemas_query = """
+    SELECT nspname FROM pg_catalog.pg_namespace
+    WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
+    """.replace(4 * ' ', '').strip()
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
@@ -67,14 +71,6 @@ class SyncManager(object):
         except psycopg2.ProgrammingError as e:
             # Consider the query as user defined
             raise UserError(str(e))
-
-    def fetch_schema_list(self, psql):
-        select = """
-        SELECT nspname FROM pg_catalog.pg_namespace
-        WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
-        """.strip().replace(8 * ' ', '')
-        for row in psql(select):
-            yield row[0]
 
     def fetch_pg_owners(self, psql):
         logger.debug("Inspecting owners...")
@@ -229,11 +225,12 @@ class SyncManager(object):
         # Only inspect schemas and owners if ACL are defined.
         if len(self.acl_dict):
             for dbname, psql in self.psql.itersessions(databases):
-                schemas[dbname] = list(self.fetch_schema_list(psql))
+                logger.debug("Inspecting schemas in %s", dbname)
+                schemas[dbname] = self.pg_fetch(
+                    psql, self._schemas_query, self.row1)
                 logger.debug(
                     "Found schemas %s in %s.",
-                    ', '.join(schemas[dbname]), dbname,
-                )
+                    ', '.join(schemas[dbname]), dbname)
             owners = list(self.fetch_pg_owners(psql))
         else:
             owners = []

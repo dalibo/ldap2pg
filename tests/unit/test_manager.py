@@ -21,24 +21,6 @@ def test_generic_fetch(mocker):
     assert [] == manager.pg_fetch(None, None)
 
 
-def test_fetch_schema(mocker):
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-    psql = mocker.Mock(name='psql')
-    psql.return_value = mocker.MagicMock()
-    psql.return_value.__iter__.return_value = [
-        ('information_schema',), ('custom',),
-    ]
-
-    rows = manager.fetch_schema_list(psql)
-    rows = list(rows)
-
-    assert 2 == len(rows)
-    assert 'information_schema' in rows
-    assert 'custom' in rows
-
-
 def test_format_roles_inspect_sql(mocker):
     from ldap2pg.manager import SyncManager
 
@@ -327,8 +309,6 @@ def test_inspect_acls(mocker):
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    sl = mocker.patch(mod + 'SyncManager.fetch_schema_list', autospec=True)
-    sl.return_value = ['public']
     pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
@@ -348,6 +328,7 @@ def test_inspect_acls(mocker):
         acl_aliases=make_group_map(acl_dict)
     )
     manager._databases_query = ['postgres']
+    manager._schemas_query = ['public']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)
