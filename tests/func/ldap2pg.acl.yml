@@ -34,7 +34,7 @@ acls:
   - __connect__
   - __select_on_tables__
   - __select_on_sequences__
-  - __usage_on_schema__
+  - __usage_on_schemas__
   - __usage_on_types__
 
 sync_map:

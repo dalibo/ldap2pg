@@ -261,8 +261,8 @@ def make_well_known_acls():
     acls = dict([
         make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
         make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
-        make_acl(_nspacl_tpl, '__create_on_schema__', None, 'CREATE'),
-        make_acl(_nspacl_tpl, '__usage_on_schema__', None, 'USAGE'),
+        make_acl(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
+        make_acl(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
         make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
     ])
 
@@ -277,14 +277,14 @@ def make_well_known_acls():
 
     acls.update(make_rel_acls('USAGE', 'S'))
 
-    acls['__all_on_schemas'] = [
+    acls['__all_on_schemas__'] = [
         '__create_on_schemas__',
         '__usage_on_sequences__',
     ]
 
-    acls['__all_on_sequences'] = [
-        '__select_on_sequences',
-        '__update_on_sequences',
+    acls['__all_on_sequences__'] = [
+        '__select_on_sequences__',
+        '__update_on_sequences__',
         '__usage_on_sequences__',
     ]
 
