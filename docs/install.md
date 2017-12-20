@@ -26,6 +26,19 @@ dependencies.
 ```
 
 
+# On CentOS 6
+
+On CentOS 6, you have to run `ldap2pg` with Python2.6 and some forward
+compatibility dependencies.
+
+``` console
+# yum install -y epel-release
+# yum install -y pyton-argparse python-pip python-ldap python-logutils python-psycopg2 PyYAML
+# pip install --no-deps --upgrade ldap2pg
+# ldap2pg --version
+```
+
+
 # On Debian
 
 On Debian jessie or later, you can use regular Python3 and wheel package.
