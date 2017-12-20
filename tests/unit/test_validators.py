@@ -104,6 +104,9 @@ def test_process_mapping_grant():
 def test_process_ldapquery():
     from ldap2pg.validators import ldapquery, parse_scope
 
+    with pytest.raises(ValueError):
+        ldapquery(None)
+
     raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
 
     v = ldapquery(raw)

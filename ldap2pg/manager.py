@@ -4,6 +4,8 @@ from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
+import psycopg2
+
 from .ldap import LDAPError, get_attribute
 
 from .acl import AclItem, AclSet
@@ -20,11 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class SyncManager(object):
-    empty_sql = 'SELECT NULL LIMIT 0;'
+    _databases_query = """
+    SELECT datname FROM pg_catalog.pg_database
+    WHERE datallowconn IS TRUE ORDER BY 1;
+    """.replace(4 * ' ', '').strip()
+    _schemas_query = """
+    SELECT nspname FROM pg_catalog.pg_namespace
+    WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
+    """.replace(4 * ' ', '').strip()
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
-            blacklist=[], roles_query=empty_sql, owners_query=empty_sql,
+            blacklist=[], roles_query=None, owners_query=None,
             dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
@@ -35,37 +44,45 @@ class SyncManager(object):
         self._owners_query = owners_query
         self.dry = dry
 
-    def fetch_database_list(self, psql):
-        select = """
-        SELECT datname FROM pg_catalog.pg_database
-        WHERE datallowconn IS TRUE ORDER BY 1;
-        """.strip().replace(8 * ' ', '')
-        for row in psql(select):
+    def row1(self, rows):
+        for row in rows:
             yield row[0]
 
-    def fetch_schema_list(self, psql):
-        select = """
-        SELECT nspname FROM pg_catalog.pg_namespace
-        WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
-        """.strip().replace(8 * ' ', '')
-        for row in psql(select):
-            yield row[0]
+    def pg_fetch(self, psql, sql, processor=None):
+        # Implement common management of customizable queries
 
-    def fetch_pg_owners(self, psql):
-        logger.debug("Inspecting owners...")
-        for row in psql(self._owners_query):
-            yield row[0]
+        # Disabled inspection
+        if sql is None:
+            return []
 
-    def fetch_pg_roles(self, psql):
-        if not self._roles_query:
+        try:
+            if isinstance(sql, list):
+                # Static inspection
+                rows = sql[:]
+            else:
+                rows = psql(sql)
+
+            if processor:
+                rows = processor(rows)
+            if not isinstance(rows, list):
+                rows = list(rows)
+            return rows
+        except psycopg2.ProgrammingError as e:
+            # Consider the query as user defined
+            raise UserError(str(e))
+
+    def format_roles_query(self, roles_query=None):
+        roles_query = roles_query or self._roles_query
+        if not roles_query:
             logger.warn("Roles introspection disabled.")
             return
 
+        if isinstance(roles_query, list):
+            return roles_query
+
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
-        qry = self._roles_query.format(options=', '.join(row_cols[1:]))
-        for row in psql(qry):
-            yield row
+        return roles_query.format(options=', '.join(row_cols[1:]))
 
     def process_pg_roles(self, rows):
         for row in rows:
@@ -86,7 +103,11 @@ class SyncManager(object):
 
     def process_pg_acl_items(self, acl, dbname, rows):
         for row in rows:
-            role = row[1]
+            try:
+                role = row[1]
+            except IndexError:
+                fmt = "%s ACL's inspect query doesn't return role as column 2"
+                raise UserError(fmt % (acl,))
 
             if match(role, self._blacklist):
                 continue
@@ -190,20 +211,22 @@ class SyncManager(object):
 
     def inspect_pg(self, syncmap):
         with self.psql('postgres') as psql:
-            databases = list(self.fetch_database_list(psql))
-            rows = self.fetch_pg_roles(psql)
-            pgroles = RoleSet(self.process_pg_roles(rows))
+            databases = self.pg_fetch(psql, self._databases_query, self.row1)
+            pgroles = RoleSet(self.pg_fetch(
+                psql, self.format_roles_query(), self.process_pg_roles))
 
         schemas = dict([(k, []) for k in databases])
         # Only inspect schemas and owners if ACL are defined.
         if len(self.acl_dict):
             for dbname, psql in self.psql.itersessions(databases):
-                schemas[dbname] = list(self.fetch_schema_list(psql))
+                logger.debug("Inspecting schemas in %s", dbname)
+                schemas[dbname] = self.pg_fetch(
+                    psql, self._schemas_query, self.row1)
                 logger.debug(
                     "Found schemas %s in %s.",
-                    ', '.join(schemas[dbname]), dbname,
-                )
-            owners = list(self.fetch_pg_owners(psql))
+                    ', '.join(schemas[dbname]), dbname)
+            logger.debug("Inspecting owners...")
+            owners = self.pg_fetch(psql, self._owners_query, self.row1)
         else:
             owners = []
 
