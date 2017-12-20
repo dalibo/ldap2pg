@@ -1,5 +1,5 @@
 from .psql import Query
-from .utils import AllDatabases, UserError, unicode
+from .utils import AllDatabases, UserError, unicode, make_group_map
 
 
 class Acl(object):
@@ -186,3 +186,27 @@ class AclSet(set):
 
                 for expansion in acl.expand(item, databases, owners):
                     yield expansion
+
+
+def check_group_definitions(acls, groups):
+    known = set(acls.keys()) | set(groups.keys())
+    for name, children in groups.items():
+        unknown = [c for c in children if c not in known]
+        if unknown:
+            msg = 'Unknown ACL %s in group %s' % (
+                ', '.join(sorted(unknown)), name)
+            raise ValueError(msg)
+
+
+def process_definitions(acls):
+    # Check and manage ACL and ACL group definitions in same namespace.
+    groups = {}
+    for k, v in sorted(acls.items()):
+        if isinstance(v, list):
+            groups[k] = v
+            acls.pop(k)
+
+    check_group_definitions(acls, groups)
+    aliases = make_group_map(acls, groups)
+
+    return acls, groups, aliases

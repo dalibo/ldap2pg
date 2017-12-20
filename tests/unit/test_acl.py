@@ -124,3 +124,12 @@ def test_expand_nok():
             databases=dict(),
             owners=[],
         ))
+
+
+def test_check_groups():
+    from ldap2pg.acl import check_group_definitions
+
+    acls = dict(group=['inexistant'])
+
+    with pytest.raises(ValueError):
+        check_group_definitions(dict(), acls)
