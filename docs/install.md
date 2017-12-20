@@ -20,13 +20,10 @@ dependencies.
 
 ``` console
 # yum install -y epel-release
-# yum install -y gcc python python-devel python2-pip python-psycopg2 PyYAML python-ldap
-# pip2 install --no-binary :all: --no-deps ldap2pg
+# yum install -y python2-pip python-ldap python-psycopg2 python-wheel PyYAML
+# pip2 install --no-deps --upgrade ldap2pg
+# ldap2pg --version
 ```
-
-Note that wheel package uses [pyldap](https://github.com/pyldap/pyldap) which is
-not packaged on CentOS. Installing from source will fallback
-to [python-ldap](https://www.python-ldap.org/).
 
 
 # On Debian
