@@ -111,7 +111,7 @@ def make_group_map(values, groups=None):
     aliases = dict((k, [k]) for k in values)
     # Now resolve groups descendant to value list and update map.
     aliases.update(dict(
-        (k, sorted(list_descendant(groups, k)))
+        (k, sorted(set(list_descendant(groups, k))))
         for k in groups
     ))
     return aliases
