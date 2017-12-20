@@ -4,6 +4,8 @@ from fnmatch import fnmatch
 import logging
 from itertools import groupby
 
+import psycopg2
+
 from .ldap import LDAPError, get_attribute
 
 from .acl import AclItem, AclSet
@@ -195,8 +197,11 @@ class SyncManager(object):
     def inspect_pg(self, syncmap):
         with self.psql('postgres') as psql:
             databases = list(self.fetch_database_list(psql))
-            rows = self.fetch_pg_roles(psql)
-            pgroles = RoleSet(self.process_pg_roles(rows))
+            try:
+                rows = self.fetch_pg_roles(psql)
+                pgroles = RoleSet(self.process_pg_roles(rows))
+            except psycopg2.ProgrammingError as e:
+                raise UserError(str(e))
 
         schemas = dict([(k, []) for k in databases])
         # Only inspect schemas and owners if ACL are defined.
