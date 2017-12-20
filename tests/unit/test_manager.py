@@ -39,28 +39,16 @@ def test_fetch_schema(mocker):
     assert 'custom' in rows
 
 
-def test_fetch_roles(mocker):
+def test_format_roles_inspect_sql(mocker):
     from ldap2pg.manager import SyncManager
 
     manager = SyncManager()
-    psql = mocker.Mock(name='psql')
-    psql.return_value = mocker.MagicMock()
-    psql.return_value.__iter__.return_value = r = [mocker.Mock()]
+    assert manager.format_roles_query() is None
 
-    rows = manager.fetch_pg_roles(psql)
-    rows = list(rows)
+    assert ['static'] == manager.format_roles_query(['static'])
 
-    assert r == rows
-
-    manager = SyncManager(roles_query=None)
-    psql = mocker.Mock(name='psql')
-    psql.return_value = cur = mocker.MagicMock()
-
-    rows = manager.fetch_pg_roles(psql)
-    rows = list(rows)
-
-    assert cur.called is False
-    assert [] == rows
+    manager._roles_query = 'SELECT {options}'
+    assert 'rolsuper' in manager.format_roles_query()
 
 
 def test_fetch_owners(mocker):
@@ -341,7 +329,6 @@ def test_inspect_acls(mocker):
 
     sl = mocker.patch(mod + 'SyncManager.fetch_schema_list', autospec=True)
     sl.return_value = ['public']
-    mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
     pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
     la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
 
@@ -374,7 +361,6 @@ def test_inspect_acls_bad_database(mocker):
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
     mocker.patch(
         mod + 'SyncManager.process_pg_acl_items',
         autospec=True, return_value=[])
@@ -416,21 +402,22 @@ def test_inspect_acls_inexistant():
 
 
 def test_inspect_roles(mocker):
-    p = mocker.patch('ldap2pg.manager.SyncManager.process_pg_roles')
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.SyncManager.process_ldap_entry')
     psql = mocker.MagicMock()
 
     from ldap2pg.manager import SyncManager, Role
 
-    p.return_value = {Role(name='spurious')}
     ql.return_value = [mocker.Mock(name='entry')]
     r.side_effect = [
         {Role(name='alice', options=dict(SUPERUSER=True))},
         {Role(name='bob')},
     ]
 
-    manager = SyncManager(psql=psql, ldapconn=mocker.Mock())
+    manager = SyncManager(
+        psql=psql, ldapconn=mocker.Mock(),
+        roles_query=[('spurious', [])])
+
     # Minimal effective syncmap
     syncmap = dict(db=dict(s=[
         dict(roles=[]),
@@ -440,12 +427,16 @@ def test_inspect_roles(mocker):
         ),
     ]))
 
-    manager.inspect(syncmap=syncmap)
+    _, pgroles, _, ldaproles, _ = manager.inspect(syncmap=syncmap)
 
     assert 2 is r.call_count, "sync did not iterate over each rules."
 
+    assert 'spurious' in pgroles
+    assert 'alice' in ldaproles
+    assert 'bob' in ldaproles
 
-def test_diff_roles(mocker):
+
+def test_diff_roles():
     from ldap2pg.manager import SyncManager, Role, RoleSet
 
     m = SyncManager()

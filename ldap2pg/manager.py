@@ -30,7 +30,7 @@ class SyncManager(object):
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
-            blacklist=[], roles_query=empty_sql, owners_query=empty_sql,
+            blacklist=[], roles_query=None, owners_query=empty_sql,
             dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
@@ -81,17 +81,18 @@ class SyncManager(object):
         for row in psql(self._owners_query):
             yield row[0]
 
-    def format_roles_query(self):
-        if not self._roles_query:
+    def format_roles_query(self, roles_query=None):
+        roles_query = roles_query or self._roles_query
+        if not roles_query:
             logger.warn("Roles introspection disabled.")
             return
 
-        if isinstance(self._roles_query, list):
-            return self._roles_query
+        if isinstance(roles_query, list):
+            return roles_query
 
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
-        return self._roles_query.format(options=', '.join(row_cols[1:]))
+        return roles_query.format(options=', '.join(row_cols[1:]))
 
     def process_pg_roles(self, rows):
         for row in rows:
