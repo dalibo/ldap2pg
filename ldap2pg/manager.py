@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 class SyncManager(object):
     empty_sql = 'SELECT NULL LIMIT 0;'
+    _databases_query = """
+    SELECT datname FROM pg_catalog.pg_database
+    WHERE datallowconn IS TRUE ORDER BY 1;
+    """.replace(4 * ' ', '').strip()
 
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
@@ -37,13 +41,32 @@ class SyncManager(object):
         self._owners_query = owners_query
         self.dry = dry
 
-    def fetch_database_list(self, psql):
-        select = """
-        SELECT datname FROM pg_catalog.pg_database
-        WHERE datallowconn IS TRUE ORDER BY 1;
-        """.strip().replace(8 * ' ', '')
-        for row in psql(select):
+    def row1(self, rows):
+        for row in rows:
             yield row[0]
+
+    def pg_fetch(self, psql, sql, processor=None):
+        # Implement common management of customizable queries
+
+        # Disabled inspection
+        if sql is None:
+            return []
+
+        try:
+            if isinstance(sql, list):
+                # Static inspection
+                rows = sql[:]
+            else:
+                rows = psql(sql)
+
+            if processor:
+                rows = processor(rows)
+            if not isinstance(rows, list):
+                rows = list(rows)
+            return rows
+        except psycopg2.ProgrammingError as e:
+            # Consider the query as user defined
+            raise UserError(str(e))
 
     def fetch_schema_list(self, psql):
         select = """
@@ -58,16 +81,17 @@ class SyncManager(object):
         for row in psql(self._owners_query):
             yield row[0]
 
-    def fetch_pg_roles(self, psql):
+    def format_roles_query(self):
         if not self._roles_query:
             logger.warn("Roles introspection disabled.")
             return
 
+        if isinstance(self._roles_query, list):
+            return self._roles_query
+
         row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
         row_cols = ['role.%s' % (r,) for r in row_cols]
-        qry = self._roles_query.format(options=', '.join(row_cols[1:]))
-        for row in psql(qry):
-            yield row
+        return self._roles_query.format(options=', '.join(row_cols[1:]))
 
     def process_pg_roles(self, rows):
         for row in rows:
@@ -196,12 +220,9 @@ class SyncManager(object):
 
     def inspect_pg(self, syncmap):
         with self.psql('postgres') as psql:
-            databases = list(self.fetch_database_list(psql))
-            try:
-                rows = self.fetch_pg_roles(psql)
-                pgroles = RoleSet(self.process_pg_roles(rows))
-            except psycopg2.ProgrammingError as e:
-                raise UserError(str(e))
+            databases = self.pg_fetch(psql, self._databases_query, self.row1)
+            pgroles = RoleSet(self.pg_fetch(
+                psql, self.format_roles_query(), self.process_pg_roles))
 
         schemas = dict([(k, []) for k in databases])
         # Only inspect schemas and owners if ACL are defined.

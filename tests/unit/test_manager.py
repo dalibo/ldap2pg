@@ -5,22 +5,20 @@ from fnmatch import filter as fnfilter
 import pytest
 
 
-def test_fetch_databases(mocker):
-    from ldap2pg.manager import SyncManager
+def test_generic_fetch(mocker):
+    from ldap2pg.manager import psycopg2, SyncManager, UserError
 
     manager = SyncManager()
-    psql = mocker.Mock(name='psql')
-    psql.return_value = mocker.MagicMock()
-    psql.return_value.__iter__.return_value = [
-        ('postgres',), ('template1',),
-    ]
+    psql = mocker.Mock(name='psql', side_effect=psycopg2.ProgrammingError())
 
-    rows = manager.fetch_database_list(psql)
-    rows = list(rows)
+    with pytest.raises(UserError):
+        manager.pg_fetch(psql, 'POUET;')
 
-    assert 2 == len(rows)
-    assert 'postgres' in rows
-    assert 'template1' in rows
+    psql = mocker.Mock(name='psql', return_value=[('val0',), ('val1',)])
+    rows = manager.pg_fetch(psql, 'POUET;', manager.row1)
+    assert ['val0', 'val1'] == rows
+
+    assert [] == manager.pg_fetch(None, None)
 
 
 def test_fetch_schema(mocker):
@@ -341,8 +339,6 @@ def test_inspect_acls(mocker):
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    dbl = mocker.patch(mod + 'SyncManager.fetch_database_list', autospec=True)
-    dbl.return_value = ['postgres']
     sl = mocker.patch(mod + 'SyncManager.fetch_schema_list', autospec=True)
     sl.return_value = ['public']
     mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
@@ -364,6 +360,7 @@ def test_inspect_acls(mocker):
         psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
         acl_aliases=make_group_map(acl_dict)
     )
+    manager._databases_query = ['postgres']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)
@@ -377,9 +374,6 @@ def test_inspect_acls_bad_database(mocker):
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
 
-    mocker.patch(
-        mod + 'SyncManager.fetch_database_list',
-        autospec=True, return_value=['postgres'])
     mocker.patch(mod + 'SyncManager.process_pg_roles', autospec=True)
     mocker.patch(
         mod + 'SyncManager.process_pg_acl_items',
@@ -397,6 +391,7 @@ def test_inspect_acls_bad_database(mocker):
         psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
         acl_aliases=make_group_map(acl_dict)
     )
+    manager._databases_query = ['postgres']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     with pytest.raises(UserError) as ei:
