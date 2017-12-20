@@ -38,7 +38,7 @@ def test_make_map():
     from ldap2pg.utils import make_group_map
 
     values = dict(v0=0, v1=1)
-    groups = dict(g0=['v0'], g1=['v1', 'g0'], g2=['g1'])
+    groups = dict(g0=['v0'], g1=['v1', 'g0'], g2=['g1', 'g0'])
 
     aliases = make_group_map(values, groups)
 

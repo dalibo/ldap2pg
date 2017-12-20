@@ -5,6 +5,15 @@ default:
 clean-pyc:
 	find . -name __pycache__ -or -name "*.pyc" | xargs -rt rm -rf
 
+%.md: %.md.j2 docs/auto-acl-doc.py ldap2pg/defaults.py Makefile
+	echo '<!-- GENERATED FROM $< -->' > $@.tmp
+	python docs/auto-acl-doc.py $< >> $@.tmp
+	mv -f $@.tmp $@
+
+.PHONY: docs
+docs: docs/wellknown.md
+	mkdocs build --clean --strict
+
 readme-sample:
 	@echo -n '$$ '
 	cat ldap2pg.minimal.yml

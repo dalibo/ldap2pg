@@ -83,9 +83,11 @@ version: 2
       name: Python tests
       command: |
         . .venv/bin/activate
+        set -x
         sort --check .gitignore
         python setup.py --long-description | rst2html.py --strict >/dev/null
-        mkdocs build --clean --strict
+        make docs
+        git diff --exit-code docs/
         flake8 . tests/*/
         pytest tests/unit/
         codecov

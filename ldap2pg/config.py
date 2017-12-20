@@ -21,12 +21,12 @@ import yaml
 
 from . import __version__
 from .acl import Acl
+from .acl import process_definitions as process_acls
 from .utils import (
     deepget,
     deepset,
     UserError,
     string_types,
-    make_group_map,
 )
 from . import validators as V
 from .defaults import make_well_known_acls
@@ -158,40 +158,37 @@ def merge_acl_options(acls, acl_dict, acl_groups):
     return V.acls(final)
 
 
+def list_unused_acl(acls, aliases):
+    used = set()
+    for name, aliases in aliases.items():
+        if name[0] not in ('_', '.'):
+            used.add(name)
+            used.update(aliases)
+    unused = set(acls.keys()) - used
+    return sorted(unused)
+
+
 def postprocess_acl_options(self, defaults=None):
-    # Compat with user defined acl_dict and acl_groups
+    # Compat with user defined acl_dict and acl_groups, merge in the same
+    # namespace.
     acls = defaults or {}
     acls.update(self.pop('acls', {}))
     acls = merge_acl_options(
         acls,
         self.get('acl_dict', {}),
-        self.get('acl_groups', {}),
-    )
-    # Now split acls by type
-    self['acl_dict'] = dict([
-        (k, Acl.factory(k, **v)) for k, v in acls.items()
-        if isinstance(v, dict)]
-    )
-    self['acl_groups'] = dict([
-        (k, v) for k, v in acls.items()
-        if isinstance(v, list)]
-    )
-    # Finally, compute flat map from acl name to ACL
-    self['acl_aliases'] = make_group_map(
-        self['acl_dict'], self['acl_groups'],
+        self.pop('acl_groups', {}),
     )
 
-    # Clean _*
-    used = set()
-    for name, aliases in self['acl_aliases'].items():
-        if name[0] not in ('_', '.'):
-            used.add(name)
-            used.update(aliases)
-    all_ = set(self['acl_dict'].keys())
-    unused = all_ - used
-    for k in sorted(unused):
+    acls, _, self['acl_aliases'] = process_acls(acls)
+
+    # Clean unused ACL starting with _ or .
+    for k in list_unused_acl(acls, self['acl_aliases']):
         logger.debug("Drop unused hidden ACL %s", k)
-        del self['acl_dict'][k]
+        del acls[k]
+
+    self['acl_dict'] = dict([
+        (k, Acl.factory(k, **v)) for k, v in acls.items()
+    ])
 
 
 class Mapping(object):
