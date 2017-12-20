@@ -307,7 +307,7 @@ class Configuration(dict):
             'uri': '',
             'host': '',
             'port': 389,
-            'binddn': None,
+            'binddn': '',
             'user': None,
             'password': '',
         },
