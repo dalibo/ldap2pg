@@ -17,21 +17,21 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 3.4
 
+- Fix unicode error on logging SQL query.
+- Fix traceback on inexistant database in ACL.
+- Fix various configuration loading errors.
+- Fix Distinguished Name case sensitivity.
+- Provide [well known ACLs](wellknown.md).
+- Merge `acl_dict` and `acl_groups` in `acls`.
+- Manage `ALTER DEFAULT PRIVILEGES`.
 - Support psycopg2 2.0.
 - Support Python 2.6.
 - Tested on CentOS 6.
-- Fix unicode error on logging SQL query.
-- Fix traceback on inexistant database in ACL.
-- Avoid reading ldaprc twice.
 - Show detailed version informations.
 - Show YAML parsing error.
-- Fix various configuration loading errors.
-- Fix Distinguished Name case sensitivity.
+- Avoid reading ldaprc twice.
 - Quote role name in SQL queries.
 - Documentation and sample update.
-- Merge `acl_dict` and `acl_groups` in `acls`.
-- Manage `ALTER DEFAULT PRIVILEGES`.
-- Provide well known ACLs.
 
 
 # ldap2pg 3.3
