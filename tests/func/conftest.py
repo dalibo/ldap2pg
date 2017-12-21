@@ -71,7 +71,6 @@ class LDAP(object):
         )
 
         self.search = sh.ldapsearch.bake(*self.common_args)
-        self.delete = sh.ldapdelete.bake(*self.common_args)
 
     def search_sub_dn(self, base):
         # Iter dn under base entry, excluded.
@@ -102,7 +101,7 @@ def dev():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def flushall(ldap, psql):
+def flushall(psql):
     # Flush PostgreSQL and OpenLDAP from any data.
     psql('-tc', "DROP DATABASE IF EXISTS app0;")
     psql('-tc', "DROP DATABASE IF EXISTS app1;")

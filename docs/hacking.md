@@ -14,23 +14,21 @@ instances as well as a phpLDAPAdmin to help you manage OpenLDAP.
 ``` console
 $ docker-compose pull
 ...
-Status: Image is up to date for dinkel/phpldapadmin:latest
+Status: Downloaded newer image for postgres:10-alpine
 $ docker-compose up -d
 Creating network "ldap2pg_default" with the default driver
-Creating volume "ldap2pg_ldapetc" with default driver
-Creating volume "ldap2pg_ldapvar" with default driver
-Creating ldap2pg_ldap_1
+Creating ldap2pg_postgres_1 ...
+Creating ldap2pg_ldap_1 ...
 Creating ldap2pg_postgres_1
-Creating ldap2pg_admin_1
+Creating ldap2pg_ldap_1 ... done
 ```
 
 It's up to you to define how to access Postgres and LDAP containers from your
 host: either use DNS resolution or a `docker-compose.override.yml` to expose
 port on your host. Provided `docker-compose.yml` comes with
-`postgres.ldap2pg.docker` and
-`ldap.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases .
-If you want to test SSL, you **must** access OpenLDAP through
-`ldap.ldap2pg.docker` domain name.
+`postgres.ldap2pg.docker` and `ldap.ldap2pg.docker`
+[dnsdock](https://github.com/aacebedo/dnsdock) aliases . If you want to test
+SSL, you **must** access OpenLDAP through `ldap.ldap2pg.docker` domain name.
 
 Setup your environment with regular `PG*` envvars so that `psql` can just
 connect to your PostgreSQL instance. Check with a simple `psql` call.
@@ -45,7 +43,7 @@ setting up `BINDDN` and `BASE`. `ldap2pg` supports `LDAPPASSWORD` to set
 password from env. Check it with `ldapsearch`:
 
 ``` console
-$ export LDAPURI=ldaps://ldap.ldap2pg.dockr LDAPPASSWORD=integral
+$ export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=integral
 $ ldapsearch -vxw $LDAPPASSWORD cn
 # extended LDIF
 #
@@ -76,12 +74,15 @@ Now you can install `ldap2pg` from source and test your changes!
 ``` console
 $ pip install -e .
 $ ldap2pg
-Starting ldap2pg 2.0a1.
-Using /home/.../src/dalibo/ldap2pg/ldap2pg.yml.
+Starting ldap2pg 3.4.
+Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
 Running in dry mode. Postgres will be untouched.
 Inspecting Postgres...
+Querying LDAP cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
 Querying LDAP ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
-Failed to query LDAP: {'matched': 'dc=ldap,dc=ldap2pg,dc=docker', 'desc': 'No such object'}.
+Would create albert.
+...
+Comparison complete.
 $
 ```
 
@@ -93,7 +94,7 @@ OpenLDAP starts with `fixture/openldap-data.ldif` loaded.
 Some users, database and ACLs are provided for testing purpose in
 `./fixtures/postgres.sh`. Postgres instance is initialized with this
 automatically. This script also resets modifications to Postgres instance by
-`ldap2pg`. You can run `./fixtures/postgres.sh` every time you need to reset the
+`ldap2pg`. You can run `fixtures/postgres.sh` every time you need to reset the
 Postgres instance.
 
 
@@ -105,9 +106,17 @@ exporting `DEBUG` envvar to either `1`, `y` or `Y`.
 
 ``` console
 $ DEBUG=1 ldap2pg
+$ DEBUG=1 ldap2pg
 [ldap2pg.script      DEBUG] Debug mode enabled.
 [ldap2pg.config      DEBUG] Processing CLI arguments.
-[ldap2pg.config       INFO] Starting ldap2pg 2.0a1.
+[ldap2pg.config       INFO] Starting ldap2pg 3.4.
+[ldap2pg.config      DEBUG] Trying ./ldap2pg.yml.
+[ldap2pg.config       INFO] Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
+[ldap2pg.config      DEBUG] Read verbose from DEBUG.
+[ldap2pg.config      DEBUG] Read ldap:uri from LDAPURI.
+[ldap2pg.config      DEBUG] Read ldap:password from LDAPPASSWORD.
+[ldap2pg.config      DEBUG] Read postgres:dsn from PGDSN.
+[ldap2pg.config      DEBUG] Read sync_map from YAML.
 ...
 [ldap2pg.script      ERROR] Unhandled error:
 [ldap2pg.script      ERROR] Traceback (most recent call last):
@@ -121,6 +130,7 @@ $ DEBUG=1 ldap2pg
 -> raise ValueError(...)
 (Pdb) _
 ```
+
 
 # Unit tests
 
@@ -152,9 +162,9 @@ Unit tests must cover all code in `ldap2pg`. We use
 
 # Functionnal tests
 
-Functionnal tests tend to validate `ldap2pg` in real world : **no mocks**. We put
-func tests in `tests/func/`. You can run func tests right from you development
-environment:
+Functionnal tests tend to validate `ldap2pg` in real world : **no mocks**. We
+put func tests in `tests/func/`. You can run func tests right from you
+development environment:
 
 
 ``` console
@@ -170,14 +180,14 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in a CentOS 7 container, with ldap2pg and its
+On CI, func tests are executed in CentOS 6 and CentOS 7, with ldap2pg and its
 dependencies installed from rpm. You can reproduce this setup with
-`docker-compose.yml` and some `make` calls. Run `make clean rpm tests` in
-`tests/func/` to recreate rpm and test env.
+`docker-compose.yml` and some `make` calls. Run `make -C tests/func/ clean rpm
+tests` to recreate rpm and test env.
 
 
 ``` console
-$ make clean rpm tests
+$ make -C tests/func/ clean rpm tests
 runner_1    |
 runner_1    | ========================== 9 passed in 18.16 seconds ===========================
 runner_1    | make: Leaving directory `/workspace/tests/func'
@@ -242,9 +252,9 @@ Logs should be enough to diagnose errors.
 
 [mkdocs](http://www.mkdocs.org) is in charge of building the documentation. To
 edit the doc, just type `mkdocs serve` at the toplevel directory and start
-editing `mkdocs.yml` and `docs/`.
-See [mkdocs documentation](http://www.mkdocs.org/user-guide/writing-your-docs/)
-for further information.
+editing `mkdocs.yml` and `docs/`. See [mkdocs
+documentation](http://www.mkdocs.org/user-guide/writing-your-docs/) for further
+information.
 
 
 # Packaging

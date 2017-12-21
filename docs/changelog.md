@@ -3,36 +3,40 @@
 <h1>Changelog</h1>
 
 Here is a highlight of changes in each versions. If you need further details,
-just
-follow
-[merged Pull request pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
+follow [merged Pull request
+pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
 # ldap2pg 3.5 (unreleased)
 
-- Provide new well known ACL for, `__temporary__`, `__create_on_schema__`.
+- **Deprecation**: use `acls:` rather than `acl_dict` and `acl_groups`.
+- **Deprecation**: `sync_map` should be a list.
+- **Deprecation**: schema `__all__` should be used instead of `__all__`.
+- Fix various tracebacks with errors in configuration or SQL queries.
+- Manage grants to `public` role.
+- Provide new [well known ACL](wellknown.md) for, `__temporary__`,
+  `__create_on_schema__`.
 - Provide `__all_on_tables__`, `__all_on_schemas__` and `__all_on_sequences__`
   well known ACL groups.
-- Manage grants to `public` role.
 
 
 # ldap2pg 3.4
 
+- Fix unicode error on logging SQL query.
+- Fix traceback on inexistant database in ACL.
+- Fix various configuration loading errors.
+- Fix Distinguished Name case sensitivity.
+- Provide [well known ACLs](wellknown.md).
+- Merge `acl_dict` and `acl_groups` in `acls`.
+- Manage `ALTER DEFAULT PRIVILEGES`.
 - Support psycopg2 2.0.
 - Support Python 2.6.
 - Tested on CentOS 6.
-- Fix unicode error on logging SQL query.
-- Fix traceback on inexistant database in ACL.
-- Avoid reading ldaprc twice.
 - Show detailed version informations.
 - Show YAML parsing error.
-- Fix various configuration loading errors.
-- Fix Distinguished Name case sensitivity.
+- Avoid reading ldaprc twice.
 - Quote role name in SQL queries.
 - Documentation and sample update.
-- Merge `acl_dict` and `acl_groups` in `acls`.
-- Manage `ALTER DEFAULT PRIVILEGES`.
-- Provide well known ACLs.
 
 
 # ldap2pg 3.3

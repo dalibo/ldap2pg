@@ -11,12 +11,14 @@ state of the art code **quality** and nice **user experience**.
 
 ## Highlighted features
 
-- Configure multiple LDAP queries.
-- Customize Postgres role options (`LOGIN`, `SUPERUSER`, `REPLICATION`, etc.).
-- Create, alter and drop roles.
-- Manage role members.
-- Grant or revoke ACLs per database and/or per schema.
-- Dry run to audit a cluster.
+- Creates, alter and drops PostgreSQL roles from LDAP queries.
+- Creates static roles from YAML to complete LDAP entries.
+- Manage role members (alias *groups*).
+- Grant or revoke ACL statically or from LDAP entries.
+- Dry run.
+- Logs LDAP queries as `ldapsearch` commands.
+- Logs **every** SQL queries.
+- Reads settings from an expressive YAML config file.
 
 
 ## Quick installation
@@ -30,10 +32,9 @@ Just use PyPI as any regular Python project:
 ```
 
 Now you **must** configure Postgres and LDAP connections as well as the
-synchronization map.
-The
-[dumb but tested `ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is
-a good way to start.
+synchronization map. The [dumb but tested
+`ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is a
+good way to start.
 
 ``` console
 # curl -LO https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml

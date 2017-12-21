@@ -278,7 +278,7 @@ class SyncManager(object):
         spurious = pgroles - ldaproles
         owners = owners - spurious
 
-        if not owners:
+        if not owners and len(self.acl_dict):
             logger.warn(
                 "No owners found. Can't issue ALTER DEFAULT PRIVILEGES.")
 

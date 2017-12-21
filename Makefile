@@ -16,9 +16,9 @@ docs: docs/wellknown.md
 
 readme-sample:
 	@echo -n '$$ '
-	cat ldap2pg.minimal.yml
+	cat docs/ldap2pg.minimal.yml
 	@echo -n '$$ '
-	ldap2pg --color --config docs/ldap2pg.minimal.yml --real 2>&1 | sed s,${LOGNAME},...,g
+	ldap2pg --config docs/ldap2pg.minimal.yml --real 2>&1 | sed s,${LOGNAME},...,g
 
 release:
 	python setup.py egg_info
