@@ -11,12 +11,14 @@ state of the art code **quality** and nice **user experience**.
 
 ## Highlighted features
 
-- Configure multiple LDAP queries.
-- Customize Postgres role options (`LOGIN`, `SUPERUSER`, `REPLICATION`, etc.).
-- Create, alter and drop roles.
-- Manage role members.
-- Grant or revoke ACLs per database and/or per schema.
-- Dry run to audit a cluster.
+- Creates, alter and drops PostgreSQL roles from LDAP queries.
+- Creates static roles from YAML to complete LDAP entries.
+- Manage role members (alias *groups*).
+- Grant or revoke ACL statically or from LDAP entries.
+- Dry run.
+- Logs LDAP queries as `ldapsearch` commands.
+- Logs **every** SQL queries.
+- Reads settings from an expressive YAML config file.
 
 
 ## Quick installation
