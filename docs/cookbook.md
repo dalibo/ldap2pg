@@ -8,7 +8,7 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes ! Your contribution is welcome!
 
 
-# How to Configure Postgres Authentication with LDAP ?
+# Configure Postgres with LDAP ?
 
 `ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
 [PostgreSQL
@@ -144,6 +144,19 @@ Read further on how to control role creation from LDAP entry in
 real with `--real`.
 
 
+# Using LDAP High-Availability
+
+`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
+space separated list of URI to tells all servers.
+
+``` console
+$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
+```
+
+See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
+for further details.
+
+
 # Don't Drop Role not in Directory
 
 Usualy, you have roles in the cluster not defined in LDAP directory. At least
@@ -172,19 +185,6 @@ role as missing in the cluster.
 postgres:
   blacklist: [postgres, pg_*, ldap_users]
 ```
-
-
-# Using LDAP High-Availability
-
-`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
-space separated list of URI to tells all servers.
-
-``` console
-$ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
-```
-
-See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
-for further details.
 
 
 # Don't Synchronize Superusers
@@ -227,92 +227,46 @@ Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). Only
 `options` substitution is available. `%` is safe.
 
 
-# Read-only ACLs
+# Read-Only / Read-Write / DDL groups
 
-Say you want to manage `SELECT` privileges based on LDAP directory. The easiest
-way is to define `inspect`, `grant` and `revoke` for each `PRIVILEGES` : grant
-on all tables in schema, default privileges on schema. Then group these ACL
-under the `ro` name and use this group as a regular ACL in sync map.
+A good pattern to manage ACLs is to have a group with read-only grants, a group
+with read-write grants and finally a group with DDL grants. First, declare the
+sets of ACL you want to grant to each groups, then apply them to corresponding
+roles.
+
 
 ``` yaml
-acl_dict:
-  default-tables-select:
-    inspect: |
-      WITH acls AS (
-        SELECT
-          defaclnamespace AS oid,
-          (aclexplode(defaclacl)).grantee,
-          (aclexplode(defaclacl)).privilege_type
-        FROM pg_catalog.pg_default_acl
-        WHERE defaclobjtype = 'r'
-      )
-      SELECT
-        nspname, rolname
-      FROM acls
-      JOIN pg_catalog.pg_namespace nsp ON nsp.oid = acls.oid
-      JOIN pg_catalog.pg_roles rol ON rol.oid = grantee
-    grant: |
-      ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role};
-    revoke: |
-      ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} REVOKE SELECT ON TABLES FROM {role};
-
-  all-tables-select:
-    # Warning: schema with no tables are never granted!
-    inspect: |
-      WITH
-      namespace_tables AS (
-        -- All namespace and role having grant on it, and array of available
-        -- relations in the namespace.
-        SELECT
-          nsp.nspname,
-          ARRAY(
-            SELECT UNNEST(array_agg(rel.relname)
-            FILTER (WHERE rel.relname IS NOT NULL))
-            ORDER BY 1
-          ) AS tables
-        FROM pg_catalog.pg_namespace nsp
-        LEFT OUTER JOIN pg_catalog.pg_class rel
-          ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v')
-        WHERE nspname NOT LIKE 'pg_%'
-        GROUP BY 1
-      ),
-      tables_grants AS (
-        SELECT
-          table_schema AS "schema",
-          grantee,
-          -- Aggregate the relation grant for this privilege.
-          ARRAY(SELECT UNNEST(array_agg(table_name::name)) ORDER BY 1) AS tables
-        FROM information_schema.role_table_grants
-        WHERE privilege_type = 'SELECT'
-        GROUP BY 1, 2
-      )
-      SELECT
-        nspname, rolname,
-        rels.tables = nsp.tables AS "full"
-      FROM namespace_tables nsp
-      CROSS JOIN pg_catalog.pg_roles rol
-      JOIN tables_grants rels
-        ON rels."schema" = nsp.nspname AND rels.grantee = rolname
-    grant: |
-      GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
-    revoke: |
-      REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
-
-acl_groups:
-  ro: [default-tables-select, all-tables-select]
+acls:
+  ro:
+  - __usage_on_schemas__
+  - __select_on_tables__
+  
+  rw:
+  - ro
+  - __all_on_tables__
+  
+  ddl:
+  - rw
+  - __create_on_schemas__
 
 sync_map:
+- roles:
+  - names: [owners, readers, writers]
+    options: NOLOGIN
 - grant:
-    role: daniel
-    acl: ro
-    database: frontend
+  - acl: ro
+    database: mydb
     schema: __all__
+    role: readers
+  - acl: rw
+    database: mydb
+    schema: __all__
+    role: writers
+  - acl: ddl
+    database: mydb
+    schema: __all__
+    role: owners
 ```
-
-As you can see, the inspect query is quite tricky. The complexity come from the
-aggregation of multiple `GRANT` into a single ACL. Also, `GRANTO ON ALL TABLES`
-registers several ACL that must be checked. You can adapt this ACL to manage
-other privileges like `INSERT`, `UPDATE` and make a `rw` ACL alike.
 
 
 # Synchronize only ACL

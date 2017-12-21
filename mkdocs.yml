@@ -9,8 +9,13 @@ repo_url: https://github.com/dalibo/ldap2pg
 pages:
 - Home: index.md
 - Installation: install.md
-- Configuration: config.md
-- Well-known ACL: wellknown.md
+- Configuration:
+  - CLI: cli.md
+  - ldap2pg.yml: config.md
+  - Querying with LDAP: ldap.md
+  - Managing roles: roles.md
+  - Managing ACL: acl.md
+  - Well-known ACL: wellknown.md
 - Cookbook: cookbook.md
 - Hacking: hacking.md
 - Changelog: changelog.md

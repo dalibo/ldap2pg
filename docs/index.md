@@ -31,8 +31,9 @@ Just use PyPI as any regular Python project:
 # ldap2pg --help
 ```
 
-Now you **must** configure Postgres and LDAP connections as well as the
-synchronization map. The [dumb but tested
+Now you **must** configure [Postgres](cookbook.md#configure-postgres-connection)
+and [LDAP](cookbook.md#query-ldap) connections, then synchronisation map in
+[`ldap2pg.yml`](config.md). The [dumb but tested
 `ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is a
 good way to start.
 
