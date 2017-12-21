@@ -30,10 +30,9 @@ Just use PyPI as any regular Python project:
 ```
 
 Now you **must** configure Postgres and LDAP connections as well as the
-synchronization map.
-The
-[dumb but tested `ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is
-a good way to start.
+synchronization map. The [dumb but tested
+`ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is a
+good way to start.
 
 ``` console
 # curl -LO https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml
