@@ -14,18 +14,17 @@ Features
 - Creates, alter and drops PostgreSQL roles from LDAP queries.
 - Creates static roles from YAML to complete LDAP entries.
 - Manage role members (alias *groups*).
-- Grant or revoke custom ACL statically or from LDAP entries.
+- Grant or revoke ACL statically or from LDAP entries.
 - Dry run.
 - Logs LDAP queries as ``ldapsearch`` commands.
 - Logs **every** SQL queries.
-- Reads settings from YAML config file.
+- Reads settings from an expressive YAML config file.
 
 Here is a sample configuration and execution:
 
 ::
 
-    $ cat ldap2pg.minimal.yml
-    sync_map:
+    $ cat docs/ldap2pg.minimal.yml
     - role:
         name: ldap
         options: NOLOGIN
@@ -37,22 +36,22 @@ Here is a sample configuration and execution:
         name_attribute: cn
         options: LOGIN
         parent: ldap
-    $ ldap2pg --color --config ldap2pg.minimal.yml --real 2>&1 | sed s,bersace,...,g
-    Starting ldap2pg 2.0a3.
-    Using /home/.../src/dalibo/ldap2pg/ldap2pg.minimal.yml.
+    $ ldap2pg --color --config docs/ldap2pg.minimal.yml --real
+    Starting ldap2pg 3.4.
+    Using /.../src/dalibo/ldap2pg/docs/ldap2pg.minimal.yml.
     Running in real mode.
     Inspecting Postgres...
     Querying LDAP ou=people,dc=ldap,dc=ldap2pg,dc=docker...
-    Create alan.
     Create albert.
-    Create dave.
-    Create donald.
+    Create alter.
+    Create didier.
     Create ldap.
     Add ldap members.
+    Update options of alan.
     Update options of alice.
-    Reassign oscar objects and purge ACL on frontend.
-    Reassign oscar objects and purge ACL on postgres.
     Reassign oscar objects and purge ACL on template1.
+    Reassign oscar objects and purge ACL on appdb.
+    Reassign oscar objects and purge ACL on postgres.
     Drop oscar.
     Synchronization complete.
     $
