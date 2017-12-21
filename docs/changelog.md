@@ -9,10 +9,15 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 3.5 (unreleased)
 
-- Provide new well known ACL for, `__temporary__`, `__create_on_schema__`.
+- **Deprecation**: use `acls:` rather than `acl_dict` and `acl_groups`.
+- **Deprecation**: `sync_map` should be a list.
+- **Deprecation**: schema `__all__` should be used instead of `__all__`.
+- Fix various tracebacks with errors in configuration or SQL queries.
+- Manage grants to `public` role.
+- Provide new [well known ACL](wellknown.md) for, `__temporary__`,
+  `__create_on_schema__`.
 - Provide `__all_on_tables__`, `__all_on_schemas__` and `__all_on_sequences__`
   well known ACL groups.
-- Manage grants to `public` role.
 
 
 # ldap2pg 3.4
