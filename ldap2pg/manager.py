@@ -230,6 +230,8 @@ class SyncManager(object):
         else:
             owners = []
 
+        owners_str = ', '.join(["'%s'" % o for o in owners])
+
         # Inspect ACLs
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
@@ -239,7 +241,7 @@ class SyncManager(object):
 
             logger.debug("Searching items of ACL %s.", acl)
             for dbname, psql in self.psql.itersessions(databases):
-                rows = psql(acl.inspect)
+                rows = psql(acl.inspect.format(owners=owners_str))
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
