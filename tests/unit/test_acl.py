@@ -102,6 +102,29 @@ def test_expand_datacl():
     assert items[1].schema is None
 
 
+def test_expand_global_defacl():
+    from ldap2pg.acl import GlobalDefAcl, AclItem
+
+    acl = GlobalDefAcl('c', grant='GRANT CONNECT')
+    item = AclItem(acl='c', dbname=AclItem.ALL_DATABASES, schema=None)
+
+    items = sorted(acl.expand(
+        item, databases=dict(postgres=0xbad),
+        owners=['postgres', 'admin'],
+    ), key=lambda x: x.owner)
+
+    assert 2 == len(items)
+    item = items[0]
+    assert 'postgres' == item.dbname
+    assert item.schema is None
+    assert 'admin' == item.owner
+
+    item = items[1]
+    assert 'postgres' == item.dbname
+    assert item.schema is None
+    assert 'postgres' == item.owner
+
+
 def test_expand_nok():
     from ldap2pg.acl import AclSet, AclItem
 

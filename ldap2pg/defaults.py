@@ -26,6 +26,45 @@ _datacl_tpl = dict(
 
 )
 
+_global_defacl_tpl = dict(
+    type='globaldefacl',
+    inspect="""\
+    WITH
+    grants AS (
+      SELECT
+        defaclrole AS owner,
+        (aclexplode(defaclacl)).grantee,
+        (aclexplode(defaclacl)).privilege_type AS priv
+      FROM pg_default_acl AS def
+      WHERE defaclnamespace = 0
+      UNION
+      SELECT
+        rol.oid AS owner,
+        0 AS grantee,
+        'EXECUTE' AS priv
+      FROM pg_roles AS rol
+      LEFT OUTER JOIN pg_catalog.pg_default_acl AS defacl
+        ON defacl.defaclrole = rol.oid AND defacl.defaclnamespace = 0
+      WHERE defaclacl IS NULL AND rolname IN ({owners})
+    )
+    SELECT
+      NULL AS "schema",
+      COALESCE(rolname, 'public') as rolname,
+      TRUE AS "full",
+      pg_catalog.pg_get_userbyid(owner) AS owner
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (rolname IS NOT NULL OR grantee = 0)
+      AND priv = '%(privilege)s'
+    """.replace(' ' * 4, '').strip(),
+    grant=(
+        "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
+        " GRANT %(privilege)s ON %(TYPE)s TO {role};"),
+    revoke=(
+        "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
+        " REVOKE %(privilege)s ON %(TYPE)s FROM {role};"),
+)
+
 _defacl_tpl = dict(
     type="defacl",
     inspect="""\
@@ -237,11 +276,13 @@ def make_proc_acls(privilege, t='f', namefmt='__%(privilege)s_on_%(type)s__'):
     fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
+    global_def = '__global_default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
         make_acl(_allprocacl_tpl, all_, t, privilege),
         make_acl(_defacl_tpl, default, t, privilege),
-        (name, [all_, default]),
+        make_acl(_global_defacl_tpl, global_def, t, privilege),
+        (name, [all_, default, global_def]),
     ])
 
 

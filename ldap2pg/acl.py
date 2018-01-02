@@ -83,6 +83,16 @@ class DatAcl(Acl):
 
 
 @Acl.register
+class GlobalDefAcl(DatAcl):
+    itemfmt = '%(dbname)s for %(owner)s'
+
+    def expand(self, item, databases, owners):
+        for exp in super(GlobalDefAcl, self).expand(item, databases):
+            for owner in owners:
+                yield exp.copy(owner=owner)
+
+
+@Acl.register
 class NspAcl(DatAcl):
     itemfmt = '%(dbname)s.%(schema)s'
 
