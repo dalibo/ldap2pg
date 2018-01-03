@@ -4,7 +4,8 @@
 # synchronization. See openldap-data.ldif for details.
 
 roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname != 'postgres'"))
-roles=$(IFS=', ' ; echo "${roles[*]}")
+# This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
+roles=$(IFS=', ' ; echo ${roles[*]+"${roles[*]}"})
 
 for d in template1 postgres ; do
     psql -v ON_ERROR_STOP=1 $d <<EOSQL
