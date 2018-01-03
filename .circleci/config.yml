@@ -7,6 +7,7 @@ version: 2
     LDAP_DOMAIN: ldap.ldap2pg.docker
     LDAP_ADMIN_PASSWORD: communication
     LDAP_CONFIG_PASSWORD: communication
+    LDAP_LOG_LEVEL: any
     LDAP_TLS_VERIFY_CLIENT: try
 
 .postgres_container: &postgres_container
