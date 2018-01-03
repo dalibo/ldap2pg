@@ -5,6 +5,7 @@ version: 2
   command: ["/container/tool/run", "--loglevel=trace"]
   environment:
     CONTAINER_LOG_LEVEL: 5
+    HOSTNAME: localhost
     LDAP_DOMAIN: ldap.ldap2pg.docker
     LDAP_ADMIN_PASSWORD: communication
     LDAP_CONFIG_PASSWORD: communication
