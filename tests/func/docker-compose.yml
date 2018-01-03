@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ldap:
-    image: osixia/openldap:1.1.9
+    image: osixia/openldap:1.1.11
     environment:
       LDAP_DOMAIN: ldap.ldap2pg.docker
       LDAP_ADMIN_PASSWORD: fonctionnel

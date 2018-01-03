@@ -1,7 +1,7 @@
 version: 2
 
 .openldap_container: &openldap_container
-  image: osixia/openldap@sha256:443571790e7db8dd7072d31003089fbec1acf490340173c34a39cd6f4aa345e5
+  image: osixia/openldap:1.1.11
   environment:
     LDAP_DOMAIN: ldap.ldap2pg.docker
     LDAP_ADMIN_PASSWORD: communication
