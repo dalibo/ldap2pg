@@ -3,6 +3,7 @@ version: 2
 .openldap_container: &openldap_container
   image: osixia/openldap:1.1.11
   environment:
+    CONTAINER_LOG_LEVEL: trace
     LDAP_DOMAIN: ldap.ldap2pg.docker
     LDAP_ADMIN_PASSWORD: communication
     LDAP_CONFIG_PASSWORD: communication
