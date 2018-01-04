@@ -52,7 +52,7 @@ fi
 
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
-ldapwhoami -xw ${LDAPPASSWORD}
+ldapwhoami -d -1 -xw ${LDAPPASSWORD}
 
 # Install requirements tools with pip.
 pip2 install --no-deps --requirement tests/func/requirements.txt

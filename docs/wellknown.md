@@ -4,8 +4,8 @@
 <h1>Well-known ACL</h1>
 
 `ldap2pg` provides some well-known ACLs for recurrent usage. There is **no
-warranty** of any kind on these ACLs. You have to check privileges configuration
-on your databases just like you should do with your own code.
+warranty** of on these ACLs. You have to check privileges configuration on your
+databases just like you should do with your own code.
 
 The true added-value of well-known ACLs is the `inspect` queries associated and
 the boilerplate saved for declaring all `GRANT` queries.

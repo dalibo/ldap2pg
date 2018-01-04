@@ -2,7 +2,7 @@ version: '2'
 
 services:
   secondaryldap:
-    image: osixia/openldap:1.1.9
+    image: osixia/openldap:1.1.11
     environment:
       # To debug slapd configuration:
       # LDAP_LOG_LEVEL: 33768

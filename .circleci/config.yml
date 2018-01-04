@@ -1,11 +1,14 @@
 version: 2
 
 .openldap_container: &openldap_container
-  image: osixia/openldap@sha256:443571790e7db8dd7072d31003089fbec1acf490340173c34a39cd6f4aa345e5
+  image: bersace/openldap:1.1.43
+  command: ["--loglevel=trace"]
   environment:
+    CONTAINER_LOG_LEVEL: 5
     LDAP_DOMAIN: ldap.ldap2pg.docker
     LDAP_ADMIN_PASSWORD: communication
     LDAP_CONFIG_PASSWORD: communication
+    # LDAP_LOG_LEVEL: any
     LDAP_TLS_VERIFY_CLIENT: try
 
 .postgres_container: &postgres_container
@@ -129,11 +132,11 @@ workflows:
   version: 2
   pipeline:
     jobs:
-    - 0-unit-py27
-    - 0-unit-py34
-    - 0-rpm-centos6
+    # - 0-unit-py27
+    # - 0-unit-py34
+    # - 0-rpm-centos6
     - 0-rpm-centos7
-    - 1-func-centos6:
-        requires: [0-unit-py27, 0-rpm-centos6]
+    # - 1-func-centos6:
+    #     requires: [0-unit-py27, 0-rpm-centos6]
     - 1-func-centos7:
-        requires: [0-unit-py27, 0-rpm-centos7]
+        requires: [0-rpm-centos7]
