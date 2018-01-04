@@ -1,8 +1,8 @@
 version: 2
 
 .openldap_container: &openldap_container
-  image: bersace/openldap:1.1.29
-  # command: /container/tool/run", "--loglevel=trace"]
+  image: bersace/openldap:1.1.30
+  command: /container/tool/run", "--loglevel=trace"]
   environment:
     CONTAINER_LOG_LEVEL: 5
     LDAP_DOMAIN: ldap.ldap2pg.docker
