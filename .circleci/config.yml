@@ -1,7 +1,7 @@
 version: 2
 
 .openldap_container: &openldap_container
-  image: bersace/openldap:1.1.39
+  image: bersace/openldap:1.1.40
   # command: ["/container/tool/run", "--loglevel=trace"]
   command: ["/bersace.sh"]
   environment:
