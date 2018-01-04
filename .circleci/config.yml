@@ -1,7 +1,7 @@
 version: 2
 
 .openldap_container: &openldap_container
-  image: bersace/openldap:1.1.30
+  image: bersace/openldap:1.1.31
   command: ["/container/tool/run", "--loglevel=trace"]
   environment:
     CONTAINER_LOG_LEVEL: 5
