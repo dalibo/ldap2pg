@@ -2,19 +2,17 @@ version: '2'
 
 services:
   secondaryldap:
-    image: osixia/openldap:1.1.9
+    image: bersace/openldap:latest
     environment:
       # To debug slapd configuration:
-      # LDAP_LOG_LEVEL: 33768
+      # LDAP_LOGLEVEL: 33768
       LDAP_DOMAIN: ldap.ldap2pg.docker
       LDAP_ADMIN_PASSWORD: integral
-      LDAP_CONFIG_PASSWORD: territorial
-      LDAP_TLS_VERIFY_CLIENT: try
+      LDAP_ORGANISATION: ldap2pg
     volumes:
     - ./fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
     - ./fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
-    hostname: secondary.ldap.ldap2pg.docker
-    domainname: secondary.ldap.ldap2pg.docker
-    command: [--copy-service, --loglevel, debug]
+    hostname: secondary
+    domainname: ldap.ldap2pg.docker
     labels:
       com.dnsdock.alias: secondary.ldap.ldap2pg.docker

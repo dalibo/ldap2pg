@@ -5,13 +5,6 @@ replace: olcPasswordHash
 olcPasswordHash: {SSHA}
 olcPasswordHash: {CLEARTEXT}
 
-# Allow connected users to read everything
-dn: olcDatabase={1}hdb,cn=config
-changetype: modify
-replace: olcAccess
-olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by * none
-olcAccess: {1}to * by self write by users read by anonymous auth by * none
-
 # Tell SASL to  read password from directory only, not from file.
 dn: cn=config
 changetype: modify
