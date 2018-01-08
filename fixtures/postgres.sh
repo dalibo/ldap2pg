@@ -3,31 +3,37 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
+roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname != 'postgres'"))
+# This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
+roles=$(IFS=', ' ; echo ${roles[*]+"${roles[*]}"})
+
 for d in template1 postgres ; do
     psql -v ON_ERROR_STOP=1 $d <<EOSQL
 UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
 GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+DO \$\$BEGIN
+  IF '${roles}' <> '' THEN
+    DROP OWNED BY ${roles:-pouet};
+  END IF;
+END\$\$;
+DELETE FROM pg_default_acl;
 EOSQL
 done
 
-psql -v ON_ERROR_STOP=1 <<'EOSQL'
+psql -v ON_ERROR_STOP=1 <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
-DO $$
-  DECLARE r record;
-BEGIN
-  FOR r IN SELECT rolname FROM pg_catalog.pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname <> 'postgres'
-  LOOP
-    EXECUTE 'DROP OWNED BY ' || r.rolname;
-  END LOOP;
-END$$;
-
-DELETE FROM pg_catalog.pg_auth_members;
-DELETE FROM pg_catalog.pg_authid WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';
+DO \$\$BEGIN
+  IF '${roles}' <> '' THEN
+    DROP ROLE ${roles:-pouet};
+  END IF;
+END\$\$;
 UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
+EOSQL
 
+psql -v ON_ERROR_STOP=1 <<'EOSQL'
 -- Create role as it should be. for NOOP
 CREATE ROLE app WITH NOLOGIN;
 CREATE ROLE daniel WITH LOGIN;

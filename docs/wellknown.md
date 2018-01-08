@@ -117,6 +117,7 @@ Here we go.
 
 - [`__default_execute_on_functions__`](#default-execute-on-functions)
 - [`__execute_on_all_functions__`](#execute-on-all-functions)
+- [`__global_default_execute_on_functions__`](#global-default-execute-on-functions)
 
 
 <a name="insert"></a>
@@ -323,6 +324,14 @@ GRANT DELETE ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 ``` SQL
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {schema} TO {role}
+```
+
+
+<a name="global-default-execute-on-functions"></a>
+### ACL `__global_default_execute_on_functions__`
+
+``` SQL
+ALTER DEFAULT PRIVILEGES FOR ROLE {owner} GRANT EXECUTE ON FUNCTIONS TO {role};
 ```
 
 
