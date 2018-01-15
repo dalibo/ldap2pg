@@ -249,7 +249,7 @@ class SyncManager(object):
         return schemas, owners, pgroles, pgacls
 
     def inspect_ldap(self, syncmap):
-        ldaproles = RoleSet()
+        ldaproles = {}
         ldapacls = AclSet()
         for dbname, schema, mapping in self.itermappings(syncmap):
             logger.debug("Working on schema %s.%s.", dbname, schema)
@@ -260,7 +260,13 @@ class SyncManager(object):
                 entries = [None]
 
             for role in self.apply_role_rules(mapping['roles'], entries):
-                ldaproles.add(role)
+                if role in ldaproles:
+                    if role.options != ldaproles[role].options:
+                        msg = "Role %s redefined with different options." % (
+                            role,)
+                        raise UserError(msg)
+                    role.merge(ldaproles[role])
+                ldaproles[role] = role
 
             grant = mapping.get('grant', [])
             aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
@@ -268,7 +274,7 @@ class SyncManager(object):
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)
 
-        return ldaproles, ldapacls
+        return RoleSet(ldaproles.values()), ldapacls
 
     def postprocess_inspection(self, schemas, pgowners, pgroles, ldaproles,
                                ldapacls):

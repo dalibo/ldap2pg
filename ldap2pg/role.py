@@ -111,6 +111,11 @@ class Role(object):
             "DROP ROLE \"%(role)s\";" % dict(role=self.name),
         )
 
+    def merge(self, other):
+        self.members += other.members
+        self.parents += other.parents
+        return self
+
 
 class RoleOptions(dict):
     COLUMNS_MAP = OrderedDict([

@@ -403,6 +403,48 @@ def test_inspect_roles(mocker):
     assert 'bob' in ldaproles
 
 
+def test_inspect_roles_merge_duplicates(mocker):
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+
+    syncmap = dict(db=dict(s=[
+        dict(roles=[
+            dict(names=['group0']),
+            dict(names=['group1']),
+            dict(names=['bob'], parents=['group0']),
+            dict(names=['bob'], parents=['group1']),
+        ]),
+    ]))
+
+    ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
+
+    ldaproles = {r: r for r in ldaproles}
+    assert 'group0' in ldaproles
+    assert 'group1' in ldaproles
+    assert 'bob' in ldaproles
+    assert 3 == len(ldaproles)
+    assert 2 == len(ldaproles['bob'].parents)
+
+
+def test_inspect_roles_duplicate_differents_options(mocker):
+    from ldap2pg.manager import SyncManager, UserError
+
+    manager = SyncManager()
+
+    syncmap = dict(db=dict(s=[
+        dict(roles=[
+            dict(names=['group0']),
+            dict(names=['group1']),
+            dict(names=['bob'], options=dict(LOGIN=True)),
+            dict(names=['bob']),
+        ]),
+    ]))
+
+    with pytest.raises(UserError):
+        manager.inspect_ldap(syncmap=syncmap)
+
+
 def test_diff_roles():
     from ldap2pg.manager import SyncManager, Role, RoleSet
 
