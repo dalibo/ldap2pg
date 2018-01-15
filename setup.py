@@ -23,7 +23,7 @@ else:
 
 setup(
     name='ldap2pg',
-    version='4.0',
+    version='4.1',
     description='Synchronize PostgreSQL roles and ACLs from LDAP',
     url='https://github.com/dalibo/ldap2pg',
     author='Dalibo',
