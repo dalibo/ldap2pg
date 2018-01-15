@@ -27,7 +27,7 @@ release:
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git
-	@echo Now upload with `make upload`
+	@echo Now upload with make upload
 
 upload:
 	git describe --exact-match --tags
