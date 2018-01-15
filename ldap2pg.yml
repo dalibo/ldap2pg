@@ -48,7 +48,7 @@
 # Here we will create a group for each LDAP group and create their members.
 - ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: "(objectClass=groupOfNames)"
+    filter: "(&(objectClass=groupOfNames)(!(cn=dba)))"
     # We'll need cn of the group and all member.
     attributes: [cn, member]
   roles:
