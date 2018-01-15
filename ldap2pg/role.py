@@ -157,9 +157,6 @@ class RoleOptions(dict):
 
 
 class RoleSet(set):
-    def __init__(self, *a, **kw):
-        super(RoleSet, self).__init__(*a, **kw)
-
     def resolve_membership(self):
         index_ = self.reindex()
         for role in self:
