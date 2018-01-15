@@ -25,13 +25,9 @@ release:
 	sed -i 's/ \+(unreleased)$$//' docs/changelog.md
 	git commit setup.py docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
-	@echo
-	@echo Now push with
-	@echo
-	@echo "    git push rw"
-	@echo "    git push --tags rw"
-	@echo
-	@echo and upload with make upload
+	git push git@github.com:dalibo/ldap2pg.git
+	git push --tags git@github.com:dalibo/ldap2pg.git
+	@echo Now upload with `make upload`
 
 upload:
 	git describe --exact-match --tags
