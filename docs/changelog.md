@@ -9,7 +9,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 4.1 (unreleased)
 
-- Merge groups of roles inspected twice.
+- Merge role memberships when inspected twice.
+- Manage `ALTER DEFAULT PRIVILEGES` on global schema.
 
 
 # ldap2pg 4.0
