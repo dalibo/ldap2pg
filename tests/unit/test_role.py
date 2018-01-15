@@ -57,6 +57,20 @@ def test_drop():
     assert fnfilter(queries, 'DROP ROLE "toto";')
 
 
+def test_merge():
+    from ldap2pg.role import Role
+
+    a = Role(name='daniel', parents=['group0'])
+    b = Role(name='daniel', parents=['group1'])
+    c = Role(name='daniel', members=['group2'])
+
+    a.merge(b)
+    assert 2 == len(a.parents)
+
+    a.merge(c)
+    assert 1 == len(a.members)
+
+
 def test_options():
     from ldap2pg.manager import RoleOptions
 
