@@ -12,6 +12,5 @@ insert_final_newline = true
 indent_style = space
 indent_size = 2
 
-[Makefile]
+[{*.spec,Makefile}]
 indent_size = 8
-indent_style = tab

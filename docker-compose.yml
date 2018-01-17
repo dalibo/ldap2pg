@@ -11,9 +11,20 @@ services:
   build:
     image: dalibo/postgres-sdk
     environment:
-      HISTFILE: /workspace/.docker-bash-history
+      HISTFILE: /workspace/.docker-build-bash-history
       PGHOST: postgres
       PGUSER: postgres
     volumes:
     - .:/workspace
+    links:
+    - postgres
     command: "tail -f /dev/null"
+
+  rpm:
+    image: rpmbuild/centos7
+    environment:
+    - HISTFILE=/srv/.docker-rpm-bash-history
+    - PGDG_RPM
+    - PGVERSION
+    volumes:
+    - .:/srv
