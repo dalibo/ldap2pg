@@ -2,7 +2,7 @@ version: "2"
 
 services:
   postgres:
-    image: postgres:10-alpine
+    image: postgres:9.6-alpine
     labels:
       com.dnsdock.alias: postgres.pgdumpacl.docker
 
