@@ -1,0 +1,17 @@
+version: "2"
+
+services:
+  postgres:
+    image: postgres:10-alpine
+    labels:
+      com.dnsdock.alias: postgres.pgdumpacl.docker
+
+  build:
+    image: dalibo/postgres-sdk
+    environment:
+      HISTFILE: /workspace/.docker-bash-history
+      PGHOST: postgres
+      PGUSER: postgres
+    volumes:
+    - .:/workspace
+    command: "tail -f /dev/null"
