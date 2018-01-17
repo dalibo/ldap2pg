@@ -1,0 +1,24 @@
+#!/bin/bash -eux
+#
+# Entrypoint for rpmbuild official Docker image
+#
+
+teardown() {
+    # Ease debugging from Docker container by waiting for explicit shutdown.
+    if [ -z "${CI-}" ] && ! test -t 0 ; then
+        tail -f /dev/null
+    fi
+}
+
+trap teardown EXIT INT TERM
+
+cd $(readlink -m $0/..)
+if ! yum repolist |& grep -q pgdg ; then
+	PGDG_RPM=https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+	sudo yum install -y $PGDG_RPM
+fi
+sudo yum-builddep -y pg_dumpacl.spec
+rpmbuild \
+    --define "_sourcedir ${PWD}" \
+    --define "_rpmdir ${PWD}/rpm" \
+	-ba pg_dumpacl.spec
