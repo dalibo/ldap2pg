@@ -23,6 +23,8 @@ services:
   rpm:
     image: rpmbuild/centos7
     environment:
-      HISTFILE: /srv/.docker-rpm-bash-history
+    - HISTFILE=/srv/.docker-rpm-bash-history
+    - PGDG_RPM
+    - PGVERSION
     volumes:
     - .:/srv

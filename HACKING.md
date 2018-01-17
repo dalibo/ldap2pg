@@ -13,4 +13,5 @@ root@ece3f6b4763e:/workspace# PGHOST=postgres PGUSER=postgres ./pg_dumpacl ...
 
 # Creating RPM
 
-`docker-compose run --rm rpm` builds a rpm in `rpm/` folder.
+`docker-compose run --rm rpm` builds a rpm in `rpm/` folder. `make rpms`
+generate packages for all supported PostgreSQL versions.

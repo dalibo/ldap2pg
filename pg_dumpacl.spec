@@ -1,9 +1,9 @@
 %global version 0.1
-%global pgmajorversion 96
-%global pginstdir /usr/pgsql-9.6
+%{!?pgversion: %global pgversion 96}
+%{!?pginstdir: %global pginstdir /usr/pgsql-9.6}
 
 Summary:	Tool for dumping database creation options
-Name:     pg_dumpacl%{pgmajorversion}
+Name:     pg_dumpacl%{pgversion}
 Version:	%{version}
 Release:	1%{?dist}
 License:	BSD
@@ -11,9 +11,9 @@ Group:		Applications/Databases
 Source0:	pg_dumpacl.c
 Source1:	Makefile
 URL:      https://github.com/dalibo/pg_dumpacl
-BuildRequires:	  postgresql%{pgmajorversion}-devel
+BuildRequires:	  postgresql%{pgversion}-devel
 BuildRoot:        %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:	postgresql%{pgmajorversion}-server
+Requires:	postgresql%{pgversion}-server
 Requires(post):   %{_sbindir}/update-alternatives
 Requires(postun): %{_sbindir}/update-alternatives
 

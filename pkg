@@ -14,11 +14,20 @@ trap teardown EXIT INT TERM
 
 cd $(readlink -m $0/..)
 if ! yum repolist |& grep -q pgdg ; then
-	PGDG_RPM=https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
-	sudo yum install -y $PGDG_RPM
+	sudo yum install -y \
+		 ${PGDG_RPM-https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm}
 fi
-sudo yum-builddep -y pg_dumpacl.spec
+
+: ${PGVERSION=9.6}
+defines=(
+	"--define=pgversion ${PGVERSION/./}"
+	"--define=pginstdir /usr/pgsql-${PGVERSION}"
+)
+
+
+sudo yum install -y $(rpmspec -q --buildrequires "${defines[@]}" pg_dumpacl.spec)
 rpmbuild \
     --define "_sourcedir ${PWD}" \
     --define "_rpmdir ${PWD}/rpm" \
+	"${defines[@]}" \
 	-ba pg_dumpacl.spec
