@@ -311,13 +311,25 @@ connectDatabase(const char *dbname, const char *connection_string,
 	bool		new_pass;
 	const char *remoteversion_str;
 	int			my_version;
+	// API change in version 10 : no need to free password anymore
+	// but we must allocate it
+#if PG_VERSION_NUM > 100000
+	char *password = pg_malloc(101);
+#else
 	static char *password = NULL;
+#endif
 	const char **keywords = NULL;
 	const char **values = NULL;
 	PQconninfoOption *conn_opts = NULL;
 
-	if (prompt_password == TRI_YES && !password)
-		password = simple_prompt("Password: ", 100, false);
+	if (prompt_password == TRI_YES) {
+#if PG_VERSION_NUM > 100000
+		simple_prompt("Password: ", password, 100, false);
+#else
+		if (!password)
+			password = simple_prompt("Password: ", 100, false);
+#endif
+	}
 
 	/*
 	 * Start the connection.  Loop until we have a password if requested by
@@ -425,7 +437,16 @@ connectDatabase(const char *dbname, const char *connection_string,
 			prompt_password != TRI_NO)
 		{
 			PQfinish(conn);
-			password = simple_prompt("Password: ", 100, false);
+
+			if (prompt_password == TRI_YES) {
+#if PG_VERSION_NUM > 100000
+				simple_prompt("Password: ", password, 100, false);
+#else
+				if (!password)
+					password = simple_prompt("Password: ", 100, false);
+#endif
+			}
+
 			new_pass = true;
 		}
 	} while (new_pass);
