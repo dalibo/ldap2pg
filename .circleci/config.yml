@@ -1,0 +1,23 @@
+version: "2"
+
+jobs:
+  build:
+    working_directory: /workspace
+    docker:
+    - image: dalibo/postgres-sdk@sha256:b4b6b953235442cf6214ea6970934a572bb61f5b5525e9d28c651d54062b90cf
+    - image: postgres:9.6-alpine
+    steps:
+    - checkout
+    - run:
+        name: Build pg_dumpacl
+        environment:
+          PGHOST: localhost
+          PGUSER: postgres
+        command: |
+          make clean all PG_CONFIG=/usr/lib/postgresql/9.6/bin/pg_config
+          wait-for-it.sh localhost:5432 -t 10
+          sleep 1
+          # Wait for restart
+          wait-for-it.sh localhost:5432 -t 10
+          ./fixture.sh
+          ./pg_dumpacl -l db0
