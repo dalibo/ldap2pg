@@ -15,10 +15,10 @@ trap teardown EXIT INT TERM
 cd $(readlink -m $0/..)
 if ! yum repolist |& grep -q pgdg ; then
 	sudo yum install -y \
-		 ${PGDG_RPM-https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm}
+		 ${PGDG_RPM-https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm}
 fi
 
-: ${PGVERSION=9.6}
+: ${PGVERSION=10}
 defines=(
 	"--define=pgversion ${PGVERSION/./}"
 	"--define=pginstdir /usr/pgsql-${PGVERSION}"
