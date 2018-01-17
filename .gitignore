@@ -1,0 +1,3 @@
+.docker-bash-history
+*.o
+pg_dumpacl
