@@ -2,7 +2,7 @@ version: "2"
 
 services:
   postgres:
-    image: postgres:9.6-alpine
+    image: postgres:10-alpine
     volumes:
     - ./fixture.sh:/docker-entrypoint-initdb.d/fixture.sh
     labels:
@@ -12,6 +12,7 @@ services:
     image: dalibo/postgres-sdk
     environment:
       HISTFILE: /workspace/.docker-build-bash-history
+      PG_CONFIG: /usr/lib/postgresql/10/bin/pg_config
       PGHOST: postgres
       PGUSER: postgres
     volumes:

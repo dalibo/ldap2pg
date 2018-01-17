@@ -1,6 +1,6 @@
 %global version 0.1
-%{!?pgversion: %global pgversion 96}
-%{!?pginstdir: %global pginstdir /usr/pgsql-9.6}
+%{!?pgversion: %global pgversion 10}
+%{!?pginstdir: %global pginstdir /usr/pgsql-10}
 
 Summary:	Tool for dumping database creation options
 Name:     pg_dumpacl%{pgversion}
