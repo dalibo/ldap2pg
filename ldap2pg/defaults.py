@@ -76,7 +76,7 @@ _defacl_tpl = dict(
         (aclexplode(defaclacl)).grantee AS grantee,
         (aclexplode(defaclacl)).privilege_type AS priv
       FROM pg_catalog.pg_default_acl
-      WHERE defaclobjtype = '%(t)s'
+      WHERE defaclobjtype IN %(t)s
     )
     SELECT
       nspname,
@@ -162,7 +162,7 @@ _allrelacl_tpl = dict(
           FILTER (WHERE rel.relname IS NOT NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
-        ON rel.relnamespace = nsp.oid AND relkind = '%(t)s'
+        ON rel.relnamespace = nsp.oid AND relkind IN %(t)s
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -172,7 +172,7 @@ _allrelacl_tpl = dict(
         (aclexplode(relacl)).grantee,
         array_agg(relname ORDER BY relname) AS rels
       FROM pg_catalog.pg_class
-      WHERE relkind = '%(t)s'
+      WHERE relkind IN %(t)s
       GROUP BY 1, 2, 3
     )
     SELECT
@@ -258,17 +258,21 @@ _allprocacl_tpl = dict(
 
 
 _types = {
-    'FUNCTIONS': 'f',
-    'TABLES': 'r',
-    'TYPES': 'T',
-    'SEQUENCES': 'S',
+    'FUNCTIONS': ('f',),
+    'TABLES': ('r', 'v'),
+    'TYPES': ('T',),
+    'SEQUENCES': ('S',),
 }
 
 
 def make_acl(tpl, name, TYPE, privilege):
+    t = _types.get(TYPE)
+    if t:
+        # Loose SQL formatting
+        t = '(%s)' % (', '.join(['%r' % i for i in t]))
     return name, dict(
         (k, v % (dict(
-            t=_types.get(TYPE),
+            t=t,
             TYPE=TYPE,
             privilege=privilege.upper(),
         )))
