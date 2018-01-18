@@ -118,26 +118,47 @@ class Role(object):
 
 
 class RoleOptions(dict):
-    COLUMNS_MAP = OrderedDict([
-        ('BYPASSRLS', 'rolbypassrls'),
-        ('LOGIN', 'rolcanlogin'),
-        ('CREATEDB', 'rolcreatedb'),
-        ('CREATEROLE', 'rolcreaterole'),
-        ('INHERIT', 'rolinherit'),
-        ('REPLICATION', 'rolreplication'),
-        ('SUPERUSER', 'rolsuper'),
+    COLUMNS = OrderedDict([
+        # column: (option, default)
+        ('rolbypassrls', ('BYPASSRLS', False)),
+        ('rolcanlogin', ('LOGIN', False)),
+        ('rolcreatedb', ('CREATEDB', False)),
+        ('rolcreaterole', ('CREATEROLE', False)),
+        ('rolinherit', ('INHERIT', True)),
+        ('rolreplication', ('REPLICATION', False)),
+        ('rolsuper', ('SUPERUSER', False)),
     ])
 
-    def __init__(self, *a, **kw):
-        super(RoleOptions, self).__init__(
-            BYPASSRLS=False,
-            LOGIN=False,
-            CREATEDB=False,
-            CREATEROLE=False,
-            INHERIT=True,
-            REPLICATION=False,
-            SUPERUSER=False,
+    SUPPORTED_COLUMNS = list(COLUMNS.keys())
+
+    @classmethod
+    def supported_options(cls):
+        return [
+            o for c, (o, _) in cls.COLUMNS.items()
+            if c in cls.SUPPORTED_COLUMNS
+        ]
+
+    COLUMNS_QUERY = """
+    SELECT array_agg(column_name::text)
+    FROM information_schema.columns
+    WHERE table_schema = 'pg_catalog' AND table_name = 'pg_authid'
+    LIMIT 1
+    """.replace('\n    ', '\n').strip()
+
+    @classmethod
+    def update_supported_columns(cls, columns):
+        cls.SUPPORTED_COLUMNS = [
+            c for c in RoleOptions.COLUMNS.keys()
+            if c in columns
+        ]
+        logger.debug(
+            "Postgres server supports role options %s.",
+            ", ".join(cls.supported_options()),
         )
+
+    def __init__(self, *a, **kw):
+        defaults = dict([(o, d) for c, (o, d) in self.COLUMNS.items()])
+        super(RoleOptions, self).__init__(**defaults)
         init = dict(*a, **kw)
         self.update(init)
 
@@ -148,10 +169,11 @@ class RoleOptions(dict):
         return ' '.join((
             ('NO' if value is False else '') + name
             for name, value in self.items()
+            if name in self.supported_options()
         ))
 
     def update_from_row(self, row):
-        self.update(dict(zip(self.COLUMNS_MAP.keys(), row)))
+        self.update(dict(zip(self.supported_options(), row)))
 
     def update(self, other):
         spurious_options = set(other.keys()) - set(self.keys())
