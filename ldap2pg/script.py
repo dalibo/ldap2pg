@@ -13,6 +13,7 @@ from .config import Configuration, ConfigurationError, dictConfig
 from .manager import SyncManager
 from .psql import PSQL
 from .utils import UserError
+from .role import RoleOptions
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,14 @@ def wrapped_main(config=None):
         logger.warn("Running in real mode.")
 
     psql = PSQL(connstring=config['postgres']['dsn'])
+    with psql('postgres') as psql_:
+        try:
+            supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
+        except psycopg2.OperationalError as e:
+            message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
+            raise ConfigurationError(message)
+        RoleOptions.update_supported_columns(supported_columns)
+
     manager = SyncManager(
         ldapconn=ldapconn, psql=psql,
         acl_dict=config['acl_dict'],
@@ -46,13 +55,7 @@ def wrapped_main(config=None):
         owners_query=config['postgres']['owners_query'],
         dry=config['dry'],
     )
-    try:
-        sync_data = manager.inspect(
-            syncmap=config['sync_map'])
-    except psycopg2.OperationalError as e:
-        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
-        raise ConfigurationError(message)
-
+    sync_data = manager.inspect(syncmap=config['sync_map'])
     count = manager.sync(*sync_data)
 
     action = "Comparison" if config['dry'] else "Synchronization"

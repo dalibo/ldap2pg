@@ -78,6 +78,7 @@ def test_pdb(mocker):
 
 def test_wrapped_main(mocker):
     mocker.patch('ldap2pg.script.dictConfig', autospec=True)
+    PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
     clc = mocker.patch('ldap2pg.script.ldap.connect')
     RM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     rm = RM.return_value
@@ -87,10 +88,13 @@ def test_wrapped_main(mocker):
     from ldap2pg.script import wrapped_main
 
     config = mocker.MagicMock(name='config')
+    # Dry run
     config.get.return_value = True
     wrapped_main(config=config)
 
+    # Real mode
     config.get.return_value = False
+    PSQL.return_value.return_value = mocker.MagicMock(name='psql')
     wrapped_main(config=config)
 
     assert clc.called is True
@@ -104,6 +108,7 @@ def test_conn_errors(mocker):
     SyncManager = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     SyncManager.return_value.inspect.return_value = [mocker.Mock()] * 3
     clc = mocker.patch('ldap2pg.script.ldap.connect')
+    PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
 
     from ldap2pg.script import (
         wrapped_main, ConfigurationError,
@@ -113,9 +118,11 @@ def test_conn_errors(mocker):
     clc.side_effect = ldap.LDAPError("pouet")
     with pytest.raises(ConfigurationError):
         wrapped_main()
-
     clc.side_effect = None
-    manager = SyncManager.return_value
-    manager.inspect.side_effect = psycopg2.OperationalError()
+
+    psql = PSQL.return_value
+    psql.return_value = mocker.MagicMock()
+    psql_ = psql.return_value.__enter__.return_value
+    psql_.side_effect = psycopg2.OperationalError()
     with pytest.raises(ConfigurationError):
         wrapped_main()
