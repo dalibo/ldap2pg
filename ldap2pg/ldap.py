@@ -81,7 +81,7 @@ def get_attribute(entry, attribute):
                 raise ValueError(msg)
             value = dict()
             for (type_, name, _), in dn:
-                names = value.setdefault(type_, [])
+                names = value.setdefault(type_.lower(), [])
                 names.append(name)
             try:
                 value = value[path[0]][0]
