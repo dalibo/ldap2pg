@@ -118,26 +118,24 @@ class Role(object):
 
 
 class RoleOptions(dict):
-    COLUMNS_MAP = OrderedDict([
-        ('BYPASSRLS', 'rolbypassrls'),
-        ('LOGIN', 'rolcanlogin'),
-        ('CREATEDB', 'rolcreatedb'),
-        ('CREATEROLE', 'rolcreaterole'),
-        ('INHERIT', 'rolinherit'),
-        ('REPLICATION', 'rolreplication'),
-        ('SUPERUSER', 'rolsuper'),
+    COLUMNS = OrderedDict([
+        # column: (option, default)
+        ('rolbypassrls', ('BYPASSRLS', False)),
+        ('rolcanlogin', ('LOGIN', False)),
+        ('rolcreatedb', ('CREATEDB', False)),
+        ('rolcreaterole', ('CREATEROLE', False)),
+        ('rolinherit', ('INHERIT', True)),
+        ('rolreplication', ('REPLICATION', False)),
+        ('rolsuper', ('SUPERUSER', False)),
     ])
 
+    @classmethod
+    def options(cls):
+        return [o for _, (o, _) in cls.COLUMNS.items()]
+
     def __init__(self, *a, **kw):
-        super(RoleOptions, self).__init__(
-            BYPASSRLS=False,
-            LOGIN=False,
-            CREATEDB=False,
-            CREATEROLE=False,
-            INHERIT=True,
-            REPLICATION=False,
-            SUPERUSER=False,
-        )
+        defaults = dict([(o, d) for c, (o, d) in self.COLUMNS.items()])
+        super(RoleOptions, self).__init__(**defaults)
         init = dict(*a, **kw)
         self.update(init)
 
@@ -148,10 +146,11 @@ class RoleOptions(dict):
         return ' '.join((
             ('NO' if value is False else '') + name
             for name, value in self.items()
+            if name in self.options()
         ))
 
     def update_from_row(self, row):
-        self.update(dict(zip(self.COLUMNS_MAP.keys(), row)))
+        self.update(dict(zip(self.options(), row)))
 
     def update(self, other):
         spurious_options = set(other.keys()) - set(self.keys())

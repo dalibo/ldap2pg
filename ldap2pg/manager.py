@@ -80,7 +80,7 @@ class SyncManager(object):
         if isinstance(roles_query, list):
             return roles_query
 
-        row_cols = ['rolname'] + list(RoleOptions.COLUMNS_MAP.values())
+        row_cols = ['rolname'] + list(RoleOptions.COLUMNS.keys())
         row_cols = ['role.%s' % (r,) for r in row_cols]
         return roles_query.format(options=', '.join(row_cols[1:]))
 
