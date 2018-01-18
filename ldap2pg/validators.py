@@ -14,7 +14,6 @@ default_ldap_query = {
     'base': '',
     'filter': '(objectClass=*)',
     'scope': 'sub',
-    'attributes': ['cn'],
 }
 
 
@@ -23,14 +22,10 @@ def ldapquery(value):
         raise ValueError("ldap: is not a dict")
 
     query = dict(default_ldap_query, **value)
-
-    if 'attribute' in query:
-        query['attributes'] = query['attribute']
-        del query['attribute']
-    if isinstance(query['attributes'], string_types):
-        query['attributes'] = [query['attributes']]
-
     query['scope'] = parse_scope(query['scope'])
+
+    # Clean value from old manual attribute
+    query.pop('attribute', None)
 
     return query
 
@@ -139,15 +134,19 @@ def ismapping(value):
     return bool(set(['grant', 'ldap', 'role', 'roles']) >= set(value.keys()))
 
 
+def gather_queried_attributes(mapping):
+    for role in mapping.get('roles', []):
+        for k, v in role.items():
+            if k.endswith('_attribute'):
+                yield v.partition('.')[0]
+
+
 def mapping(value):
     # A single mapping from a query to a set of role rules. This function
     # translate random YAML to cannonical schema.
 
     if not isinstance(value, dict):
         raise ValueError("Mapping should be a dict.")
-
-    if 'ldap' in value:
-        value['ldap'] = ldapquery(value['ldap'])
 
     if 'role' in value:
         value['roles'] = value.pop('role')
@@ -166,6 +165,10 @@ def mapping(value):
     if not value['roles'] and 'grant' not in value:
         # Don't accept unused LDAP queries.
         raise ValueError("Missing role or grant rule.")
+
+    if 'ldap' in value:
+        value['ldap'] = ldapquery(value['ldap'])
+        value['ldap']['attributes'] = list(gather_queried_attributes(value))
 
     return value
 
