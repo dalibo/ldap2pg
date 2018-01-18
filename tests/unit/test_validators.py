@@ -102,7 +102,7 @@ def test_process_mapping_grant():
 
 
 def test_process_ldapquery():
-    from ldap2pg.validators import ldapquery, parse_scope
+    from ldap2pg.validators import mapping, ldapquery, parse_scope
 
     with pytest.raises(ValueError):
         ldapquery(None)
@@ -111,12 +111,14 @@ def test_process_ldapquery():
 
     v = ldapquery(raw)
 
-    assert 'attributes' in v
-    assert 'attribute' not in v
     assert 'filter' in v
 
     with pytest.raises(ValueError):
         ldapquery(dict(raw, scope='unkqdsfq'))
+
+    v = mapping(dict(role=dict(name_attribute='cn'), ldap=dict(base='o=acme')))
+
+    assert ['cn'] == v['ldap']['attributes']
 
 
 def test_process_rolerule():
