@@ -81,6 +81,7 @@ EOSQL
 # Ensure daniel has no privileges on appdb, for grant.
 PGDATABASE=appdb psql <<'EOSQL'
 CREATE TABLE public.table1 (id SERIAL);
+CREATE VIEW public.view1 AS SELECT 'row0';
 
 CREATE SCHEMA appns;
 CREATE TABLE appns.table1 (id SERIAL);

@@ -76,7 +76,7 @@ _defacl_tpl = dict(
         (aclexplode(defaclacl)).grantee AS grantee,
         (aclexplode(defaclacl)).privilege_type AS priv
       FROM pg_catalog.pg_default_acl
-      WHERE defaclobjtype = '%(t)s'
+      WHERE defaclobjtype IN %(t)s
     )
     SELECT
       nspname,
@@ -162,7 +162,7 @@ _allrelacl_tpl = dict(
           FILTER (WHERE rel.relname IS NOT NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
-        ON rel.relnamespace = nsp.oid AND relkind = '%(t)s'
+        ON rel.relnamespace = nsp.oid AND relkind IN %(t)s
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -172,7 +172,7 @@ _allrelacl_tpl = dict(
         (aclexplode(relacl)).grantee,
         array_agg(relname ORDER BY relname) AS rels
       FROM pg_catalog.pg_class
-      WHERE relkind = '%(t)s'
+      WHERE relkind IN %(t)s
       GROUP BY 1, 2, 3
     )
     SELECT
@@ -258,42 +258,51 @@ _allprocacl_tpl = dict(
 
 
 _types = {
-    'f': 'FUNCTIONS',
-    'r': 'TABLES',
-    'T': 'TYPES',
-    'S': 'SEQUENCES',
+    'FUNCTIONS': ('f',),
+    'TABLES': ('r', 'v'),
+    'TYPES': ('T',),
+    'SEQUENCES': ('S',),
 }
 
 
-def make_acl(tpl, name, t, privilege):
+def make_acl(tpl, name, TYPE, privilege):
+    t = _types.get(TYPE)
+    if t:
+        # Loose SQL formatting
+        t = '(%s)' % (', '.join(['%r' % i for i in t]))
     return name, dict(
-        (k, v % (dict(t=t, TYPE=_types.get(t), privilege=privilege.upper())))
+        (k, v % (dict(
+            t=t,
+            TYPE=TYPE,
+            privilege=privilege.upper(),
+        )))
         for k, v in tpl.items()
     )
 
 
-def make_proc_acls(privilege, t='f', namefmt='__%(privilege)s_on_%(type)s__'):
-    fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
+def make_proc_acls(privilege, TYPE='FUNCTIONS',
+                   namefmt='__%(privilege)s_on_%(type)s__'):
+    fmtkw = dict(privilege=privilege.lower(), type=TYPE.lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
     global_def = '__global_default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
-        make_acl(_allprocacl_tpl, all_, t, privilege),
-        make_acl(_defacl_tpl, default, t, privilege),
-        make_acl(_global_defacl_tpl, global_def, t, privilege),
+        make_acl(_allprocacl_tpl, all_, TYPE, privilege),
+        make_acl(_defacl_tpl, default, TYPE, privilege),
+        make_acl(_global_defacl_tpl, global_def, TYPE, privilege),
         (name, [all_, default, global_def]),
     ])
 
 
-def make_rel_acls(privilege, t, namefmt='__%(privilege)s_on_%(type)s__'):
-    fmtkw = dict(privilege=privilege.lower(), type=_types[t].lower())
+def make_rel_acls(privilege, TYPE, namefmt='__%(privilege)s_on_%(type)s__'):
+    fmtkw = dict(privilege=privilege.lower(), type=TYPE.lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
-        make_acl(_allrelacl_tpl, all_, t, privilege),
-        make_acl(_defacl_tpl, default, t, privilege),
+        make_acl(_allrelacl_tpl, all_, TYPE, privilege),
+        make_acl(_defacl_tpl, default, TYPE, privilege),
         (name, [all_, default]),
     ])
 
@@ -304,19 +313,21 @@ def make_well_known_acls():
         make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
         make_acl(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
         make_acl(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__usage_on_types__', 'T', 'USAGE'),
+        make_acl(_defacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
     ])
 
-    acls.update(make_proc_acls('EXECUTE', 'f', namefmt='__%(privilege)s__'))
+    acls.update(
+        make_proc_acls('EXECUTE', 'FUNCTIONS', namefmt='__%(privilege)s__'))
 
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRIGGER', 'TRUNCATE':
-        acls.update(make_rel_acls(privilege, 'r', namefmt='__%(privilege)s__'))
+        acls.update(
+            make_rel_acls(privilege, 'TABLES', namefmt='__%(privilege)s__'))
 
     for privilege in 'SELECT', 'UPDATE':
-        acls.update(make_rel_acls(privilege, 'r'))
-        acls.update(make_rel_acls(privilege, 'S'))
+        acls.update(make_rel_acls(privilege, 'TABLES'))
+        acls.update(make_rel_acls(privilege, 'SEQUENCES'))
 
-    acls.update(make_rel_acls('USAGE', 'S'))
+    acls.update(make_rel_acls('USAGE', 'SEQUENCES'))
 
     acls['__all_on_schemas__'] = [
         '__create_on_schemas__',
