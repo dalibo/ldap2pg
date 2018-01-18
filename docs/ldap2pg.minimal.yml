@@ -4,7 +4,6 @@
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=organizationalRole)"
-    attribute: cn
   role:
     name_attribute: cn
     options: LOGIN

@@ -76,7 +76,6 @@ acls:
 sync_map:
 - ldap:
     base: ...
-    attribute: cn
   grant:
     database: appdb
     acl: ro

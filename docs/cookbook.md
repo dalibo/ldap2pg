@@ -119,7 +119,6 @@ roles from each values of each entries returned by the LDAP search:
 ``` yaml
 - ldap:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    attributes: member
   role:
     name_attribute: member.cn
     options: LOGIN SUPERUSER
@@ -294,7 +293,6 @@ sync_map:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=groupOfNames)"
     scope: sub
-    attribute: member
   grant:
     role_attribute: member
     acl: rw

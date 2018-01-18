@@ -2,13 +2,11 @@
 
 `ldap2pg` searches for LDAP query in `sync_map` items in the `ldap` entry.
 
-A `ldap` entry contains `base`, `scope`, `filter` and `attribute` or
-`attributes`. The meaning of `base`, `scope`, `filter` and `attribute` is
-strictly the same as in `ldapsearch`. `base` and either `attribute` or
-`attributes` must be defined. `filter` defaults to `(objectClass=*)`, just like
-`ldapsearch(1)`. `scope` defaults to `sub`, likewise. `attribute` or
-`attributes` can be either a string or a list of strings. You need at least one
-attribute, an empty entry is useless.
+A `ldap` entry contains `base`, `scope` and `filter`. The meaning of `base`,
+`scope` and `filter` is strictly the same as in `ldapsearch`. `base` must be
+defined. `filter` defaults to `(objectClass=*)`, just like `ldapsearch(1)`.
+`scope` defaults to `sub`, likewise. `ldap2pg` determine which attribute to
+query depending on `_attribute` values in `grant` and `roles` rules.
 
 !!! tip
 
@@ -43,7 +41,6 @@ generate `toto`.
 ``` yaml
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
-    attribute: cn
   role:
     name_attribute: cn
     options: LOGIN
@@ -56,8 +53,6 @@ generate `toto`.
         (objectClass=User)
         (memberOf=cn=dba,ou=groups,ou=site,dc=ldap,dc=local)
       )
-    attributes:
-    - member
   roles:
   - name_attribute: member.cn
     options: LOGIN
