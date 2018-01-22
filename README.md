@@ -3,7 +3,7 @@
 A tool to dump ACL per database, based on `pg_dump`
 
 ``` console
-$ ./pg_dumpacl -l db0
+$ ./pg_dumpacl -d db0
 --
 -- Database creation
 --
