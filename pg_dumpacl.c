@@ -93,7 +93,7 @@ void appendStringLiteralConn(PQExpBuffer buf, const char *str,
 						PGconn *conn);
 
 
-static void dumpCreateDB(PGconn *conn, const char *dbname);
+static void dumpCreateDB(PGconn *conn, const char *dbname, bool dump_all_db);
 
 static char *progname;
 static PQExpBuffer pgdumpopts;
@@ -110,6 +110,7 @@ int
 main(int argc, char *argv[])
 {
 	static struct option long_options[] = {
+		{"all", no_argument, NULL, 'a'},
 		{"connstr", required_argument, NULL, 'c'},
 		{"database", required_argument, NULL, 'd'},
 		{"file", required_argument, NULL, 'f'},
@@ -124,6 +125,7 @@ main(int argc, char *argv[])
 	char	   *pgport = NULL;
 	char	   *pguser = NULL;
 	char	   *pgdb = NULL;
+	bool     dump_all_db = false;
 	enum trivalue prompt_password = TRI_DEFAULT;
 	PGconn	   *conn;
 	int			c;
@@ -140,10 +142,14 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while ((c = getopt_long(argc, argv, "c:d:f:h:l:p:U:wW", long_options, &optindex)) != -1)
+	while ((c = getopt_long(argc, argv, "ac:d:f:h:l:p:U:wW", long_options, &optindex)) != -1)
 	{
 		switch (c)
 		{
+			case 'a':
+				dump_all_db = true;
+				break;
+
 			case 'c':
 				connstr = pg_strdup(optarg);
 				break;
@@ -251,7 +257,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	dumpCreateDB(conn, pgdb);
+	dumpCreateDB(conn, pgdb, dump_all_db);
 	if (filename)
 		fclose(OPF);
 	exit(0);
@@ -294,6 +300,7 @@ help(void)
 	printf(_("  %s [OPTION]...\n"), progname);
 
 	printf(_("\nGeneral options:\n"));
+	printf(_("  -a, --all                dump ACL for all databases\n"));
 	printf(_("  -f, --file=FILENAME      output file name\n"));
 	printf(_("  -?, --help               show this help, then exit\n"));
 
@@ -602,7 +609,7 @@ doConnStrQuoting(PQExpBuffer buf, const char *str)
 }
 
 static void
-dumpCreateDB(PGconn *conn, const char *dbname)
+dumpCreateDB(PGconn *conn, const char *dbname, bool dump_all_db)
 {
 	PQExpBuffer buf = createPQExpBuffer();
 	char	   *default_encoding = NULL;
@@ -644,15 +651,22 @@ dumpCreateDB(PGconn *conn, const char *dbname)
 
 	PQclear(res);
 
-	res = executeQuery(conn,
-					   "SELECT datname, "
-					   "coalesce(rolname, (select rolname from pg_authid where oid=(select datdba from pg_database where datname='template0'))), "
-					   "pg_encoding_to_char(d.encoding), "
-					   "datcollate, datctype, datfrozenxid, datminmxid, "
-					   "datistemplate, datacl, datconnlimit, "
-					   "(SELECT spcname FROM pg_tablespace t WHERE t.oid = d.dattablespace) AS dattablespace "
-			  "FROM pg_database d LEFT JOIN pg_authid u ON (datdba = u.oid) "
-			   "WHERE datallowconn AND datname = $1 ORDER BY 1", 1, &dbname);
+	appendPQExpBuffer(buf,
+	                  "SELECT datname, "
+	                  "coalesce(rolname, (select rolname from pg_authid where oid=(select datdba from pg_database where datname='template0'))), "
+	                  "pg_encoding_to_char(d.encoding), "
+	                  "datcollate, datctype, datfrozenxid, datminmxid, "
+	                  "datistemplate, datacl, datconnlimit, "
+	                  "(SELECT spcname FROM pg_tablespace t WHERE t.oid = d.dattablespace) AS dattablespace "
+	                  "FROM pg_database d LEFT JOIN pg_authid u ON (datdba = u.oid) "
+	                  "WHERE datallowconn");
+	if (! dump_all_db)
+	{
+		appendPQExpBuffer(buf, " AND datname = \'%s\'", dbname);
+	}
+	appendPQExpBuffer(buf, " ORDER BY 1");
+	
+	res = executeQuery(conn, buf->data, 0, NULL);
 
 	for (i = 0; i < PQntuples(res); i++)
 	{
