@@ -1,3 +1,20 @@
+/*-------------------------------------------------------------------------
+ *
+ * pg_dumpacl.c
+ *
+ * Portions Copyright (c) 2018, Dalibo
+ * Portions Copyright (c) 2014, Ronan Dunklau
+ * Portions Copyright (c) 1996-2017, PGDG for the pg_dumpall code
+ * Portions Copyright (c) 1994, Regents of the University of California
+ *
+ * pg_dumpacl is a tool forked from the pg_dumpall utility by Ronan Dunklau.
+ * pg_dumpacl will read the system catalogs in a database and dump out a
+ * script that reproduces the database creation and ACL in terms of SQL that is
+ * understood by PostgreSQL.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 #include "postgres.h"
 #include <stdlib.h>
 #include <string.h>
