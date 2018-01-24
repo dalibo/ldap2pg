@@ -51,8 +51,9 @@ def wrapped_main(config=None):
         acl_dict=config['acl_dict'],
         acl_aliases=config['acl_aliases'],
         blacklist=config['postgres']['blacklist'],
-        roles_query=config['postgres']['roles_query'],
         owners_query=config['postgres']['owners_query'],
+        roles_query=config['postgres']['roles_query'],
+        schemas_query=config['postgres']['schemas_query'],
         dry=config['dry'],
     )
     sync_data = manager.inspect(syncmap=config['sync_map'])

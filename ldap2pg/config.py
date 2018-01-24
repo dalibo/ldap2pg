@@ -335,6 +335,10 @@ class Configuration(dict):
             WHERE role.rolsuper IS TRUE
             ORDER BY 1;
             """.replace("\n" + ' ' * 12, "\n").strip(),
+            'schemas_query': """
+            SELECT nspname FROM pg_catalog.pg_namespace
+            WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
+            """.replace('\n' + ' ' * 12, '\n').strip(),
         },
         'acls': {},
         'acl_dict': {},
@@ -358,8 +362,9 @@ class Configuration(dict):
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:blacklist', env=None),
-        Mapping('postgres:roles_query', env=None),
         Mapping('postgres:owners_query', env=None),
+        Mapping('postgres:roles_query', env=None),
+        Mapping('postgres:schemas_query', env=None),
         Mapping('acls', env=None, processor=V.acls),
         Mapping('acl_dict', processor=V.acldict),
         Mapping('acl_groups', env=None),
