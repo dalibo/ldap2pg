@@ -29,6 +29,7 @@ jobs:
           wait-for-it.sh localhost:5432 -t 10
           ./fixture.sh
           ./pg_dumpacl -d db0
+          ./pg_dumpacl --all
 
   0-rpm-centos7:
     working_directory: /tmp/cci
