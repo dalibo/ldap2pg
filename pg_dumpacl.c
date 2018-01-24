@@ -98,6 +98,7 @@ static void dumpCreateDB(PGconn *conn, const char *dbname);
 static char *progname;
 static PQExpBuffer pgdumpopts;
 static char *connstr = "";
+static char *connstr_dbname = NULL;
 static FILE *OPF;
 static char *filename = NULL;
 
@@ -109,10 +110,10 @@ int
 main(int argc, char *argv[])
 {
 	static struct option long_options[] = {
+		{"connstr", required_argument, NULL, 'c'},
+		{"database", required_argument, NULL, 'd'},
 		{"file", required_argument, NULL, 'f'},
 		{"host", required_argument, NULL, 'h'},
-		{"dbname", required_argument, NULL, 'd'},
-		{"database", required_argument, NULL, 'l'},
 		{"port", required_argument, NULL, 'p'},
 		{"username", required_argument, NULL, 'U'},
 		{"no-password", no_argument, NULL, 'w'},
@@ -139,12 +140,16 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while ((c = getopt_long(argc, argv, "acd:f:gh:il:oOp:rsS:tU:vwWx", long_options, &optindex)) != -1)
+	while ((c = getopt_long(argc, argv, "c:d:f:h:l:p:U:wW", long_options, &optindex)) != -1)
 	{
 		switch (c)
 		{
-			case 'd':
+			case 'c':
 				connstr = pg_strdup(optarg);
+				break;
+
+			case 'd':
+				pgdb = pg_strdup(optarg);
 				break;
 
 			case 'f':
@@ -157,16 +162,9 @@ main(int argc, char *argv[])
 				pghost = pg_strdup(optarg);
 				break;
 
-
-			case 'l':
-				pgdb = pg_strdup(optarg);
-				break;
-
-
 			case 'p':
 				pgport = pg_strdup(optarg);
 				break;
-
 
 			case 'U':
 				pguser = pg_strdup(optarg);
@@ -191,7 +189,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (pgdb)
+	if (strlen(connstr) != 0)
 	{
 		conn = connectDatabase(pgdb, connstr, pghost, pgport, pguser,
 							   prompt_password, false);
@@ -202,18 +200,29 @@ main(int argc, char *argv[])
 					progname, pgdb);
 			exit(1);
 		}
+
+		/*
+		 * If pgdb is not given using the -d switch, try to get it from the 
+		 * connection string (connstr_dbname could be set in connectDatabase)
+		 */
+		if (connstr_dbname && !pgdb)
+			pgdb = strdup(connstr_dbname);
 	}
 	else
 	{
-		conn = connectDatabase("postgres", connstr, pghost, pgport, pguser,
+		conn = connectDatabase(pgdb, connstr, pghost, pgport, pguser,
 							   prompt_password, false);
+		if (!conn)
+			conn = connectDatabase("postgres", connstr, pghost, pgport, pguser,
+								   prompt_password, true);
 		if (!conn)
 			conn = connectDatabase("template1", connstr, pghost, pgport, pguser,
 								   prompt_password, true);
 
 		if (!conn)
 		{
-			fprintf(stderr, _("%s: could not connect to databases \"postgres\" or \"template1\"\n"
+			fprintf(stderr, _("%s: could not connect to either given database and"
+			          " databases \"postgres\" or \"template1\"\n"
 							  "Please specify an alternative database.\n"),
 					progname);
 			fprintf(stderr, _("Try \"%s --help\" for more information.\n"),
@@ -234,7 +243,6 @@ main(int argc, char *argv[])
 	}
 	else
 		OPF = stdout;
-
 
 	if (!conn)
 	{
@@ -286,13 +294,13 @@ help(void)
 	printf(_("  %s [OPTION]...\n"), progname);
 
 	printf(_("\nGeneral options:\n"));
-	printf(_("  -f, --file=FILENAME          output file name\n"));
-	printf(_("  -?, --help                   show this help, then exit\n"));
+	printf(_("  -f, --file=FILENAME      output file name\n"));
+	printf(_("  -?, --help               show this help, then exit\n"));
 
 	printf(_("\nConnection options:\n"));
-	printf(_("  -d, --dbname=CONNSTR     connect using connection string\n"));
+	printf(_("  -c, --connstr=CONNSTR    connect using connection string\n"));
 	printf(_("  -h, --host=HOSTNAME      database server host or socket directory\n"));
-	printf(_("  -l, --database=DBNAME    alternative default database\n"));
+	printf(_("  -d, --database=DBNAME    alternative default database\n"));
 	printf(_("  -p, --port=PORT          database server port number\n"));
 	printf(_("  -U, --username=NAME      connect as specified database user\n"));
 	printf(_("  -w, --no-password        never prompt for password\n"));
@@ -321,6 +329,7 @@ connectDatabase(const char *dbname, const char *connection_string,
 	const char **keywords = NULL;
 	const char **values = NULL;
 	PQconninfoOption *conn_opts = NULL;
+	static bool have_password = false;
 
 	if (prompt_password == TRI_YES) {
 #if PG_VERSION_NUM > 100000
@@ -329,6 +338,7 @@ connectDatabase(const char *dbname, const char *connection_string,
 		if (!password)
 			password = simple_prompt("Password: ", 100, false);
 #endif
+		have_password = true;
 	}
 
 	/*
@@ -351,11 +361,13 @@ connectDatabase(const char *dbname, const char *connection_string,
 
 		/*
 		 * Merge the connection info inputs given in form of connection string
-		 * and other options.
-		 */
+		 * and other options. Explicitly discard any dbname value in the
+		 * connection string; otherwise, PQconnectdbParams() would interpret
+		 * that value as being itself a connection string.*/
 		if (connection_string)
 		{
 			conn_opts = PQconninfoParse(connection_string, &err_msg);
+
 			if (conn_opts == NULL)
 			{
 				fprintf(stderr, "%s: %s", progname, err_msg);
@@ -375,6 +387,14 @@ connectDatabase(const char *dbname, const char *connection_string,
 			{
 				if (conn_opt->val != NULL && conn_opt->val[0] != '\0')
 				{
+					/*
+					 * if the dbname was given in the connstr and not in pgdb using the -d 
+					 * switch, we must retrieve it and save it in the pgdb variable for the 
+					 * dumpCreateDB operation
+					 */
+					if (strcmp(conn_opt->keyword, "dbname") == 0 && !dbname)
+						connstr_dbname = pg_strdup(conn_opt->val);
+
 					keywords[i] = conn_opt->keyword;
 					values[i] = conn_opt->val;
 					i++;
@@ -405,7 +425,7 @@ connectDatabase(const char *dbname, const char *connection_string,
 			values[i] = pguser;
 			i++;
 		}
-		if (password)
+		if (have_password)
 		{
 			keywords[i] = "password";
 			values[i] = password;
@@ -433,20 +453,17 @@ connectDatabase(const char *dbname, const char *connection_string,
 
 		if (PQstatus(conn) == CONNECTION_BAD &&
 			PQconnectionNeedsPassword(conn) &&
-			password == NULL &&
+			!have_password &&
 			prompt_password != TRI_NO)
 		{
 			PQfinish(conn);
 
-			if (prompt_password == TRI_YES) {
 #if PG_VERSION_NUM > 100000
-				simple_prompt("Password: ", password, 100, false);
+			simple_prompt("Password: ", password, 100, false);
 #else
-				if (!password)
-					password = simple_prompt("Password: ", 100, false);
+			password = simple_prompt("Password: ", 100, false);
 #endif
-			}
-
+			have_password = true;
 			new_pass = true;
 		}
 	} while (new_pass);
