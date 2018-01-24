@@ -6,7 +6,7 @@ from itertools import groupby
 
 import psycopg2
 
-from .ldap import LDAPError, get_attribute
+from .ldap import LDAPError, get_attribute, lower_attributes
 
 from .acl import AclItem, AclSet
 from .role import (
@@ -124,7 +124,8 @@ class SyncManager(object):
             raise UserError(message)
 
         logger.debug('Got %d entries from LDAP.', len(entries))
-        return decode_value(entries)
+        entries = decode_value(entries)
+        return [lower_attributes(e) for e in entries]
 
     def process_ldap_entry(self, entry, **kw):
         if 'names' in kw:
