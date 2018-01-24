@@ -337,7 +337,7 @@ class Configuration(dict):
             """.replace("\n" + ' ' * 12, "\n").strip(),
             'schemas_query': """
             SELECT nspname FROM pg_catalog.pg_namespace
-            WHERE nspname NOT LIKE 'pg_%' ORDER BY 1;
+            ORDER BY 1;
             """.replace('\n' + ' ' * 12, '\n').strip(),
         },
         'acls': {},
