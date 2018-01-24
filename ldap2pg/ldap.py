@@ -91,6 +91,14 @@ def get_attribute(entry, attribute):
         yield value
 
 
+def lower_attributes(entry):
+    dn, attributes = entry
+    return dn, dict([
+        (k.lower(), v)
+        for k, v in attributes.items()
+    ])
+
+
 class EncodedParamsCallable(object):  # pragma: nocover_py3
     # Wrap a callable not accepting unicode to encode all arguments.
     def __init__(self, callable_):

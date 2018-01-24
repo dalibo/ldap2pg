@@ -133,6 +133,14 @@ def test_parse_rc():
     assert 3 == items[0].lineno
 
 
+def test_lower_attrs():
+    from ldap2pg.manager import lower_attributes
+
+    entry = lower_attributes(('dn', {'sAMAccountName': 'alice'}))
+
+    assert 'samaccountname' in entry[1]
+
+
 def test_get_attribute():
     from ldap2pg.manager import get_attribute
 
