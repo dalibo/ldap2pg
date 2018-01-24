@@ -285,7 +285,7 @@ class SyncManager(object):
             if role.options['SUPERUSER']:
                 owners.add(role)
         spurious = pgroles - ldaproles
-        owners = owners - spurious
+        owners = [str(o) for o in owners - spurious]
 
         if not owners and len(self.acl_dict):
             logger.warn(
