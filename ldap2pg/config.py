@@ -359,6 +359,7 @@ class Configuration(dict):
         ),
         Mapping('postgres:blacklist', env=None),
         Mapping('postgres:roles_query', env=None),
+        Mapping('postgres:owners_query', env=None),
         Mapping('acls', env=None, processor=V.acls),
         Mapping('acl_dict', processor=V.acldict),
         Mapping('acl_groups', env=None),
