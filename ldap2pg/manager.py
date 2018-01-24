@@ -124,7 +124,15 @@ class SyncManager(object):
             raise UserError(message)
 
         logger.debug('Got %d entries from LDAP.', len(entries))
-        return decode_value(entries)
+        entries = decode_value(entries)
+        # Lowerize attribute name
+        return [
+            (dn, dict([
+                (k.lower(), v)
+                for k, v in attrs.items()
+            ]))
+            for dn, attrs in entries
+        ]
 
     def process_ldap_entry(self, entry, **kw):
         if 'names' in kw:
