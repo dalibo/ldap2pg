@@ -20,6 +20,9 @@ def test_generic_fetch(mocker):
 
     assert [] == manager.pg_fetch(None, None)
 
+    assert [('val0',)] == manager.pg_fetch(None, ['val0'])
+    assert [['val0']] == manager.pg_fetch(None, [['val0']])
+
 
 def test_format_roles_inspect_sql(mocker):
     from ldap2pg.manager import SyncManager

@@ -59,6 +59,8 @@ class SyncManager(object):
             if isinstance(sql, list):
                 # Static inspection
                 rows = sql[:]
+                if rows and not isinstance(rows[0], (list, tuple)):
+                    rows = [(v,) for v in rows]
             else:
                 rows = psql(sql)
 
