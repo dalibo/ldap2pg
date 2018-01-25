@@ -293,13 +293,9 @@ def test_apply_grant_rule_nodb(mocker):
     assert items[0].dbname is AclItem.ALL_DATABASES
 
 
-def test_inspect_acls(mocker):
-    mod = 'ldap2pg.manager.'
-    psql = mocker.MagicMock()
-    psql.itersessions.return_value = [('postgres', psql)]
-
-    pa = mocker.patch(mod + 'SyncManager.process_pg_acl_items', autospec=True)
-    la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
+def test_inspect_pg_acls(mocker):
+    pa = mocker.patch(
+        'ldap2pg.manager.SyncManager.process_pg_acl_items', autospec=True)
 
     from ldap2pg.manager import SyncManager, AclItem
     from ldap2pg.acl import NspAcl
@@ -310,71 +306,121 @@ def test_inspect_acls(mocker):
         ro=NspAcl(name='ro', inspect='SQL'),
     )
     pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
-    la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
 
+    psql = mocker.MagicMock()
+    psql.itersessions.return_value = [('postgres', psql)]
     manager = SyncManager(
         psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
         acl_aliases=make_group_map(acl_dict)
     )
-    manager._databases_query = ['postgres']
     manager._schemas_query = ['public']
+    manager._owners_query = ['postgres']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
-    databases, _, pgacls, _, ldapacls = manager.inspect(syncmap=syncmap)
+    schemas, owners, pgacls = manager.inspect_pg_acls(
+        syncmap=syncmap, databases=['postgres'])
 
     assert 1 == len(pgacls)
+    assert 'postgres' in owners
+    assert 'postgres' in schemas
+    assert 'public' in schemas['postgres']
+
+
+def test_inspect_ldap_acls(mocker):
+    la = mocker.patch(
+        'ldap2pg.manager.SyncManager.apply_grant_rules', autospec=True)
+
+    from ldap2pg.manager import SyncManager, AclItem
+    from ldap2pg.acl import NspAcl
+    from ldap2pg.utils import make_group_map
+
+    acl_dict = dict(ro=NspAcl(name='ro'))
+    la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+
+    manager = SyncManager(
+        psql=mocker.Mock(), ldapconn=mocker.Mock(), acl_dict=acl_dict,
+        acl_aliases=make_group_map(acl_dict)
+    )
+    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
+
+    _, ldapacls = manager.inspect_ldap(syncmap=syncmap)
+
     assert 1 == len(ldapacls)
 
 
-def test_inspect_acls_bad_database(mocker):
-    mod = 'ldap2pg.manager.'
-    psql = mocker.MagicMock()
-    psql.itersessions.return_value = [('postgres', psql)]
+def test_postprocess_acls():
+    from ldap2pg.manager import SyncManager, AclItem, AclSet
+    from ldap2pg.acl import DefAcl
 
-    mocker.patch(
-        mod + 'SyncManager.process_pg_acl_items',
-        autospec=True, return_value=[])
-    la = mocker.patch(mod + 'SyncManager.apply_grant_rules', autospec=True)
+    manager = SyncManager(
+        acl_dict=dict(ro=DefAcl(name='ro')),
+        acl_aliases=dict(ro=['ro']),
+    )
 
-    from ldap2pg.manager import SyncManager, AclItem, UserError
+    # No owners
+    ldapacls = manager.postprocess_acls(AclSet(), schemas=dict(), owners=[])
+    assert 0 == len(ldapacls)
+
+    ldapacls = AclSet([AclItem(acl='ro', dbname='db', schema=None)])
+    ldapacls = manager.postprocess_acls(
+        ldapacls, schemas=dict(db=['public', 'ns']),
+        owners=['postgres', 'owner'],
+    )
+
+    # One item per schema, per owner
+    assert 4 == len(ldapacls)
+
+
+def test_postprocess_acls_bad_database():
+    from ldap2pg.manager import SyncManager, AclItem, AclSet, UserError
     from ldap2pg.acl import NspAcl
     from ldap2pg.utils import make_group_map
 
     acl_dict = dict(ro=NspAcl(name='ro', inspect='SQL'))
-    la.return_value = [AclItem('ro', 'inexistantdb', None, 'alice')]
-
     manager = SyncManager(
-        psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
-        acl_aliases=make_group_map(acl_dict)
+        acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict)
     )
-    manager._databases_query = ['postgres']
-    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
+
+    ldapacls = AclSet([AclItem('ro', 'inexistantdb', None, 'alice')])
+    schemas = dict(postgres=['public'])
+    owners = ['postgres']
 
     with pytest.raises(UserError) as ei:
-        manager.inspect(syncmap=syncmap)
+        manager.postprocess_acls(ldapacls, schemas, owners)
     assert 'inexistantdb' in str(ei.value)
 
 
-def test_inspect_acls_inexistant():
-    from ldap2pg.manager import (
-        SyncManager, AclSet, AclItem, RoleSet, UserError,
-    )
+def test_postprocess_acls_inexistant():
+    from ldap2pg.manager import SyncManager, AclSet, AclItem, UserError
 
     manager = SyncManager()
 
     with pytest.raises(UserError):
-        manager.postprocess_inspection(
-            schemas=dict(postgres=['public']),
-            pgowners=[],
-            pgroles=RoleSet(), ldaproles=RoleSet(),
+        manager.postprocess_acls(
             ldapacls=AclSet([AclItem('inexistant')]),
+            schemas=dict(postgres=['public']),
+            owners=['postgres'],
         )
 
 
-def test_inspect_roles(mocker):
+def test_inspect_pg_roles(mocker):
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager(
+        psql=mocker.MagicMock(),
+        roles_query=[('spurious', [])],
+    )
+    manager._databases_query = ['postgres']
+
+    databases, pgroles = manager.inspect_pg_roles()
+
+    assert 'spurious' in pgroles
+    assert 'postgres' in databases
+
+
+def test_inspect_ldap_roles(mocker):
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
     r = mocker.patch('ldap2pg.manager.SyncManager.process_ldap_entry')
-    psql = mocker.MagicMock()
 
     from ldap2pg.manager import SyncManager, Role
 
@@ -385,8 +431,8 @@ def test_inspect_roles(mocker):
     ]
 
     manager = SyncManager(
-        psql=psql, ldapconn=mocker.Mock(),
-        roles_query=[('spurious', [])])
+        ldapconn=mocker.Mock(),
+    )
 
     # Minimal effective syncmap
     syncmap = dict(db=dict(s=[
@@ -397,11 +443,10 @@ def test_inspect_roles(mocker):
         ),
     ]))
 
-    _, pgroles, _, ldaproles, _ = manager.inspect(syncmap=syncmap)
+    ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
 
     assert 2 is r.call_count, "sync did not iterate over each rules."
 
-    assert 'spurious' in pgroles
     assert 'alice' in ldaproles
     assert 'bob' in ldaproles
 
@@ -463,7 +508,7 @@ def test_diff_roles():
         Role('nothing'),
         Role('create-me')
     ])
-    queries = [q.args[0] for q in m.diff(pgroles, set(), ldaproles, set())]
+    queries = [q.args[0] for q in m.diff_roles(pgroles, ldaproles)]
 
     assert fnfilter(queries, 'ALTER ROLE "alter-me" WITH* LOGIN*;')
     assert fnfilter(queries, 'CREATE ROLE "create-me" *;')
@@ -493,71 +538,78 @@ def test_diff_acls(mocker):
         AclItem(acl=nogrant.name, role='togrant'),
     ])
 
-    queries = [q.args[0] for q in m.diff(pgacls=pgacls, ldapacls=ldapacls)]
+    queries = [q.args[0] for q in m.diff_acls(pgacls, ldapacls)]
 
     assert not fnfilter(queries, 'REVOKE "daniel"*')
     assert fnfilter(queries, 'REVOKE "alice"*')
     assert fnfilter(queries, 'GRANT "david"*')
 
 
-def test_sync(mocker):
-    diff = mocker.patch('ldap2pg.manager.SyncManager.diff')
+def test_run_queries_error(mocker):
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.psql import Query
 
-    from ldap2pg.manager import SyncManager
-
-    psql = mocker.MagicMock()
+    psql = mocker.MagicMock(name='psql')
     cursor = psql.return_value.__enter__.return_value
 
     manager = SyncManager(psql=psql)
-
-    # Simple diff with one query
-    diff.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
-    qry[0].expand.return_value = [qry[0]]
-
-    sync_kw = dict(
-        databases=['postgres', 'template1'],
-        pgroles=set(), pgacls=set(), ldaproles=set(), ldapacls=set(),
-    )
+    queries = [
+        Query('q0', Query.ALL_DATABASES, 'SQL 0'),
+        Query('q1', 'postgres', 'SQL 1'),
+    ]
+    databases = ['postgres', 'template1']
 
     # Dry run
     manager.dry = True
-    # No mapping, we're just testing query loop
-    manager.sync(**sync_kw)
+    count = manager.run_queries(queries=queries, databases=databases)
     assert cursor.called is False
+    assert 3 == count
 
     # Real mode
+    cursor.side_effect = RuntimeError()
     manager.dry = False
-    manager.sync(**sync_kw)
-    assert cursor.called is True
-
-    # Nothing to do
-    diff.return_value = []
-    manager.dry = False
-    manager.sync(**sync_kw)
+    with pytest.raises(UserError):
+        manager.run_queries(queries=queries, databases=databases)
     assert cursor.called is True
 
 
-def test_sync_sql_error(mocker):
-    diff = mocker.patch('ldap2pg.manager.SyncManager.diff')
+def test_sync(mocker):
+    cls = 'ldap2pg.manager.SyncManager'
+    ipa = mocker.patch(cls + '.inspect_pg_acls', autospec=True)
+    ipr = mocker.patch(cls + '.inspect_pg_roles', autospec=True)
+    il = mocker.patch(cls + '.inspect_ldap', autospec=True)
+    mocker.patch(cls + '.postprocess_acls', autospec=True)
+    dr = mocker.patch(cls + '.diff_roles', autospec=True)
+    da = mocker.patch(cls + '.diff_acls', autospec=True)
+    rq = mocker.patch(cls + '.run_queries', autospec=True)
 
     from ldap2pg.manager import SyncManager
 
-    psql = mocker.MagicMock()
-    cursor = psql.return_value.__enter__.return_value
-    cursor.side_effect = Exception()
+    manager = SyncManager()
 
-    manager = SyncManager(psql=psql)
-
+    ipr.return_value = (['postgres', 'template1'], set())
+    il.return_value = (mocker.Mock(name='ldaproles'), set())
     # Simple diff with one query
-    diff.return_value = qry = [mocker.Mock(name='qry', args=())]
+    dr.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
     qry[0].expand.return_value = [qry[0]]
+    ipa.return_value = (dict(postgres=['public']), [], set())
+    da.return_value = []
 
-    sync_kw = dict(
-        databases=['postgres', 'template1'],
-        pgroles=set(), pgacls=set(), ldaproles=set(), ldapacls=set(),
-    )
+    # No ACL to sync, one query
+    rq.return_value = 1
+    count = manager.sync(syncmap=[])
+    assert dr.called is True
+    assert da.called is False
+    assert 1 == count
 
-    manager.dry = False
-    with pytest.raises(Exception):
-        manager.sync(**sync_kw)
-    assert cursor.called is True
+    # With ACLs
+    manager.acl_dict = dict(ro=mocker.Mock(name='ro'))
+    count = manager.sync(syncmap=[])
+    assert dr.called is True
+    assert da.called is True
+    assert 2 == count
+
+    # Nothing to do
+    rq.return_value = 0
+    count = manager.sync(syncmap=[])
+    assert 0 == count

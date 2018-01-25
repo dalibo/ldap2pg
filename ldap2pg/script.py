@@ -56,8 +56,7 @@ def wrapped_main(config=None):
         schemas_query=config['postgres']['schemas_query'],
         dry=config['dry'],
     )
-    sync_data = manager.inspect(syncmap=config['sync_map'])
-    count = manager.sync(*sync_data)
+    count = manager.sync(syncmap=config['sync_map'])
 
     action = "Comparison" if config['dry'] else "Synchronization"
     logger.info("%s complete.", action)

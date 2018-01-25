@@ -210,30 +210,28 @@ class SyncManager(object):
                         continue
                     yield AclItem(acl, database, schema, role)
 
-    def inspect_pg(self, syncmap):
+    def inspect_pg_roles(self):
         with self.psql('postgres') as psql:
             databases = self.pg_fetch(psql, self._databases_query, self.row1)
             pgroles = RoleSet(self.pg_fetch(
                 psql, self.format_roles_query(), self.process_pg_roles))
 
-        schemas = dict([(k, []) for k in databases])
-        # Only inspect schemas and owners if ACL are defined.
-        if len(self.acl_dict):
-            for dbname, psql in self.psql.itersessions(databases):
-                logger.debug("Inspecting schemas in %s", dbname)
-                schemas[dbname] = self.pg_fetch(
-                    psql, self._schemas_query, self.row1)
-                logger.debug(
-                    "Found schemas %s in %s.",
-                    ', '.join(schemas[dbname]), dbname)
-            logger.debug("Inspecting owners...")
-            owners = self.pg_fetch(psql, self._owners_query, self.row1)
-        else:
-            owners = []
+        return databases, pgroles
 
+    def inspect_pg_acls(self, syncmap, databases):
+        schemas = dict([(k, []) for k in databases])
+        for dbname, psql in self.psql.itersessions(databases):
+            logger.debug("Inspecting schemas in %s", dbname)
+            schemas[dbname] = self.pg_fetch(
+                psql, self._schemas_query, self.row1)
+            logger.debug(
+                "Found schemas %s in %s.",
+                ', '.join(schemas[dbname]), dbname)
+
+        logger.debug("Inspecting owners...")
+        owners = self.pg_fetch(psql, self._owners_query, self.row1)
         owners_str = ', '.join(["'%s'" % o for o in owners])
 
-        # Inspect ACLs
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
             if not acl.inspect:
@@ -247,13 +245,12 @@ class SyncManager(object):
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
-        return schemas, owners, pgroles, pgacls
+        return schemas, owners, pgacls
 
     def inspect_ldap(self, syncmap):
         ldaproles = {}
         ldapacls = AclSet()
         for dbname, schema, mapping in self.itermappings(syncmap):
-            logger.debug("Working on schema %s.%s.", dbname, schema)
             if 'ldap' in mapping:
                 logger.info("Querying LDAP %s...", mapping['ldap']['base'])
                 entries = self.query_ldap(**mapping['ldap'])
@@ -277,17 +274,8 @@ class SyncManager(object):
 
         return RoleSet(ldaproles.values()), ldapacls
 
-    def postprocess_inspection(self, schemas, pgowners, pgroles, ldaproles,
-                               ldapacls):
-        ldaproles.resolve_membership()
-        owners = set(pgowners)
-        for role in ldaproles:
-            if role.options['SUPERUSER']:
-                owners.add(role)
-        spurious = pgroles - ldaproles
-        owners = [str(o) for o in owners - spurious]
-
-        if not owners and len(self.acl_dict):
+    def postprocess_acls(self, ldapacls, schemas, owners):
+        if not owners:
             logger.warn(
                 "No owners found. Can't issue ALTER DEFAULT PRIVILEGES.")
 
@@ -305,34 +293,13 @@ class SyncManager(object):
         except ValueError as e:
             raise UserError(e)
 
-        return ldaproles, ldapacls
+        return ldapacls
 
-    def inspect(self, syncmap):
-        logger.info("Inspecting Postgres...")
-        schemas, pgowners, pgroles, pgacls = self.inspect_pg(syncmap)
-        logger.debug("Postgres inspection done.")
-        ldaproles, ldapacls = self.inspect_ldap(syncmap)
-        logger.debug("LDAP inspection completed. Post processing.")
-        ldaproles, ldapacls = self.postprocess_inspection(
-            schemas, pgowners, pgroles, ldaproles, ldapacls)
-        return schemas, pgroles, pgacls, ldaproles, ldapacls
-
-    def diff(self, pgroles=None, pgacls=set(), ldaproles=None, ldapacls=set()):
+    def diff_roles(self, pgroles=None, ldaproles=None):
         pgroles = pgroles or RoleSet()
         ldaproles = ldaproles or RoleSet()
 
-        # First, revoke spurious ACLs
-        spurious = pgacls - ldapacls
-        spurious = sorted([i for i in spurious if i.full is not None])
-        for aclname, aclitems in groupby(spurious, lambda i: i.acl):
-            acl = self.acl_dict[aclname]
-            if not acl.revoke_sql:
-                logger.warn("Can't revoke ACL %s: query not defined.", acl)
-                continue
-            for aclitem in aclitems:
-                yield acl.revoke(aclitem)
-
-        # Then create missing roles
+        # First create missing roles
         missing = RoleSet(ldaproles - pgroles)
         for role in missing.flatten():
             for qry in role.create():
@@ -354,6 +321,21 @@ class SyncManager(object):
             for qry in role.drop():
                 yield qry
 
+    def diff_acls(self, pgacls=None, ldapacls=None):
+        pgacls = pgacls or AclSet()
+        ldapacls = ldapacls or AclSet()
+
+        # First, revoke spurious ACLs
+        spurious = pgacls - ldapacls
+        spurious = sorted([i for i in spurious if i.full is not None])
+        for aclname, aclitems in groupby(spurious, lambda i: i.acl):
+            acl = self.acl_dict[aclname]
+            if not acl.revoke_sql:
+                logger.warn("Can't revoke ACL %s: query not defined.", acl)
+                continue
+            for aclitem in aclitems:
+                yield acl.revoke(aclitem)
+
         # Finally, grant ACL when all roles are ok.
         missing = ldapacls - set([a for a in pgacls if a.full in (None, True)])
         missing = sorted(list(missing))
@@ -365,10 +347,9 @@ class SyncManager(object):
             for aclitem in aclitems:
                 yield acl.grant(aclitem)
 
-    def sync(self, databases, pgroles, pgacls, ldaproles, ldapacls):
+    def run_queries(self, queries, databases=None):
         count = 0
-        queries = self.diff(pgroles, pgacls, ldaproles, ldapacls)
-        for query in expandqueries(queries, databases):
+        for query in expandqueries(queries, databases or []):
             with self.psql(query.dbname) as psql:
                 count += 1
                 if self.dry:
@@ -385,9 +366,33 @@ class SyncManager(object):
                     except Exception as e:
                         msg = "Error while executing SQL query:\n%s" % (e,)
                         raise UserError(msg)
-        logger.debug("Generated %d querie(s).", count)
+        return count
 
-        if not count:
+    def sync(self, syncmap):
+        logger.info("Inspecting Postgres roles...")
+        databases, pgroles = self.inspect_pg_roles()
+        logger.debug("Postgres inspection done.")
+        ldaproles, ldapacls = self.inspect_ldap(syncmap)
+        logger.debug("LDAP inspection completed. Post processing.")
+        ldaproles.resolve_membership()
+
+        count = 0
+        count += self.run_queries(
+            self.diff_roles(pgroles, ldaproles),
+            databases=databases)
+        if self.acl_dict:
+            logger.info("Inspecting Postgres ACLs...")
+            schemas, owners, pgacls = self.inspect_pg_acls(syncmap, databases)
+            ldapacls = self.postprocess_acls(ldapacls, schemas, owners)
+            count += self.run_queries(
+                self.diff_acls(pgacls, ldapacls),
+                databases=schemas)
+        else:
+            logger.debug("No ACL defined. Skipping ACL. ")
+
+        if count:
+            logger.debug("Generated %d querie(s).", count)
+        else:
             logger.info("Nothing to do.")
 
         return count
