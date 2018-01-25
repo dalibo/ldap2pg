@@ -80,10 +80,9 @@ def test_wrapped_main(mocker):
     mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
     clc = mocker.patch('ldap2pg.script.ldap.connect')
-    RM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
-    rm = RM.return_value
-    rm.inspect.return_value = [mocker.Mock()] * 5
-    rm.sync.return_value = 0
+    SM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
+    manager = SM.return_value
+    manager.sync.return_value = 0
 
     from ldap2pg.script import wrapped_main
 
@@ -98,15 +97,13 @@ def test_wrapped_main(mocker):
     wrapped_main(config=config)
 
     assert clc.called is True
-    assert rm.inspect.called is True
-    assert rm.sync.called is True
+    assert manager.sync.called is True
 
 
 def test_conn_errors(mocker):
     mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     mocker.patch('ldap2pg.script.Configuration', autospec=True)
-    SyncManager = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
-    SyncManager.return_value.inspect.return_value = [mocker.Mock()] * 3
+    mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     clc = mocker.patch('ldap2pg.script.ldap.connect')
     PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
 
