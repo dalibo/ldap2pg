@@ -203,7 +203,7 @@ _allprocacl_tpl = dict(
     WITH
     grants AS (SELECT
       pronamespace, grantee, priv,
-      array_agg(proname ORDER BY proname) AS procs
+      array_agg(DISTINCT proname ORDER BY proname) AS procs
       FROM (
         SELECT
           pronamespace,
@@ -224,7 +224,7 @@ _allprocacl_tpl = dict(
     namespaces AS (
       SELECT
         nsp.oid, nsp.nspname,
-        array_agg(pro.proname ORDER BY pro.proname)
+        array_agg(DISTINCT pro.proname ORDER BY pro.proname)
           FILTER (WHERE pro.proname IS NOT NULL) AS procs
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_proc AS pro

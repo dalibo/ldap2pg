@@ -7,6 +7,11 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 4.4
+
+- Fix all procs ACL inspection.
+
+
 # ldap2pg 4.3
 
 - Fix case sensitivity in LDAP query. Thanks @dirks for report and tests.
