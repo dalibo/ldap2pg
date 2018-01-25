@@ -7,6 +7,15 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 4.3
+
+- Fix case sensitivity in LDAP query. Thanks @dirks for report and tests.
+- Allow to customize owners for `ALTER DEFAULT PRIVILEGES` with
+  `postgres:owners_query`.
+- Don't execlude `pg_catalog` from `__all__` schema group.
+- Allow to customize schema introspection with `postgres:schema_query`.
+
+
 # ldap2pg 4.2
 
 - Support Postgres 9.4 and lower.
