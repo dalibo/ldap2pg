@@ -1,4 +1,4 @@
-%global version 0.1
+%global version 0.2
 %{!?pgversion: %global pgversion 10}
 %{!?pginstdir: %global pginstdir /usr/pgsql-10}
 
