@@ -112,8 +112,23 @@ Here we go.
 - [`__delete_on_all_tables__`](#delete-on-all-tables)
 
 
+<a name="delete-on-tables"></a>
+### Group `__delete_on_tables__`
+
+- [`__default_delete_on_tables__`](#default-delete-on-tables)
+- [`__delete_on_all_tables__`](#delete-on-all-tables)
+
+
 <a name="execute"></a>
 ### Group `__execute__`
+
+- [`__default_execute_on_functions__`](#default-execute-on-functions)
+- [`__execute_on_all_functions__`](#execute-on-all-functions)
+- [`__global_default_execute_on_functions__`](#global-default-execute-on-functions)
+
+
+<a name="execute-on-functions"></a>
+### Group `__execute_on_functions__`
 
 - [`__default_execute_on_functions__`](#default-execute-on-functions)
 - [`__execute_on_all_functions__`](#execute-on-all-functions)
@@ -127,8 +142,22 @@ Here we go.
 - [`__insert_on_all_tables__`](#insert-on-all-tables)
 
 
+<a name="insert-on-tables"></a>
+### Group `__insert_on_tables__`
+
+- [`__default_insert_on_tables__`](#default-insert-on-tables)
+- [`__insert_on_all_tables__`](#insert-on-all-tables)
+
+
 <a name="references"></a>
 ### Group `__references__`
+
+- [`__default_references_on_tables__`](#default-references-on-tables)
+- [`__references_on_all_tables__`](#references-on-all-tables)
+
+
+<a name="references-on-tables"></a>
+### Group `__references_on_tables__`
 
 - [`__default_references_on_tables__`](#default-references-on-tables)
 - [`__references_on_all_tables__`](#references-on-all-tables)
@@ -155,8 +184,22 @@ Here we go.
 - [`__trigger_on_all_tables__`](#trigger-on-all-tables)
 
 
+<a name="trigger-on-tables"></a>
+### Group `__trigger_on_tables__`
+
+- [`__default_trigger_on_tables__`](#default-trigger-on-tables)
+- [`__trigger_on_all_tables__`](#trigger-on-all-tables)
+
+
 <a name="truncate"></a>
 ### Group `__truncate__`
+
+- [`__default_truncate_on_tables__`](#default-truncate-on-tables)
+- [`__truncate_on_all_tables__`](#truncate-on-all-tables)
+
+
+<a name="truncate-on-tables"></a>
+### Group `__truncate_on_tables__`
 
 - [`__default_truncate_on_tables__`](#default-truncate-on-tables)
 - [`__truncate_on_all_tables__`](#truncate-on-all-tables)

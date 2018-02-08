@@ -317,11 +317,14 @@ def make_well_known_acls():
     ])
 
     acls.update(
-        make_proc_acls('EXECUTE', 'FUNCTIONS', namefmt='__%(privilege)s__'))
+        make_proc_acls('EXECUTE', 'FUNCTIONS'))
+    acls['__execute__'] = ['__execute_on_functions__']
 
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRIGGER', 'TRUNCATE':
         acls.update(
-            make_rel_acls(privilege, 'TABLES', namefmt='__%(privilege)s__'))
+            make_rel_acls(privilege, 'TABLES'))
+        alias = '__%s__' % (privilege.lower(),)
+        acls[alias] = ['__%s_on_tables__' % (privilege.lower(),)]
 
     for privilege in 'SELECT', 'UPDATE':
         acls.update(make_rel_acls(privilege, 'TABLES'))
