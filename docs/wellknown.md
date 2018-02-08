@@ -71,8 +71,7 @@ Here we go.
 ### Group `__all_on_schemas__`
 
 - [`__create_on_schemas__`](#create-on-schemas)
-- [`__default_usage_on_sequences__`](#default-usage-on-sequences)
-- [`__usage_on_all_sequences__`](#usage-on-all-sequences)
+- [`__usage_on_schemas__`](#usage-on-schemas)
 
 
 <a name="all-on-sequences"></a>

@@ -334,7 +334,7 @@ def make_well_known_acls():
 
     acls['__all_on_schemas__'] = [
         '__create_on_schemas__',
-        '__usage_on_sequences__',
+        '__usage_on_schemas__',
     ]
 
     acls['__all_on_sequences__'] = [
