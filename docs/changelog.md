@@ -12,6 +12,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix uninitialized ldap parameters.
 - Fix `__all_on_schemas__` group including a `sequences` ACL.
 - Add `*_on_tables__` ACL for all privileges on table.
+- Allow to customize managed databases with `postgres:databases_query`.
 
 
 # ldap2pg 4.3.1
