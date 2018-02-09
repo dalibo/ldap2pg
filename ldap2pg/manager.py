@@ -22,21 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class SyncManager(object):
-    _databases_query = """
-    SELECT datname FROM pg_catalog.pg_database
-    WHERE datallowconn IS TRUE ORDER BY 1;
-    """.replace(4 * ' ', '').strip()
-
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
             blacklist=[],
-            roles_query=None, owners_query=None, schemas_query=None,
+            roles_query=None, owners_query=None, databases_query=None,
+            schemas_query=None,
             dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
         self.acl_aliases = acl_aliases or {}
         self._blacklist = blacklist
+        self._databases_query = databases_query
         self._owners_query = owners_query
         self._roles_query = roles_query
         self._schemas_query = schemas_query
