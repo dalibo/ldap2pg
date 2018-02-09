@@ -39,11 +39,20 @@ compatibility dependencies.
 ```
 
 
-# On Debian
+# On Debian 9 (jessie)
 
 On Debian jessie or later, you can use regular Python3 and wheel package.
 
 ``` console
 # apt install -y python3-pip python3-psycopg2 python3-yaml python3-pyldap
 # pip3 install --no-deps ldap2pg
+```
+
+# On Debian 7 (wheezy)
+
+On Debian wheezy, you have to use Python2.7.
+
+``` console
+# apt install -y python-pip python-psycopg2 python-yaml python-ldap
+# pip install --no-deps ldap2pg
 ```
