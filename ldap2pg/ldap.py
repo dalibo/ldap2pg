@@ -218,10 +218,10 @@ class Options(dict):
 
 def gather_options(environ=None, **kw):
     options = Options(
-        URI=None,
+        URI='',
         HOST='',
         PORT=389,
-        BINDDN=None,
+        BINDDN='',
         USER=None,
         PASSWORD='',
     )
