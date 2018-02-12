@@ -189,7 +189,10 @@ class RoleSet(set):
         for role in self:
             while role.parents:
                 parent_name = role.parents.pop()
-                parent = index_[parent_name]
+                try:
+                    parent = index_[parent_name]
+                except KeyError:
+                    raise ValueError('Unknown parent role %s' % parent_name)
                 if role.name in parent.members:
                     continue
                 logger.debug("Add %s as member of %s.", role.name, parent.name)

@@ -133,3 +133,8 @@ def test_resolve_membership():
 
     assert not oscar.parents
     assert 'oscar' in alice.members
+
+    alice.parents = ['unknown']
+
+    with pytest.raises(ValueError):
+        roles.resolve_membership()
