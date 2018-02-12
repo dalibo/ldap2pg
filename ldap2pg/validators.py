@@ -98,7 +98,7 @@ def rolerule(value):
     return rule
 
 
-def grantrule(value):
+def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if not isinstance(value, dict):
         raise ValueError('Grant rule must be a dict.')
     if 'acl' not in value:
@@ -124,6 +124,9 @@ def grantrule(value):
     if 'roles' not in value and 'role_attribute' not in value:
         raise ValueError('Missing role in grant rule.')
 
+    value.setdefault('database', defaultdb)
+    value.setdefault('schema', defaultschema)
+
     return value
 
 
@@ -141,7 +144,7 @@ def gather_queried_attributes(mapping):
                 yield v.partition('.')[0]
 
 
-def mapping(value):
+def mapping(value, **kw):
     # A single mapping from a query to a set of role rules. This function
     # translate random YAML to cannonical schema.
 
@@ -160,7 +163,7 @@ def mapping(value):
     if 'grant' in value:
         if isinstance(value['grant'], dict):
             value['grant'] = [value['grant']]
-        value['grant'] = [grantrule(g) for g in value['grant']]
+        value['grant'] = [grantrule(g, **kw) for g in value['grant']]
 
     if not value['roles'] and 'grant' not in value:
         # Don't accept unused LDAP queries.
@@ -173,16 +176,34 @@ def mapping(value):
     return value
 
 
+def _flatten_legacy_map(value):
+    for dbname, dbvalue in value.items():
+        if ismapping(dbvalue):
+            dbvalue = [dbvalue]
+
+        if isinstance(dbvalue, dict):
+            for schema, svalues in dbvalue.items():
+                if ismapping(svalues):
+                    svalues = [svalues]
+                for svalue in svalues:
+                    yield mapping(
+                        svalue, defaultdb=dbname, defaultschema=schema)
+        elif isinstance(dbvalue, list):
+            for v in dbvalue:
+                yield mapping(v, defaultdb=dbname)
+
+
 def syncmap(value):
     # Validate and translate raw YAML value to cannonical form used internally.
     #
     # A sync map has the following canonical schema:
     #
-    # <__all__|dbname>:
-    #   <__all__|__any__|schema>:
     #   - ldap: <ldapquery>
     #     roles:
     #     - <rolerule>
+    #     - ...
+    #     grant:
+    #     - <grantrule>
     #     - ...
     #   ...
     # ...
@@ -198,52 +219,38 @@ def syncmap(value):
     # - roles: [<rolerule>]
     # - ...
     #
-    # dict of dbname->single mapping
+    # dict of dbname->single mapping (legacy)
     #
     # appdb:
     #   roles: <rolerule>
     #
-    # dict of dbname-> list of mapping
+    # dict of dbname->list of mapping (legacy)
     #
     # appdb:
     # - roles: <rolerule>
     #
-    # dict of dbname->schema->single mapping
+    # dict of dbname->schema->single mapping (legacy)
     #
     # appdb:
     # - roles: <rolerule>
-    # dict of dbname->schema->single mapping
+    # dict of dbname->schema->single mapping (legacy)
     #
     # appdb:
     #   appschema:
     #     roles: <rolerule>
 
     if not value:
-        return {}
+        return []
 
     if ismapping(value):
         value = [value]
 
     if isinstance(value, list):
-        value = dict(__all__=value)
-
-    if not isinstance(value, dict):
+        return [mapping(v) for v in value]
+    elif isinstance(value, dict):
+        return list(_flatten_legacy_map(value))
+    else:
         raise ValueError("Illegal value for sync_map.")
-
-    for dbname, ivalue in value.items():
-        if ismapping(ivalue):
-            value[dbname] = ivalue = [ivalue]
-
-        if isinstance(ivalue, list):
-            value[dbname] = ivalue = dict(__any__=ivalue)
-
-        for schema, maplist in ivalue.items():
-            if isinstance(maplist, dict):
-                ivalue[schema] = maplist = [maplist]
-
-            maplist[:] = [mapping(m) for m in maplist]
-
-    return value
 
 
 def raw(v):

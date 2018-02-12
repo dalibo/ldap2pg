@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 
 
@@ -41,6 +43,7 @@ def test_ismapping():
     assert ismapping(dict(ldap=dict()))
     assert ismapping(dict(roles=[]))
     assert ismapping(dict(role=dict()))
+    assert ismapping(dict(grant=dict()))
     assert not ismapping([])
     assert not ismapping(dict(__all__=[]))
 
@@ -48,40 +51,57 @@ def test_ismapping():
 def test_process_syncmap():
     from ldap2pg.validators import syncmap
 
+    assert [] == syncmap(None)
+
+    rule = dict(grant=dict(acl='rol', role='alice'))
     fixtures = [
         # Canonical case.
-        dict(
-            __all__=dict(
-                __any__=[
-                    dict(role=dict(name='alice')),
-                ]
-            ),
-        ),
-        # Squeeze list.
-        dict(
-            __all__=dict(
-                __any__=dict(role=dict(name='alice')),
-            ),
-        ),
+        [rule],
+        # full map dict (ldap2pg 2 format).
+        dict(__all__=dict(__all__=[rule])),
+        # Squeeze inner list.
+        dict(__all__=dict(__all__=rule)),
         # Squeeze also schema.
-        dict(__all__=dict(role=dict(name='alice'))),
+        dict(__all__=rule),
         # Squeeze also database.
-        dict(role=dict(name='alice')),
-        # Direct list (this is 1.0 format).
-        [dict(role=dict(name='alice'))],
+        rule,
     ]
 
     for raw in fixtures:
-        v = syncmap(raw)
+        v = syncmap(copy.deepcopy(raw))
 
-        assert isinstance(v, dict)
-        assert '__all__' in v
-        assert '__any__' in v['__all__']
-        maplist = v['__all__']['__any__']
-        assert 1 == len(maplist)
-        assert 'roles' in maplist[0]
+        assert isinstance(v, list)
+        assert 1 == len(v)
+        assert 'grant' in v[0]
+        m = v[0]['grant'][0]
+        assert '__all__' == m['database']
+        assert '__all__' == m['schema']
 
-    # Missing rules
+
+def test_process_syncmap_legacy():
+    from ldap2pg.validators import syncmap
+
+    grant = dict(acl='rol', role='alice')
+    fixtures = [
+        dict(db=dict(schema=dict(grant=grant))),
+        dict(db=dict(grant=dict(schema='schema', **grant))),
+        dict(grant=dict(database='db', schema='schema', **grant)),
+    ]
+
+    for raw in fixtures:
+        v = syncmap(copy.deepcopy(raw))
+
+        assert isinstance(v, list)
+        assert 1 == len(v)
+        assert 'grant' in v[0]
+        m = v[0]['grant'][0]
+        assert 'db' == m['database']
+        assert 'schema' == m['schema']
+
+
+def test_process_syncmap_bad():
+    from ldap2pg.validators import syncmap
+
     raw = dict(ldap=dict(base='dc=unit', attribute='cn'))
     with pytest.raises(ValueError):
         syncmap(raw)

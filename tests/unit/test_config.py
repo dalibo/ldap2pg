@@ -368,7 +368,7 @@ def test_load_stdin(mocker):
 
     config.load(argv=[])
 
-    maplist = config['sync_map']['__all__']['__any__']
+    maplist = config['sync_map']
     assert 1 == len(maplist)
 
 
@@ -391,7 +391,7 @@ def test_load_file(mocker):
     config.load(argv=['--verbose'])
 
     assert 'envpass' == config['ldap']['password']
-    maplist = config['sync_map']['__all__']['__any__']
+    maplist = config['sync_map']
     assert 1 == len(maplist)
     assert config['verbose'] is True
 
