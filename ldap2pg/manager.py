@@ -365,7 +365,10 @@ class SyncManager(object):
         logger.debug("Postgres inspection done.")
         ldaproles, ldapacls = self.inspect_ldap(syncmap)
         logger.debug("LDAP inspection completed. Post processing.")
-        ldaproles.resolve_membership()
+        try:
+            ldaproles.resolve_membership()
+        except ValueError as e:
+            raise UserError(str(e))
 
         count = 0
         count += self.run_queries(

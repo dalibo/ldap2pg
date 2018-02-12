@@ -581,7 +581,7 @@ def test_sync(mocker):
     da = mocker.patch(cls + '.diff_acls', autospec=True)
     rq = mocker.patch(cls + '.run_queries', autospec=True)
 
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, UserError
 
     manager = SyncManager()
 
@@ -611,3 +611,7 @@ def test_sync(mocker):
     rq.return_value = 0
     count = manager.sync(syncmap=[])
     assert 0 == count
+
+    il.return_value[0].resolve_membership.side_effect = ValueError()
+    with pytest.raises(UserError):
+        manager.sync(syncmap=[])
