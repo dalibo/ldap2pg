@@ -404,6 +404,18 @@ def test_show_versions(mocker):
         config.load(argv=['--version'])
 
 
+def test_has_ldap():
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    config['sync_map'] = [dict(roles=dict())]
+    assert not config.has_ldap_query()
+
+    config['sync_map'] = [dict(ldap=dict())]
+    assert config.has_ldap_query()
+
+
 def test_acl_options():
     from ldap2pg.config import postprocess_acl_options
 

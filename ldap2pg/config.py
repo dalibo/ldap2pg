@@ -426,6 +426,9 @@ class Configuration(dict):
     By default, ldap2pg runs in dry mode.
     """.replace(4 * ' ', '')
 
+    def has_ldap_query(self):
+        return [m['ldap'] for m in self['sync_map'] if 'ldap' in m]
+
     def load(self, argv=None):
         # argv processing.
         logger.debug("Processing CLI arguments.")
