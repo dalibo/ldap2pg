@@ -33,6 +33,15 @@ sync_map:
 """
 
 
+def ldapfree_env():
+    blacklist = ('LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD')
+    return dict(
+        (k, v)
+        for k, v in os.environ.items()
+        if k not in blacklist
+    )
+
+
 def test_custom_yaml():
     from sh import ErrorReturnCode, chmod, ldap2pg, rm
 
@@ -46,26 +55,19 @@ def test_custom_yaml():
         fo.write(yaml)
 
     # Purge env from value set in file. Other are reads from ldaprc.
-    blacklist = ('LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD')
-    ldapfree_env = dict(
-        (k, v)
-        for k, v in os.environ.items()
-        if k not in blacklist
-    )
-
     # Ensure world readable password is denied
     with pytest.raises(ErrorReturnCode):
-        ldap2pg(config=LDAP2PG_CONFIG, _env=ldapfree_env)
+        ldap2pg(config=LDAP2PG_CONFIG, _env=ldapfree_env())
 
     # And that fixing file mode do the trick.
     chmod('0600', LDAP2PG_CONFIG)
-    ldap2pg('--config', LDAP2PG_CONFIG, _env=ldapfree_env)
+    ldap2pg('--config', LDAP2PG_CONFIG, _env=ldapfree_env())
 
 
 def test_stdin():
     from sh import ldap2pg
 
-    out = ldap2pg('--config=-', _in="- role: stdinuser")
+    out = ldap2pg('--config=-', _in="- role: stdinuser", _env=ldapfree_env())
 
     assert b'stdinuser' in out.stderr
 

@@ -14,6 +14,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix user drop with Postgres 9.4.
 - Add `*_on_tables__` ACL for all privileges on table.
 - Allow to customize managed databases with `postgres:databases_query`.
+- Allow pure static configuration (aka ldap2pg without LDAP).
 
 
 # ldap2pg 4.3.1
