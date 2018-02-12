@@ -99,6 +99,13 @@ def test_wrapped_main(mocker):
     assert clc.called is True
     assert manager.sync.called is True
 
+    # No LDAP
+    clc.reset_mock()
+    config.has_ldap_query.return_value = []
+    wrapped_main(config=config)
+
+    assert clc.called is False
+
 
 def test_conn_errors(mocker):
     mocker.patch('ldap2pg.script.dictConfig', autospec=True)

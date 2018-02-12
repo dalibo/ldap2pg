@@ -341,7 +341,7 @@ def test_inspect_ldap_acls(mocker):
         psql=mocker.Mock(), ldapconn=mocker.Mock(), acl_dict=acl_dict,
         acl_aliases=make_group_map(acl_dict)
     )
-    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
+    syncmap = [dict(roles=[], grant=dict(acl='ro'))]
 
     _, ldapacls = manager.inspect_ldap(syncmap=syncmap)
 
@@ -435,13 +435,13 @@ def test_inspect_ldap_roles(mocker):
     )
 
     # Minimal effective syncmap
-    syncmap = dict(db=dict(s=[
+    syncmap = [
         dict(roles=[]),
         dict(
             ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
             roles=[dict(), dict()],
         ),
-    ]))
+    ]
 
     ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
 
@@ -456,14 +456,14 @@ def test_inspect_roles_merge_duplicates(mocker):
 
     manager = SyncManager()
 
-    syncmap = dict(db=dict(s=[
+    syncmap = [
         dict(roles=[
             dict(names=['group0']),
             dict(names=['group1']),
             dict(names=['bob'], parents=['group0']),
             dict(names=['bob'], parents=['group1']),
         ]),
-    ]))
+    ]
 
     ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
 
@@ -480,14 +480,12 @@ def test_inspect_roles_duplicate_differents_options(mocker):
 
     manager = SyncManager()
 
-    syncmap = dict(db=dict(s=[
-        dict(roles=[
-            dict(names=['group0']),
-            dict(names=['group1']),
-            dict(names=['bob'], options=dict(LOGIN=True)),
-            dict(names=['bob']),
-        ]),
-    ]))
+    syncmap = [dict(roles=[
+        dict(names=['group0']),
+        dict(names=['group1']),
+        dict(names=['bob'], options=dict(LOGIN=True)),
+        dict(names=['bob']),
+    ])]
 
     with pytest.raises(UserError):
         manager.inspect_ldap(syncmap=syncmap)

@@ -157,12 +157,6 @@ class SyncManager(object):
 
             yield role
 
-    def itermappings(self, syncmap):
-        for dbname, schemas in syncmap.items():
-            for schema, mappings in schemas.items():
-                for mapping in mappings:
-                    yield dbname, schema, mapping
-
     def apply_role_rules(self, rules, entries):
         for rule in rules:
             for entry in entries:
@@ -173,15 +167,15 @@ class SyncManager(object):
                     msg = "Failed to process %.48s: %s" % (entry[0], e,)
                     raise UserError(msg)
 
-    def apply_grant_rules(self, grant, dbname=None, schema=None, entries=[]):
+    def apply_grant_rules(self, grant, entries=[]):
         for rule in grant:
             acl = rule.get('acl')
 
-            database = rule.get('database', dbname)
+            database = rule.get('database', '__all__')
             if database == '__all__':
                 database = AclItem.ALL_DATABASES
 
-            schema = rule.get('schema', schema)
+            schema = rule.get('schema', '__all__')
             if schema in (None, '__all__', '__any__'):
                 schema = None
 
@@ -247,7 +241,7 @@ class SyncManager(object):
     def inspect_ldap(self, syncmap):
         ldaproles = {}
         ldapacls = AclSet()
-        for dbname, schema, mapping in self.itermappings(syncmap):
+        for mapping in syncmap:
             if 'ldap' in mapping:
                 logger.info("Querying LDAP %s...", mapping['ldap']['base'])
                 entries = self.query_ldap(**mapping['ldap'])
@@ -264,7 +258,7 @@ class SyncManager(object):
                 ldaproles[role] = role
 
             grant = mapping.get('grant', [])
-            aclitems = self.apply_grant_rules(grant, dbname, schema, entries)
+            aclitems = self.apply_grant_rules(grant, entries)
             for aclitem in aclitems:
                 logger.debug("Found ACL item %s in LDAP.", aclitem)
                 ldapacls.add(aclitem)

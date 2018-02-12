@@ -26,11 +26,15 @@ def wrapped_main(config=None):
     logging_config = config.logging_dict()
     dictConfig(logging_config)
 
-    try:
-        ldapconn = ldap.connect(**config['ldap'])
-    except ldap.LDAPError as e:
-        message = "Failed to connect to LDAP: %s" % (e,)
-        raise ConfigurationError(message)
+    if config.has_ldap_query():
+        logger.debug("Connecting to LDAP directory.")
+        try:
+            ldapconn = ldap.connect(**config['ldap'])
+        except ldap.LDAPError as e:
+            message = "Failed to connect to LDAP: %s" % (e,)
+            raise ConfigurationError(message)
+    else:
+        ldapconn = None
 
     if config.get('dry', True):
         logger.warn("Running in dry mode. Postgres will be untouched.")

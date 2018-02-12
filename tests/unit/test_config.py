@@ -368,7 +368,7 @@ def test_load_stdin(mocker):
 
     config.load(argv=[])
 
-    maplist = config['sync_map']['__all__']['__any__']
+    maplist = config['sync_map']
     assert 1 == len(maplist)
 
 
@@ -391,7 +391,7 @@ def test_load_file(mocker):
     config.load(argv=['--verbose'])
 
     assert 'envpass' == config['ldap']['password']
-    maplist = config['sync_map']['__all__']['__any__']
+    maplist = config['sync_map']
     assert 1 == len(maplist)
     assert config['verbose'] is True
 
@@ -402,6 +402,18 @@ def test_show_versions(mocker):
     config = Configuration()
     with pytest.raises(SystemExit):
         config.load(argv=['--version'])
+
+
+def test_has_ldap():
+    from ldap2pg.config import Configuration
+
+    config = Configuration()
+
+    config['sync_map'] = [dict(roles=dict())]
+    assert not config.has_ldap_query()
+
+    config['sync_map'] = [dict(ldap=dict())]
+    assert config.has_ldap_query()
 
 
 def test_acl_options():
