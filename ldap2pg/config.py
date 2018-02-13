@@ -17,6 +17,7 @@ from os import stat
 import re
 import sys
 
+import psycopg2
 import yaml
 
 from . import __version__
@@ -80,11 +81,13 @@ class VersionAction(_VersionAction):
 
         version = (
             "%(package)s %(version)s\n"
+            "psycopg2 %(psycopg2version)s\n"
             "%(pyldap)s %(ldapversion)s\n"
             "Python %(pyversion)s\n"
         ) % dict(
             package=__package__,
             version=__version__,
+            psycopg2version=psycopg2.__version__,
             pyversion=sys.version,
             pyldap=pyldap.project_name,
             ldapversion=pyldap.version,
