@@ -16,6 +16,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Add `*_on_tables__` ACL for all privileges on table.
 - Allow to customize managed databases with `postgres:databases_query`.
 - Allow pure static configuration (aka ldap2pg without LDAP).
+- Don't revoke ACL granted to roles not in `roles_query`.
 
 
 # ldap2pg 4.3.1
