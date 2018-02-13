@@ -42,13 +42,13 @@ def wrapped_main(config=None):
         logger.warn("Running in real mode.")
 
     psql = PSQL(connstring=config['postgres']['dsn'])
-    with psql('postgres') as psql_:
-        try:
+    try:
+        with psql('postgres') as psql_:
             supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
-        except psycopg2.OperationalError as e:
-            message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
-            raise ConfigurationError(message)
-        RoleOptions.update_supported_columns(supported_columns)
+    except psycopg2.OperationalError as e:
+        message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
+        raise ConfigurationError(message)
+    RoleOptions.update_supported_columns(supported_columns)
 
     manager = SyncManager(
         ldapconn=ldapconn, psql=psql,
