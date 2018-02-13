@@ -209,7 +209,14 @@ class SyncManager(object):
 
         return databases, pgroles
 
-    def inspect_pg_acls(self, syncmap, databases):
+    def is_role_managed(self, role, roles):
+        return (
+            self._roles_query is not None
+            and role != 'public'
+            and role not in roles
+        )
+
+    def inspect_pg_acls(self, syncmap, databases, roles):
         schemas = dict([(k, []) for k in databases])
         for dbname, psql in self.psql.itersessions(databases):
             logger.debug("Inspecting schemas in %s", dbname)
@@ -233,6 +240,8 @@ class SyncManager(object):
             for dbname, psql in self.psql.itersessions(databases):
                 rows = psql(acl.inspect.format(owners=owners_str))
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
+                    if self.is_role_managed(aclitem.role, roles):
+                        continue
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
@@ -376,7 +385,8 @@ class SyncManager(object):
             databases=databases)
         if self.acl_dict:
             logger.info("Inspecting Postgres ACLs...")
-            schemas, owners, pgacls = self.inspect_pg_acls(syncmap, databases)
+            schemas, owners, pgacls = self.inspect_pg_acls(
+                syncmap, databases, pgroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas, owners)
             count += self.run_queries(
                 self.diff_acls(pgacls, ldapacls),

@@ -305,7 +305,11 @@ def test_inspect_pg_acls(mocker):
         noinspect=NspAcl(name='noinspect'),
         ro=NspAcl(name='ro', inspect='SQL'),
     )
-    pa.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+    pa.return_value = [
+        AclItem('ro', 'postgres', None, 'alice'),
+        AclItem('ro', 'postgres', None, 'public'),
+        AclItem('ro', 'postgres', None, 'unmanaged'),
+    ]
 
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('postgres', psql)]
@@ -313,17 +317,21 @@ def test_inspect_pg_acls(mocker):
         psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
         acl_aliases=make_group_map(acl_dict)
     )
+    manager._roles_query = managed_roles = ['alice']
     manager._schemas_query = ['public']
     manager._owners_query = ['postgres']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     schemas, owners, pgacls = manager.inspect_pg_acls(
-        syncmap=syncmap, databases=['postgres'])
+        syncmap=syncmap, databases=['postgres'], roles=managed_roles)
 
-    assert 1 == len(pgacls)
+    assert 2 == len(pgacls)
     assert 'postgres' in owners
     assert 'postgres' in schemas
     assert 'public' in schemas['postgres']
+    grantees = [a.role for a in pgacls]
+    assert 'public' in grantees
+    assert 'alice' in grantees
 
 
 def test_inspect_ldap_acls(mocker):
