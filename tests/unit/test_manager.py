@@ -309,6 +309,7 @@ def test_inspect_pg_acls(mocker):
         AclItem('ro', 'postgres', None, 'alice'),
         AclItem('ro', 'postgres', None, 'public'),
         AclItem('ro', 'postgres', None, 'unmanaged'),
+        AclItem('ro', 'postgres', 'unmanaged', 'alice'),
     ]
 
     psql = mocker.MagicMock()

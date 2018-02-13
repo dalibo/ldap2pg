@@ -216,6 +216,12 @@ class SyncManager(object):
             or role in roles
         )
 
+    def is_schema_managed(self, schema, managed_schemas):
+        return (
+            schema is None
+            or schema in managed_schemas
+        )
+
     def inspect_pg_acls(self, syncmap, databases, roles):
         schemas = dict([(k, []) for k in databases])
         for dbname, psql in self.psql.itersessions(databases):
@@ -241,6 +247,9 @@ class SyncManager(object):
                 rows = psql(acl.inspect.format(owners=owners_str))
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
                     if not self.is_role_managed(aclitem.role, roles):
+                        continue
+                    schema = aclitem.schema
+                    if not self.is_schema_managed(schema, schemas[dbname]):
                         continue
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
