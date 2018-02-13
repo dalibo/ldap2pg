@@ -17,6 +17,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Allow to customize managed databases with `postgres:databases_query`.
 - Allow pure static configuration (aka ldap2pg without LDAP).
 - Don't revoke ACL granted to roles not in `roles_query`.
+- Don't revoke ACL granted on schema not in `schemas_query`.
 
 
 # ldap2pg 4.3.1
