@@ -211,9 +211,9 @@ class SyncManager(object):
 
     def is_role_managed(self, role, roles):
         return (
-            self._roles_query is not None
-            and role != 'public'
-            and role not in roles
+            self._roles_query is None
+            or role == 'public'
+            or role in roles
         )
 
     def inspect_pg_acls(self, syncmap, databases, roles):
@@ -240,7 +240,7 @@ class SyncManager(object):
             for dbname, psql in self.psql.itersessions(databases):
                 rows = psql(acl.inspect.format(owners=owners_str))
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
-                    if self.is_role_managed(aclitem.role, roles):
+                    if not self.is_role_managed(aclitem.role, roles):
                         continue
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
