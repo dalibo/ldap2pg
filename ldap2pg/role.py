@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from textwrap import dedent
 from collections import OrderedDict
 import logging
 
@@ -94,10 +95,10 @@ class Role(object):
                     ),
                 )
 
-    _drop_objects_sql = """
+    _drop_objects_sql = dedent("""
     DO $$BEGIN EXECUTE 'REASSIGN OWNED BY "%(role)s" TO '||SESSION_USER; END$$;
     DROP OWNED BY "%(role)s";
-    """.strip().replace(4 * ' ', '')
+    """)
 
     def drop(self):
         yield Query(
@@ -138,12 +139,12 @@ class RoleOptions(dict):
             if c in cls.SUPPORTED_COLUMNS
         ]
 
-    COLUMNS_QUERY = """
+    COLUMNS_QUERY = dedent("""
     SELECT array_agg(column_name::text)
     FROM information_schema.columns
     WHERE table_schema = 'pg_catalog' AND table_name = 'pg_authid'
     LIMIT 1
-    """.replace('\n    ', '\n').strip()
+    """)
 
     @classmethod
     def update_supported_columns(cls, columns):

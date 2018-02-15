@@ -1,6 +1,8 @@
+from textwrap import dedent
+
 _datacl_tpl = dict(
     type='datacl',
-    inspect="""\
+    inspect=dedent("""\
     WITH grants AS (
       SELECT
         (aclexplode(datacl)).grantee AS grantee,
@@ -20,7 +22,7 @@ _datacl_tpl = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND grants.priv = '%(privilege)s';
-    """.replace(' ' * 4, ''),
+    """),
     grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
     revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
 
@@ -28,7 +30,7 @@ _datacl_tpl = dict(
 
 _global_defacl_tpl = dict(
     type='globaldefacl',
-    inspect="""\
+    inspect=dedent("""\
     WITH
     grants AS (
       SELECT
@@ -56,7 +58,7 @@ _global_defacl_tpl = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (rolname IS NOT NULL OR grantee = 0)
       AND priv = '%(privilege)s'
-    """.replace(' ' * 4, '').strip(),
+    """),
     grant=(
         "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
         " GRANT %(privilege)s ON %(TYPE)s TO {role};"),
@@ -67,7 +69,7 @@ _global_defacl_tpl = dict(
 
 _defacl_tpl = dict(
     type="defacl",
-    inspect="""\
+    inspect=dedent("""\
     WITH
     grants AS (
       SELECT
@@ -89,20 +91,20 @@ _defacl_tpl = dict(
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND priv = '%(privilege)s'
     ORDER BY 1, 2, 4;
-    """.replace(' ' * 4, ''),
-    grant="""\
+    """),
+    grant=dedent("""\
     ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
     GRANT %(privilege)s ON %(TYPE)s TO {role};
-    """.replace(' ' * 4, ''),
-    revoke="""\
+    """),
+    revoke=dedent("""\
     ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
     REVOKE %(privilege)s ON %(TYPE)s FROM {role};
-    """.replace(' ' * 4, ''),
+    """),
 )
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect="""
+    inspect=dedent("""\
     WITH grants AS (
       SELECT
         nspname,
@@ -118,7 +120,7 @@ _nspacl_tpl = dict(
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND grants.priv = '%(privilege)s'
     ORDER BY 1, 2;
-    """.replace('\n    ', '\n').strip(),
+    """),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
@@ -153,7 +155,8 @@ _nspacl_tpl = dict(
 #
 _allrelacl_tpl = dict(
     type='nspacl',
-    inspect="""WITH
+    inspect=dedent("""\
+    WITH
     namespace_rels AS (
       SELECT
         nsp.oid,
@@ -190,7 +193,7 @@ _allrelacl_tpl = dict(
          AND privilege_type = '%(privilege)s'
     WHERE NOT (nsp.rels IS NOT NULL AND grants.rels IS NULL)
     ORDER BY 1, 2
-    """.replace('\n    ', '\n'),
+    """),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
         "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
@@ -199,7 +202,7 @@ _allrelacl_tpl = dict(
 
 _allprocacl_tpl = dict(
     type='nspacl',
-    inspect="""
+    inspect=dedent("""\
     WITH
     grants AS (SELECT
       pronamespace, grantee, priv,
@@ -250,7 +253,7 @@ _allprocacl_tpl = dict(
     WHERE NOT (nsp.procs IS NOT NULL AND grants.procs IS NULL)
       AND (priv IS NULL OR priv = '%(privilege)s')
     ORDER BY 1, 2;
-    """.replace('\n    ', '\n').strip(),
+    """),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
         "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
