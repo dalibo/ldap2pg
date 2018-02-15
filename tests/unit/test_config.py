@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from textwrap import dedent
+
 import pytest
 
 
@@ -28,11 +30,11 @@ def test_multiline_formatter():
     record = logging.makeLogRecord(dict(base_record, msg="Uno\nDos\nTres"))
 
     payload = formatter.format(record)
-    wanted = """\
+    wanted = dedent("""\
     prefix: Uno
     prefix: Dos
-    prefix: Tres\
-    """.replace('    ', '')
+    prefix: Tres
+    """).strip()
 
     assert wanted == payload
 

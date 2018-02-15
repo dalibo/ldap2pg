@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
+from textwrap import dedent
 from argparse import _VersionAction
 from pkg_resources import get_distribution
 from codecs import open
@@ -317,15 +318,15 @@ class Configuration(dict):
         'postgres': {
             'dsn': '',
             'blacklist': ['pg_*', 'postgres'],
-            'databases_query': """
+            'databases_query': dedent("""\
             SELECT datname FROM pg_catalog.pg_database
             WHERE datallowconn IS TRUE ORDER BY 1;
-            """.replace("\n" + ' ' * 12, "\n").strip(),
+            """),
             # SQL Query to inspect roles in cluster. See
             # https://www.postgresql.org/docs/current/static/view-pg-roles.html
             # and
             # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
-            'roles_query': """
+            'roles_query': dedent("""\
             SELECT
                 role.rolname, array_agg(members.rolname) AS members,
                 {options}
@@ -335,17 +336,17 @@ class Configuration(dict):
             LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
             GROUP BY role.rolname, {options}
             ORDER BY 1;
-            """.replace("\n" + ' ' * 12, "\n").strip(),
-            'owners_query': """
+            """),
+            'owners_query': dedent("""\
             SELECT role.rolname
             FROM pg_catalog.pg_roles AS role
             WHERE role.rolsuper IS TRUE
             ORDER BY 1;
-            """.replace("\n" + ' ' * 12, "\n").strip(),
-            'schemas_query': """
+            """),
+            'schemas_query': dedent("""\
             SELECT nspname FROM pg_catalog.pg_namespace
             ORDER BY 1;
-            """.replace('\n' + ' ' * 12, '\n').strip(),
+            """),
         },
         'acls': {},
         'acl_dict': {},
@@ -420,14 +421,14 @@ class Configuration(dict):
         else:
             raise NoConfigurationError("No configuration file found")
 
-    EPILOG = """\
+    EPILOG = dedent("""\
 
     ldap2pg requires a configuration file to describe LDAP queries and role
     mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further
     details.
 
     By default, ldap2pg runs in dry mode.
-    """.replace(4 * ' ', '')
+    """)
 
     def has_ldap_query(self):
         return [m['ldap'] for m in self['sync_map'] if 'ldap' in m]
