@@ -1,0 +1,44 @@
+{
+  "projectName": "ldap2pg",
+  "projectOwner": "bersace",
+  "files": [
+    "CONTRIBUTING.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "bersace",
+      "name": "Étienne BERSAC",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/542613?v=4",
+      "profile": "https://bersace.cae.li/",
+      "contributions": [
+        "code",
+        "doc",
+        "test",
+        "talk"
+      ]
+    },
+    {
+      "login": "leorenc",
+      "name": "Léo",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/27353905?v=4",
+      "profile": "https://github.com/leorenc",
+      "contributions": [
+        "blog",
+        "eventOrganizing",
+        "design"
+      ]
+    },
+    {
+      "login": "cbandy",
+      "name": "Chris Bandy",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/106560?v=4",
+      "profile": "https://github.com/cbandy",
+      "contributions": [
+        "example",
+        "review"
+      ]
+    }
+  ]
+}
