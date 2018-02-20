@@ -148,6 +148,9 @@ class SyncManager(object):
                 logger.debug(
                     "Role %s must have members %s.", name, ', '.join(members),
                 )
+            if parents:
+                logger.debug(
+                    "Role %s is member of %s.", name, ', '.join(parents))
             role = Role(
                 name=name,
                 members=members,
