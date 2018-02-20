@@ -411,7 +411,10 @@ class SyncManager(object):
             logger.debug("No ACL defined. Skipping ACL. ")
 
         if count:
-            logger.debug("Generated %d querie(s).", count)
+            # If log does not fit in screen, we should tell how much is to be
+            # done.
+            level = logger.debug if count < 30 else logger.info
+            level("Generated %d querie(s).", count)
         else:
             logger.info("Nothing to do.")
 
