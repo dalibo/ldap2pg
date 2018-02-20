@@ -171,7 +171,8 @@ def mapping(value, **kw):
 
     if 'ldap' in value:
         value['ldap'] = ldapquery(value['ldap'])
-        value['ldap']['attributes'] = list(gather_queried_attributes(value))
+        value['ldap']['attributes'] = list(set(
+            gather_queried_attributes(value)))
 
     return value
 
