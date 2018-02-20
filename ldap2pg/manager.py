@@ -264,7 +264,9 @@ class SyncManager(object):
         ldapacls = AclSet()
         for mapping in syncmap:
             if 'ldap' in mapping:
-                logger.info("Querying LDAP %s...", mapping['ldap']['base'])
+                logger.info(
+                    "Querying LDAP %.24s... %.12s...",
+                    mapping['ldap']['base'], mapping['ldap']['filter'])
                 entries = self.query_ldap(**mapping['ldap'])
             else:
                 entries = [None]
