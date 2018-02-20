@@ -1,11 +1,10 @@
 from __future__ import unicode_literals
 
-from textwrap import dedent
 from collections import OrderedDict
 import logging
 
 from .psql import Query
-from .utils import unicode
+from .utils import dedent, unicode
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,10 @@ class Role(object):
         yield Query(
             'Create %s.' % (self.name,),
             'postgres',
-            'CREATE ROLE "%s" WITH %s;' % (self.name, self.options)
+            dedent("""\
+            CREATE ROLE "{role}" WITH {options};
+            COMMENT ON ROLE "{role}" IS 'Managed by ldap2pg.';
+            """).format(role=self.name, options=self.options)
         )
         if self.members:
             yield Query(
@@ -62,7 +64,10 @@ class Role(object):
             yield Query(
                 'Update options of %s.' % (self.name,),
                 'postgres',
-                'ALTER ROLE "%s" WITH %s;' % (self.name, other.options),
+                dedent("""\
+                ALTER ROLE "{role}" WITH {options};
+                COMMENT ON ROLE "{role}" IS 'Managed by ldap2pg.';
+                """).format(role=self.name, options=other.options)
             )
 
         if self.members != other.members:
