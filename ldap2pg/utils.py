@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import sys
 from fnmatch import fnmatch
+import textwrap
 
 
 PY2 = sys.version_info < (3,)
@@ -19,6 +20,10 @@ class AllDatabases(object):
     # Simple object to represent dbname wildcard.
     def __repr__(self):
         return '__ALL_DATABASES__'
+
+
+def dedent(s):
+    return textwrap.dedent(s).strip()
 
 
 def lower1(string):
