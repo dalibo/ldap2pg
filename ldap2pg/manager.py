@@ -268,8 +268,10 @@ class SyncManager(object):
                     "Querying LDAP %.24s... %.12s...",
                     mapping['ldap']['base'], mapping['ldap']['filter'])
                 entries = self.query_ldap(**mapping['ldap'])
+                log_source = 'in LDAP'
             else:
                 entries = [None]
+                log_source = 'from YAML'
 
             for role in self.apply_role_rules(mapping['roles'], entries):
                 if role in ldaproles:
@@ -283,7 +285,7 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             aclitems = self.apply_grant_rules(grant, entries)
             for aclitem in aclitems:
-                logger.debug("Found ACL item %s in LDAP.", aclitem)
+                logger.debug("Found ACL item %s %s.", aclitem, log_source)
                 ldapacls.add(aclitem)
 
         return RoleSet(ldaproles.values()), ldapacls
