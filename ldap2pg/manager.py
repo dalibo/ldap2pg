@@ -135,11 +135,14 @@ class SyncManager(object):
 
         if kw.get('members_attribute'):
             members = get_attribute(entry, kw['members_attribute'])
-            members = [m.lower() for m in members]
         else:
             members = []
+        members = [m.lower() for m in members]
 
-        parents = [p.lower() for p in kw.get('parents', [])]
+        kw.setdefault('parents', [])
+        if kw.get('parents_attribute'):
+            kw['parents'] += get_attribute(entry, kw['parents_attribute'])
+        parents = [p.lower() for p in kw['parents']]
 
         for name in names:
             name = name.lower()

@@ -155,15 +155,18 @@ def test_process_entry_dn():
     assert 'bob' in names
 
 
-def test_process_entry_members(mocker):
+def test_process_entry_membership(mocker):
     from ldap2pg.manager import SyncManager
 
     manager = SyncManager()
 
-    entry = ('dn', {'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
+    entry = ('dn', {
+        'cn': 'group',
+        'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
 
     roles = manager.process_ldap_entry(
         entry, names=['group'], members_attribute='member.cn',
+        parents_attribute='cn',
     )
     roles = list(roles)
 
