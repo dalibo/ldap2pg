@@ -148,6 +148,9 @@ class SyncManager(object):
                 logger.debug(
                     "Role %s must have members %s.", name, ', '.join(members),
                 )
+            if parents:
+                logger.debug(
+                    "Role %s is member of %s.", name, ', '.join(parents))
             role = Role(
                 name=name,
                 members=members,
@@ -261,10 +264,14 @@ class SyncManager(object):
         ldapacls = AclSet()
         for mapping in syncmap:
             if 'ldap' in mapping:
-                logger.info("Querying LDAP %s...", mapping['ldap']['base'])
+                logger.info(
+                    "Querying LDAP %.24s... %.12s...",
+                    mapping['ldap']['base'], mapping['ldap']['filter'])
                 entries = self.query_ldap(**mapping['ldap'])
+                log_source = 'in LDAP'
             else:
                 entries = [None]
+                log_source = 'from YAML'
 
             for role in self.apply_role_rules(mapping['roles'], entries):
                 if role in ldaproles:
@@ -278,7 +285,7 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             aclitems = self.apply_grant_rules(grant, entries)
             for aclitem in aclitems:
-                logger.debug("Found ACL item %s in LDAP.", aclitem)
+                logger.debug("Found ACL item %s %s.", aclitem, log_source)
                 ldapacls.add(aclitem)
 
         return RoleSet(ldaproles.values()), ldapacls
@@ -404,7 +411,10 @@ class SyncManager(object):
             logger.debug("No ACL defined. Skipping ACL. ")
 
         if count:
-            logger.debug("Generated %d querie(s).", count)
+            # If log does not fit in screen, we should tell how much is to be
+            # done.
+            level = logger.debug if count < 30 else logger.info
+            level("Generated %d querie(s).", count)
         else:
             logger.info("Nothing to do.")
 

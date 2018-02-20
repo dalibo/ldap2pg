@@ -82,10 +82,6 @@ class Role(object):
                 )
             spurious = set(self.members) - set(other.members)
             if spurious:
-                logger.debug(
-                    "Role %s has spurious members %s.",
-                    self.name, ', '.join(spurious)
-                )
                 yield Query(
                     'Delete spurious %s members.' % (self.name,),
                     'postgres',
@@ -196,7 +192,6 @@ class RoleSet(set):
                     raise ValueError('Unknown parent role %s' % parent_name)
                 if role.name in parent.members:
                     continue
-                logger.debug("Add %s as member of %s.", role.name, parent.name)
                 parent.members.append(role.name)
 
     def reindex(self):
