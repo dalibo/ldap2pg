@@ -32,28 +32,27 @@ Here is a sample configuration and execution:
     - ldap:
         base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
         filter: "(objectClass=organizationalRole)"
-        attribute: cn
       role:
         name_attribute: cn
         options: LOGIN
         parent: ldap
-    $ ldap2pg --color --config docs/ldap2pg.minimal.yml --real
-    Starting ldap2pg 3.4.
-    Using /.../src/dalibo/ldap2pg/docs/ldap2pg.minimal.yml.
+    $ ldap2pg --config docs/ldap2pg.minimal.yml --real
+    Starting ldap2pg 4.5.
+    Using .../docs/ldap2pg.minimal.yml.
     Running in real mode.
-    Inspecting Postgres...
-    Querying LDAP ou=people,dc=ldap,dc=ldap2pg,dc=docker...
+    Inspecting Postgres roles...
+    Querying LDAP ou=people,dc=ldap,dc=lda... (objectClass...
     Create albert.
     Create alter.
     Create didier.
+    Create dorothée.
     Create ldap.
     Add ldap members.
-    Update options of alan.
     Update options of alice.
-    Reassign oscar objects and purge ACL on template1.
-    Reassign oscar objects and purge ACL on appdb.
-    Reassign oscar objects and purge ACL on postgres.
-    Drop oscar.
+    Update options of alan.
+    Reassign olivier objects and purge ACL on appdb.
+    Reassign olivier objects and purge ACL on olddb.
+    Drop olivier.
     Synchronization complete.
     $
 

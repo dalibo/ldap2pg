@@ -53,15 +53,12 @@ Currently, only boolean options are supported. Namely: `BYPASSRLS`, `LOGIN`,
 can be a SQL snippet like `SUPERUSER NOLOGIN`, a YAML list like `[LOGIN,
 NOCREATEDB]` or a dict like `{LOGIN: yes, SUPERUSER: no}`.
 
-`members_attribute` parameter behave the same way as `name_attribute`. It allows
-you to read members of a Postgres role from a LDAP attribute. If the attribute
-is a list in LDAP, all entries are considered a member of each roles generated
-by the entry. Note that members roles are **not** automatically created in
-Postres cluster. You must define a `role` rule for each member too, with their
-own options.
+`members` or `members_attribute` define members of the Postgres role. Note that
+members roles are **not** automatically created in Postres cluster. You must
+define a `role` rule for each member too, with their own options.
 
-`parent` or `parents` define one or more parent role. It's the reverse meaning
-of `members_attribute`, but statically.
+`parent`, `parents` or `parents_attribute` define one or more parent role. It's
+the reverse meaning of `members_attribute`.
 
 
 ## Ignoring roles
