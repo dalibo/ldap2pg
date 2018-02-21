@@ -30,6 +30,8 @@ jobs:
           ./fixture.sh
           ./pg_dumpacl -d db0
           ./pg_dumpacl --all
+          export PGDATABASE=db0
+          ./pg_dumpacl
 
   0-rpm-centos7:
     working_directory: /tmp/cci

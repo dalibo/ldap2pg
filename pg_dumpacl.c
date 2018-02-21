@@ -217,24 +217,42 @@ main(int argc, char *argv[])
 		conn = connectDatabase(pgdb, connstr, pghost, pgport, pguser,
 							   prompt_password, false);
 
+		/*
+		 * If pgdb is not given using the -d switch, try to get it from the
+		 * connection string (connstr_dbname could be set in connectDatabase)
+		 */
+		if (connstr_dbname && !pgdb) {
+			pgdb = strdup(connstr_dbname);
+		}
+
+		/*
+		 * if we still do not have a pgdb, get it from the environment variable
+		 * PGDATABASE
+		 */
+		if (!pgdb && getenv("PGDATABASE")) {
+			pgdb = getenv("PGDATABASE");
+		}
+
 		if (!conn)
 		{
 			fprintf(stderr, _("%s: could not connect to database \"%s\"\n"),
 					progname, pgdb);
 			exit(1);
 		}
-
-		/*
-		 * If pgdb is not given using the -d switch, try to get it from the 
-		 * connection string (connstr_dbname could be set in connectDatabase)
-		 */
-		if (connstr_dbname && !pgdb)
-			pgdb = strdup(connstr_dbname);
 	}
 	else
 	{
 		conn = connectDatabase(pgdb, connstr, pghost, pgport, pguser,
 							   prompt_password, false);
+		/*
+		 * if we do not have a pgdb, get it from the environment variable
+		 * PGDATABASE
+		 */
+		if (!conn && !pgdb && getenv("PGDATABASE")) {
+			pgdb = getenv("PGDATABASE");
+			conn = connectDatabase(pgdb, connstr, pghost, pgport, pguser,
+			                       prompt_password, false);
+		}
 		if (!conn)
 			conn = connectDatabase("postgres", connstr, pghost, pgport, pguser,
 								   prompt_password, true);
@@ -244,10 +262,10 @@ main(int argc, char *argv[])
 
 		if (!conn)
 		{
-			fprintf(stderr, _("%s: could not connect to either given database and"
-			          " databases \"postgres\" or \"template1\"\n"
-							  "Please specify an alternative database.\n"),
-					progname);
+			fprintf(stderr, _("%s: could not connect to either database \'%s\', "
+			                  "\"postgres\" or \"template1\".\n"
+			                  "Please specify an alternative database.\n"),
+			        progname, pgdb);
 			fprintf(stderr, _("Try \"%s --help\" for more information.\n"),
 					progname);
 			exit(1);
@@ -412,9 +430,9 @@ connectDatabase(const char *dbname, const char *connection_string,
 				if (conn_opt->val != NULL && conn_opt->val[0] != '\0')
 				{
 					/*
-					 * if the dbname was given in the connstr and not in pgdb using the -d 
-					 * switch, we must retrieve it and save it in the pgdb variable for the 
-					 * dumpCreateDB operation
+					 * if the dbname was given in the connstr and not in pgdb using the -d
+					 * switch, we must retrieve it and save it in the pgdb variable for
+					 * the dumpCreateDB operation
 					 */
 					if (strcmp(conn_opt->keyword, "dbname") == 0 && !dbname)
 						connstr_dbname = pg_strdup(conn_opt->val);
@@ -682,7 +700,7 @@ dumpCreateDB(PGconn *conn, const char *dbname, bool dump_all_db)
 		appendPQExpBuffer(buf, " AND datname = \'%s\'", dbname);
 	}
 	appendPQExpBuffer(buf, " ORDER BY 1");
-	
+
 	res = executeQuery(conn, buf->data, 0, NULL);
 
 	for (i = 0; i < PQntuples(res); i++)
