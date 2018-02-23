@@ -43,7 +43,7 @@ def wrapped_main(config=None):
 
     psql = PSQL(connstring=config['postgres']['dsn'])
     try:
-        with psql('postgres') as psql_:
+        with psql() as psql_:
             supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
     except psycopg2.OperationalError as e:
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)

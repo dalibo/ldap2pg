@@ -226,7 +226,7 @@ class SyncManager(object):
                     yield AclItem(acl, database, schema, role)
 
     def inspect_pg_roles(self):
-        with self.psql('postgres') as psql:
+        with self.psql() as psql:
             databases = self.pg_fetch(psql, self._databases_query, self.row1)
             pgroles = RoleSet(self.pg_fetch(
                 psql, self.format_roles_query(), self.process_pg_roles))
@@ -284,7 +284,7 @@ class SyncManager(object):
                 # False owner means schemas_query is not aware of owners.
                 if owners is None:
                     logger.debug("Globally inspecting owners...")
-                    with self.psql('postgres') as psql:
+                    with self.psql() as psql:
                         owners = self.pg_fetch(
                             psql, self._owners_query, self.row1)
                 schemas[dbname][schema] = owners

@@ -1,6 +1,30 @@
 import pytest
 
 
+def test_connstring():
+    from ldap2pg.psql import inject_database_in_connstring
+
+    dsns = [
+        '',
+        'postgres://toto@localhost',
+        'postgres://toto@localhost?connect_timeout=4',
+        'postgres://toto@localhost/?connect_timeout=4',
+        'dbname=other',
+        "dbname = 'other'",
+        'postgres://toto@localhost/other',
+    ]
+
+    for dsn in dsns:
+        connstring = inject_database_in_connstring(dsn, 'postgres')
+        if dsn.startswith('postgres://'):
+            assert 'localhost/postgres' in connstring
+        else:
+            assert 'dbname=postgres' in connstring
+
+        assert 'other' not in connstring
+        assert dsn == inject_database_in_connstring(dsn, None)
+
+
 def test_psql(mocker):
     connect = mocker.patch('ldap2pg.psql.psycopg2.connect')
 
@@ -8,19 +32,8 @@ def test_psql(mocker):
     conn = connect.return_value
     cursor = conn.cursor.return_value
 
-    dsns = [
-        '',
-        'postgres://toto@localhost',
-        'postgres://toto@localhost?connect_timeout=4',
-        'postgres://toto@localhost/?connect_timeout=4',
-    ]
-    for dsn in dsns:
-        psql = PSQL(dsn)
-        session = psql('postgres')
-        if dsn.startswith('postgres://'):
-            assert 'localhost/postgres' in session.connstring
-        else:
-            assert 'dbname=postgres' in session.connstring
+    psql = PSQL()
+    session = psql('postgres')
 
     with session:
         assert connect.called is True
