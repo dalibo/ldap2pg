@@ -116,6 +116,50 @@ There is no `revoke` rule. Any ACL found in the cluster are revoked unless they
 are specifically granted with `grant`.
 
 
+## Inspect schemas and owners
+
+`ALTER DEFAULT PRIVILEGES` allows users to create objects in schemas without
+worrying about granting privileges. This way, schema migration and grant are
+distincts. A good practice is to use a group to reference object owners. The
+following diagram shows the relations between the different `GRANT`. What's
+important to understand is that `ALTER DEFAULT PRIVILEGES` are **not**
+inherited. `ldap2pg` must known who are the owners to configuret their default
+privileges.
+
+![Owners and readers group](img/owners-readers-adp.svg)
+
+`ldap2pg` inspect schemas and owners in cluster to manage
+`ALTER DEFAULT PRIVILEGES` and grant on `__all__` schema. By default, `ldap2pg`
+consider every superuser as owner on all schemas. This is likely to not match
+your case. The `postgres:schemas_query` allows you to fully customize this.
+
+The purpose of `schemas_query` is to list all schemas in a database, associated
+with all roles owning objects in it. An owner is a superuser or a role with
+`CREATE ON SCHEMA` granted. If you put every owners in a `owners` group, you
+should inspect schemas like this :
+
+``` yaml
+postgres:
+  schemas_query: |
+    SELECT
+      nsp.nspname AS nsp,
+      array_agg(role.rolname ORDER BY 1) FILTER (WHERE role.rolname IS NOT NULL) AS owners
+    FROM pg_catalog.pg_namespace AS nsp
+    LEFT OUTER JOIN pg_catalog.pg_roles AS owners
+      ON owners.rolname = 'owners'
+    LEFT OUTER JOIN pg_catalog.pg_auth_members AS ms
+      ON ms.roleid = owners.oid
+    LEFT OUTER JOIN pg_catalog.pg_roles AS role
+      ON role.oid = ms.member
+    GROUP BY 1
+    ORDER BY 1;
+```
+
+Default privileges will be set only to these roles. This way, you can `GRANT
+CREATE` one time for all on role `owners` and `GRANT SELECT` to `readers`, new
+objects will be properly configured without a new run of `ldap2pg`.
+
+
 ## Defining custom ACL
 
 [Well-known ACLs](wellknown.md) do not handle all cases. Sometime, you need
