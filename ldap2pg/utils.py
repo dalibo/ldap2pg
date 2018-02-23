@@ -9,11 +9,19 @@ PY2 = sys.version_info < (3,)
 
 if PY2:  # pragma: nocover_py3
     string_types = (str, unicode)  # noqa
-    unicode = unicode
+    unicode = unicode  # noqa
     bytes = str
 else:  # pragma: nocover_py2
     string_types = (str,)
     unicode = str
+
+try:  # pragma: nocover_py2
+    from urllib.parse import urlparse, urlunparse
+except ImportError:  # pragma: nocover_py3
+    from urlparse import urlparse, urlunparse
+
+
+__all__ = ['urlparse', 'urlunparse']
 
 
 class AllDatabases(object):

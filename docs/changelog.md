@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # ldap2pg 4.6 (unreleased)
 
 - Allow to inspect owners per schema.
+- Use configured database instead of hardcoded `postgres`.
 
 
 # ldap2pg 4.5
