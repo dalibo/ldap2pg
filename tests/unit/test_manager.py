@@ -221,8 +221,8 @@ def test_apply_grant_rule_ok(mocker):
     items = manager.apply_grant_rules(
         grant=[dict(
             acl='connect',
-            database='postgres',
-            schema='__any__',
+            databases=['postgres'],
+            schemas='__any__',
             role_attribute='cn',
         )],
         entries=[None, None],
@@ -230,7 +230,7 @@ def test_apply_grant_rule_ok(mocker):
     items = list(items)
     assert 2 == len(items)
     assert 'alice' == items[0].role
-    assert 'postgres' == items[0].dbname
+    assert 'postgres' == items[0].dbname[0]
     # Ensure __any__ schema is mapped to None
     assert items[0].schema is None
     assert 'bob' == items[1].role
@@ -261,7 +261,7 @@ def test_apply_grant_rule_all_schema(mocker):
     items = manager.apply_grant_rules(
         grant=[dict(
             acl='connect',
-            database='postgres',
+            databases=['postgres'],
             schema='__all__',
             role_attribute='cn',
         )],
@@ -270,7 +270,7 @@ def test_apply_grant_rule_all_schema(mocker):
     items = list(items)
     assert 1 == len(items)
     assert 'alice' == items[0].role
-    assert 'postgres' == items[0].dbname
+    assert 'postgres' == items[0].dbname[0]
     # Ensure __all__ schema is mapped to object
     assert items[0].schema != '__all__'
 
@@ -417,7 +417,7 @@ def test_postprocess_acls():
     ldapacls = manager.postprocess_acls(AclSet(), schemas=dict())
     assert 0 == len(ldapacls)
 
-    ldapacls = AclSet([AclItem(acl='ro', dbname='db', schema=None)])
+    ldapacls = AclSet([AclItem(acl='ro', dbname=['db'], schema=None)])
     ldapacls = manager.postprocess_acls(
         ldapacls, schemas=dict(db=dict(
             public=['postgres', 'owner'],
@@ -439,7 +439,7 @@ def test_postprocess_acls_bad_database():
         acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict)
     )
 
-    ldapacls = AclSet([AclItem('ro', 'inexistantdb', None, 'alice')])
+    ldapacls = AclSet([AclItem('ro', ['inexistantdb'], None, 'alice')])
     schemas = dict(postgres=dict(public=['postgres']))
 
     with pytest.raises(UserError) as ei:
