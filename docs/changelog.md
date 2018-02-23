@@ -7,7 +7,7 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
-# ldap2pg 4.6 (unreleased)
+# ldap2pg 4.6
 
 - Allow to inspect owners per schema.
 - Use configured database instead of hardcoded `postgres`.
