@@ -29,12 +29,15 @@ def test_process_grant():
     with pytest.raises(ValueError):
         grantrule(dict(acl='missing role*'))
 
-    grantrule(dict(
+    rule = grantrule(dict(
         acl='ro',
         database='postgres',
         schema='public',
         role_attribute='cn',
     ))
+
+    assert 'schemas' in rule
+    assert 'databases' in rule
 
 
 def test_ismapping():

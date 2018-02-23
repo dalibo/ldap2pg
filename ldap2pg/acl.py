@@ -1,3 +1,5 @@
+from itertools import chain
+
 from .psql import Query
 from .utils import AllDatabases, UserError, unicode, make_group_map
 
@@ -69,7 +71,7 @@ class DatAcl(Acl):
         if item.dbname is AclItem.ALL_DATABASES:
             dbnames = databases.keys()
         else:
-            dbnames = [item.dbname]
+            dbnames = item.dbname
 
         for dbname in dbnames:
             yield item.copy(acl=self.name, dbname=dbname)
@@ -105,7 +107,7 @@ class NspAcl(DatAcl):
                 fmt = "Database %s does not exists or is not managed."
                 raise UserError(fmt % (item.dbname))
         else:
-            schemas = [item.schema]
+            schemas = item.schema
         for schema in schemas:
             yield item.copy(acl=self.name, schema=schema)
 
@@ -162,7 +164,7 @@ class AclItem(object):
         return '<%s %s>' % (self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash(self.as_tuple())
+        return hash(''.join(chain(*filter(None, self.as_tuple()))))
 
     def __eq__(self, other):
         return self.as_tuple() == other.as_tuple()

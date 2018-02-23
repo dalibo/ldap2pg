@@ -41,7 +41,7 @@ sync_map:
 - grant:
     # Grant ro to some developers
     database: appdb
-    schema: appns
+    schema: [appns]
     acl: ro
     roles:
     - daniel  # in fixture/postgres.sh: has partial grant

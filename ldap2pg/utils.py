@@ -29,6 +29,9 @@ class AllDatabases(object):
     def __repr__(self):
         return '__ALL_DATABASES__'
 
+    def __iter__(self):
+        return iter([repr(self)])
+
 
 def dedent(s):
     return textwrap.dedent(s).strip()

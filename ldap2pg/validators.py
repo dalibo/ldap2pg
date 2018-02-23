@@ -98,6 +98,15 @@ def rolerule(value):
     return rule
 
 
+def strlist_alias(dict_, key, alias, exceptions=[]):
+    if alias in dict_:
+        dict_[key] = dict_[alias]
+    if key in dict_:
+        v = dict_[key]
+        if v not in exceptions and isinstance(v, string_types):
+            dict_[key] = [v]
+
+
 def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if not isinstance(value, dict):
         raise ValueError('Grant rule must be a dict.')
@@ -116,16 +125,16 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
         )
         raise ValueError(msg)
 
-    if 'role' in value:
-        value['roles'] = value.pop('role')
-    if 'roles' in value and isinstance(value['roles'], string_types):
-        value['roles'] = [value['roles']]
+    strlist_alias(value, 'roles', 'role')
 
     if 'roles' not in value and 'role_attribute' not in value:
         raise ValueError('Missing role in grant rule.')
 
     value.setdefault('database', defaultdb)
+    strlist_alias(value, 'databases', 'database', '__all__')
+
     value.setdefault('schema', defaultschema)
+    strlist_alias(value, 'schemas', 'schema', [None, '__any__', '__all__'])
 
     return value
 

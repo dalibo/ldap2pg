@@ -60,7 +60,7 @@ def test_expand_defacl():
         acl='select', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
     )
     item1 = AclItem(
-        acl='select', dbname='postgres', schema='information_schema',
+        acl='select', dbname=['postgres'], schema=['information_schema'],
     )
 
     assert repr(item0.schema)

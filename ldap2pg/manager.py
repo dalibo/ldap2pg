@@ -195,13 +195,13 @@ class SyncManager(object):
         for rule in grant:
             acl = rule.get('acl')
 
-            database = rule.get('database', '__all__')
-            if database == '__all__':
-                database = AclItem.ALL_DATABASES
+            databases = rule.get('databases', '__all__')
+            if databases == '__all__':
+                databases = AclItem.ALL_DATABASES
 
-            schema = rule.get('schema', '__all__')
-            if schema in (None, '__all__', '__any__'):
-                schema = None
+            schemas = rule.get('schemas', '__all__')
+            if schemas in (None, '__all__', '__any__'):
+                schemas = None
 
             pattern = rule.get('role_match')
 
@@ -223,7 +223,7 @@ class SyncManager(object):
                             acl, role, pattern,
                         )
                         continue
-                    yield AclItem(acl, database, schema, role)
+                    yield AclItem(acl, databases, schemas, role)
 
     def inspect_pg_roles(self):
         with self.psql() as psql:
@@ -458,9 +458,9 @@ class SyncManager(object):
             logger.debug("No ACL defined. Skipping ACL. ")
 
         if count:
-            # If log does not fit in screen, we should tell how much is to be
-            # done.
-            level = logger.debug if count < 30 else logger.info
+            # If log does not fit in 24 row screen, we should tell how much is
+            # to be done.
+            level = logger.debug if count < 20 else logger.info
             level("Generated %d querie(s).", count)
         else:
             logger.info("Nothing to do.")
