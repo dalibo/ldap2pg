@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from fnmatch import fnmatch
 import logging
-from itertools import groupby
+from itertools import chain, groupby
 
 import psycopg2
 
@@ -111,6 +111,24 @@ class SyncManager(object):
 
             yield AclItem.from_row(acl, dbname, *row)
 
+    def process_schemas(self, rows):
+        for row in rows:
+            if not isinstance(row, (list, tuple)):
+                row = [row]
+
+            # schemas_query can return tuple with signature (schema,) or
+            # (schema, owners)
+            try:
+                schema, owners = row
+                owners = owners or []
+            except ValueError:
+                schema, = row
+                # Store that schemas_query is not aware of owners. e.g. static
+                # list or old query.
+                owners = False
+
+            yield schema, owners
+
     def query_ldap(self, base, filter, attributes, scope):
         try:
             entries = self.ldapconn.search_s(
@@ -215,6 +233,21 @@ class SyncManager(object):
 
         return databases, pgroles
 
+    def is_aclitem_managed(self, aclitem, schemas, roles, all_owners):
+        if not self.is_role_managed(aclitem.role, roles):
+            return False
+
+        dbname, schema = aclitem.dbname, aclitem.schema
+        if not self.is_schema_managed(schema, schemas[dbname]):
+            return False
+
+        # Use all owners in database for schema-less ACLs
+        owners = all_owners if not schema else schemas[dbname][schema]
+        if not self.is_owner_managed(aclitem.owner, owners):
+            return False
+
+        return True
+
     def is_role_managed(self, role, roles):
         return (
             self._roles_query is None
@@ -222,26 +255,42 @@ class SyncManager(object):
             or role in roles
         )
 
+    def is_owner_managed(self, owner, owners):
+        return owner is None or owner in owners
+
     def is_schema_managed(self, schema, managed_schemas):
         return (
             schema is None
             or schema in managed_schemas
         )
 
-    def inspect_pg_acls(self, syncmap, databases, roles):
+    def inspect_schemas(self, databases):
         schemas = dict([(k, []) for k in databases])
         for dbname, psql in self.psql.itersessions(databases):
             logger.debug("Inspecting schemas in %s", dbname)
-            schemas[dbname] = self.pg_fetch(
-                psql, self._schemas_query, self.row1)
+            schemas[dbname] = dict(self.pg_fetch(
+                psql, self._schemas_query, self.process_schemas))
             logger.debug(
                 "Found schemas %s in %s.",
                 ', '.join(schemas[dbname]), dbname)
 
-        logger.debug("Inspecting owners...")
-        owners = self.pg_fetch(psql, self._owners_query, self.row1)
-        owners_str = ', '.join(["'%s'" % o for o in owners])
+        # Fallback to postgres:owners_query if schemas_query does not return
+        # owners.
+        owners = None
+        for dbname in schemas:
+            for schema in schemas[dbname]:
+                if schemas[dbname][schema] is not False:
+                    continue
+                # False owner means schemas_query is not aware of owners.
+                if owners is None:
+                    logger.debug("Globally inspecting owners...")
+                    with self.psql('postgres') as psql:
+                        owners = self.pg_fetch(
+                            psql, self._owners_query, self.row1)
+                schemas[dbname][schema] = owners
+        return schemas
 
+    def inspect_pg_acls(self, syncmap, schemas, roles):
         pgacls = AclSet()
         for name, acl in sorted(self.acl_dict.items()):
             if not acl.inspect:
@@ -249,18 +298,18 @@ class SyncManager(object):
                 continue
 
             logger.debug("Searching items of ACL %s.", acl)
-            for dbname, psql in self.psql.itersessions(databases):
-                rows = psql(acl.inspect.format(owners=owners_str))
+            for dbname, psql in self.psql.itersessions(schemas):
+                rows = psql(acl.inspect)
+                # Gather all owners in database for global ACL
+                owners = set(chain(*schemas[dbname].values()))
                 for aclitem in self.process_pg_acl_items(name, dbname, rows):
-                    if not self.is_role_managed(aclitem.role, roles):
-                        continue
-                    schema = aclitem.schema
-                    if not self.is_schema_managed(schema, schemas[dbname]):
+                    if not self.is_aclitem_managed(
+                            aclitem, schemas, roles, owners):
                         continue
                     logger.debug("Found ACL item %s.", aclitem)
                     pgacls.add(aclitem)
 
-        return schemas, owners, pgacls
+        return pgacls
 
     def inspect_ldap(self, syncmap):
         ldaproles = {}
@@ -293,16 +342,11 @@ class SyncManager(object):
 
         return RoleSet(ldaproles.values()), ldapacls
 
-    def postprocess_acls(self, ldapacls, schemas, owners):
-        if not owners:
-            logger.warn(
-                "No owners found. Can't issue ALTER DEFAULT PRIVILEGES.")
-
+    def postprocess_acls(self, ldapacls, schemas):
         expanded_acls = ldapacls.expanditems(
             aliases=self.acl_aliases,
             acl_dict=self.acl_dict,
             databases=schemas,
-            owners=owners,
         )
 
         ldapacls = AclSet()
@@ -404,9 +448,9 @@ class SyncManager(object):
             databases=databases)
         if self.acl_dict:
             logger.info("Inspecting Postgres ACLs...")
-            schemas, owners, pgacls = self.inspect_pg_acls(
-                syncmap, databases, pgroles)
-            ldapacls = self.postprocess_acls(ldapacls, schemas, owners)
+            schemas = self.inspect_schemas(databases)
+            pgacls = self.inspect_pg_acls(syncmap, schemas, pgroles)
+            ldapacls = self.postprocess_acls(ldapacls, schemas)
             count += self.run_queries(
                 self.diff_acls(pgacls, ldapacls),
                 databases=schemas)
