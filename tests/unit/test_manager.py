@@ -76,6 +76,22 @@ def test_process_acl_rows():
         list(manager.process_pg_acl_items('acl', 'db', [('incomplete',)]))
 
 
+def test_process_schema_rows():
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+
+    rows = ['legacy']
+    my = dict(manager.process_schemas(rows))
+    assert 'legacy' in my
+    assert my['legacy'] is False
+
+    rows = [['public', ['owner']]]
+    my = dict(manager.process_schemas(rows))
+    assert 'public' in my
+    assert 'owner' in my['public']
+
+
 def test_query_ldap(mocker):
     from ldap2pg.manager import SyncManager
 
@@ -296,6 +312,39 @@ def test_apply_grant_rule_nodb(mocker):
     assert items[0].dbname is AclItem.ALL_DATABASES
 
 
+def test_inspect_schemas(mocker):
+    from ldap2pg.manager import SyncManager
+
+    psql = mocker.MagicMock()
+    psql.itersessions.return_value = [('db', psql)]
+    manager = SyncManager(psql=psql)
+
+    # legacy
+    manager._schemas_query = ['public']
+    manager._owners_query = ['owner']
+
+    schemas = manager.inspect_schemas(databases=['db'])
+
+    assert 'db' in schemas
+    assert 'public' in schemas['db']
+    assert 'owner' in schemas['db']['public']
+
+    # owner aware
+    manager._schemas_query = [
+        ('public', ['pubowner']),
+        ('ns', ['nsowner']),
+    ]
+    manager._owners_query = ['owner']
+
+    schemas = manager.inspect_schemas(databases=['db'])
+
+    assert 'db' in schemas
+    assert 'public' in schemas['db']
+    assert 'pubowner' in schemas['db']['public']
+    assert 'ns' in schemas['db']
+    assert 'nsowner' in schemas['db']['ns']
+
+
 def test_inspect_pg_acls(mocker):
     pa = mocker.patch(
         'ldap2pg.manager.SyncManager.process_pg_acl_items', autospec=True)
@@ -309,30 +358,25 @@ def test_inspect_pg_acls(mocker):
         ro=NspAcl(name='ro', inspect='SQL'),
     )
     pa.return_value = [
-        AclItem('ro', 'postgres', None, 'alice'),
-        AclItem('ro', 'postgres', None, 'public'),
-        AclItem('ro', 'postgres', None, 'unmanaged'),
-        AclItem('ro', 'postgres', 'unmanaged', 'alice'),
+        AclItem('ro', 'db', None, 'alice'),
+        AclItem('ro', 'db', None, 'public'),
+        AclItem('ro', 'db', None, 'unmanaged'),
+        AclItem('ro', 'db', 'unmanaged', 'alice'),
+        AclItem('ro', 'db', None, 'alice', owner='unmanaged'),
     ]
 
     psql = mocker.MagicMock()
-    psql.itersessions.return_value = [('postgres', psql)]
+    psql.itersessions.return_value = [('db', psql)]
     manager = SyncManager(
-        psql=psql, ldapconn=mocker.Mock(), acl_dict=acl_dict,
-        acl_aliases=make_group_map(acl_dict)
-    )
+        psql=psql, acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict))
     manager._roles_query = managed_roles = ['alice']
-    manager._schemas_query = ['public']
-    manager._owners_query = ['postgres']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
-    schemas, owners, pgacls = manager.inspect_pg_acls(
-        syncmap=syncmap, databases=['postgres'], roles=managed_roles)
+    pgacls = manager.inspect_pg_acls(
+        syncmap=syncmap, schemas=dict(db=dict(public=['owner'])),
+        roles=managed_roles)
 
     assert 2 == len(pgacls)
-    assert 'postgres' in owners
-    assert 'postgres' in schemas
-    assert 'public' in schemas['postgres']
     grantees = [a.role for a in pgacls]
     assert 'public' in grantees
     assert 'alice' in grantees
@@ -370,17 +414,19 @@ def test_postprocess_acls():
     )
 
     # No owners
-    ldapacls = manager.postprocess_acls(AclSet(), schemas=dict(), owners=[])
+    ldapacls = manager.postprocess_acls(AclSet(), schemas=dict())
     assert 0 == len(ldapacls)
 
     ldapacls = AclSet([AclItem(acl='ro', dbname='db', schema=None)])
     ldapacls = manager.postprocess_acls(
-        ldapacls, schemas=dict(db=['public', 'ns']),
-        owners=['postgres', 'owner'],
+        ldapacls, schemas=dict(db=dict(
+            public=['postgres', 'owner'],
+            ns=['owner'],
+        )),
     )
 
     # One item per schema, per owner
-    assert 4 == len(ldapacls)
+    assert 3 == len(ldapacls)
 
 
 def test_postprocess_acls_bad_database():
@@ -394,11 +440,10 @@ def test_postprocess_acls_bad_database():
     )
 
     ldapacls = AclSet([AclItem('ro', 'inexistantdb', None, 'alice')])
-    schemas = dict(postgres=['public'])
-    owners = ['postgres']
+    schemas = dict(postgres=dict(public=['postgres']))
 
     with pytest.raises(UserError) as ei:
-        manager.postprocess_acls(ldapacls, schemas, owners)
+        manager.postprocess_acls(ldapacls, schemas)
     assert 'inexistantdb' in str(ei.value)
 
 
@@ -410,8 +455,7 @@ def test_postprocess_acls_inexistant():
     with pytest.raises(UserError):
         manager.postprocess_acls(
             ldapacls=AclSet([AclItem('inexistant')]),
-            schemas=dict(postgres=['public']),
-            owners=['postgres'],
+            schemas=dict(postgres=dict(public=['postgres'])),
         )
 
 
@@ -585,6 +629,7 @@ def test_run_queries_error(mocker):
 
 def test_sync(mocker):
     cls = 'ldap2pg.manager.SyncManager'
+    is_ = mocker.patch(cls + '.inspect_schemas', autospec=True)
     ipa = mocker.patch(cls + '.inspect_pg_acls', autospec=True)
     ipr = mocker.patch(cls + '.inspect_pg_roles', autospec=True)
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
@@ -602,7 +647,8 @@ def test_sync(mocker):
     # Simple diff with one query
     dr.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
     qry[0].expand.return_value = [qry[0]]
-    ipa.return_value = (dict(postgres=['public']), [], set())
+    is_.return_value = dict(postgres=dict(public=['owner']))
+    ipa.return_value = []
     da.return_value = []
 
     # No ACL to sync, one query

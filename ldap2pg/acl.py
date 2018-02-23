@@ -74,7 +74,7 @@ class DatAcl(Acl):
         for dbname in dbnames:
             yield item.copy(acl=self.name, dbname=dbname)
 
-    def expand(self, item, databases, owners=None):
+    def expand(self, item, databases):
         for exp in self.expanddb(item, databases):
             # inspect query will return AclItem with NULL schema, so ensure we
             # have schema None.
@@ -86,10 +86,11 @@ class DatAcl(Acl):
 class GlobalDefAcl(DatAcl):
     itemfmt = '%(dbname)s for %(owner)s'
 
-    def expand(self, item, databases, owners):
+    def expand(self, item, databases):
         for exp in super(GlobalDefAcl, self).expand(item, databases):
-            for owner in owners:
-                yield exp.copy(owner=owner)
+            for schema in databases[exp.dbname]:
+                for owner in databases[exp.dbname][schema]:
+                    yield exp.copy(owner=owner)
 
 
 @Acl.register
@@ -108,7 +109,7 @@ class NspAcl(DatAcl):
         for schema in schemas:
             yield item.copy(acl=self.name, schema=schema)
 
-    def expand(self, item, databases, owners):
+    def expand(self, item, databases):
         for datexp in self.expanddb(item, databases):
             for nspexp in self.expandschema(datexp, databases):
                 yield nspexp
@@ -118,9 +119,9 @@ class NspAcl(DatAcl):
 class DefAcl(NspAcl):
     itemfmt = '%(dbname)s.%(schema)s for %(owner)s'
 
-    def expand(self, item, databases, owners):
-        for expand in super(DefAcl, self).expand(item, databases, []):
-            for owner in owners:
+    def expand(self, item, databases):
+        for expand in super(DefAcl, self).expand(item, databases):
+            for owner in databases[expand.dbname][expand.schema]:
                 yield expand.copy(owner=owner)
 
 
@@ -181,7 +182,7 @@ class AclItem(object):
 
 
 class AclSet(set):
-    def expanditems(self, aliases, acl_dict, databases, owners):
+    def expanditems(self, aliases, acl_dict, databases):
         for item in self:
             try:
                 aclnames = aliases[item.acl]
@@ -194,7 +195,7 @@ class AclSet(set):
                 except KeyError:
                     raise ValueError("Unknown ACL %s" % (aclname,))
 
-                for expansion in acl.expand(item, databases, owners):
+                for expansion in acl.expand(item, databases):
                     yield expansion
 
 

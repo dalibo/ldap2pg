@@ -60,7 +60,7 @@ def test_expand_defacl():
         acl='select', dbname=AclItem.ALL_DATABASES, schema=AclItem.ALL_SCHEMAS,
     )
     item1 = AclItem(
-        acl='select', dbname='postgres', schema='public',
+        acl='select', dbname='postgres', schema='information_schema',
     )
 
     assert repr(item0.schema)
@@ -72,10 +72,13 @@ def test_expand_defacl():
             aliases=dict(select=['select']),
             acl_dict={acl.name: acl},
             databases=dict(
-                postgres=['information_schema'],
-                template1=['information_schema'],
+                postgres=dict(
+                    information_schema=['postgres'],
+                ),
+                template1=dict(
+                    information_schema=['postgres'],
+                ),
             ),
-            owners=['postgres'],
         ),
         key=lambda x: x.dbname,
     )
@@ -109,8 +112,7 @@ def test_expand_global_defacl():
     item = AclItem(acl='c', dbname=AclItem.ALL_DATABASES, schema=None)
 
     items = sorted(acl.expand(
-        item, databases=dict(postgres=0xbad),
-        owners=['postgres', 'admin'],
+        item, databases=dict(postgres=dict(public=['postgres', 'admin'])),
     ), key=lambda x: x.owner)
 
     assert 2 == len(items)
@@ -135,7 +137,6 @@ def test_expand_nok():
             aliases=dict(),
             acl_dict=dict(),
             databases=dict(),
-            owners=[],
         ))
 
     set_ = AclSet([AclItem('inexistant_dep')])
@@ -145,7 +146,6 @@ def test_expand_nok():
             aliases=dict(inexistant_dep=['inexistant']),
             acl_dict=dict(),
             databases=dict(),
-            owners=[],
         ))
 
 

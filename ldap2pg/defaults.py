@@ -47,7 +47,7 @@ _global_defacl_tpl = dict(
       FROM pg_roles AS rol
       LEFT OUTER JOIN pg_catalog.pg_default_acl AS defacl
         ON defacl.defaclrole = rol.oid AND defacl.defaclnamespace = 0
-      WHERE defaclacl IS NULL AND rolname IN ({owners})
+      WHERE defaclacl IS NULL
     )
     SELECT
       NULL AS "schema",
