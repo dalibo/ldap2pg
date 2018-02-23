@@ -34,9 +34,9 @@ def inject_database_in_connstring(connstring, dbname):
 class PSQL(object):
     # A simple connexion manager to Postgres
     #
-    # For now, ldap2pg self limits it's connexion pool to 32 sessions. Later if
-    # we hit the limit, we'll see how to managed this better.
-    def __init__(self, connstring=None, max_pool_size=32):
+    # For now, ldap2pg self limits it's connexion pool to 256 sessions. Later
+    # if we hit the limit, we'll see how to managed this better.
+    def __init__(self, connstring=None, max_pool_size=256):
         self.connstring = connstring or ''
         self.pool = {}
         self.max_pool_size = max_pool_size
