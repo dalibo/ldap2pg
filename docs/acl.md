@@ -120,10 +120,10 @@ are specifically granted with `grant`.
 
 `ALTER DEFAULT PRIVILEGES` allows users to create objects in schemas without
 worrying about granting privileges. This way, schema migration and grant are
-distincts. A good practice is to use a group to reference object owners. The
+distinct. A good practice is to use a group to reference object owners. The
 following diagram shows the relations between the different `GRANT`. What's
 important to understand is that `ALTER DEFAULT PRIVILEGES` are **not**
-inherited. `ldap2pg` must known who are the owners to configuret their default
+inherited. `ldap2pg` must known who are the owners to configure their default
 privileges.
 
 ![Owners and readers group](img/owners-readers-adp.svg)
