@@ -1,5 +1,5 @@
 - role:
-    name: ldap
+    name: ldap_roles
     options: NOLOGIN
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -7,4 +7,4 @@
   role:
     name_attribute: cn
     options: LOGIN
-    parent: ldap
+    parent: ldap_roles
