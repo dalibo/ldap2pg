@@ -11,6 +11,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix `__usage_on_types__` regranted for each owner.
 - Warn about undetermined `ALTER DEFAULT PRIVILEGES`.
+- Sort GRANT/REVOKE by role first.
 
 
 # ldap2pg 4.6
