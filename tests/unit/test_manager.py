@@ -665,6 +665,10 @@ def test_sync(mocker):
     assert da.called is True
     assert 2 == count
 
+    # Dry run with roles and ACL
+    manager.dry = True
+    manager.sync(syncmap=[])
+
     # Nothing to do
     rq.return_value = 0
     count = manager.sync(syncmap=[])

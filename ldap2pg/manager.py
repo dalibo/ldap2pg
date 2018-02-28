@@ -448,6 +448,10 @@ class SyncManager(object):
             databases=databases)
         if self.acl_dict:
             logger.info("Inspecting Postgres ACLs...")
+            if self.dry and count:
+                logger.warn(
+                    "In dry mode, some owners aren't created, "
+                    "their default privileges can't be determined.")
             schemas = self.inspect_schemas(databases)
             pgacls = self.inspect_pg_acls(syncmap, schemas, pgroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas)

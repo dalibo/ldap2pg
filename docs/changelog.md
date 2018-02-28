@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # ldap2pg 4.7 (unreleased)
 
 - Fix `__usage_on_types__` regranted for each owner.
+- Warn about undetermined `ALTER DEFAULT PRIVILEGES`.
 
 
 # ldap2pg 4.6
