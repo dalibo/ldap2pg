@@ -170,7 +170,7 @@ class AclItem(object):
         return self.as_tuple() == other.as_tuple()
 
     def as_tuple(self):
-        return (self.acl, self.dbname, self.schema, self.role, self.owner)
+        return (self.role, self.acl, self.dbname, self.schema, self.owner)
 
     def copy(self, **kw):
         return self.__class__(**dict(dict(

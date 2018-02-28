@@ -7,6 +7,14 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# ldap2pg 4.7 (unreleased)
+
+- Fix `__usage_on_types__` regranted for each owner.
+- Fix `ALTER DEFAULT PRIVILEGES` on blacklisted roles.
+- Warn about undetermined `ALTER DEFAULT PRIVILEGES`.
+- Sort GRANT/REVOKE by role first.
+
+
 # ldap2pg 4.6
 
 - Allow to inspect owners per schema.

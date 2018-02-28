@@ -469,7 +469,6 @@ GRANT USAGE ON SCHEMA {schema} TO {role};
 ### ACL `__usage_on_types__`
 
 ``` SQL
-ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
-GRANT USAGE ON TYPES TO {role};
+GRANT USAGE ON SCHEMA {schema} TO {role};
 ```
 

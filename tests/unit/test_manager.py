@@ -317,30 +317,34 @@ def test_inspect_schemas(mocker):
 
     psql = mocker.MagicMock()
     psql.itersessions.return_value = [('db', psql)]
-    manager = SyncManager(psql=psql)
+    manager = SyncManager(psql=psql, blacklist=['postgres'])
 
     # legacy
     manager._schemas_query = ['public']
-    manager._owners_query = ['owner']
+    manager._owners_query = ['owner', 'postgres']
 
     schemas = manager.inspect_schemas(databases=['db'])
 
     assert 'db' in schemas
     assert 'public' in schemas['db']
     assert 'owner' in schemas['db']['public']
+    assert 'postgres' not in schemas['db']['public']
 
     # owner aware
     manager._schemas_query = [
-        ('public', ['pubowner']),
+        ('public', ['pubowner', 'postgres']),
         ('ns', ['nsowner']),
     ]
     manager._owners_query = ['owner']
 
-    schemas = manager.inspect_schemas(databases=['db'])
+    schemas = manager.inspect_schemas(
+        databases=['db'], managedroles={'pubowner', 'nsowner'})
 
     assert 'db' in schemas
     assert 'public' in schemas['db']
     assert 'pubowner' in schemas['db']['public']
+    assert 'owner' not in schemas['db']['public']
+    assert 'postgres' not in schemas['db']['public']
     assert 'ns' in schemas['db']
     assert 'nsowner' in schemas['db']['ns']
 
@@ -664,6 +668,10 @@ def test_sync(mocker):
     assert dr.called is True
     assert da.called is True
     assert 2 == count
+
+    # Dry run with roles and ACL
+    manager.dry = True
+    manager.sync(syncmap=[])
 
     # Nothing to do
     rq.return_value = 0
