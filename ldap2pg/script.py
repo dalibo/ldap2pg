@@ -58,6 +58,7 @@ def wrapped_main(config=None):
         databases_query=config['postgres']['databases_query'],
         owners_query=config['postgres']['owners_query'],
         roles_query=config['postgres']['roles_query'],
+        managed_roles_query=config['postgres']['managed_roles_query'],
         schemas_query=config['postgres']['schemas_query'],
         dry=config['dry'],
     )

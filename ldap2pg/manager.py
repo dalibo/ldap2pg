@@ -25,14 +25,15 @@ class SyncManager(object):
     def __init__(
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
             blacklist=[],
-            roles_query=None, owners_query=None, databases_query=None,
-            schemas_query=None,
+            roles_query=None, owners_query=None, managed_roles_query=None,
+            databases_query=None, schemas_query=None,
             dry=False):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
         self.acl_aliases = acl_aliases or {}
         self._blacklist = blacklist
+        self._managed_roles_query = managed_roles_query
         self._databases_query = databases_query
         self._owners_query = owners_query
         self._roles_query = roles_query
@@ -83,20 +84,32 @@ class SyncManager(object):
 
     def process_pg_roles(self, rows):
         for row in rows:
-            name = row[0]
-            pattern = match(name, self._blacklist)
+            yield Role.from_row(*row)
+
+    def filter_roles(self, allroles, blacklist, whitelist):
+        managedroles = RoleSet()
+        for role in list(allroles):
+            pattern = match(role.name, blacklist)
             if pattern:
-                logger.debug("Ignoring role %s. Matches %r.", name, pattern)
-                continue
+                logger.debug(
+                    "Ignoring role %s. Matches %r.", role.name, pattern)
+                # Remove blacklisted role from allroles. Prefer to fail on
+                # re-CREATE-ing it rather than even altering options of it.
+                allroles.remove(role)
+            elif role.name not in whitelist:
+                logger.debug("May reuse role %s.", role.name)
             else:
-                role = Role.from_row(*row)
-                logger.debug("Found role %r %s.", role.name, role.options)
+                logger.debug("Managing role %r %s.", role.name, role.options)
                 if role.members:
+                    # Filter members to not revoke unmanaged roles.
+                    role.members = list(set(role.members) & whitelist)
                     logger.debug(
                         "Role %s has members %s.",
                         role.name, ','.join(role.members),
                     )
-                yield role
+                managedroles.add(role)
+
+        return allroles, managedroles
 
     def process_pg_acl_items(self, acl, dbname, rows):
         for row in rows:
@@ -228,10 +241,15 @@ class SyncManager(object):
     def inspect_pg_roles(self):
         with self.psql() as psql:
             databases = self.pg_fetch(psql, self._databases_query, self.row1)
-            pgroles = RoleSet(self.pg_fetch(
+            pgallroles = RoleSet(self.pg_fetch(
                 psql, self.format_roles_query(), self.process_pg_roles))
-
-        return databases, pgroles
+            if self._managed_roles_query is None:
+                pgmanagedroles = set([r.name for r in pgallroles])
+            else:
+                logger.debug("Listing managed roles.")
+                pgmanagedroles = set(self.pg_fetch(
+                    psql, self._managed_roles_query, self.row1))
+        return databases, pgallroles, pgmanagedroles
 
     def is_aclitem_managed(self, aclitem, schemas, roles, all_owners):
         if not self.is_role_managed(aclitem.role, roles):
@@ -365,28 +383,32 @@ class SyncManager(object):
 
         return ldapacls
 
-    def diff_roles(self, pgroles=None, ldaproles=None):
-        pgroles = pgroles or RoleSet()
+    def diff_roles(self, pgallroles=None, pgmanagedroles=None, ldaproles=None):
+        pgallroles = pgallroles or RoleSet()
+        pgmanagedroles = pgmanagedroles or RoleSet()
         ldaproles = ldaproles or RoleSet()
 
         # First create missing roles
-        missing = RoleSet(ldaproles - pgroles)
+        missing = RoleSet(ldaproles - pgallroles)
         for role in missing.flatten():
             for qry in role.create():
                 yield qry
 
         # Now update existing roles options and memberships
-        existing = pgroles & ldaproles
-        pg_roles_index = pgroles.reindex()
+        existing = pgallroles & ldaproles
+        pg_roles_index = pgallroles.reindex()
         ldap_roles_index = ldaproles.reindex()
         for role in existing:
             my = pg_roles_index[role.name]
             its = ldap_roles_index[role.name]
+            if role not in pgmanagedroles:
+                logger.warn(
+                    "Role %s already exists in cluster. Reusing.", role.name)
             for qry in my.alter(its):
                 yield qry
 
-        # Don't forget to trash all spurious roles!
-        spurious = RoleSet(pgroles - ldaproles)
+        # Don't forget to trash all spurious managed roles!
+        spurious = RoleSet(pgmanagedroles - ldaproles)
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry
@@ -440,7 +462,10 @@ class SyncManager(object):
 
     def sync(self, syncmap):
         logger.info("Inspecting Postgres roles...")
-        databases, pgroles = self.inspect_pg_roles()
+        databases, pgallroles, pgmanagedroles = self.inspect_pg_roles()
+        pgallroles, pgmanagedroles = self.filter_roles(
+            pgallroles, self._blacklist, pgmanagedroles)
+
         logger.debug("Postgres inspection done.")
         ldaproles, ldapacls = self.inspect_ldap(syncmap)
         logger.debug("LDAP inspection completed. Post processing.")
@@ -451,7 +476,7 @@ class SyncManager(object):
 
         count = 0
         count += self.run_queries(
-            self.diff_roles(pgroles, ldaproles),
+            self.diff_roles(pgallroles, pgmanagedroles, ldaproles),
             databases=databases)
         if self.acl_dict:
             logger.info("Inspecting Postgres ACLs...")
@@ -459,8 +484,8 @@ class SyncManager(object):
                 logger.warn(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
-            schemas = self.inspect_schemas(databases, pgroles)
-            pgacls = self.inspect_pg_acls(syncmap, schemas, pgroles)
+            schemas = self.inspect_schemas(databases, pgmanagedroles)
+            pgacls = self.inspect_pg_acls(syncmap, schemas, pgmanagedroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas)
             count += self.run_queries(
                 self.diff_acls(pgacls, ldapacls),
