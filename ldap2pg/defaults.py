@@ -316,11 +316,10 @@ def make_well_known_acls():
         make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
         make_acl(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
         make_acl(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
-        make_acl(_defacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
+        make_acl(_nspacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
     ])
 
-    acls.update(
-        make_proc_acls('EXECUTE', 'FUNCTIONS'))
+    acls.update(make_proc_acls('EXECUTE', 'FUNCTIONS'))
     acls['__execute__'] = ['__execute_on_functions__']
 
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRIGGER', 'TRUNCATE':
