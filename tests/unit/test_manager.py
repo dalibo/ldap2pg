@@ -36,21 +36,31 @@ def test_format_roles_inspect_sql(mocker):
     assert 'rolsuper' in manager.format_roles_query()
 
 
-def test_process_roles_rows():
-    from ldap2pg.manager import SyncManager
+def test_filter_roles():
+    from ldap2pg.manager import SyncManager, Role
 
-    manager = SyncManager(blacklist=['pg_*', 'postgres'])
-    rows = [
-        ('postgres', []),
-        ('pg_signal_backend', []),
-        ('dba', ['alice']),
-        ('alice', []),
+    manager = SyncManager()
+
+    blacklist = ['pg_*', 'postgres']
+    allroles = [
+        Role('postgres'),
+        Role('pg_signal_backend'),
+        Role('dba', members=['alice']),
+        Role('alice'),
+        Role('unmanaged'),
     ]
-    roles = list(manager.process_pg_roles(rows))
+    managedroles = {'alice', 'dba'}
+    allroles, managedroles = manager.filter_roles(
+        allroles, blacklist, managedroles)
 
-    assert 2 == len(roles)
-    assert 'dba' == roles[0].name
-    assert 'alice' == roles[1].name
+    assert 3 == len(allroles)
+    assert 2 == len(managedroles)
+    assert 'dba' in allroles
+    assert 'alice' in allroles
+    assert 'unmanaged' in allroles
+    assert 'unmanaged' not in managedroles
+    assert 'postgres' not in allroles
+    assert 'postgres' not in managedroles
 
 
 def test_process_acl_rows():
@@ -373,12 +383,12 @@ def test_inspect_pg_acls(mocker):
     psql.itersessions.return_value = [('db', psql)]
     manager = SyncManager(
         psql=psql, acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict))
-    manager._roles_query = managed_roles = ['alice']
+    manager._roles_query = managed_roles_query = ['alice']
     syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
 
     pgacls = manager.inspect_pg_acls(
         syncmap=syncmap, schemas=dict(db=dict(public=['owner'])),
-        roles=managed_roles)
+        roles=managed_roles_query)
 
     assert 2 == len(pgacls)
     grantees = [a.role for a in pgacls]
@@ -468,14 +478,23 @@ def test_inspect_pg_roles(mocker):
 
     manager = SyncManager(
         psql=mocker.MagicMock(),
-        roles_query=[('spurious', [])],
+        roles_query=['precreated', 'spurious'],
+        managed_roles_query=None,
+        databases_query=['postgres'],
     )
-    manager._databases_query = ['postgres']
 
-    databases, pgroles = manager.inspect_pg_roles()
+    databases, pgallroles, pgmanagedroles = manager.inspect_pg_roles()
 
-    assert 'spurious' in pgroles
     assert 'postgres' in databases
+    assert 'precreated' in pgallroles
+    assert 'spurious' in pgallroles
+    assert pgallroles == pgmanagedroles
+
+    manager._managed_roles_query = ['precreated']
+
+    _, _, pgmanagedroles = manager.inspect_pg_roles()
+
+    assert 'spurious' not in pgmanagedroles
 
 
 def test_inspect_ldap_roles(mocker):
@@ -556,22 +575,32 @@ def test_diff_roles():
 
     m = SyncManager()
 
-    pgroles = RoleSet([
+    pgmanagedroles = RoleSet([
         Role('drop-me'),
         Role('alter-me'),
         Role('nothing'),
     ])
+    pgallroles = pgmanagedroles.union({
+        Role('reuse-me'),
+        Role('dont-touch-me'),
+    })
     ldaproles = RoleSet([
+        Role('reuse-me'),
         Role('alter-me', options=dict(LOGIN=True)),
         Role('nothing'),
         Role('create-me')
     ])
-    queries = [q.args[0] for q in m.diff_roles(pgroles, ldaproles)]
+    queries = [
+        q.args[0]
+        for q in m.diff_roles(pgallroles, pgmanagedroles, ldaproles)
+    ]
 
     assert fnfilter(queries, 'ALTER ROLE "alter-me" WITH* LOGIN*;')
     assert fnfilter(queries, 'CREATE ROLE "create-me" *;')
     assert fnfilter(queries, '*DROP ROLE "drop-me";*')
+    assert not fnfilter(queries, 'CREATE ROLE "reuse-me" *')
     assert not fnfilter(queries, '*nothing*')
+    assert not fnfilter(queries, '*dont-touch-me*')
 
 
 def test_diff_acls(mocker):
@@ -646,7 +675,7 @@ def test_sync(mocker):
 
     manager = SyncManager()
 
-    ipr.return_value = (['postgres', 'template1'], set())
+    ipr.return_value = (['postgres', 'template1'], set(), set())
     il.return_value = (mocker.Mock(name='ldaproles'), set())
     # Simple diff with one query
     dr.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
@@ -678,6 +707,7 @@ def test_sync(mocker):
     count = manager.sync(syncmap=[])
     assert 0 == count
 
+    # resolve_membership failure
     il.return_value[0].resolve_membership.side_effect = ValueError()
     with pytest.raises(UserError):
         manager.sync(syncmap=[])

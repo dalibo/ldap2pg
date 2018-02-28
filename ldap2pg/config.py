@@ -328,10 +328,9 @@ class Configuration(dict):
             # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
             'roles_query': dedent("""\
             SELECT
-                role.rolname, array_agg(members.rolname) AS members,
-                {options}
+              role.rolname, array_agg(members.rolname) AS members, {options}
             FROM
-                pg_catalog.pg_roles AS role
+              pg_catalog.pg_roles AS role
             LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
             LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
             GROUP BY role.rolname, {options}
@@ -343,6 +342,7 @@ class Configuration(dict):
             WHERE role.rolsuper IS TRUE
             ORDER BY 1;
             """),
+            'managed_roles_query': None,
             'schemas_query': dedent("""\
             SELECT nspname FROM pg_catalog.pg_namespace
             ORDER BY 1;
@@ -373,6 +373,7 @@ class Configuration(dict):
         Mapping('postgres:databases_query', env=None),
         Mapping('postgres:owners_query', env=None),
         Mapping('postgres:roles_query', env=None),
+        Mapping('postgres:managed_roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
         Mapping('acls', env=None, processor=V.acls),
         Mapping('acl_dict', processor=V.acldict),

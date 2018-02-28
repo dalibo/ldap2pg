@@ -13,6 +13,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix `ALTER DEFAULT PRIVILEGES` on blacklisted roles.
 - Warn about undetermined `ALTER DEFAULT PRIVILEGES`.
 - Sort GRANT/REVOKE by role first.
+- Reuse existing role. Drop roles only from `managed_roles_query`.
 
 
 # ldap2pg 4.6
