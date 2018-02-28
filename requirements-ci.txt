@@ -4,7 +4,6 @@ flake8
 mkdocs==0.15  # Map to RTD version
 pytest
 pytest-cov
-pytest-catchlog
 pytest-mock
 psycopg2==2.5.1  # From CentOS7
 pyyaml==3.10  # From CentOS7
