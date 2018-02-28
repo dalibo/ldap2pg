@@ -227,3 +227,6 @@ class RoleSet(set):
         for name in sorted(index.keys()):
             for i in walk(name):
                 yield index[i]
+
+    def union(self, other):
+        return self.__class__(self | other)
