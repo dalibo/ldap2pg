@@ -632,34 +632,6 @@ def test_diff_acls(mocker):
     assert fnfilter(queries, 'GRANT "david"*')
 
 
-def test_run_queries_error(mocker):
-    from ldap2pg.manager import SyncManager, UserError
-    from ldap2pg.psql import Query
-
-    psql = mocker.MagicMock(name='psql')
-    cursor = psql.return_value.__enter__.return_value
-
-    manager = SyncManager(psql=psql)
-    queries = [
-        Query('q0', Query.ALL_DATABASES, 'SQL 0'),
-        Query('q1', 'postgres', 'SQL 1'),
-    ]
-    databases = ['postgres', 'template1']
-
-    # Dry run
-    manager.dry = True
-    count = manager.run_queries(queries=queries, databases=databases)
-    assert cursor.called is False
-    assert 3 == count
-
-    # Real mode
-    cursor.side_effect = RuntimeError()
-    manager.dry = False
-    with pytest.raises(UserError):
-        manager.run_queries(queries=queries, databases=databases)
-    assert cursor.called is True
-
-
 def test_sync(mocker):
     cls = 'ldap2pg.manager.SyncManager'
     is_ = mocker.patch(cls + '.inspect_schemas', autospec=True)
@@ -669,11 +641,11 @@ def test_sync(mocker):
     mocker.patch(cls + '.postprocess_acls', autospec=True)
     dr = mocker.patch(cls + '.diff_roles', autospec=True)
     da = mocker.patch(cls + '.diff_acls', autospec=True)
-    rq = mocker.patch(cls + '.run_queries', autospec=True)
 
     from ldap2pg.manager import SyncManager, UserError
 
-    manager = SyncManager()
+    psql = mocker.Mock(name='psql')
+    manager = SyncManager(psql=psql)
 
     ipr.return_value = (['postgres', 'template1'], set(), set())
     il.return_value = (mocker.Mock(name='ldaproles'), set())
@@ -685,7 +657,8 @@ def test_sync(mocker):
     da.return_value = []
 
     # No ACL to sync, one query
-    rq.return_value = 1
+    psql.dry = False
+    psql.run_queries.return_value = 1
     count = manager.sync(syncmap=[])
     assert dr.called is True
     assert da.called is False
@@ -699,11 +672,11 @@ def test_sync(mocker):
     assert 2 == count
 
     # Dry run with roles and ACL
-    manager.dry = True
+    manager.psql.dry = True
     manager.sync(syncmap=[])
 
     # Nothing to do
-    rq.return_value = 0
+    psql.run_queries.return_value = 0
     count = manager.sync(syncmap=[])
     assert 0 == count
 
