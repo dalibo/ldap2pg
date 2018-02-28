@@ -26,8 +26,7 @@ class SyncManager(object):
             self, ldapconn=None, psql=None, acl_dict=None, acl_aliases=None,
             blacklist=[],
             roles_query=None, owners_query=None, managed_roles_query=None,
-            databases_query=None, schemas_query=None,
-            dry=False):
+            databases_query=None, schemas_query=None):
         self.ldapconn = ldapconn
         self.psql = psql
         self.acl_dict = acl_dict or {}
@@ -38,7 +37,6 @@ class SyncManager(object):
         self._owners_query = owners_query
         self._roles_query = roles_query
         self._schemas_query = schemas_query
-        self.dry = dry
 
     def row1(self, rows):
         for row in rows:
@@ -439,27 +437,6 @@ class SyncManager(object):
             for aclitem in aclitems:
                 yield acl.grant(aclitem)
 
-    def run_queries(self, queries, databases=None):
-        count = 0
-        for query in expandqueries(queries, databases or []):
-            with self.psql(query.dbname) as psql:
-                count += 1
-                if self.dry:
-                    logger.info('Would ' + lower1(query.message))
-                else:
-                    logger.info(query.message)
-
-                sql = psql.mogrify(*query.args)
-                if self.dry:
-                    logger.debug("Would execute: %s", sql)
-                else:
-                    try:
-                        psql(sql)
-                    except Exception as e:
-                        msg = "Error while executing SQL query:\n%s" % (e,)
-                        raise UserError(msg)
-        return count
-
     def sync(self, syncmap):
         logger.info("Inspecting Postgres roles...")
         databases, pgallroles, pgmanagedroles = self.inspect_pg_roles()
@@ -475,21 +452,21 @@ class SyncManager(object):
             raise UserError(str(e))
 
         count = 0
-        count += self.run_queries(
+        count += self.psql.run_queries(expandqueries(
             self.diff_roles(pgallroles, pgmanagedroles, ldaproles),
-            databases=databases)
+            databases=databases))
         if self.acl_dict:
             logger.info("Inspecting Postgres ACLs...")
-            if self.dry and count:
+            if self.psql.dry and count:
                 logger.warn(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
             schemas = self.inspect_schemas(databases, pgmanagedroles)
             pgacls = self.inspect_pg_acls(syncmap, schemas, pgmanagedroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas)
-            count += self.run_queries(
+            count += self.psql.run_queries(expandqueries(
                 self.diff_acls(pgacls, ldapacls),
-                databases=schemas)
+                databases=schemas))
         else:
             logger.debug("No ACL defined. Skipping ACL. ")
 

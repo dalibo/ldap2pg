@@ -108,3 +108,55 @@ def test_expand_queries():
     allqueries = list(expandqueries(queries, databases))
 
     assert 3 == len(allqueries)
+
+
+def test_group_by_sessions(mocker):
+    PSQLSession = mocker.patch('ldap2pg.psql.PSQLSession', mocker.MagicMock())
+    # Identify each with on PSQLSession
+    PSQLSession.return_value.__enter__.side_effect = ['a', 'b', 'c']
+
+    from ldap2pg.psql import PSQL, Query
+
+    psql = PSQL()
+    queries = [
+        Query('M.', None, 'SELECT 1;'),
+        Query('M.', None, 'SELECT 2;'),
+        Query('M.', 'other', 'SELECT 3;'),
+        Query('M.', None, 'SELECT 4;'),
+    ]
+
+    sessions = [
+        session for session, _ in psql.iter_queries_by_session(queries)]
+
+    assert len(queries) == len(sessions)
+    # Ensure the session is reused for the second query
+    assert sessions[0] == sessions[1]
+    # But not for the last one.
+    assert sessions[0] != sessions[3]
+
+
+def test_run_queries(mocker):
+    iqbs = mocker.patch('ldap2pg.psql.PSQL.iter_queries_by_session')
+    from ldap2pg.psql import PSQL, Query, UserError
+
+    psql = PSQL()
+
+    queries = [
+        Query('q0', None, 'SQL 0'),
+        Query('q1', 'postgres', 'SQL 1'),
+    ]
+    session = mocker.Mock(name='session')
+    iqbs.return_value = [(session, query) for query in queries]
+
+    # Dry run
+    psql.dry = True
+    count = psql.run_queries(queries)
+    assert session.called is False
+    assert 2 == count
+
+    # Real mode
+    session.side_effect = RuntimeError()
+    psql.dry = False
+    with pytest.raises(UserError):
+        psql.run_queries(queries=queries)
+    assert session.called is True

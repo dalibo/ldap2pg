@@ -6,6 +6,7 @@ import re
 import psycopg2.extensions
 
 from .utils import AllDatabases, UserError, urlparse, urlunparse
+from .utils import lower1
 
 
 logger = logging.getLogger(__name__)
@@ -36,10 +37,11 @@ class PSQL(object):
     #
     # For now, ldap2pg self limits it's connexion pool to 256 sessions. Later
     # if we hit the limit, we'll see how to managed this better.
-    def __init__(self, connstring=None, max_pool_size=256):
+    def __init__(self, connstring=None, max_pool_size=256, dry=False):
         self.connstring = connstring or ''
         self.pool = {}
         self.max_pool_size = max_pool_size
+        self.dry = dry
 
     def __call__(self, dbname=None):
         if dbname in self.pool:
@@ -63,12 +65,54 @@ class PSQL(object):
             with self(dbname) as session:
                 yield dbname, session
 
+    def iter_queries_by_session(self, queries):
+        dbname = None
+        dbqueries = []
+        for query in queries:
+            if dbname != query.dbname:
+                if dbqueries:
+                    with self(dbname) as session:
+                        for q in dbqueries:
+                            yield session, q
+                dbqueries[:] = []
+            dbname = query.dbname
+            dbqueries.append(query)
+
+        if dbqueries:
+            with self(dbname) as session:
+                for q in dbqueries:
+                    yield session, q
+
+    def run_queries(self, queries):
+        count = 0
+        queries = list(queries)
+        for session, query in self.iter_queries_by_session(queries):
+            count += 1
+            if self.dry:
+                logger.info('Would ' + lower1(query.message))
+            else:
+                logger.info(query.message)
+
+            sql = session.mogrify(*query.args)
+            if self.dry:
+                logger.debug("Would execute: %s", sql)
+                continue
+
+            try:
+                session(sql)
+            except Exception as e:
+                msg = "Error while executing SQL query:\n%s" % (e,)
+                raise UserError(msg)
+
+        return count
+
 
 class PSQLSession(object):
-    def __init__(self, connstring):
+    def __init__(self, connstring, dry=False):
         self.connstring = connstring
         self.conn = None
         self.cursor = None
+        self.dry = dry
 
     def __del__(self):
         if self.cursor:
@@ -91,12 +135,11 @@ class PSQLSession(object):
         return self
 
     def __exit__(self, *a):
-        pass
+        self.conn.commit()
 
     def __call__(self, query, *args):
         logger.debug("Doing:\n%s", query.strip())
         self.cursor.execute(query, *args)
-        self.conn.commit()
         return self.cursor
 
     def mogrify(self, qry, *a, **kw):

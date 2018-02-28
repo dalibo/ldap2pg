@@ -40,8 +40,7 @@ def wrapped_main(config=None):
         logger.warn("Running in dry mode. Postgres will be untouched.")
     else:
         logger.warn("Running in real mode.")
-
-    psql = PSQL(connstring=config['postgres']['dsn'])
+    psql = PSQL(connstring=config['postgres']['dsn'], dry=config['dry'])
     try:
         with psql() as psql_:
             supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
@@ -60,7 +59,6 @@ def wrapped_main(config=None):
         roles_query=config['postgres']['roles_query'],
         managed_roles_query=config['postgres']['managed_roles_query'],
         schemas_query=config['postgres']['schemas_query'],
-        dry=config['dry'],
     )
     count = manager.sync(syncmap=config['sync_map'])
 
