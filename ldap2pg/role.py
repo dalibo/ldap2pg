@@ -33,8 +33,8 @@ class Role(object):
         return unicode(self) < unicode(other)
 
     @classmethod
-    def from_row(cls, name, members, *row):
-        self = Role(name=name, members=list(filter(None, members)))
+    def from_row(cls, name, members=None, *row):
+        self = Role(name=name, members=list(filter(None, members or [])))
         self.options.update_from_row(row)
         return self
 
