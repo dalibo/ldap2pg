@@ -35,6 +35,7 @@ EOSQL
 
 psql -v ON_ERROR_STOP=1 <<'EOSQL'
 -- Create role as it should be. for NOOP
+CREATE ROLE ldap_roles WITH NOLOGIN;
 CREATE ROLE app WITH NOLOGIN;
 CREATE ROLE daniel WITH LOGIN;
 CREATE ROLE david WITH LOGIN;
@@ -44,11 +45,16 @@ CREATE ROLE alan WITH SUPERUSER LOGIN;
 CREATE ROLE alice WITH SUPERUSER NOLOGIN IN ROLE app;
 
 -- Create spurious roles, for DROP.
-CREATE ROLE old WITH LOGIN;
-CREATE ROLE omar;
-CREATE ROLE olivier;
-CREATE ROLE oscar WITH LOGIN IN ROLE app, old;
+CREATE ROLE olivia;
+CREATE ROLE omar WITH LOGIN;
+CREATE ROLE oscar WITH LOGIN IN ROLE app;
 CREATE ROLE œdipe;
+
+-- Put them in ldap_roles for drop
+GRANT ldap_roles to omar, olivia, oscar, œdipe;
+
+-- Create a role out of scope, for no drop
+CREATE ROLE keepme;
 
 -- Create databases
 CREATE DATABASE olddb;
@@ -92,7 +98,7 @@ CREATE FUNCTION appns.func2() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE S
 
 CREATE SCHEMA empty;
 
--- No grant to olivier.
+-- No grant to olivia.
 -- Partial grant for revoke
 GRANT SELECT ON TABLE appns.table1 TO omar;
 -- full grant for revoke

@@ -28,22 +28,3 @@ acls:
       WHERE acls.grantee IS NULL;
     revoke: |
       REVOKE CONNECT ON DATABASE {database} FROM {role}
-
-  # Use **some** well-known ACLs. Other must be ignored.
-  ro:
-  - __connect__
-  - __select_on_tables__
-  - __select_on_sequences__
-  - __usage_on_schemas__
-  - __usage_on_types__
-
-sync_map:
-- grant:
-    # Grant ro to some developers
-    database: appdb
-    schema: [appns]
-    acl: ro
-    roles:
-    - daniel  # in fixture/postgres.sh: has partial grant
-    - david   # in f/p.sh: already has full grant
-    - denis   # has no grant

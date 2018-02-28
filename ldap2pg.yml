@@ -1,63 +1,141 @@
 #
-# **LDAP2PG CONFIGURATION**
+# **LDAP2PG SAMPLE CONFIGURATION**
 #
-# This is a sample starting point configuration file for ldap2pg.yml.
+# This is a sample starting point configuration file for ldap2pg.yml. Including
+# static roles, groups, ACL and LDAP query.
 #
-# ldap2pg file is a regular YAML file. File mode must be 0600 if you store a
-# password in it.
+# This configuration assumes the following principles:
 #
-# See also full documentation on how to configure ldap2pg at
-# https://ldap2pg.readthedocs.io/en/latest/config/.
+# - All LDAP users are grouped in `ldap_roles` group.
+# - Read privileges are granted to `readers` group.
+# - Write privileges are granted to `writers` group.
+# - DDL privileges are granted to `owners` group.
+# - We have one or more databases with public and maybe a schema.
+# - Grants are not specific to a schema. Once you're writer in a database, you
+#   are writer to all schemas in it.
+#
+# Adapt to your needs! See also full documentation on how to configure ldap2pg
+# at https://ldap2pg.readthedocs.io/en/latest/config/.
+#
+
+postgres:
+  # Scope the database where to purge objects when dropping roles. This is the
+  # scope of grant on `__all__` databases.
+  databases_query: [postgres, appdb, olddb]
+  # List of managed schema. This skip pg_toast, pg_temp1, etc. but not pg_catalog.
+  schemas_query: |
+    SELECT nspname FROM pg_catalog.pg_namespace
+    WHERE nspname = 'pg_catalog' OR nspname NOT LIKE 'pg_%'
+  # Return managed roles which can be dropped or revoked.
+  managed_roles_query: |
+    SELECT DISTINCT role.rolname
+    FROM pg_roles AS role
+    LEFT OUTER JOIN pg_auth_members AS ms ON ms.member = role.oid
+    LEFT OUTER JOIN pg_roles AS ldap_roles
+      ON ldap_roles.rolname = 'ldap_roles' AND ldap_roles.oid = ms.roleid
+    WHERE role.rolname IN ('ldap_roles', 'readers', 'writers', 'owners')
+        OR ldap_roles.oid IS NOT NULL
+    ORDER BY 1;
+
+  # Since readers/writer/owners groups are globals, we have a global
+  # owners_query.
+  owners_query: |
+    SELECT DISTINCT role.rolname
+    FROM pg_catalog.pg_roles AS role
+    JOIN pg_catalog.pg_auth_members AS ms ON ms.member = role.oid
+    JOIN pg_catalog.pg_roles AS owners
+      ON owners.rolname = 'owners' AND owners.oid = ms.roleid
+    ORDER BY 1;
 
 
-# The sync map is a list of mappings. Each mapping describes an optional LDAP
-# query and a set of rules to generate roles or ACL grant from entries returned
-# by LDAP.
+acls:
+  # Define an ACL group `ro` with read-only grants
+  ro:
+  - __connect__
+  - __execute__
+  - __select_on_tables__
+  - __select_on_sequences__
+  - __usage_on_schemas__
+  - __usage_on_types__
+
+  # `rw` ACL group lists write-only grants
+  rw:
+  - __all_on_tables__
+  - __all_on_sequences__
+
+  # `ddl` ACL group lists DDL only grants.
+  ddl:
+  - __create_on_schemas__
 
 
-# First, a static rule to create an extra roles not in LDAP. Here we create a
-# ldap_users role in which all roles defined here will belong to. See below.
-# Note that role names are lowercase in Postgres. ldap2pg takes care of
-# lowering inputs.
-- role:
-    name: LDAP_USERS
+sync_map:
+# First, setup static roles and grants
+- roles:
+  - names:
+    - ldap_roles
+    - readers
     options: NOLOGIN
-# Second mapping, query LDAP and generate DBA roles.
-- ldap:
-    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    scope: sub
-    filter: "(objectClass=groupOfNames)"
-    attribute: member
-  # A single rule to generate roles for each entries.
-  role:
+  - name: writers
+    # Grant reading to writers
+    parent: readers
+    options: NOLOGIN
+  - name: owners
+    # Grant read/write to owners
+    parent: writers
+    options: NOLOGIN
+  # Now grant privileges to each groups
+  grant:
+  - acl: ro
+    role: readers
+    # Let's everyone see pg_catalog
+    schema: __all__
+  - acl: rw
+    role: writers
+    # But avoid writers to write in pg_catalog
+    schema: public
+  # Allow ddl to create tables in public only
+  - acl: ddl
+    role: owners
+    schema: public
+  # owners must have write access to pg_catalog
+  - acl: rw
+    role: owners
+    schema: pg_catalog
+  # Grants on specific schema appdb.appns:
+  - acl: rw
+    role: writers
+    database: appdb
+    schema: appns
+  - acl: ddl
+    role: owners
+    database: appdb
+    schema: appns
 
-    # *_attribute allows to fetch the value from an LDAP entry attribute. A role
-    # is generated for each value returned by LDAP directory.
-    #
-    # If the attribute is a LDAP distinguishedName, you can specify which part
-    # of the DN to use instead of the whole attribute value.
-    #
-    # e.g. `member: cn=alice,dc=company,dc=com` generates `CREATE ROLE alice;`
-    #
-    name_attribute: member.cn
-    # Postgres role options: Can be a regular SQL snippet, a list or a dict.
-    options: LOGIN SUPERUSER NOBYPASSRLS
-    # Define static parents
-    parent: LDAP_USERS
-
-# Here we will create a group for each LDAP group and create their members.
+# Now query LDAP to create roles and grant them privileges by parenting.
 - ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: "(&(objectClass=groupOfNames)(!(cn=dba)))"
-    # We'll need cn of the group and all member.
-    attributes: [cn, member]
-  roles:
-  # Creates a *group* role with cn for role name, and member.cn as member list.
-  - name_attribute: cn
-    members_attribute: member.cn
-    options: [NOLOGIN]
-  # Creates a role for each member.cn
-  - name_attribute: member.cn
-    options:
-      LOGIN: yes
-    parents: [LDAP_USERS]
+    filter: "(cn=dba)"
+  role:
+    name_attribute: member.cn
+    options: LOGIN SUPERUSER
+    parent:
+    - ldap_roles
+    - owners
+- ldap:
+    base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    filter: "(cn=app*)"
+  role:
+    name_attribute: member.cn
+    options: LOGIN
+    parent:
+    - ldap_roles
+    - writers
+- ldap:
+    base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    filter: "(cn=bi)"
+  role:
+    name_attribute: member.cn
+    options: LOGIN
+    parent:
+    - ldap_roles
+    - readers
