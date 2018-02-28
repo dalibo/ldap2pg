@@ -264,7 +264,7 @@ class SyncManager(object):
             or schema in managed_schemas
         )
 
-    def inspect_schemas(self, databases):
+    def inspect_schemas(self, databases, managedroles=None):
         schemas = dict([(k, []) for k in databases])
         for dbname, psql in self.psql.itersessions(databases):
             logger.debug("Inspecting schemas in %s", dbname)
@@ -280,14 +280,21 @@ class SyncManager(object):
         for dbname in schemas:
             for schema in schemas[dbname]:
                 if schemas[dbname][schema] is not False:
-                    continue
-                # False owner means schemas_query is not aware of owners.
-                if owners is None:
-                    logger.debug("Globally inspecting owners...")
-                    with self.psql() as psql:
-                        owners = self.pg_fetch(
-                            psql, self._owners_query, self.row1)
-                schemas[dbname][schema] = owners
+                    s_owners = set(schemas[dbname][schema])
+                else:
+                    # False owner means schemas_query is not aware of owners.
+                    if owners is None:
+                        logger.debug("Globally inspecting owners...")
+                        with self.psql() as psql:
+                            owners = set(self.pg_fetch(
+                                    psql, self._owners_query, self.row1))
+                    s_owners = owners
+                # Only filter if managedroles are defined. This allow ACL only mode
+                if managedroles:
+                    s_owners = s_owners & managedroles
+                else:
+                    s_owners = s_owners - set(self._blacklist)
+                schemas[dbname][schema] = s_owners
         return schemas
 
     def inspect_pg_acls(self, syncmap, schemas, roles):
@@ -452,7 +459,7 @@ class SyncManager(object):
                 logger.warn(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
-            schemas = self.inspect_schemas(databases)
+            schemas = self.inspect_schemas(databases, pgroles)
             pgacls = self.inspect_pg_acls(syncmap, schemas, pgroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas)
             count += self.run_queries(
