@@ -14,7 +14,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value, lower1, match
+from .utils import UserError, decode_value, match
 from .psql import expandqueries
 
 
@@ -305,7 +305,8 @@ class SyncManager(object):
                             owners = set(self.pg_fetch(
                                     psql, self._owners_query, self.row1))
                     s_owners = owners
-                # Only filter if managedroles are defined. This allow ACL only mode
+                # Only filter if managedroles are defined. This allow ACL only
+                # mode.
                 if managedroles:
                     s_owners = s_owners & managedroles
                 else:
