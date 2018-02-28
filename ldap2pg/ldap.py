@@ -172,11 +172,11 @@ def connect(**kw):
 
     options = gather_options(**kw)
     logger.debug("Connecting to LDAP server %s.", options['URI'])
-    l = ldap.initialize(options['URI'])
+    conn = ldap.initialize(options['URI'])
     if PY2:  # pragma: nocover_py3
-        l = UnicodeModeLDAPObject(l)
+        conn = UnicodeModeLDAPObject(conn)
 
-    l = LDAPLogger(l)
+    conn = LDAPLogger(conn)
 
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
@@ -184,12 +184,12 @@ def connect(**kw):
             sasl.CB_AUTHNAME: options['USER'],
             sasl.CB_PASS: options['PASSWORD'],
         }, 'DIGEST-MD5')
-        l.sasl_interactive_bind_s("", auth)
+        conn.sasl_interactive_bind_s("", auth)
     else:
         logger.debug("Trying simple bind.")
-        l.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+        conn.simple_bind_s(options['BINDDN'], options['PASSWORD'])
 
-    return l
+    return conn
 
 
 class Options(dict):

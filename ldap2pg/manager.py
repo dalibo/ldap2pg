@@ -14,7 +14,7 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value, lower1, match
+from .utils import UserError, decode_value, match
 from .psql import expandqueries
 
 
@@ -305,12 +305,14 @@ class SyncManager(object):
                             owners = set(self.pg_fetch(
                                     psql, self._owners_query, self.row1))
                     s_owners = owners
-                # Only filter if managedroles are defined. This allow ACL only mode
+                # Only filter if managedroles are defined. This allow ACL only
+                # mode.
                 if managedroles:
                     s_owners = s_owners & managedroles
                 else:
                     s_owners = s_owners - set(self._blacklist)
                 schemas[dbname][schema] = s_owners
+
         return schemas
 
     def inspect_pg_acls(self, syncmap, schemas, roles):
@@ -461,7 +463,7 @@ class SyncManager(object):
                 logger.warn(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
-            schemas = self.inspect_schemas(databases, pgmanagedroles)
+            schemas = self.inspect_schemas(databases, ldaproles)
             pgacls = self.inspect_pg_acls(syncmap, schemas, pgmanagedroles)
             ldapacls = self.postprocess_acls(ldapacls, schemas)
             count += self.psql.run_queries(expandqueries(
