@@ -1,7 +1,7 @@
 <h1><code>ldap2pg</code></h1>
 
-`ldap2pg` is a simple yet powerful tool to synchronize Postgres roles and ACLs
-from LDAP directories, including OpenLDAP and Active Directory.
+`ldap2pg` is a simple yet powerful tool to manage Postgres roles and privileges
+statically or from LDAP directories, including OpenLDAP and Active Directory.
 
 Project goals include **stability**, **portability**, high **configurability**,
 state of the art code **quality** and nice **user experience**.
@@ -14,7 +14,7 @@ state of the art code **quality** and nice **user experience**.
 - Creates, alter and drops PostgreSQL roles from LDAP queries.
 - Creates static roles from YAML to complete LDAP entries.
 - Manage role members (alias *groups*).
-- Grant or revoke ACL statically or from LDAP entries.
+- Grant or revoke privileges statically or from LDAP entries.
 - Dry run.
 - Logs LDAP queries as `ldapsearch` commands.
 - Logs **every** SQL queries.

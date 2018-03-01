@@ -164,7 +164,7 @@ update privileges after a schema upgrade.
 To do this, create a distinct configuration file. You must first disable roles
 introspection, so that `ldap2pg` will never try to drop a role. Then you must
 ban any `role` rule from the file. You can still trigger LDAP searches to
-determine to which role you want to grant an ACL.
+determine to which role you want to grant a privilege.
 
 ``` yaml
 # File `ldap2pg.acl.yml`
@@ -174,7 +174,7 @@ postgres:
   roles_query: null
 
 acl_dict:
-  rw: {}  # here define your ACLs
+  rw: {}  # here define your privilege
 
 sync_map:
 - ldap:
