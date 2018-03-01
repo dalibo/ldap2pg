@@ -8,7 +8,7 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes ! Your contribution is welcome!
 
 
-# Configure Postgres with LDAP ?
+# Configure `pg_hba.conf`with LDAP
 
 `ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
 [PostgreSQL
@@ -60,7 +60,7 @@ complete*. `ldap2pg` suggests to drop everything. Go on and write the
 synchronization map to tell `ldap2pg` the required roles for the cluster.
 
 
-# Query LDAP
+# Query LDAP Directory
 
 The first step is to query your LDAP server with `ldapsearch`, the CLI tool from
 OpenLDAP. Like this:

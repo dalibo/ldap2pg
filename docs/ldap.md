@@ -1,4 +1,4 @@
-<h1>Querying with LDAP</h1>
+<h1>Querying Directory with LDAP</h1>
 
 `ldap2pg` searches for LDAP query in `sync_map` items in the `ldap` entry.
 

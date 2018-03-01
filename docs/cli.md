@@ -1,6 +1,6 @@
 <!--*- markdown -*-->
 
-<h1>Configuration</h1>
+<h1>Command Line Interface</h1>
 
 `ldap2pg` tries to be friendly regarding configuration. `ldap2pg` reads its
 configuration from several sources, in the following order:

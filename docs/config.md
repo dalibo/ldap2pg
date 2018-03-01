@@ -2,9 +2,10 @@
 
 <h1><tt>ldap2pg.yml</tt></h1>
 
-`ldap2pg` accepts a YAML configuration file. Everything can be configured from
-the YAML file: verbosity, real mode, LDAP and Postgres credentials, LDAP
-queries, ACL and mappings.
+`ldap2pg` accepts a YAML configuration file usually named `ldap2pg.yml` and put
+un working directory. Everything can be configured from the YAML file:
+verbosity, real mode, LDAP and Postgres credentials, LDAP queries, privileges
+and mappings.
 
 !!! warning
 
@@ -16,7 +17,7 @@ queries, ACL and mappings.
 
 - `postgres` : setup Postgres connexion and queries.
 - `ldap` : setup LDAP connexion.
-- `acls` : the definition of grants.
+- `acls` : the definition of privileges.
 - `sync_map` : the list of LDAP queries and associated mapping to roles and
   grants.
 - finally some global parameters (verbosity, etc.).
@@ -25,8 +26,8 @@ If the file is a YAML list, `ldap2pg` puts the list as `sync_map`. The two
 following configurations are strictly equivalent:
 
 ``` console
-$ echo '- role: admin' | ldap2pg -c -
-...
+$ ldap2pg -c -
+- role: admin
 $ ldap2pg -c -
 sync_map:
 - roles:
@@ -46,7 +47,7 @@ on CI. If you don't know how to begin, it can be a goot starting point.
     [file an issue](https://github.com/dalibo/ldap2pg/issues/new) to get help.
 
 
-## Postgres parameters
+## Postgres Parameters
 
 The `postgres` section defines connection parameters and queries for Postgres.
 
@@ -61,7 +62,7 @@ postgres:
     readable `ldap2pg.yml`.
 
 
-## LDAP parameters
+## LDAP Parameters
 
 ``` yaml
 ldap:
@@ -97,7 +98,7 @@ sections compose a mapping:
     It just means you want a role named `toto` in the cluster.
 
 
-## Various parameters
+## Various Parameters
 
 Finally, `ldap2pg.yml` contains various plain parameters for `ldap2pg`
 behaviour.
@@ -114,7 +115,7 @@ dry: yes
 ```
 
 
-## File location
+## File Location
 
 `ldap2pg` searches for files in the following order :
 
