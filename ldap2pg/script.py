@@ -10,6 +10,7 @@ import psycopg2
 
 from . import ldap
 from .config import Configuration, ConfigurationError, dictConfig
+from .inspector import PostgresInspector
 from .manager import SyncManager
 from .psql import PSQL
 from .utils import UserError
@@ -49,16 +50,19 @@ def wrapped_main(config=None):
         raise ConfigurationError(message)
     RoleOptions.update_supported_columns(supported_columns)
 
+    inspector = PostgresInspector(
+        psql=psql,
+        acls=config['acl_dict'],
+        databases=config['postgres']['databases_query'],
+        schemas=config['postgres']['schemas_query'],
+        all_roles=config['postgres']['roles_query'],
+        managed_roles=config['postgres']['managed_roles_query'],
+        owners=config['postgres']['owners_query'],
+        roles_blacklist=config['postgres']['blacklist'],
+    )
     manager = SyncManager(
-        ldapconn=ldapconn, psql=psql,
-        acl_dict=config['acl_dict'],
-        acl_aliases=config['acl_aliases'],
-        blacklist=config['postgres']['blacklist'],
-        databases_query=config['postgres']['databases_query'],
-        owners_query=config['postgres']['owners_query'],
-        roles_query=config['postgres']['roles_query'],
-        managed_roles_query=config['postgres']['managed_roles_query'],
-        schemas_query=config['postgres']['schemas_query'],
+        ldapconn=ldapconn, psql=psql, inspector=inspector,
+        acl_dict=config['acl_dict'], acl_aliases=config['acl_aliases'],
     )
     count = manager.sync(syncmap=config['sync_map'])
 

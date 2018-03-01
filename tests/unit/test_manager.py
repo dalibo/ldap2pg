@@ -5,103 +5,6 @@ from fnmatch import filter as fnfilter
 import pytest
 
 
-def test_generic_fetch(mocker):
-    from ldap2pg.manager import psycopg2, SyncManager, UserError
-
-    manager = SyncManager()
-    psql = mocker.Mock(name='psql', side_effect=psycopg2.ProgrammingError())
-
-    with pytest.raises(UserError):
-        manager.pg_fetch(psql, 'POUET;')
-
-    psql = mocker.Mock(name='psql', return_value=[('val0',), ('val1',)])
-    rows = manager.pg_fetch(psql, 'POUET;', manager.row1)
-    assert ['val0', 'val1'] == rows
-
-    assert [] == manager.pg_fetch(None, None)
-
-    assert [('val0',)] == manager.pg_fetch(None, ['val0'])
-    assert [['val0']] == manager.pg_fetch(None, [['val0']])
-
-
-def test_format_roles_inspect_sql(mocker):
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-    assert manager.format_roles_query() is None
-
-    assert ['static'] == manager.format_roles_query(['static'])
-
-    manager._roles_query = 'SELECT {options}'
-    assert 'rolsuper' in manager.format_roles_query()
-
-
-def test_filter_roles():
-    from ldap2pg.manager import SyncManager, Role
-
-    manager = SyncManager()
-
-    blacklist = ['pg_*', 'postgres']
-    allroles = [
-        Role('postgres'),
-        Role('pg_signal_backend'),
-        Role('dba', members=['alice']),
-        Role('alice'),
-        Role('unmanaged'),
-    ]
-    managedroles = {'alice', 'dba'}
-    allroles, managedroles = manager.filter_roles(
-        allroles, blacklist, managedroles)
-
-    assert 3 == len(allroles)
-    assert 2 == len(managedroles)
-    assert 'dba' in allroles
-    assert 'alice' in allroles
-    assert 'unmanaged' in allroles
-    assert 'unmanaged' not in managedroles
-    assert 'postgres' not in allroles
-    assert 'postgres' not in managedroles
-
-
-def test_process_acl_rows():
-    from ldap2pg.manager import SyncManager, UserError
-
-    manager = SyncManager(blacklist=['pg_*', 'postgres'])
-    rows = [
-        (None, 'postgres', True),
-        (None, 'pg_signal_backend'),  # Old signature, fallback to True
-        ('public', 'alice', True),
-    ]
-
-    items = list(manager.process_pg_acl_items('connect', 'postgres', rows))
-
-    assert 1 == len(items)
-    item = items[0]
-    assert 'connect' == item.acl
-    assert 'postgres' == item.dbname
-    assert 'public' == item.schema
-    assert 'alice' == item.role
-
-    with pytest.raises(UserError):
-        list(manager.process_pg_acl_items('acl', 'db', [('incomplete',)]))
-
-
-def test_process_schema_rows():
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    rows = ['legacy']
-    my = dict(manager.process_schemas(rows))
-    assert 'legacy' in my
-    assert my['legacy'] is False
-
-    rows = [['public', ['owner']]]
-    my = dict(manager.process_schemas(rows))
-    assert 'public' in my
-    assert 'owner' in my['public']
-
-
 def test_query_ldap(mocker):
     from ldap2pg.manager import SyncManager
 
@@ -322,80 +225,6 @@ def test_apply_grant_rule_nodb(mocker):
     assert items[0].dbname is AclItem.ALL_DATABASES
 
 
-def test_inspect_schemas(mocker):
-    from ldap2pg.manager import SyncManager
-
-    psql = mocker.MagicMock()
-    psql.itersessions.return_value = [('db', psql)]
-    manager = SyncManager(psql=psql, blacklist=['postgres'])
-
-    # legacy
-    manager._schemas_query = ['public']
-    manager._owners_query = ['owner', 'postgres']
-
-    schemas = manager.inspect_schemas(databases=['db'])
-
-    assert 'db' in schemas
-    assert 'public' in schemas['db']
-    assert 'owner' in schemas['db']['public']
-    assert 'postgres' not in schemas['db']['public']
-
-    # owner aware
-    manager._schemas_query = [
-        ('public', ['pubowner', 'postgres']),
-        ('ns', ['nsowner']),
-    ]
-    manager._owners_query = ['owner']
-
-    schemas = manager.inspect_schemas(
-        databases=['db'], managedroles={'pubowner', 'nsowner'})
-
-    assert 'db' in schemas
-    assert 'public' in schemas['db']
-    assert 'pubowner' in schemas['db']['public']
-    assert 'owner' not in schemas['db']['public']
-    assert 'postgres' not in schemas['db']['public']
-    assert 'ns' in schemas['db']
-    assert 'nsowner' in schemas['db']['ns']
-
-
-def test_inspect_pg_acls(mocker):
-    pa = mocker.patch(
-        'ldap2pg.manager.SyncManager.process_pg_acl_items', autospec=True)
-
-    from ldap2pg.manager import SyncManager, AclItem
-    from ldap2pg.acl import NspAcl
-    from ldap2pg.utils import make_group_map
-
-    acl_dict = dict(
-        noinspect=NspAcl(name='noinspect'),
-        ro=NspAcl(name='ro', inspect='SQL'),
-    )
-    pa.return_value = [
-        AclItem('ro', 'db', None, 'alice'),
-        AclItem('ro', 'db', None, 'public'),
-        AclItem('ro', 'db', None, 'unmanaged'),
-        AclItem('ro', 'db', 'unmanaged', 'alice'),
-        AclItem('ro', 'db', None, 'alice', owner='unmanaged'),
-    ]
-
-    psql = mocker.MagicMock()
-    psql.itersessions.return_value = [('db', psql)]
-    manager = SyncManager(
-        psql=psql, acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict))
-    manager._roles_query = managed_roles_query = ['alice']
-    syncmap = dict(db=dict(schema=[dict(roles=[], grant=dict(acl='ro'))]))
-
-    pgacls = manager.inspect_pg_acls(
-        syncmap=syncmap, schemas=dict(db=dict(public=['owner'])),
-        roles=managed_roles_query)
-
-    assert 2 == len(pgacls)
-    grantees = [a.role for a in pgacls]
-    assert 'public' in grantees
-    assert 'alice' in grantees
-
-
 def test_inspect_ldap_acls(mocker):
     la = mocker.patch(
         'ldap2pg.manager.SyncManager.apply_grant_rules', autospec=True)
@@ -471,30 +300,6 @@ def test_postprocess_acls_inexistant():
             ldapacls=AclSet([AclItem('inexistant')]),
             schemas=dict(postgres=dict(public=['postgres'])),
         )
-
-
-def test_inspect_pg_roles(mocker):
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager(
-        psql=mocker.MagicMock(),
-        roles_query=['precreated', 'spurious'],
-        managed_roles_query=None,
-        databases_query=['postgres'],
-    )
-
-    databases, pgallroles, pgmanagedroles = manager.inspect_pg_roles()
-
-    assert 'postgres' in databases
-    assert 'precreated' in pgallroles
-    assert 'spurious' in pgallroles
-    assert pgallroles == pgmanagedroles
-
-    manager._managed_roles_query = ['precreated']
-
-    _, _, pgmanagedroles = manager.inspect_pg_roles()
-
-    assert 'spurious' not in pgmanagedroles
 
 
 def test_inspect_ldap_roles(mocker):
@@ -634,9 +439,6 @@ def test_diff_acls(mocker):
 
 def test_sync(mocker):
     cls = 'ldap2pg.manager.SyncManager'
-    is_ = mocker.patch(cls + '.inspect_schemas', autospec=True)
-    ipa = mocker.patch(cls + '.inspect_pg_acls', autospec=True)
-    ipr = mocker.patch(cls + '.inspect_pg_roles', autospec=True)
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
     mocker.patch(cls + '.postprocess_acls', autospec=True)
     dr = mocker.patch(cls + '.diff_roles', autospec=True)
@@ -645,15 +447,17 @@ def test_sync(mocker):
     from ldap2pg.manager import SyncManager, UserError
 
     psql = mocker.Mock(name='psql')
-    manager = SyncManager(psql=psql)
+    inspector = mocker.Mock(name='inspector')
+    manager = SyncManager(psql=psql, inspector=inspector)
 
-    ipr.return_value = (['postgres', 'template1'], set(), set())
+    inspector.fetch_roles.return_value = (['postgres'], set(), set())
+    inspector.filter_roles.return_value = set(), set()
     il.return_value = (mocker.Mock(name='ldaproles'), set())
     # Simple diff with one query
     dr.return_value = qry = [mocker.Mock(name='qry', args=(), message='hop')]
     qry[0].expand.return_value = [qry[0]]
-    is_.return_value = dict(postgres=dict(public=['owner']))
-    ipa.return_value = []
+    inspector.fetch_schemas.return_value = dict(postgres=dict(ns=['owner']))
+    inspector.fetch_grants.return_value = []
     da.return_value = []
 
     # No ACL to sync, one query
