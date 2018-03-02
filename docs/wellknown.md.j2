@@ -1,6 +1,6 @@
 <!--*- markdown -*-->
 
-<h1>Well-known ACL</h1>
+<h1>Well-known Privileges</h1>
 
 `ldap2pg` provides some well-known ACLs for recurrent usage. There is **no
 warranty** of on these ACLs. You have to check privileges configuration on your
@@ -10,12 +10,12 @@ The true added-value of well-known ACLs is the `inspect` queries associated and
 the boilerplate saved for declaring all `GRANT` queries.
 
 
-## Using Well-known ACLs
+## Using Well-known Privileges
 
 Well-known ACL starts and lasts with `__`. `ldap2pg` [disables
-ACL](acl.md#enabling-acl) starting with `_`. Thus you have to include well-known
-ACLs in a group to enable them. If two groups reference the same ACL, it will be
-deduplicated, don't worry.
+privilege](acl.md#enabling-acl) starting with `_`. Thus you have to include
+well-known ACLs in a group to enable them. If two groups reference the same ACL,
+it will be deduplicated, don't worry.
 
 ``` yaml
 acls:
@@ -42,7 +42,7 @@ sync_map:
     role: admins
 ```
 
-Well-known ACL name follows the following loose convention:
+Well-known privilege name follows the following loose convention:
 
 - `_on_all_tables__` is equivalent to `GRANT ... ON ALL TABLES IN SCHEMA ...`.
 - `__default_...` is equivalent to `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ...`.
@@ -53,15 +53,15 @@ Well-known ACL name follows the following loose convention:
   `__delete_on_tables__` is shorten to `__delete__` .
 
 
-## ACL groups
+## Privilege Groups
 
-Next is an extensive, boring, list of all well known ACL groups in `master`.
-Each group is documented by its name and the list of included ACL. Each ACL name
-point the the detail of ACL definition.
+Next is an extensive, boring, list of all well known privilege groups in
+`master`. Each group is documented by its name and the list of included ACL.
+Each ACL name point the the detail of ACL definition.
 
 Actually, a group like `__all_on_tables__` is implemented as group of groups.
 But for the sake of simplicity, the documentation lists the resolved list of
-concrete ACLs finally included.
+concrete privileges finally included.
 
 Here we go.
 {% for name in groups|sort %}
@@ -76,11 +76,11 @@ Here we go.
 {% endfor %}
 
 
-## ACLs
+## Single Privileges
 
-Next is the list of well-known ACL. Each is associated with a `REVOKE` query and
-an `inspect` query implementing full inspection of grantees, including built-in
-grants to PUBLIC.
+Next is the list of well-known privileg. Each is associated with a `REVOKE`
+query and an `inspect` query implementing full inspection of grantees, including
+built-in grants to PUBLIC.
 
 For the actual meaning of each SQL privileges, refer to official [Postgres
 documentation of
@@ -91,7 +91,7 @@ statement.
 
 
 <a name="{{ name|slugify }}"></a>
-### ACL `{{ name }}`
+### Privilege `{{ name }}`
 
 ``` SQL
 {{ acls[name].grant|trim }}

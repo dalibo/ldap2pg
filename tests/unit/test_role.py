@@ -72,7 +72,7 @@ def test_merge():
 
 
 def test_options():
-    from ldap2pg.manager import RoleOptions
+    from ldap2pg.role import RoleOptions
 
     options = RoleOptions()
 

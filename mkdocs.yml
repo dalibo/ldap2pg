@@ -12,10 +12,11 @@ pages:
 - Configuration:
   - CLI: cli.md
   - ldap2pg.yml: config.md
-  - Querying with LDAP: ldap.md
-  - Managing roles: roles.md
-  - Managing ACL: acl.md
-  - Well-known ACL: wellknown.md
+  - Inspecting Cluster: postgres.md
+  - Querying Directory: ldap.md
+  - Managing Roles: roles.md
+  - Managing Privileges: acl.md
+  - Well-known Privileges: wellknown.md
 - Cookbook: cookbook.md
 - Hacking: hacking.md
 - Changelog: changelog.md

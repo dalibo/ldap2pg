@@ -1,7 +1,7 @@
 <!-- GENERATED FROM docs/wellknown.md.j2 -->
 <!--*- markdown -*-->
 
-<h1>Well-known ACL</h1>
+<h1>Well-known Privileges</h1>
 
 `ldap2pg` provides some well-known ACLs for recurrent usage. There is **no
 warranty** of on these ACLs. You have to check privileges configuration on your
@@ -11,12 +11,12 @@ The true added-value of well-known ACLs is the `inspect` queries associated and
 the boilerplate saved for declaring all `GRANT` queries.
 
 
-## Using Well-known ACLs
+## Using Well-known Privileges
 
 Well-known ACL starts and lasts with `__`. `ldap2pg` [disables
-ACL](acl.md#enabling-acl) starting with `_`. Thus you have to include well-known
-ACLs in a group to enable them. If two groups reference the same ACL, it will be
-deduplicated, don't worry.
+privilege](acl.md#enabling-acl) starting with `_`. Thus you have to include
+well-known ACLs in a group to enable them. If two groups reference the same ACL,
+it will be deduplicated, don't worry.
 
 ``` yaml
 acls:
@@ -43,7 +43,7 @@ sync_map:
     role: admins
 ```
 
-Well-known ACL name follows the following loose convention:
+Well-known privilege name follows the following loose convention:
 
 - `_on_all_tables__` is equivalent to `GRANT ... ON ALL TABLES IN SCHEMA ...`.
 - `__default_...` is equivalent to `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ...`.
@@ -54,15 +54,15 @@ Well-known ACL name follows the following loose convention:
   `__delete_on_tables__` is shorten to `__delete__` .
 
 
-## ACL groups
+## Privilege Groups
 
-Next is an extensive, boring, list of all well known ACL groups in `master`.
-Each group is documented by its name and the list of included ACL. Each ACL name
-point the the detail of ACL definition.
+Next is an extensive, boring, list of all well known privilege groups in
+`master`. Each group is documented by its name and the list of included ACL.
+Each ACL name point the the detail of ACL definition.
 
 Actually, a group like `__all_on_tables__` is implemented as group of groups.
 But for the sake of simplicity, the documentation lists the resolved list of
-concrete ACLs finally included.
+concrete privileges finally included.
 
 Here we go.
 
@@ -225,11 +225,11 @@ Here we go.
 - [`__usage_on_all_sequences__`](#usage-on-all-sequences)
 
 
-## ACLs
+## Single Privileges
 
-Next is the list of well-known ACL. Each is associated with a `REVOKE` query and
-an `inspect` query implementing full inspection of grantees, including built-in
-grants to PUBLIC.
+Next is the list of well-known privileg. Each is associated with a `REVOKE`
+query and an `inspect` query implementing full inspection of grantees, including
+built-in grants to PUBLIC.
 
 For the actual meaning of each SQL privileges, refer to official [Postgres
 documentation of
@@ -239,7 +239,7 @@ statement.
 
 
 <a name="connect"></a>
-### ACL `__connect__`
+### Privilege `__connect__`
 
 ``` SQL
 GRANT CONNECT ON DATABASE {database} TO {role};
@@ -247,7 +247,7 @@ GRANT CONNECT ON DATABASE {database} TO {role};
 
 
 <a name="create-on-schemas"></a>
-### ACL `__create_on_schemas__`
+### Privilege `__create_on_schemas__`
 
 ``` SQL
 GRANT CREATE ON SCHEMA {schema} TO {role};
@@ -255,7 +255,7 @@ GRANT CREATE ON SCHEMA {schema} TO {role};
 
 
 <a name="default-delete-on-tables"></a>
-### ACL `__default_delete_on_tables__`
+### Privilege `__default_delete_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -264,7 +264,7 @@ GRANT DELETE ON TABLES TO {role};
 
 
 <a name="default-execute-on-functions"></a>
-### ACL `__default_execute_on_functions__`
+### Privilege `__default_execute_on_functions__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -273,7 +273,7 @@ GRANT EXECUTE ON FUNCTIONS TO {role};
 
 
 <a name="default-insert-on-tables"></a>
-### ACL `__default_insert_on_tables__`
+### Privilege `__default_insert_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -282,7 +282,7 @@ GRANT INSERT ON TABLES TO {role};
 
 
 <a name="default-references-on-tables"></a>
-### ACL `__default_references_on_tables__`
+### Privilege `__default_references_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -291,7 +291,7 @@ GRANT REFERENCES ON TABLES TO {role};
 
 
 <a name="default-select-on-sequences"></a>
-### ACL `__default_select_on_sequences__`
+### Privilege `__default_select_on_sequences__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -300,7 +300,7 @@ GRANT SELECT ON SEQUENCES TO {role};
 
 
 <a name="default-select-on-tables"></a>
-### ACL `__default_select_on_tables__`
+### Privilege `__default_select_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -309,7 +309,7 @@ GRANT SELECT ON TABLES TO {role};
 
 
 <a name="default-trigger-on-tables"></a>
-### ACL `__default_trigger_on_tables__`
+### Privilege `__default_trigger_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -318,7 +318,7 @@ GRANT TRIGGER ON TABLES TO {role};
 
 
 <a name="default-truncate-on-tables"></a>
-### ACL `__default_truncate_on_tables__`
+### Privilege `__default_truncate_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -327,7 +327,7 @@ GRANT TRUNCATE ON TABLES TO {role};
 
 
 <a name="default-update-on-sequences"></a>
-### ACL `__default_update_on_sequences__`
+### Privilege `__default_update_on_sequences__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -336,7 +336,7 @@ GRANT UPDATE ON SEQUENCES TO {role};
 
 
 <a name="default-update-on-tables"></a>
-### ACL `__default_update_on_tables__`
+### Privilege `__default_update_on_tables__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -345,7 +345,7 @@ GRANT UPDATE ON TABLES TO {role};
 
 
 <a name="default-usage-on-sequences"></a>
-### ACL `__default_usage_on_sequences__`
+### Privilege `__default_usage_on_sequences__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -354,7 +354,7 @@ GRANT USAGE ON SEQUENCES TO {role};
 
 
 <a name="delete-on-all-tables"></a>
-### ACL `__delete_on_all_tables__`
+### Privilege `__delete_on_all_tables__`
 
 ``` SQL
 GRANT DELETE ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -362,7 +362,7 @@ GRANT DELETE ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="execute-on-all-functions"></a>
-### ACL `__execute_on_all_functions__`
+### Privilege `__execute_on_all_functions__`
 
 ``` SQL
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {schema} TO {role}
@@ -370,7 +370,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {schema} TO {role}
 
 
 <a name="global-default-execute-on-functions"></a>
-### ACL `__global_default_execute_on_functions__`
+### Privilege `__global_default_execute_on_functions__`
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} GRANT EXECUTE ON FUNCTIONS TO {role};
@@ -378,7 +378,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE {owner} GRANT EXECUTE ON FUNCTIONS TO {role};
 
 
 <a name="insert-on-all-tables"></a>
-### ACL `__insert_on_all_tables__`
+### Privilege `__insert_on_all_tables__`
 
 ``` SQL
 GRANT INSERT ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -386,7 +386,7 @@ GRANT INSERT ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="references-on-all-tables"></a>
-### ACL `__references_on_all_tables__`
+### Privilege `__references_on_all_tables__`
 
 ``` SQL
 GRANT REFERENCES ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -394,7 +394,7 @@ GRANT REFERENCES ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="select-on-all-sequences"></a>
-### ACL `__select_on_all_sequences__`
+### Privilege `__select_on_all_sequences__`
 
 ``` SQL
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
@@ -402,7 +402,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 
 
 <a name="select-on-all-tables"></a>
-### ACL `__select_on_all_tables__`
+### Privilege `__select_on_all_tables__`
 
 ``` SQL
 GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -410,7 +410,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="temporary"></a>
-### ACL `__temporary__`
+### Privilege `__temporary__`
 
 ``` SQL
 GRANT TEMPORARY ON DATABASE {database} TO {role};
@@ -418,7 +418,7 @@ GRANT TEMPORARY ON DATABASE {database} TO {role};
 
 
 <a name="trigger-on-all-tables"></a>
-### ACL `__trigger_on_all_tables__`
+### Privilege `__trigger_on_all_tables__`
 
 ``` SQL
 GRANT TRIGGER ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -426,7 +426,7 @@ GRANT TRIGGER ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="truncate-on-all-tables"></a>
-### ACL `__truncate_on_all_tables__`
+### Privilege `__truncate_on_all_tables__`
 
 ``` SQL
 GRANT TRUNCATE ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -434,7 +434,7 @@ GRANT TRUNCATE ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="update-on-all-sequences"></a>
-### ACL `__update_on_all_sequences__`
+### Privilege `__update_on_all_sequences__`
 
 ``` SQL
 GRANT UPDATE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
@@ -442,7 +442,7 @@ GRANT UPDATE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 
 
 <a name="update-on-all-tables"></a>
-### ACL `__update_on_all_tables__`
+### Privilege `__update_on_all_tables__`
 
 ``` SQL
 GRANT UPDATE ON ALL TABLES IN SCHEMA {schema} TO {role}
@@ -450,7 +450,7 @@ GRANT UPDATE ON ALL TABLES IN SCHEMA {schema} TO {role}
 
 
 <a name="usage-on-all-sequences"></a>
-### ACL `__usage_on_all_sequences__`
+### Privilege `__usage_on_all_sequences__`
 
 ``` SQL
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
@@ -458,7 +458,7 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 
 
 <a name="usage-on-schemas"></a>
-### ACL `__usage_on_schemas__`
+### Privilege `__usage_on_schemas__`
 
 ``` SQL
 GRANT USAGE ON SCHEMA {schema} TO {role};
@@ -466,7 +466,7 @@ GRANT USAGE ON SCHEMA {schema} TO {role};
 
 
 <a name="usage-on-types"></a>
-### ACL `__usage_on_types__`
+### Privilege `__usage_on_types__`
 
 ``` SQL
 GRANT USAGE ON SCHEMA {schema} TO {role};

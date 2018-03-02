@@ -528,7 +528,7 @@ class Configuration(dict):
                 },
                 'verbose': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '[%(name)-16s %(levelname)8s] %(message)s',
+                    'format': '[%(name)-20s %(levelname)5.5s] %(message)s',
                 },
             },
             'handlers': {

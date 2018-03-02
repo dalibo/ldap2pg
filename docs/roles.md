@@ -76,33 +76,6 @@ The role blacklist is also applied to grants. `ldap2pg` will never apply `GRANT`
 or `REVOKE` on a role matching one of the blacklist patterns.
 
 
-## Custom inspection
-
-By default, `ldap2pg` inspects all roles from Postgres and apply blacklist on
-it. If you want `ldap2pg` to synchronsize only a subset of roles, you need to
-customize inspection query in `postgres:roles_query`.
-
-The columns returned by the row is: role name, array of member names, and a
-special formatted value `{options}` containing role options columns
-(rolcanlogin, rolsuper, etc.).
-
-``` yaml
-postgres:
-  # Inspect only non SUPERUSER roles.
-  roles_query: |
-    SELECT role.rolname, array_agg(members.rolname) AS members, {options}
-    FROM pg_catalog.pg_roles AS role
-    LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
-    LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-    WHERE role.rolsuper IS FALSE
-    GROUP BY role.rolname, {options}
-    ORDER BY 1;
-```
-
-You can also return only roles belonging to a `ldap_roles` group. You only have
-to match the columns definition.
-
-
 ## Disable role management
 
 You can tell `ldap2pg` to manage only ACL and never `CREATE` or `DROP` a role.

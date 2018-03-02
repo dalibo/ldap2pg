@@ -1,14 +1,14 @@
-<h1>Managing ACL</h1>
+<h1>Managing Privileges</h1>
 
-Managing ACL is tricky. ldap2pg tries to make this simpler and safer.
+Managing privileges is tricky. `ldap2pg` tries to make this simpler and safer.
 
 The base design of `ldap2pg` is ambitious. First, it inspects Postgres cluster
-for grants, then loops `sync_map` to determine what ACL should be granted, then
-compares and applies a diff on the cluster with `ALTER DEFAULT PRIVILEGES`,
-`GRANT` or `REVOKE` queries.
+for grants, then loops `sync_map` to determine what privileges should be
+granted, then compares and applies a diff on the cluster with `ALTER DEFAULT
+PRIVILEGES`, `GRANT` or `REVOKE` queries.
 
-In `ldap2pg.yml`, you specify ACLs in a dictionnary named `acls` and grant them
-with `grant` rules in the `sync_map`:
+In `ldap2pg.yml`, you specify privileges in a dictionnary named `acls` and grant
+them with `grant` rules in the `sync_map`:
 
 ```yaml
 acls:
@@ -26,18 +26,19 @@ sync_map:
     role: admin
 ```
 
-An ACL defined as a YAML list is a *group of ACL*. A group can include other
-groups.
+A privileges defined as a YAML list is a *group of priveleges*. A group can
+include other groups.
 
-`ldap2pg` ships an extensive set of [well-known ACLs](wellknown.md), see
+`ldap2pg` ships an extensive set of [well-known privileges](wellknown.md), see
 dedicated documentation page for them.
 
 
-## Enabling ACL
+## Enabling Privilege
 
-`ldap2pg` disables ACL whose name starts with `_` or `.` **unless** included in
-an ACL group not starting with `_` or `.`. An enabled ACL is an ACL whose name
-does not start with `_` or `.` and is not included in an enabled ACL.
+`ldap2pg` disables privileges whose name starts with `_` or `.` **unless**
+included in an privilege group not starting with `_` or `.`. An enabled privileg
+is a privilege whose name does not start with `_` or `.` and is not included in
+an enabled privilege.
 
 ``` yaml
 acls:
@@ -59,13 +60,14 @@ sync_map:
 
 !!! warning "If it's not granted, revoke it!"
 
-    Once an ACL is enabled, `ldap2pg` inspects the cluster and **revokes** all
-    grants not required by a `grant` rule described below.
+    Once a privilege is enabled, `ldap2pg` inspects the cluster and **revokes**
+    all grants not required by a `grant` rule described below.
 
 
 ## `grant` rule
 
-In `sync_map`, you can grant ACL with the `grant` rule. Here is a full sample:
+In `sync_map`, you can grant privilege with the `grant` rule. Here is a full
+sample:
 
 ``` yaml
 acls:
@@ -85,10 +87,10 @@ sync_map:
 ```
 
 Grant rule is a bit simpler than role rule. It tells `ldap2pg` to ensure a
-particular role is granted one defined ACL. An ACL assignment is identified by
-an ACL name, a database, a schema and a grantee role name.
+particular role is granted one defined ACL. An ACL assignment is identified by a
+privilege name, a database, a schema and a grantee role name.
 
-`acl` key references an ACL by its name.
+`acl` key references a privilege by its name.
 
 `database` allows to scope the grant to a database. The special database name
 `__all__` means **all** databases. `__all__` is the default value. With
@@ -97,8 +99,8 @@ an ACL name, a database, a schema and a grantee role name.
 
 In the same way, `schema` allows to scope the grant to one or more schema,
 regardless of database. If `schema` is `__all__`, `ldap2pg` will loop all
-schemas of the database and yield a revoke or grant on each. Some ACL are schema
-independant, like `CONNECT`, they will be granted once from sync user's
+schemas of the database and yield a revoke or grant on each. Some privileges are
+schema independant, like `CONNECT`, they will be granted once from sync user's
 database.
 
 `role` or `roles` keys allow to specify statically one or more grantee name.
@@ -112,69 +114,28 @@ GRANT. Just like any `*_attribute` key, it accepts a `DN` member as well e.g:
 `role_match` is a pattern allowing you to limit the grant to roles whom name
 matches `role_match`.
 
-There is no `revoke` rule. Any ACL found in the cluster are revoked unless they
-are specifically granted with `grant`.
+There is no `revoke` rule. Any grant found in the cluster is revoked unless it's
+explicitly granted with `grant` rule.
 
 
-## Inspect schemas and owners
+## Defining Custom Privilege
 
-`ALTER DEFAULT PRIVILEGES` allows users to create objects in schemas without
-worrying about granting privileges. This way, schema migration and grant are
-distinct. A good practice is to use a group to reference object owners. The
-following diagram shows the relations between the different `GRANT`. What's
-important to understand is that `ALTER DEFAULT PRIVILEGES` are **not**
-inherited. `ldap2pg` must known who are the owners to configure their default
-privileges.
+[Well-known privileges](wellknown.md) do not handle all cases. Sometime, you need
+`ldap2pg` to manage a custom `GRANT` query. Adding custom privilege is quite easy.
 
-![Owners and readers group](img/owners-readers-adp.svg)
+For `ldap2pg`, a privilege is a set of query: one to inspect the cluster, one to
+grant the privilege and one to revoke it.
 
-`ldap2pg` inspect schemas and owners in cluster to manage
-`ALTER DEFAULT PRIVILEGES` and grant on `__all__` schema. By default, `ldap2pg`
-consider every superuser as owner on all schemas. This is likely to not match
-your case. The `postgres:schemas_query` allows you to fully customize this.
-
-The purpose of `schemas_query` is to list all schemas in a database, associated
-with all roles owning objects in it. An owner is a superuser or a role with
-`CREATE ON SCHEMA` granted. If you put every owners in a `owners` group, you
-should inspect schemas like this :
-
-``` yaml
-postgres:
-  schemas_query: |
-    SELECT
-      nsp.nspname AS nsp,
-      array_agg(role.rolname ORDER BY 1) FILTER (WHERE role.rolname IS NOT NULL) AS owners
-    FROM pg_catalog.pg_namespace AS nsp
-    LEFT OUTER JOIN pg_catalog.pg_roles AS owners
-      ON owners.rolname = 'owners'
-    LEFT OUTER JOIN pg_catalog.pg_auth_members AS ms
-      ON ms.roleid = owners.oid
-    LEFT OUTER JOIN pg_catalog.pg_roles AS role
-      ON role.oid = ms.member
-    GROUP BY 1
-    ORDER BY 1;
-```
-
-Default privileges will be set only to these roles. This way, you can `GRANT
-CREATE` one time for all on role `owners` and `GRANT SELECT` to `readers`, new
-objects will be properly configured without a new run of `ldap2pg`.
-
-
-## Defining custom ACL
-
-[Well-known ACLs](wellknown.md) do not handle all cases. Sometime, you need
-`ldap2pg` to manage a custom `GRANT` query. Adding custom ACL is quite easy.
-
-For `ldap2pg`, an ACL is a set of query : one to inspect the cluster, one to
-grant the ACL and one to revoke it.
-
-`ldap2pg` recognize different kinds of ACL :
+`ldap2pg` recognize different kinds of privileges:
 
 - `datacl` are for `GRANT ON DATABASE`.
+- `globaldefacl` are `ALTER DEFAULT PRIVILEGES` on a database. They are bound to
+  an `owner`
 - `nspacl` are for `GRANT ON SCHEMA`. It's the default type.
-- `defacl` are for `ALTER DEFAULT PRIVILEGES`. They are bound to an `owner`.
+- `defacl` are for `ALTER DEFAULT PRIVILEGES IN SCHEMA`. They are bound to an
+  `owner`.
 
-Here is a full sample of custom ACL:
+Here is a full sample of custom privilege:
 
 ``` yaml
 acls:
@@ -206,23 +167,23 @@ sync_map:
 ```
 
 `inspect` query is called **once** per database in the cluster to inspect
-current grants of this ACL. If `null`, `ldap2pg` will consider this ACL as never
-granted and will always re-grant. It's actually a bad idea not to provide
-`inspect`. This won't allow `ldap2pg` to revoke ACL. Also, this prevents you to
-check that a cluster is synchronized.
+current grants of this privilege. If `null`, `ldap2pg` will consider this
+privilege as never granted and will always re-grant. It's actually a bad idea
+not to provide `inspect`. This won't allow `ldap2pg` to revoke privilege. Also,
+this prevents you to check that a cluster is synchronized.
 
 `inspect` query for `datacl` must return a rowset with two columns, the first is
-unused, the second is the names of grantees.
+unused, the second is the name of grantee.
 
 `inspect` query for `nspacl` must return a rowset with three columns : the name
 of the schema, the name of the grantee and a three state boolean called `full`.
-`full` allows to manage `GRANT ON ALL TABLES IN SCHEMA`-like ACL.
+`full` allows to manage `GRANT ON ALL TABLES IN SCHEMA`-like privilege.
 
 If `full` is `t`, `ldap2pg` won't regrant. If `f`, `ldap2pg` will re-grant to
-update the ACL or revoke to purge a partial grant.
+update the privilege or revoke to purge a partial grant.
 
-If `full` is `NULL`, the ACL is considered unapplicable. `ldap2pg` will never
-grant nor revoke this ACL. The main purpose of this case is to manage `ALL
+If `full` is `NULL`, the privilege is considered unapplicable. `ldap2pg` will never
+grant nor revoke this privilege. The main purpose of this case is to manage `ALL
 TABLES IN SCHEMA` grants on schema with no tables.
 
 `inspect` query for `defacl` must return a rowset with four columns : schema
@@ -230,16 +191,15 @@ name, grantee name, `full` state and owner name.
 
 Writing `inspect` queries requires deep knowledge of Postgres internals. See
 [System Catalogs](https://www.postgresql.org/docs/current/static/catalogs.html)
-section in PostgreSQL documentation to see how ACL are actually stored in
-Postgres. [Well-known ACLs](wellknown.md) are a good starting point.
+section in PostgreSQL documentation to see how privilege are actually stored in
+Postgres. [Well-known privileges](wellknown.md) are a good starting point.
 
-
-`grant` and `revoke` provide queries to respectively grant and revoke the ACL.
+`grant` and `revoke` provide queries to respectively grant and revoke the privilege.
 The query is formatted with three parameters: `database`, `schema`, `role` and
 `owner`. `database` strictly equals to `CURRENT_DATABASE`. `ldap2pg` uses
 Python's [*Format String
 Syntax*](https://docs.python.org/3.7/library/string.html#formatstrings). See
 example below. In verbose mode, you will see the formatted queries.
 
-If `none`, `ldap2pg` will either skip grant or revoke on the ACL and issue a
-warning. This mean you can write a revoke-only or a grant-only ACL.
+If `none`, `ldap2pg` will either skip grant or revoke on the privilege and issue a
+warning. This mean you can write a revoke-only or a grant-only privilege.
