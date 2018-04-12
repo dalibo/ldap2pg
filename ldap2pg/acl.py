@@ -123,7 +123,13 @@ class DefAcl(NspAcl):
 
     def expand(self, item, databases):
         for expand in super(DefAcl, self).expand(item, databases):
-            for owner in databases[expand.dbname][expand.schema]:
+            try:
+                owners = databases[expand.dbname][expand.schema]
+            except KeyError as e:
+                msg = "Unknown schema %s.%s." % (
+                    expand.dbname, expand.schema)
+                raise UserError(msg)
+            for owner in owners:
                 yield expand.copy(owner=owner)
 
 

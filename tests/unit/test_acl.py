@@ -53,7 +53,7 @@ def test_revoke():
 
 
 def test_expand_defacl():
-    from ldap2pg.acl import DefAcl, AclSet, AclItem
+    from ldap2pg.acl import DefAcl, AclSet, AclItem, UserError
 
     acl = DefAcl('select', grant='ALTER FOR GRANT SELECT')
     item0 = AclItem(
@@ -86,6 +86,13 @@ def test_expand_defacl():
     assert 3 == len(items)
     assert 'postgres' == items[0].dbname
     assert 'template1' == items[2].dbname
+
+    with pytest.raises(UserError):
+        list(set_.expanditems(
+            aliases=dict(select=['select']),
+            acl_dict={acl.name: acl},
+            databases=dict(),
+        ))
 
 
 def test_expand_datacl():
