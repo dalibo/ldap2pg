@@ -296,6 +296,26 @@ def construct_yaml_str(self, node):
 yaml.Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
 
+def check_yaml_gotchas(file_config):
+    dict_keys = ('ldap', 'postgres')
+    for key in dict_keys:
+        if key not in file_config:
+            continue
+
+        if not hasattr(file_config[key], 'items'):
+            msg = "Error ni YAML: %s: is not a dict." % key
+            raise ConfigurationError(msg)
+
+    for k, v in file_config.get('postgres', {}).items():
+        if not k.endswith('_query'):
+            continue
+        if v is None:
+            continue
+        if not v:
+            msg = "Error in YAML: postgres:%s: is empty." % k
+            raise ConfigurationError(msg)
+
+
 class Configuration(dict):
     DEFAULTS = {
         'check': False,
@@ -473,6 +493,8 @@ class Configuration(dict):
         # Now close stdin. To make SASL non-interactive.
         if not self.get('debug'):
             sys.stdin.close()
+
+        check_yaml_gotchas(file_config)
 
         # Now merge all config sources.
         acl_defaults = make_well_known_acls()

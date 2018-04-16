@@ -438,3 +438,17 @@ def test_acl_options():
     postprocess_acl_options(config_v34)
 
     assert config_v33 == config_v34
+
+
+def test_yaml_gotchas():
+    from ldap2pg.config import ConfigurationError, check_yaml_gotchas
+
+    # When postgres: entries are not indented.
+    config = dict(postgres=None)
+    with pytest.raises(ConfigurationError):
+        check_yaml_gotchas(config)
+
+    # When herestring for bad_query is not indented
+    config = dict(postgres=dict(dsn='', bad_query='', none_query=None))
+    with pytest.raises(ConfigurationError):
+        check_yaml_gotchas(config)
