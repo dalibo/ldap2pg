@@ -21,7 +21,7 @@ version: 2
       sudo pip install wheel virtualenv
       virtualenv .venv/
       . .venv/bin/activate
-      pip install -U -r requirements-ci.txt -e .
+      pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
 
 .func_steps: &func_steps
 - checkout
