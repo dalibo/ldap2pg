@@ -3,7 +3,7 @@
 <h1><tt>ldap2pg.yml</tt></h1>
 
 `ldap2pg` accepts a YAML configuration file usually named `ldap2pg.yml` and put
-un working directory. Everything can be configured from the YAML file:
+in working directory. Everything can be configured from the YAML file:
 verbosity, real mode, LDAP and Postgres credentials, LDAP queries, privileges
 and mappings.
 
@@ -45,6 +45,14 @@ on CI. If you don't know how to begin, it can be a goot starting point.
 
     If you have trouble finding the right configuration for your needs, feel free to
     [file an issue](https://github.com/dalibo/ldap2pg/issues/new) to get help.
+
+
+## About YAML
+
+YAML is a superset of JSON. A JSON document is a valid YAML document. YAML very
+permissive format where indentation is meaningful. See [this YAML
+cheatsheet](https://medium.com/@kenichishibata/yaml-to-json-cheatsheet-c3ac3ef519b8)
+for some example.
 
 
 ## Postgres Parameters
