@@ -1,10 +1,10 @@
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
 from argparse import ArgumentParser, SUPPRESS as SUPPRESS_ARG
 from textwrap import dedent
 from argparse import _VersionAction
-from pkg_resources import get_distribution
 from codecs import open
 import errno
 import logging
@@ -18,6 +18,7 @@ from os import stat
 import re
 import sys
 
+import ldap
 import psycopg2
 import yaml
 
@@ -75,23 +76,17 @@ class ColoredStreamHandler(logging.StreamHandler):
 
 class VersionAction(_VersionAction):
     def __call__(self, parser, *a):
-        try:
-            pyldap = get_distribution('pyldap')
-        except Exception:  # pragma: nocover_py3
-            pyldap = get_distribution('python-ldap')
-
         version = (
             "%(package)s %(version)s\n"
             "psycopg2 %(psycopg2version)s\n"
-            "%(pyldap)s %(ldapversion)s\n"
+            "python-ldap %(ldapversion)s\n"
             "Python %(pyversion)s\n"
         ) % dict(
             package=__package__,
             version=__version__,
             psycopg2version=psycopg2.__version__,
             pyversion=sys.version,
-            pyldap=pyldap.project_name,
-            ldapversion=pyldap.version,
+            ldapversion=ldap.__version__,
 
         )
         print(version.strip())

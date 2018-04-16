@@ -2,24 +2,19 @@ import sys
 from setuptools import setup
 
 
-PY2 = sys.version_info < (3,)
 PY26 = sys.version_info < (2, 7)
 
 install_requires = [
     'psycopg2',
+    'python-ldap',
     'pyyaml',
 ]
 
-if PY2:
-    install_requires.append('python-ldap')
-    if PY26:
-        install_requires.extend([
-            'argparse',
-            'logutils',
-        ])
-else:
-    # python-ldap does not support Python3
-    install_requires.append('pyldap')
+if PY26:
+    install_requires.extend([
+        'argparse',
+        'logutils',
+    ])
 
 setup(
     name='ldap2pg',

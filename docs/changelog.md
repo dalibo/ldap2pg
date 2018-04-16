@@ -7,6 +7,19 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# Unreleased
+
+- pyldap has been merged in python-ldap. Dropping pyldap.
+
+
+If you use pyldap to run ldap2pg on Python3, please either :
+
+- uninstall pyldap and switch to python-ldap 3.0.0. Do this in two steps : see
+  https://github.com/pyldap/pyldap/issues/148 for details.
+- switch to Python2 and use python-ldap.
+- keep running ldap2pg 4.7.
+
+
 # ldap2pg 4.7
 
 - Fix `__usage_on_types__` regranted for each owner.
