@@ -49,8 +49,8 @@ def parse_scope(raw):
 def str2dn(value):
     try:
         if PY2:  # pragma: nocover_py3
-            # Workaround buggy unicode managmenent in upstream python-ldap.
-            # This is not necessary with pyldap on Python3.
+            # Workaround buggy unicode managmenent in python-ldap on Python2.
+            # This is not necessary on Python3.
             value = decode_value(native_str2dn(value.encode('utf-8')))
         else:  # pragma: nocover_py2
             value = native_str2dn(value)
@@ -110,7 +110,7 @@ class EncodedParamsCallable(object):  # pragma: nocover_py3
 
 
 class UnicodeModeLDAPObject(object):  # pragma: nocover_py3
-    # Simulate UnicodeMode from pyldap, on top of python-ldap. This is not a
+    # Simulate UnicodeMode from Python3, on top of python-ldap. This is not a
     # Python2 issue but rather python-ldap not managing strings. Here we do it
     # for this.
 
