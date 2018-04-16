@@ -9,6 +9,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
+- Check YAML gotchas.
 - pyldap has been merged in python-ldap. Dropping pyldap.
 
 
