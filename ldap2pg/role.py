@@ -36,6 +36,7 @@ class Role(object):
     def from_row(cls, name, members=None, *row):
         self = Role(name=name, members=list(filter(None, members or [])))
         self.options.update_from_row(row)
+        self.options.fill_with_defaults()
         return self
 
     def create(self):
@@ -114,6 +115,7 @@ class Role(object):
         )
 
     def merge(self, other):
+        self.options.update(other.options)
         self.members += other.members
         self.parents += other.parents
         return self
@@ -159,7 +161,7 @@ class RoleOptions(dict):
         )
 
     def __init__(self, *a, **kw):
-        defaults = dict([(o, d) for c, (o, d) in self.COLUMNS.items()])
+        defaults = dict([(o, None) for c, (o, d) in self.COLUMNS.items()])
         super(RoleOptions, self).__init__(**defaults)
         init = dict(*a, **kw)
         self.update(init)
@@ -182,7 +184,21 @@ class RoleOptions(dict):
         if spurious_options:
             message = "Unknown options %s" % (', '.join(spurious_options),)
             raise ValueError(message)
-        return super(RoleOptions, self).update(other)
+
+        for k, their in other.items():
+            my = self[k]
+            if their is None:
+                continue
+            if my is None:
+                self[k] = their
+            elif my != their:
+                raise ValueError("Two values defined for option %s." % k)
+
+    def fill_with_defaults(self):
+        defaults = dict([(o, d) for c, (o, d) in self.COLUMNS.items()])
+        for k, v in self.items():
+            if v is None:
+                self[k] = defaults[k]
 
 
 class RoleSet(set):
