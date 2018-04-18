@@ -142,11 +142,12 @@ class SyncManager(object):
 
             for role in self.apply_role_rules(mapping['roles'], entries):
                 if role in ldaproles:
-                    if role.options != ldaproles[role].options:
+                    try:
+                        role.merge(ldaproles[role])
+                    except ValueError as e:
                         msg = "Role %s redefined with different options." % (
                             role,)
                         raise UserError(msg)
-                    role.merge(ldaproles[role])
                 ldaproles[role] = role
 
             grant = mapping.get('grant', [])
@@ -155,7 +156,13 @@ class SyncManager(object):
                 logger.debug("Found ACL item %s %s.", aclitem, log_source)
                 ldapacls.add(aclitem)
 
-        return RoleSet(ldaproles.values()), ldapacls
+        # Lazy apply of role options defaults
+        roleset = RoleSet()
+        for role in ldaproles.values():
+            role.options.fill_with_defaults()
+            roleset.add(role)
+
+        return roleset, ldapacls
 
     def postprocess_acls(self, ldapacls, schemas):
         expanded_acls = ldapacls.expanditems(

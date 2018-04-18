@@ -368,7 +368,7 @@ def test_inspect_roles_duplicate_differents_options(mocker):
         dict(names=['group0']),
         dict(names=['group1']),
         dict(names=['bob'], options=dict(LOGIN=True)),
-        dict(names=['bob']),
+        dict(names=['bob'], options=dict(LOGIN=False)),
     ])]
 
     with pytest.raises(UserError):

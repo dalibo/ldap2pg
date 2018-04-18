@@ -71,10 +71,36 @@ def test_merge():
     assert 1 == len(a.members)
 
 
+def test_merge_options():
+    from ldap2pg.role import Role
+
+    a = Role(name='daniel', options=dict(SUPERUSER=True))
+    b = Role(name='daniel', options=dict(SUPERUSER=False))
+    c = Role(name='daniel', options=dict(SUPERUSER=None))
+    d = Role(name='daniel', options=dict(SUPERUSER=None))
+
+    with pytest.raises(ValueError):
+        a.merge(b)
+
+    # True is kept
+    a.merge(c)
+    assert a.options['SUPERUSER'] is True
+    # False is kept
+    b.merge(c)
+    assert b.options['SUPERUSER'] is False
+    # None is kept
+    c.merge(d)
+    assert c.options['SUPERUSER'] is None
+    # None is replaced.
+    d.merge(a)
+    assert d.options['SUPERUSER'] is True
+
+
 def test_options():
     from ldap2pg.role import RoleOptions
 
     options = RoleOptions()
+    options.fill_with_defaults()
 
     assert 'NOSUPERUSER' in repr(options)
 
