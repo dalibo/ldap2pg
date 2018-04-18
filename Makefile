@@ -20,9 +20,11 @@ readme-sample:
 	@echo '$$ ldap2pg --config docs/ldap2pg.minimal.yml --real'
 	@ldap2pg --config docs/ldap2pg.minimal.yml --real 2>&1 | sed s,${PWD},...,g
 
-release:
+changelog:
 	python setup.py egg_info
-	sed -i 's/ \+(unreleased)$$//' docs/changelog.md
+	sed -i 's/^# Unreleased$$/# $(VERSION)/' docs/changelog.md
+
+release: changelog
 	git commit setup.py docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
