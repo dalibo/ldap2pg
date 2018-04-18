@@ -22,7 +22,7 @@ readme-sample:
 
 changelog:
 	python setup.py egg_info
-	sed -i 's/^# Unreleased$$/# $(VERSION)/' docs/changelog.md
+	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
 release: changelog
 	git commit setup.py docs/changelog.md -m "Version $(VERSION)"
