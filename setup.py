@@ -19,7 +19,7 @@ if PY26:
 setup(
     name='ldap2pg',
     version='4.8',
-    description='Synchronize PostgreSQL roles and ACLs from LDAP',
+    description='Synchronize PostgreSQL roles and privileges from YAML or LDAP',
     url='https://github.com/dalibo/ldap2pg',
     author='Dalibo',
     author_email='contact@dalibo.com',
