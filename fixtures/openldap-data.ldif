@@ -193,7 +193,7 @@ dn: cn=app2,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectClass: groupOfNames
 objectClass: top
-cn: app
+cn: app2
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
