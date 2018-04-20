@@ -52,16 +52,15 @@ class SyncManager(object):
             names = get_attribute(entry, name_attribute)
             log_source = " from %s %s" % (entry[0], name_attribute)
 
+        members = kw.get('members', [])[:]
         if kw.get('members_attribute'):
-            members = get_attribute(entry, kw['members_attribute'])
-        else:
-            members = []
+            members += get_attribute(entry, kw['members_attribute'])
         members = [m.lower() for m in members]
 
-        kw.setdefault('parents', [])
+        parents = kw.get('parents', [])[:]
         if kw.get('parents_attribute'):
-            kw['parents'] += get_attribute(entry, kw['parents_attribute'])
-        parents = [p.lower() for p in kw['parents']]
+            parents += get_attribute(entry, kw['parents_attribute'])
+        parents = [p.lower() for p in parents]
 
         for name in names:
             name = name.lower()

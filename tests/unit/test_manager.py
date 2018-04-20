@@ -89,20 +89,40 @@ def test_process_entry_membership(mocker):
 
     manager = SyncManager()
 
-    entry = ('dn', {
-        'cn': 'group',
-        'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
+    entries = [
+        ('cn=group0', {
+            'cn': ['group0'],
+            'member': ['cn=alice,dc=unit', 'cn=alain,dc=unit']}),
+        ('cn=group1', {
+            'cn': ['group1'],
+            'member': ['cn=bob,dc=unit', 'cn=benoit,dc=unit']}),
+    ]
 
-    roles = manager.process_ldap_entry(
-        entry, names=['group'], members_attribute='member.cn',
+    roles = []
+    rule = dict(
+        parents=[],
+        members_attribute='member.cn',
         parents_attribute='cn',
     )
-    roles = list(roles)
+    for i, entry in enumerate(entries):
+        name = 'role%d' % i
+        roles += list(manager.process_ldap_entry(
+            entry, names=[name], **rule))
 
-    assert 1 == len(roles)
-    role = roles[0]
-    assert 'alice' in role.members
-    assert 'bob' in role.members
+    assert 2 == len(roles)
+    assert 'alice' in roles[0].members
+    assert 'alain' in roles[0].members
+    assert 'bob' not in roles[0].members
+    assert 'benoit' not in roles[0].members
+    assert 'group0' in roles[0].parents
+    assert 'group1' not in roles[0].parents
+
+    assert 'alice' not in roles[1].members
+    assert 'alain' not in roles[1].members
+    assert 'bob' in roles[1].members
+    assert 'benoit' in roles[1].members
+    assert 'group0' not in roles[1].parents
+    assert 'group1' in roles[1].parents
 
 
 def test_apply_role_rule_ko(mocker):

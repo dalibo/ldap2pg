@@ -7,6 +7,11 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# Unreleased
+
+- Fix mix of parents in same role rule
+
+
 # ldap2pg 4.8
 
 - Fix traceback on unknown schema.
