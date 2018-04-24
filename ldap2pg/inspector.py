@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import logging
 from itertools import chain
+from textwrap import dedent
 
 import psycopg2
 
@@ -173,6 +174,16 @@ class PostgresInspector(object):
         except psycopg2.ProgrammingError as e:
             # Consider the query as user defined
             raise UserError(str(e))
+
+    inspect_me = dedent("""\
+    SELECT current_user, rolsuper
+    FROM pg_catalog.pg_roles
+    WHERE rolname = current_user;
+    """)
+
+    def fetch_me(self):
+        with self.psql() as psql:
+            return self.fetch(psql, self.inspect_me)[0]
 
     def fetch_roles(self):
         # Actually, fetch databases for dropping objects, all roles and managed

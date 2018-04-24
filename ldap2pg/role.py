@@ -134,6 +134,7 @@ class RoleOptions(dict):
         ('rolsuper', ('SUPERUSER', False)),
     ])
 
+    SUPERONLY_COLUMNS = ['rolsuper', 'rolreplication', 'rolbypassrls']
     SUPPORTED_COLUMNS = list(COLUMNS.keys())
 
     @classmethod
@@ -157,13 +158,20 @@ class RoleOptions(dict):
     @classmethod
     def update_supported_columns(cls, columns):
         cls.SUPPORTED_COLUMNS = [
-            c for c in RoleOptions.COLUMNS.keys()
+            c for c in cls.SUPPORTED_COLUMNS
             if c in columns
         ]
         logger.debug(
             "Postgres server supports role options %s.",
             ", ".join(cls.supported_options()),
         )
+
+    @classmethod
+    def filter_super_columns(cls):
+        cls.SUPPORTED_COLUMNS = [
+            c for c in cls.SUPPORTED_COLUMNS
+            if c not in cls.SUPERONLY_COLUMNS
+        ]
 
     def __init__(self, *a, **kw):
         defaults = dict([(o, None) for c, (o, d) in self.COLUMNS.items()])

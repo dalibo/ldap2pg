@@ -183,3 +183,21 @@ sync_map:
     role_attribute: member
     privilege: rw
 ```
+
+
+# Running as non-superuser
+
+Since Postgres provide a `CREATEROLE` role option, you can manage roles without
+superuser privileges. Security-wise, it's a good idea to manage roles without
+super privileges.
+
+`ldap2pg` support this case. However, you must be careful about the limitations.
+Let's call the non-super role creating other roles `creator`.
+
+- You can't manage some roles options like `SUPERUSER`, `BYPASSRLS` and
+  `REPLICATION`. Thus you wont be able to detect spurious superusers.
+- Ensure `creator` can revoke all grants of managed users.
+- `creator` should own database and other objects if you want `creator` to grant
+  privileges on this. This include `public` schema.
+- Granting `CREATE` on schema requires to grant write access to `pg_catalog`.
+  That's tricky to give such privileges to `creator`.

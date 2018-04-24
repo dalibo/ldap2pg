@@ -186,6 +186,19 @@ def test_grants(mocker):
     assert 'alice' in grantees
 
 
+def test_me(mocker):
+    from ldap2pg.inspector import PostgresInspector
+
+    inspector = PostgresInspector(
+        psql=mocker.MagicMock(name='psql'),
+    )
+    inspector.inspect_me = [('postgres', True)]
+    name, issuper = inspector.fetch_me()
+
+    assert 'postgres' == name
+    assert issuper
+
+
 def test_roles(mocker):
     from ldap2pg.inspector import PostgresInspector
 

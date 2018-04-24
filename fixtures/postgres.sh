@@ -25,6 +25,7 @@ psql -v ON_ERROR_STOP=1 <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
+DROP DATABASE IF EXISTS nonsuperdb;
 DO \$\$BEGIN
   IF '${roles}' <> '' THEN
     DROP ROLE ${roles:-pouet};
@@ -34,6 +35,10 @@ UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 EOSQL
 
 psql -v ON_ERROR_STOP=1 <<'EOSQL'
+-- For non-superuser case
+CREATE ROLE nonsuper LOGIN CREATEROLE;
+CREATE DATABASE nonsuperdb WITH OWNER nonsuper;
+
 -- Create role as it should be. for NOOP
 CREATE ROLE ldap_roles WITH NOLOGIN;
 CREATE ROLE app WITH NOLOGIN;
@@ -55,6 +60,8 @@ GRANT ldap_roles to omar, olivia, oscar, œdipe;
 
 -- Create a role out of scope, for no drop
 CREATE ROLE keepme;
+-- kevin is out of ldap, for drop by nonsuper
+CREATE ROLE kevin;
 
 -- Create databases
 CREATE DATABASE olddb;
@@ -109,4 +116,23 @@ GRANT SELECT ON ALL TABLES IN SCHEMA appns TO oscar;
 GRANT SELECT ON TABLE appns.table1 TO daniel;
 -- Full grant for noop
 GRANT SELECT ON ALL TABLES IN SCHEMA appns TO david;
+EOSQL
+
+# Setup non-super fixture, independant from usual case.
+PGDATABASE=nonsuperdb psql <<'EOSQL'
+REVOKE ALL ON SCHEMA public FROM public;
+ALTER SCHEMA public OWNER TO nonsuper;
+ALTER SCHEMA pg_catalog OWNER TO nonsuper;
+
+-- Create a table owned by kevin, for reassign
+CREATE TABLE table0 (id SERIAL);
+ALTER TABLE table0 OWNER TO kevin;
+
+-- Grant for drop owned by
+CREATE TABLE table1 (id SERIAL);
+ALTER TABLE table1 OWNER TO nonsuper;
+EOSQL
+
+PGDATABASE=nonsuperdb PGUSER=nonsuper psql <<'EOSQL'
+GRANT SELECT ON table1 TO kevin;
 EOSQL

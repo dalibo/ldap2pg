@@ -9,9 +9,10 @@ from .privilege import Grant
 from .privilege import Acl
 from .role import (
     Role,
+    RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value
+from .utils import UserError, decode_value, match
 from .psql import expandqueries
 
 
@@ -181,6 +182,14 @@ class SyncManager(object):
 
     def sync(self, syncmap):
         logger.info("Inspecting roles in Postgres cluster...")
+        me, issuper = self.inspector.fetch_me()
+        if not match(me, self.inspector.roles_blacklist):
+            self.inspector.roles_blacklist.append(me)
+
+        if not issuper:
+            logger.warn("Running ldap2pg as non superuser.")
+            RoleOptions.filter_super_columns()
+
         databases, pgallroles, pgmanagedroles = self.inspector.fetch_roles()
         pgallroles, pgmanagedroles = self.inspector.filter_roles(
             pgallroles, pgmanagedroles)
