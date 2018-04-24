@@ -143,10 +143,14 @@ class RoleOptions(dict):
         ]
 
     COLUMNS_QUERY = dedent("""
-    SELECT array_agg(column_name::text)
-    FROM information_schema.columns
-    WHERE table_schema = 'pg_catalog' AND table_name = 'pg_authid'
-    LIMIT 1
+    SELECT array_agg(attrs.attname)
+    FROM pg_catalog.pg_namespace AS nsp
+    JOIN pg_catalog.pg_class AS tables
+      ON tables.relnamespace = nsp.oid AND tables.relname = 'pg_authid'
+    JOIN pg_catalog.pg_attribute AS attrs
+      ON attrs.attrelid = tables.oid AND attrs.attname LIKE 'rol%'
+    WHERE nsp.nspname = 'pg_catalog'
+    ORDER BY 1
     """)
 
     @classmethod
