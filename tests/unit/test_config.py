@@ -443,12 +443,15 @@ def test_acl_options():
 def test_yaml_gotchas():
     from ldap2pg.config import ConfigurationError, check_yaml_gotchas
 
+    config = dict(postgres=dict(dsn='', none_query=None))
+    check_yaml_gotchas(config)
+
     # When postgres: entries are not indented.
     config = dict(postgres=None)
     with pytest.raises(ConfigurationError):
         check_yaml_gotchas(config)
 
     # When herestring for bad_query is not indented
-    config = dict(postgres=dict(dsn='', bad_query='', none_query=None))
+    config = dict(postgres=dict(bad_query=''))
     with pytest.raises(ConfigurationError):
         check_yaml_gotchas(config)
