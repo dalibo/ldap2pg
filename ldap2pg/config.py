@@ -391,7 +391,7 @@ class Configuration(dict):
         Mapping('postgres:managed_roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
         Mapping('acls', env=None, processor=V.acls),
-        Mapping('acl_dict', processor=V.acldict),
+        Mapping('acl_dict', processor=V.acls),
         Mapping('acl_groups', env=None),
         Mapping('sync_map', env=None, processor=V.syncmap)
     ]

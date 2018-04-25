@@ -3,17 +3,6 @@ import copy
 import pytest
 
 
-def test_process_acldict():
-    from ldap2pg.validators import acldict
-
-    with pytest.raises(ValueError):
-        acldict([])
-
-    acl_dict = acldict(dict(ro=dict(inspect='SQL', grant='SQL', revoke='SQL')))
-
-    assert 'ro' in acl_dict
-
-
 def test_process_grant():
     from ldap2pg.validators import grantrule
 
@@ -77,8 +66,8 @@ def test_process_syncmap():
         assert 1 == len(v)
         assert 'grant' in v[0]
         m = v[0]['grant'][0]
-        assert '__all__' == m['database']
-        assert '__all__' == m['schema']
+        assert '__all__' == m['databases']
+        assert '__all__' == m['schemas']
 
 
 def test_process_syncmap_legacy():
@@ -98,8 +87,8 @@ def test_process_syncmap_legacy():
         assert 1 == len(v)
         assert 'grant' in v[0]
         m = v[0]['grant'][0]
-        assert 'db' == m['database']
-        assert 'schema' == m['schema']
+        assert ['db'] == m['databases']
+        assert ['schema'] == m['schemas']
 
 
 def test_process_syncmap_bad():
