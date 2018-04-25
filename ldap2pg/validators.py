@@ -3,13 +3,6 @@ from .role import RoleOptions
 from .utils import string_types
 
 
-def acldict(value):
-    if not hasattr(value, 'items'):
-        raise ValueError('acl_dict must be a dict')
-
-    return value
-
-
 default_ldap_query = {
     'base': '',
     'filter': '(objectClass=*)',

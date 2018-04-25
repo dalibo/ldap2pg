@@ -3,17 +3,6 @@ import copy
 import pytest
 
 
-def test_process_acldict():
-    from ldap2pg.validators import acldict
-
-    with pytest.raises(ValueError):
-        acldict([])
-
-    acl_dict = acldict(dict(ro=dict(inspect='SQL', grant='SQL', revoke='SQL')))
-
-    assert 'ro' in acl_dict
-
-
 def test_process_grant():
     from ldap2pg.validators import grantrule
 
