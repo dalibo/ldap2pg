@@ -99,9 +99,17 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if 'acl' not in value:
         raise ValueError('Missing acl to grant rule.')
 
+    strlist_alias(value, 'roles', 'role')
+
+    value.setdefault('database', defaultdb)
+    strlist_alias(value, 'databases', 'database', ['__all__'])
+
+    value.setdefault('schema', defaultschema)
+    strlist_alias(value, 'schemas', 'schema', [None, '__any__', '__all__'])
+
     allowed_keys = set([
-        'acl', 'database', 'schema',
-        'role', 'roles', 'role_match', 'role_attribute',
+        'acl', 'databases', 'schemas',
+        'roles', 'role_match', 'role_attribute',
     ])
     defined_keys = set(value.keys())
 
@@ -111,16 +119,8 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
         )
         raise ValueError(msg)
 
-    strlist_alias(value, 'roles', 'role')
-
     if 'roles' not in value and 'role_attribute' not in value:
         raise ValueError('Missing role in grant rule.')
-
-    value.setdefault('database', defaultdb)
-    strlist_alias(value, 'databases', 'database', '__all__')
-
-    value.setdefault('schema', defaultschema)
-    strlist_alias(value, 'schemas', 'schema', [None, '__any__', '__all__'])
 
     return value
 
