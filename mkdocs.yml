@@ -15,7 +15,7 @@ pages:
   - Inspecting Cluster: postgres.md
   - Querying Directory: ldap.md
   - Managing Roles: roles.md
-  - Managing Privileges: acl.md
+  - Managing Privileges: privileges.md
   - Well-known Privileges: wellknown.md
 - Cookbook: cookbook.md
 - Hacking: hacking.md

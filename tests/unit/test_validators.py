@@ -6,18 +6,6 @@ import pytest
 def test_process_grant():
     from ldap2pg.validators import grantrule
 
-    with pytest.raises(ValueError):
-        grantrule([])
-
-    with pytest.raises(ValueError):
-        grantrule(dict(missing_acl=True))
-
-    with pytest.raises(ValueError):
-        grantrule(dict(acl='toto', spurious_attribute=True))
-
-    with pytest.raises(ValueError):
-        grantrule(dict(acl='missing role*'))
-
     rule = grantrule(dict(
         acl='ro',
         database='postgres',
@@ -27,6 +15,20 @@ def test_process_grant():
 
     assert 'schemas' in rule
     assert 'databases' in rule
+    assert 'privilege' in rule
+    assert 'acl' not in rule
+
+    with pytest.raises(ValueError):
+        grantrule([])
+
+    with pytest.raises(ValueError):
+        grantrule(dict(missing_privilege=True))
+
+    with pytest.raises(ValueError):
+        grantrule(dict(privilege='toto', role='toto', spurious=True))
+
+    with pytest.raises(ValueError):
+        grantrule(dict(privilege='missing role*'))
 
 
 def test_ismapping():
@@ -45,7 +47,7 @@ def test_process_syncmap():
 
     assert [] == syncmap(None)
 
-    rule = dict(grant=dict(acl='rol', role='alice'))
+    rule = dict(grant=dict(privilege='rol', role='alice'))
     fixtures = [
         # Canonical case.
         [rule],
@@ -73,7 +75,7 @@ def test_process_syncmap():
 def test_process_syncmap_legacy():
     from ldap2pg.validators import syncmap
 
-    grant = dict(acl='rol', role='alice')
+    grant = dict(privilege='rol', role='alice')
     fixtures = [
         dict(db=dict(schema=dict(grant=grant))),
         dict(db=dict(grant=dict(schema='schema', **grant))),
@@ -110,7 +112,7 @@ def test_process_syncmap_bad():
 def test_process_mapping_grant():
     from ldap2pg.validators import mapping
 
-    mapping(dict(grant=dict(acl='ro', role='alice')))
+    mapping(dict(grant=dict(privilege='ro', role='alice')))
 
 
 def test_process_ldapquery():
@@ -166,20 +168,20 @@ def test_process_rolerule():
     assert 'OLOLOL' in str(ei.value)
 
 
-def test_acls():
-    from ldap2pg.validators import acls
+def test_privileges():
+    from ldap2pg.validators import privileges
 
     with pytest.raises(ValueError):
-        acls(None)
+        privileges(None)
 
     with pytest.raises(ValueError):
-        acls([])
+        privileges([])
 
     with pytest.raises(ValueError):
-        acls(dict(select=dict(iinspect_type="INSPECT")))
+        privileges(dict(select=dict(iinspect_type="INSPECT")))
 
     with pytest.raises(ValueError):
-        acls(dict(select=None))
+        privileges(dict(select=None))
 
     raw = dict(
         __select_on_tables__=dict(
@@ -189,5 +191,5 @@ def test_acls():
         ),
         ro=['__select_on_tables__'],
     )
-    value = acls(raw)
+    value = privileges(raw)
     assert raw == value

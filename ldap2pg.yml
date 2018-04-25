@@ -2,7 +2,7 @@
 # **LDAP2PG SAMPLE CONFIGURATION**
 #
 # This is a sample starting point configuration file for ldap2pg.yml. Including
-# static roles, groups, ACL and LDAP query.
+# static roles, groups, privilege and LDAP query.
 #
 # This configuration assumes the following principles:
 #
@@ -48,8 +48,8 @@ postgres:
     ORDER BY 1;
 
 
-acls:
-  # Define an ACL group `ro` with read-only grants
+privileges:
+  # Define an privilege group `ro` with read-only grants
   ro:
   - __connect__
   - __execute__
@@ -58,12 +58,12 @@ acls:
   - __usage_on_schemas__
   - __usage_on_types__
 
-  # `rw` ACL group lists write-only grants
+  # `rw` privilege group lists write-only grants
   rw:
   - __all_on_tables__
   - __all_on_sequences__
 
-  # `ddl` ACL group lists DDL only grants.
+  # `ddl` privilege group lists DDL only grants.
   ddl:
   - __create_on_schemas__
 
@@ -85,28 +85,28 @@ sync_map:
     options: NOLOGIN
   # Now grant privileges to each groups
   grant:
-  - acl: ro
+  - privilege: ro
     role: readers
     # Let's everyone see pg_catalog
     schema: __all__
-  - acl: rw
+  - privilege: rw
     role: writers
     # But avoid writers to write in pg_catalog
     schema: public
   # Allow ddl to create tables in public only
-  - acl: ddl
+  - privilege: ddl
     role: owners
     schema: public
   # owners must have write access to pg_catalog
-  - acl: rw
+  - privilege: rw
     role: owners
     schema: pg_catalog
   # Grants on specific schema appdb.appns:
-  - acl: rw
+  - privilege: rw
     role: writers
     database: appdb
     schema: appns
-  - acl: ddl
+  - privilege: ddl
     role: owners
     database: appdb
     schema: appns

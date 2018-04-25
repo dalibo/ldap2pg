@@ -2,7 +2,7 @@
 
 | |CircleCI| |Codecov| |RTD| |PyPI|
 
-Swiss-army knife to synchronize Postgres roles and ACLs from any LDAP directory.
+Swiss-army knife to synchronize Postgres roles and privileges from YAML or LDAP.
 
 .. _documentation: https://ldap2pg.readthedocs.io/en/latest/
 .. _license:       https://opensource.org/licenses/postgresql
@@ -15,7 +15,7 @@ Features
 - Creates, alter and drops PostgreSQL roles from LDAP queries.
 - Creates static roles from YAML to complete LDAP entries.
 - Manage role members (alias *groups*).
-- Grant or revoke ACL statically or from LDAP entries.
+- Grant or revoke privileges statically or from LDAP entries.
 - Dry run.
 - Logs LDAP queries as ``ldapsearch`` commands.
 - Logs **every** SQL queries.
@@ -85,7 +85,7 @@ the help of wonderful people, jump to contributors_ list to see them.
 
 .. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
    :target: https://github.com/dalibo/ldap2pg
-   :alt: ldap2pg: PostgreSQL role and ACL management
+   :alt: ldap2pg: PostgreSQL role and privileges management
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/ldap2pg.svg
    :target: https://pypi.python.org/pypi/ldap2pg

@@ -18,7 +18,7 @@ $ ldap2pg --help
 usage: ldap2pg [-c PATH] [-C] [-n] [-N] [-q] [-v] [--color] [--no-color] [-?]
                [-V]
 
-PostgreSQL roles and ACL management.
+PostgreSQL roles and privileges management.
 
 optional arguments:
   -c PATH, --config PATH

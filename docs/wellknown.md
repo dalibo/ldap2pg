@@ -3,23 +3,23 @@
 
 <h1>Well-known Privileges</h1>
 
-`ldap2pg` provides some well-known ACLs for recurrent usage. There is **no
-warranty** of on these ACLs. You have to check privileges configuration on your
-databases just like you should do with your own code.
+`ldap2pg` provides some well-known privileges for recurrent usage. There is **no
+warranty** of on these privileges. You have to check privileges configuration on
+your databases just like you should do with your own code.
 
-The true added-value of well-known ACLs is the `inspect` queries associated and
-the boilerplate saved for declaring all `GRANT` queries.
+The true added-value of well-known privileges is the `inspect` queries
+associated and the boilerplate saved for declaring all `GRANT` queries.
 
 
 ## Using Well-known Privileges
 
-Well-known ACL starts and lasts with `__`. `ldap2pg` [disables
-privilege](acl.md#enabling-acl) starting with `_`. Thus you have to include
-well-known ACLs in a group to enable them. If two groups reference the same ACL,
-it will be deduplicated, don't worry.
+Well-known privilege starts and lasts with `__`. `ldap2pg` [disables
+privilege](privileges.md#enabling-privilege) starting with `_`. Thus you have to
+include well-known privileges in a group to enable them. If two groups reference
+the same privilege, it will be deduplicated, don't worry.
 
 ``` yaml
-acls:
+privileges:
   ro:
   - __connect__
   - __usage_on_schemas__
@@ -37,7 +37,7 @@ acls:
 
 sync_map:
 - grant:
-    acl: ddl
+    privilege: ddl
     database: mydb
     schema: __all__
     role: admins
@@ -57,8 +57,8 @@ Well-known privilege name follows the following loose convention:
 ## Privilege Groups
 
 Next is an extensive, boring, list of all well known privilege groups in
-`master`. Each group is documented by its name and the list of included ACL.
-Each ACL name point the the detail of ACL definition.
+`master`. Each group is documented by its name and the list of included
+privilege. Each privilege name point the the detail of privilege definition.
 
 Actually, a group like `__all_on_tables__` is implemented as group of groups.
 But for the sake of simplicity, the documentation lists the resolved list of

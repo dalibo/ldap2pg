@@ -52,7 +52,7 @@ def wrapped_main(config=None):
 
     inspector = PostgresInspector(
         psql=psql,
-        acls=config['acl_dict'],
+        privileges=config['privileges'],
         databases=config['postgres']['databases_query'],
         schemas=config['postgres']['schemas_query'],
         all_roles=config['postgres']['roles_query'],
@@ -62,7 +62,8 @@ def wrapped_main(config=None):
     )
     manager = SyncManager(
         ldapconn=ldapconn, psql=psql, inspector=inspector,
-        acl_dict=config['acl_dict'], acl_aliases=config['acl_aliases'],
+        privileges=config['privileges'],
+        privilege_aliases=config['privilege_aliases'],
     )
     count = manager.sync(syncmap=config['sync_map'])
 

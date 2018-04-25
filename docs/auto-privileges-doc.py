@@ -3,8 +3,8 @@ import sys
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from ldap2pg.defaults import make_well_known_acls
-from ldap2pg.acl import process_definitions as process_acls
+from ldap2pg.defaults import make_well_known_privileges
+from ldap2pg.privilege import process_definitions as process_privileges
 from ldap2pg import __version__
 
 
@@ -13,7 +13,8 @@ def slugify_filter(name):
 
 
 def main(args=sys.argv[1:]):
-    acls, groups, aliases = process_acls(make_well_known_acls())
+    privileges, groups, aliases = process_privileges(
+        make_well_known_privileges())
 
     env = Environment(
         loader=FileSystemLoader(os.getcwd()),
@@ -23,7 +24,7 @@ def main(args=sys.argv[1:]):
     env.filters['slugify'] = slugify_filter
     template = env.get_template(args[0])
     values = dict(
-        acls=acls,
+        privileges=privileges,
         aliases=aliases,
         groups=groups,
         version=__version__,

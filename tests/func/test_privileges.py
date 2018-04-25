@@ -3,9 +3,9 @@
 from __future__ import unicode_literals
 
 
-def test_custom_acl(dev, psql):
+def test_custom_privilege(dev, psql):
     from sh import ldap2pg
-    c = 'tests/func/ldap2pg.custom_acl.yml'
+    c = 'tests/func/ldap2pg.custom_privilege.yml'
 
     # Ensure database is not sync.
     ldap2pg('-C', c=c, _ok_code=1)
