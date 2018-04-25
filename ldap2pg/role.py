@@ -246,3 +246,35 @@ class RoleSet(set):
 
     def union(self, other):
         return self.__class__(self | other)
+
+    def diff(self, other=None, available=None):
+        # Yield query so that self match other. It's kind of a three-way diff
+        # since we reuse `available` roles instead of recreating roles.
+
+        available = available or RoleSet()
+        other = other or RoleSet()
+
+        # First create missing roles
+        missing = RoleSet(other - available)
+        for role in missing.flatten():
+            for qry in role.create():
+                yield qry
+
+        # Now update existing roles options and memberships
+        existing = available & other
+        my_roles_index = available.reindex()
+        other_roles_index = other.reindex()
+        for role in existing:
+            mine = my_roles_index[role.name]
+            its = other_roles_index[role.name]
+            if role not in self:
+                logger.warn(
+                    "Role %s already exists in cluster. Reusing.", role.name)
+            for qry in mine.alter(its):
+                yield qry
+
+        # Don't forget to trash all spurious managed roles!
+        spurious = RoleSet(self - other)
+        for role in reversed(list(spurious.flatten())):
+            for qry in role.drop():
+                yield qry

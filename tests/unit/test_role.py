@@ -164,3 +164,34 @@ def test_resolve_membership():
 
     with pytest.raises(ValueError):
         roles.resolve_membership()
+
+
+def test_diff():
+    from ldap2pg.role import Role, RoleSet
+
+    pgmanagedroles = RoleSet([
+        Role('drop-me'),
+        Role('alter-me'),
+        Role('nothing'),
+    ])
+    pgallroles = pgmanagedroles.union({
+        Role('reuse-me'),
+        Role('dont-touch-me'),
+    })
+    ldaproles = RoleSet([
+        Role('reuse-me'),
+        Role('alter-me', options=dict(LOGIN=True)),
+        Role('nothing'),
+        Role('create-me')
+    ])
+    queries = [
+        q.args[0]
+        for q in pgmanagedroles.diff(ldaproles, pgallroles)
+    ]
+
+    assert fnfilter(queries, 'ALTER ROLE "alter-me" WITH* LOGIN*;')
+    assert fnfilter(queries, 'CREATE ROLE "create-me" *;')
+    assert fnfilter(queries, '*DROP ROLE "drop-me";*')
+    assert not fnfilter(queries, 'CREATE ROLE "reuse-me" *')
+    assert not fnfilter(queries, '*nothing*')
+    assert not fnfilter(queries, '*dont-touch-me*')

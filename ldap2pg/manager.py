@@ -180,36 +180,6 @@ class SyncManager(object):
 
         return acl
 
-    def diff_roles(self, pgallroles=None, pgmanagedroles=None, ldaproles=None):
-        pgallroles = pgallroles or RoleSet()
-        pgmanagedroles = pgmanagedroles or RoleSet()
-        ldaproles = ldaproles or RoleSet()
-
-        # First create missing roles
-        missing = RoleSet(ldaproles - pgallroles)
-        for role in missing.flatten():
-            for qry in role.create():
-                yield qry
-
-        # Now update existing roles options and memberships
-        existing = pgallroles & ldaproles
-        pg_roles_index = pgallroles.reindex()
-        ldap_roles_index = ldaproles.reindex()
-        for role in existing:
-            my = pg_roles_index[role.name]
-            its = ldap_roles_index[role.name]
-            if role not in pgmanagedroles:
-                logger.warn(
-                    "Role %s already exists in cluster. Reusing.", role.name)
-            for qry in my.alter(its):
-                yield qry
-
-        # Don't forget to trash all spurious managed roles!
-        spurious = RoleSet(pgmanagedroles - ldaproles)
-        for role in reversed(list(spurious.flatten())):
-            for qry in role.drop():
-                yield qry
-
     def diff_acls(self, pgacl=None, ldapacl=None):
         pgacl = pgacl or Acl()
         ldapacl = ldapacl or Acl()
@@ -252,7 +222,7 @@ class SyncManager(object):
 
         count = 0
         count += self.psql.run_queries(expandqueries(
-            self.diff_roles(pgallroles, pgmanagedroles, ldaproles),
+            pgmanagedroles.diff(other=ldaproles, available=pgallroles),
             databases=databases))
         if self.privileges:
             logger.info("Inspecting GRANTs in Postgres cluster...")
