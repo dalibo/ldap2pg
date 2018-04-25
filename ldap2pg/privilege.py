@@ -1,7 +1,12 @@
 from itertools import chain
+from itertools import groupby
+import logging
 
 from .psql import Query
 from .utils import AllDatabases, UserError, unicode, make_group_map
+
+
+logger = logging.getLogger(__name__)
 
 
 class Privilege(object):
@@ -208,6 +213,33 @@ class Acl(set):
 
                 for expansion in priv.expand(grant, databases):
                     yield expansion
+
+    def diff(self, other=None, privileges=None):
+        # Yields query to match other from self.
+        other = other or Acl()
+        privileges = privileges or {}
+
+        # First, revoke spurious GRANTs
+        spurious = self - other
+        spurious = sorted([i for i in spurious if i.full is not None])
+        for priv, grants in groupby(spurious, lambda i: i.privilege):
+            acl = privileges[priv]
+            if not acl.revoke_sql:
+                logger.warn("Can't revoke %s: query not defined.", acl)
+                continue
+            for grant in grants:
+                yield acl.revoke(grant)
+
+        # Finally, grant privilege when all roles are ok.
+        missing = other - set([a for a in self if a.full in (None, True)])
+        missing = sorted(list(missing))
+        for priv, grants in groupby(missing, lambda i: i.privilege):
+            priv = privileges[priv]
+            if not priv.grant_sql:
+                logger.warn("Can't grant %s: query not defined.", priv)
+                continue
+            for grant in grants:
+                yield priv.grant(grant)
 
 
 def check_group_definitions(privileges, groups):

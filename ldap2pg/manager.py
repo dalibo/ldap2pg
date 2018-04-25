@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-from itertools import groupby
 from fnmatch import fnmatch
 import logging
 
@@ -180,32 +179,6 @@ class SyncManager(object):
 
         return acl
 
-    def diff_acls(self, pgacl=None, ldapacl=None):
-        pgacl = pgacl or Acl()
-        ldapacl = ldapacl or Acl()
-
-        # First, revoke spurious GRANTs
-        spurious = pgacl - ldapacl
-        spurious = sorted([i for i in spurious if i.full is not None])
-        for priv, grants in groupby(spurious, lambda i: i.privilege):
-            acl = self.privileges[priv]
-            if not acl.revoke_sql:
-                logger.warn("Can't revoke %s: query not defined.", acl)
-                continue
-            for grant in grants:
-                yield acl.revoke(grant)
-
-        # Finally, grant privilege when all roles are ok.
-        missing = ldapacl - set([a for a in pgacl if a.full in (None, True)])
-        missing = sorted(list(missing))
-        for priv, grants in groupby(missing, lambda i: i.privilege):
-            priv = self.privileges[priv]
-            if not priv.grant_sql:
-                logger.warn("Can't grant %s: query not defined.", priv)
-                continue
-            for grant in grants:
-                yield priv.grant(grant)
-
     def sync(self, syncmap):
         logger.info("Inspecting roles in Postgres cluster...")
         databases, pgallroles, pgmanagedroles = self.inspector.fetch_roles()
@@ -234,7 +207,7 @@ class SyncManager(object):
             pgacl = self.inspector.fetch_grants(schemas, pgmanagedroles)
             ldapacl = self.postprocess_acl(ldapacl, schemas)
             count += self.psql.run_queries(expandqueries(
-                self.diff_acls(pgacl, ldapacl),
+                pgacl.diff(ldapacl, self.privileges),
                 databases=schemas))
         else:
             logger.debug("No privileges defined. Skipping GRANT and REVOKE.")

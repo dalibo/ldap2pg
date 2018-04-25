@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from fnmatch import filter as fnfilter
-
 import pytest
 
 
@@ -395,40 +393,10 @@ def test_inspect_roles_duplicate_differents_options(mocker):
         manager.inspect_ldap(syncmap=syncmap)
 
 
-def test_diff_acls(mocker):
-    from ldap2pg.privilege import Privilege, Grant
-    from ldap2pg.manager import SyncManager
-
-    priv = Privilege(name='priv', revoke='REVOKE {role}', grant='GRANT {role}')
-    nogrant = Privilege(name='nogrant', revoke='REVOKE')
-    norvk = Privilege(name='norvk', grant='GRANT')
-    m = SyncManager(privileges={a.name: a for a in [priv, nogrant, norvk]})
-
-    item0 = Grant(privilege=priv.name, dbname='backend', role='daniel')
-    pgacl = set([
-        item0,
-        Grant(privilege=priv.name, dbname='backend', role='alice'),
-        Grant(priv.name, dbname='backend', role='irrelevant', full=None),
-        Grant(privilege=norvk.name, role='torevoke'),
-    ])
-    ldapacl = set([
-        item0,
-        Grant(privilege=priv.name, dbname='backend', role='david'),
-        Grant(privilege=nogrant.name, role='togrant'),
-    ])
-
-    queries = [q.args[0] for q in m.diff_acls(pgacl, ldapacl)]
-
-    assert not fnfilter(queries, 'REVOKE "daniel"*')
-    assert fnfilter(queries, 'REVOKE "alice"*')
-    assert fnfilter(queries, 'GRANT "david"*')
-
-
 def test_sync(mocker):
     cls = 'ldap2pg.manager.SyncManager'
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
     mocker.patch(cls + '.postprocess_acl', autospec=True)
-    da = mocker.patch(cls + '.diff_acls', autospec=True)
 
     from ldap2pg.manager import SyncManager, UserError
 
@@ -445,22 +413,22 @@ def test_sync(mocker):
     il.return_value = (mocker.Mock(name='ldaproles'), set())
     qry[0].expand.return_value = [qry[0]]
     inspector.fetch_schemas.return_value = dict(postgres=dict(ns=['owner']))
-    inspector.fetch_grants.return_value = []
-    da.return_value = []
+    inspector.fetch_grants.return_value = pgacl = mocker.Mock(name='pgacl')
+    pgacl.diff.return_value = []
 
     # No privileges to sync, one query
     psql.dry = False
     psql.run_queries.return_value = 1
     count = manager.sync(syncmap=[])
     assert pgroles.diff.called is True
-    assert da.called is False
+    assert pgacl.diff.called is False
     assert 1 == count
 
     # With privileges
     manager.privileges = dict(ro=mocker.Mock(name='ro'))
     count = manager.sync(syncmap=[])
     assert pgroles.diff.called is True
-    assert da.called is True
+    assert pgacl.diff.called is True
     assert 2 == count
 
     # Dry run with roles and ACL
