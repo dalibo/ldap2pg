@@ -86,7 +86,7 @@ def rolerule(value):
 
 def strlist_alias(dict_, key, alias, exceptions=[]):
     if alias in dict_:
-        dict_[key] = dict_[alias]
+        dict_.setdefault(key, dict_[alias])
     if key in dict_:
         v = dict_[key]
         if v not in exceptions and isinstance(v, string_types):
