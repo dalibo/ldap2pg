@@ -78,20 +78,20 @@ or `REVOKE` on a role matching one of the blacklist patterns.
 
 ## Disable role management
 
-You can tell `ldap2pg` to manage only ACL and never `CREATE` or `DROP` a role.
-Set `postgres:roles_query` to `null` and never define a `role` rule in
+You can tell `ldap2pg` to manage only privileges and never `CREATE` or `DROP` a
+role. Set `postgres:roles_query` to `null` and never define a `role` rule in
 `sync_map`.
 
 ``` yaml
 postgres:
   roles_query: null
 
-acls:
+privileges:
   ro: [__connect__, ...]
 
 sync_map:
 - grant:
-    acl: ro
+    privilege: ro
     database: mydb
     role: toto
 ```

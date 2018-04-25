@@ -1,19 +1,19 @@
-# File dedicated to test real ACL use cases. This allow to test documentation
-# exemple.
+# File dedicated to test real privilege use cases. This allow to test
+# documentation exemple.
 
 postgres:
   # Disable role management.
   roles_query: null
 
 
-acls:
-  # Provide a custom ACL
+privileges:
+  # Provide a custom privilege
   public:
     type: datacl
     inspect: |
-      -- Returns public if no ACLs are defined in this database.
+      -- Returns public if no GRANTs are defined in this database.
       WITH
-      acls AS (
+      grants AS (
           SELECT
               (aclexplode(datacl)).grantee AS grantee,
               (aclexplode(datacl)).privilege_type AS priv
@@ -24,7 +24,7 @@ acls:
           SELECT NULL AS namespace, 'public' AS rolname
       )
       SELECT static.*, TRUE as "full" FROM static
-      LEFT OUTER JOIN acls ON acls.grantee = 0
-      WHERE acls.grantee IS NULL;
+      LEFT OUTER JOIN grants ON grants.grantee = 0
+      WHERE grants.grantee IS NULL;
     revoke: |
       REVOKE CONNECT ON DATABASE {database} FROM {role}

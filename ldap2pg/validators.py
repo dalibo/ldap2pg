@@ -23,7 +23,7 @@ def ldapquery(value):
     return query
 
 
-def acl(raw):
+def privilege(raw):
     allowed_keys = set(['grant', 'inspect', 'revoke', 'type'])
     defined_keys = set(raw.keys())
     spurious_keys = defined_keys - allowed_keys
@@ -37,16 +37,16 @@ def acl(raw):
     return raw
 
 
-def acls(raw):
+def privileges(raw):
     if not isinstance(raw, dict):
-        raise ValueError('acls must be a dict')
+        raise ValueError('privileges must be a dict')
 
     value = {}
     for k, v in raw.items():
         if isinstance(v, list):
             value[k] = v
         elif isinstance(v, dict):
-            value[k] = acl(v)
+            value[k] = privilege(v)
         else:
             msg = "Unknown value %.32s for %s" % (v, k,)
             raise ValueError(msg)
@@ -84,21 +84,29 @@ def rolerule(value):
     return rule
 
 
-def strlist_alias(dict_, key, alias, exceptions=[]):
+def alias(dict_, key, alias, default=None):
     if alias in dict_:
-        dict_.setdefault(key, dict_.pop(alias))
+        dict_.setdefault(key, dict_.pop(alias, default))
+
+
+def strorlist(dict_, key, exceptions=[]):
     if key in dict_:
         v = dict_[key]
         if v not in exceptions and isinstance(v, string_types):
             dict_[key] = [v]
+        return dict_[key]
+
+
+def strlist_alias(dict_, key, alias_, exceptions=[]):
+    alias(dict_, key, alias_)
+    return strorlist(dict_, key, exceptions)
 
 
 def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if not isinstance(value, dict):
         raise ValueError('Grant rule must be a dict.')
-    if 'acl' not in value:
-        raise ValueError('Missing acl to grant rule.')
 
+    alias(value, 'privilege', 'acl')
     strlist_alias(value, 'roles', 'role')
 
     value.setdefault('database', defaultdb)
@@ -107,8 +115,11 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     value.setdefault('schema', defaultschema)
     strlist_alias(value, 'schemas', 'schema', [None, '__any__', '__all__'])
 
+    if 'privilege' not in value:
+        raise ValueError('Missing privilege to grant rule.')
+
     allowed_keys = set([
-        'acl', 'databases', 'schemas',
+        'privilege', 'databases', 'schemas',
         'roles', 'role_match', 'role_attribute',
     ])
     defined_keys = set(value.keys())

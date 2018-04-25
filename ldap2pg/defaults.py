@@ -127,7 +127,7 @@ _nspacl_tpl = dict(
 
 # ALL TABLES is tricky because we have to manage partial grant. But the
 # trickiest comes when there is no tables in a namespace. In this case, is it
-# granted or revoked ? We have to tell ldap2pg that this ACL is irrelevant on
+# granted or revoked ? We have to tell ldap2pg that this grant is irrelevant on
 # this schema.
 #
 # Here is a truth table:
@@ -147,11 +147,12 @@ _nspacl_tpl = dict(
 # -----------+----------+---------------+---------------
 #
 # When namespace has NO tables, we always return a row with full as NULL,
-# meaning ACL is irrelevant : it is both granted and revoked.
+# meaning privilege is irrelevant : it is both granted and revoked.
 #
 # When namespace has tables, we compare grants to availables tables to
-# determine if ACL is fully granted. If the ACL is not granted at all, we drop
-# the row in WHERE clause to ensure the ACL is considered as revoked.
+# determine if privilege is fully granted. If the privilege is not granted at
+# all, we drop the row in WHERE clause to ensure the privilege is considered as
+# revoked.
 #
 _allrelacl_tpl = dict(
     type='nspacl',
@@ -268,7 +269,7 @@ _types = {
 }
 
 
-def make_acl(tpl, name, TYPE, privilege):
+def make_privilege(tpl, name, TYPE, privilege):
     t = _types.get(TYPE)
     if t:
         # Loose SQL formatting
@@ -283,69 +284,70 @@ def make_acl(tpl, name, TYPE, privilege):
     )
 
 
-def make_proc_acls(privilege, TYPE='FUNCTIONS',
-                   namefmt='__%(privilege)s_on_%(type)s__'):
+def make_proc_privileges(
+        privilege, TYPE='FUNCTIONS', namefmt='__%(privilege)s_on_%(type)s__'):
     fmtkw = dict(privilege=privilege.lower(), type=TYPE.lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
     global_def = '__global_default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
-        make_acl(_allprocacl_tpl, all_, TYPE, privilege),
-        make_acl(_defacl_tpl, default, TYPE, privilege),
-        make_acl(_global_defacl_tpl, global_def, TYPE, privilege),
+        make_privilege(_allprocacl_tpl, all_, TYPE, privilege),
+        make_privilege(_defacl_tpl, default, TYPE, privilege),
+        make_privilege(_global_defacl_tpl, global_def, TYPE, privilege),
         (name, [all_, default, global_def]),
     ])
 
 
-def make_rel_acls(privilege, TYPE, namefmt='__%(privilege)s_on_%(type)s__'):
+def make_rel_privileges(
+        privilege, TYPE, namefmt='__%(privilege)s_on_%(type)s__'):
     fmtkw = dict(privilege=privilege.lower(), type=TYPE.lower())
     all_ = '__%(privilege)s_on_all_%(type)s__' % fmtkw
     default = '__default_%(privilege)s_on_%(type)s__' % fmtkw
     name = namefmt % fmtkw
     return dict([
-        make_acl(_allrelacl_tpl, all_, TYPE, privilege),
-        make_acl(_defacl_tpl, default, TYPE, privilege),
+        make_privilege(_allrelacl_tpl, all_, TYPE, privilege),
+        make_privilege(_defacl_tpl, default, TYPE, privilege),
         (name, [all_, default]),
     ])
 
 
-def make_well_known_acls():
-    acls = dict([
-        make_acl(_datacl_tpl, '__connect__', None, 'CONNECT'),
-        make_acl(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
-        make_acl(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
-        make_acl(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
-        make_acl(_nspacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
+def make_well_known_privileges():
+    privileges = dict([
+        make_privilege(_datacl_tpl, '__connect__', None, 'CONNECT'),
+        make_privilege(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
+        make_privilege(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
+        make_privilege(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
+        make_privilege(_nspacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
     ])
 
-    acls.update(make_proc_acls('EXECUTE', 'FUNCTIONS'))
-    acls['__execute__'] = ['__execute_on_functions__']
+    privileges.update(make_proc_privileges('EXECUTE', 'FUNCTIONS'))
+    privileges['__execute__'] = ['__execute_on_functions__']
 
     for privilege in 'DELETE', 'INSERT', 'REFERENCES', 'TRIGGER', 'TRUNCATE':
-        acls.update(
-            make_rel_acls(privilege, 'TABLES'))
+        privileges.update(
+            make_rel_privileges(privilege, 'TABLES'))
         alias = '__%s__' % (privilege.lower(),)
-        acls[alias] = ['__%s_on_tables__' % (privilege.lower(),)]
+        privileges[alias] = ['__%s_on_tables__' % (privilege.lower(),)]
 
     for privilege in 'SELECT', 'UPDATE':
-        acls.update(make_rel_acls(privilege, 'TABLES'))
-        acls.update(make_rel_acls(privilege, 'SEQUENCES'))
+        privileges.update(make_rel_privileges(privilege, 'TABLES'))
+        privileges.update(make_rel_privileges(privilege, 'SEQUENCES'))
 
-    acls.update(make_rel_acls('USAGE', 'SEQUENCES'))
+    privileges.update(make_rel_privileges('USAGE', 'SEQUENCES'))
 
-    acls['__all_on_schemas__'] = [
+    privileges['__all_on_schemas__'] = [
         '__create_on_schemas__',
         '__usage_on_schemas__',
     ]
 
-    acls['__all_on_sequences__'] = [
+    privileges['__all_on_sequences__'] = [
         '__select_on_sequences__',
         '__update_on_sequences__',
         '__usage_on_sequences__',
     ]
 
-    acls['__all_on_tables__'] = [
+    privileges['__all_on_tables__'] = [
         '__delete__',
         '__insert__',
         '__references__',
@@ -355,4 +357,4 @@ def make_well_known_acls():
         '__update_on_tables__',
     ]
 
-    return acls
+    return privileges

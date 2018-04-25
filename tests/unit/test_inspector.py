@@ -81,13 +81,13 @@ def test_process_grants():
 
     assert 3 == len(items)
     item = items[0]
-    assert 'connect' == item.acl
+    assert 'connect' == item.privilege
     assert 'postgres' == item.dbname
     assert 'public' == item.schema
     assert 'alice' == item.role
 
     with pytest.raises(UserError):
-        list(inspector.process_grants('acl', 'db', [('incomplete',)]))
+        list(inspector.process_grants('priv', 'db', [('incomplete',)]))
 
 
 def test_process_schema_rows():
@@ -156,27 +156,25 @@ def test_grants(mocker):
     pg = mocker.patch(
         'ldap2pg.inspector.PostgresInspector.process_grants', autospec=True)
 
-    from ldap2pg.inspector import PostgresInspector, AclItem
-    from ldap2pg.acl import NspAcl
-    from ldap2pg.utils import make_group_map
+    from ldap2pg.inspector import PostgresInspector, Grant
+    from ldap2pg.privilege import NspAcl
 
-    acls = dict(
+    privileges = dict(
         noinspect=NspAcl(name='noinspect'),
         ro=NspAcl(name='ro', inspect='SQL'),
     )
-    aliases = make_group_map(acls)
 
     pg.return_value = [
-        AclItem('ro', 'db', None, 'alice'),
-        AclItem('ro', 'db', None, 'public'),
-        AclItem('ro', 'db', None, 'unmanaged'),
-        AclItem('ro', 'db', 'unmanaged', 'alice'),
-        AclItem('ro', 'db', None, 'alice', owner='unmanaged'),
+        Grant('ro', 'db', None, 'alice'),
+        Grant('ro', 'db', None, 'public'),
+        Grant('ro', 'db', None, 'unmanaged'),
+        Grant('ro', 'db', 'unmanaged', 'alice'),
+        Grant('ro', 'db', None, 'alice', owner='unmanaged'),
     ]
 
     psql = mocker.MagicMock(name='psql')
     psql.itersessions.return_value = [('db', psql)]
-    inspector = PostgresInspector(psql=psql, acls=acls, acl_aliases=aliases)
+    inspector = PostgresInspector(psql=psql, privileges=privileges)
 
     grants = inspector.fetch_grants(
         schemas=dict(db=dict(public=['owner'])),

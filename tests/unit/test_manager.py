@@ -153,7 +153,7 @@ def test_apply_grant_rule_ok(mocker):
     gla.side_effect = [['alice'], ['bob']]
     items = manager.apply_grant_rules(
         grant=[dict(
-            acl='connect',
+            privilege='connect',
             databases=['postgres'],
             schemas='__any__',
             role_attribute='cn',
@@ -193,7 +193,7 @@ def test_apply_grant_rule_all_schema(mocker):
     gla.side_effect = [['alice']]
     items = manager.apply_grant_rules(
         grant=[dict(
-            acl='connect',
+            privilege='connect',
             databases=['postgres'],
             schema='__all__',
             role_attribute='cn',
@@ -213,7 +213,7 @@ def test_apply_grant_rule_filter(mocker):
 
     items = SyncManager().apply_grant_rules(
         grant=[dict(
-            acl='connect',
+            privilege='connect',
             database='postgres',
             schema='__any__',
             role_match='*_r',
@@ -229,95 +229,95 @@ def test_apply_grant_rule_filter(mocker):
 def test_apply_grant_rule_nodb(mocker):
     gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
 
-    from ldap2pg.manager import AclItem, SyncManager
+    from ldap2pg.manager import Grant, SyncManager
 
     manager = SyncManager()
 
     gla.return_value = ['alice']
     items = list(manager.apply_grant_rules(
         grant=[dict(
-            acl='connect',
+            privilege='connect',
             database='__all__', schema='__any__',
             role_attribute='cn',
         )],
         entries=[None],
     ))
-    assert items[0].dbname is AclItem.ALL_DATABASES
+    assert items[0].dbname is Grant.ALL_DATABASES
 
 
-def test_inspect_ldap_acls(mocker):
+def test_inspect_ldap_grants(mocker):
     la = mocker.patch(
         'ldap2pg.manager.SyncManager.apply_grant_rules', autospec=True)
 
-    from ldap2pg.manager import SyncManager, AclItem
-    from ldap2pg.acl import NspAcl
+    from ldap2pg.manager import SyncManager, Grant
+    from ldap2pg.privilege import NspAcl
     from ldap2pg.utils import make_group_map
 
-    acl_dict = dict(ro=NspAcl(name='ro'))
-    la.return_value = [AclItem('ro', 'postgres', None, 'alice')]
+    privileges = dict(ro=NspAcl(name='ro'))
+    la.return_value = [Grant('ro', 'postgres', None, 'alice')]
 
     manager = SyncManager(
-        psql=mocker.Mock(), ldapconn=mocker.Mock(), acl_dict=acl_dict,
-        acl_aliases=make_group_map(acl_dict)
+        psql=mocker.Mock(), ldapconn=mocker.Mock(), privileges=privileges,
+        privilege_aliases=make_group_map(privileges)
     )
-    syncmap = [dict(roles=[], grant=dict(acl='ro'))]
+    syncmap = [dict(roles=[], grant=dict(privilege='ro'))]
 
-    _, ldapacls = manager.inspect_ldap(syncmap=syncmap)
+    _, grants = manager.inspect_ldap(syncmap=syncmap)
 
-    assert 1 == len(ldapacls)
+    assert 1 == len(grants)
 
 
-def test_postprocess_acls():
-    from ldap2pg.manager import SyncManager, AclItem, AclSet
-    from ldap2pg.acl import DefAcl
+def test_postprocess_grants():
+    from ldap2pg.manager import SyncManager, Grant, Acl
+    from ldap2pg.privilege import DefAcl
 
     manager = SyncManager(
-        acl_dict=dict(ro=DefAcl(name='ro')),
-        acl_aliases=dict(ro=['ro']),
+        privileges=dict(ro=DefAcl(name='ro')),
+        privilege_aliases=dict(ro=['ro']),
     )
 
     # No owners
-    ldapacls = manager.postprocess_acls(AclSet(), schemas=dict())
-    assert 0 == len(ldapacls)
+    acl = manager.postprocess_acl(Acl(), schemas=dict())
+    assert 0 == len(acl)
 
-    ldapacls = AclSet([AclItem(acl='ro', dbname=['db'], schema=None)])
-    ldapacls = manager.postprocess_acls(
-        ldapacls, schemas=dict(db=dict(
+    acl = Acl([Grant(privilege='ro', dbname=['db'], schema=None)])
+    acl = manager.postprocess_acl(
+        acl, schemas=dict(db=dict(
             public=['postgres', 'owner'],
             ns=['owner'],
         )),
     )
 
-    # One item per schema, per owner
-    assert 3 == len(ldapacls)
+    # One grant per schema, per owner
+    assert 3 == len(acl)
 
 
-def test_postprocess_acls_bad_database():
-    from ldap2pg.manager import SyncManager, AclItem, AclSet, UserError
-    from ldap2pg.acl import NspAcl
+def test_postprocess_acl_bad_database():
+    from ldap2pg.manager import SyncManager, Grant, Acl, UserError
+    from ldap2pg.privilege import NspAcl
     from ldap2pg.utils import make_group_map
 
-    acl_dict = dict(ro=NspAcl(name='ro', inspect='SQL'))
+    privileges = dict(ro=NspAcl(name='ro', inspect='SQL'))
     manager = SyncManager(
-        acl_dict=acl_dict, acl_aliases=make_group_map(acl_dict)
+        privileges=privileges, privilege_aliases=make_group_map(privileges),
     )
 
-    ldapacls = AclSet([AclItem('ro', ['inexistantdb'], None, 'alice')])
+    acl = Acl([Grant('ro', ['inexistantdb'], None, 'alice')])
     schemas = dict(postgres=dict(public=['postgres']))
 
     with pytest.raises(UserError) as ei:
-        manager.postprocess_acls(ldapacls, schemas)
+        manager.postprocess_acl(acl, schemas)
     assert 'inexistantdb' in str(ei.value)
 
 
-def test_postprocess_acls_inexistant():
-    from ldap2pg.manager import SyncManager, AclSet, AclItem, UserError
+def test_postprocess_acl_inexistant_privilege():
+    from ldap2pg.manager import SyncManager, Acl, Grant, UserError
 
     manager = SyncManager()
 
     with pytest.raises(UserError):
-        manager.postprocess_acls(
-            ldapacls=AclSet([AclItem('inexistant')]),
+        manager.postprocess_acl(
+            acl=Acl([Grant('inexistant')]),
             schemas=dict(postgres=dict(public=['postgres'])),
         )
 
@@ -429,28 +429,28 @@ def test_diff_roles():
 
 
 def test_diff_acls(mocker):
-    from ldap2pg.acl import Acl, AclItem
+    from ldap2pg.privilege import Privilege, Grant
     from ldap2pg.manager import SyncManager
 
-    acl = Acl(name='connect', revoke='REVOKE {role}', grant='GRANT {role}')
-    nogrant = Acl(name='nogrant', revoke='REVOKE')
-    norvk = Acl(name='norvk', grant='GRANT')
-    m = SyncManager(acl_dict={a.name: a for a in [acl, nogrant, norvk]})
+    priv = Privilege(name='priv', revoke='REVOKE {role}', grant='GRANT {role}')
+    nogrant = Privilege(name='nogrant', revoke='REVOKE')
+    norvk = Privilege(name='norvk', grant='GRANT')
+    m = SyncManager(privileges={a.name: a for a in [priv, nogrant, norvk]})
 
-    item0 = AclItem(acl=acl.name, dbname='backend', role='daniel')
-    pgacls = set([
+    item0 = Grant(privilege=priv.name, dbname='backend', role='daniel')
+    pgacl = set([
         item0,
-        AclItem(acl=acl.name, dbname='backend', role='alice'),
-        AclItem(acl=acl.name, dbname='backend', role='irrelevant', full=None),
-        AclItem(acl=norvk.name, role='torevoke'),
+        Grant(privilege=priv.name, dbname='backend', role='alice'),
+        Grant(priv.name, dbname='backend', role='irrelevant', full=None),
+        Grant(privilege=norvk.name, role='torevoke'),
     ])
-    ldapacls = set([
+    ldapacl = set([
         item0,
-        AclItem(acl=acl.name, dbname='backend', role='david'),
-        AclItem(acl=nogrant.name, role='togrant'),
+        Grant(privilege=priv.name, dbname='backend', role='david'),
+        Grant(privilege=nogrant.name, role='togrant'),
     ])
 
-    queries = [q.args[0] for q in m.diff_acls(pgacls, ldapacls)]
+    queries = [q.args[0] for q in m.diff_acls(pgacl, ldapacl)]
 
     assert not fnfilter(queries, 'REVOKE "daniel"*')
     assert fnfilter(queries, 'REVOKE "alice"*')
@@ -460,7 +460,7 @@ def test_diff_acls(mocker):
 def test_sync(mocker):
     cls = 'ldap2pg.manager.SyncManager'
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
-    mocker.patch(cls + '.postprocess_acls', autospec=True)
+    mocker.patch(cls + '.postprocess_acl', autospec=True)
     dr = mocker.patch(cls + '.diff_roles', autospec=True)
     da = mocker.patch(cls + '.diff_acls', autospec=True)
 
@@ -480,7 +480,7 @@ def test_sync(mocker):
     inspector.fetch_grants.return_value = []
     da.return_value = []
 
-    # No ACL to sync, one query
+    # No privileges to sync, one query
     psql.dry = False
     psql.run_queries.return_value = 1
     count = manager.sync(syncmap=[])
@@ -488,8 +488,8 @@ def test_sync(mocker):
     assert da.called is False
     assert 1 == count
 
-    # With ACLs
-    manager.acl_dict = dict(ro=mocker.Mock(name='ro'))
+    # With privileges
+    manager.privileges = dict(ro=mocker.Mock(name='ro'))
     count = manager.sync(syncmap=[])
     assert dr.called is True
     assert da.called is True

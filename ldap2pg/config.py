@@ -23,8 +23,8 @@ import psycopg2
 import yaml
 
 from . import __version__
-from .acl import Acl
-from .acl import process_definitions as process_acls
+from .privilege import Privilege
+from .privilege import process_definitions as process_privileges
 from .utils import (
     deepget,
     deepset,
@@ -32,7 +32,7 @@ from .utils import (
     string_types,
 )
 from . import validators as V
-from .defaults import make_well_known_acls
+from .defaults import make_well_known_privileges
 
 
 logger = logging.getLogger(__name__)
@@ -149,44 +149,45 @@ def define_arguments(parser):
     )
 
 
-def merge_acl_options(acls, acl_dict, acl_groups):
+def merge_privilege_options(privileges, acl_dict, acl_groups):
     final = dict()
     final.update(acl_dict)
     final.update(acl_groups)
-    final.update(acls)
-    return V.acls(final)
+    final.update(privileges)
+    return V.privileges(final)
 
 
-def list_unused_acl(acls, aliases):
+def list_unused_privilege(privileges, aliases):
     used = set()
     for name, aliases in aliases.items():
         if name[0] not in ('_', '.'):
             used.add(name)
             used.update(aliases)
-    unused = set(acls.keys()) - used
+    unused = set(privileges.keys()) - used
     return sorted(unused)
 
 
-def postprocess_acl_options(self, defaults=None):
+def postprocess_privilege_options(self, defaults=None):
     # Compat with user defined acl_dict and acl_groups, merge in the same
     # namespace.
-    acls = defaults or {}
-    acls.update(self.pop('acls', {}))
-    acls = merge_acl_options(
-        acls,
-        self.get('acl_dict', {}),
+    privileges = defaults or {}
+    privileges.update(self.pop('acls', {}))
+    privileges.update(self.pop('privileges', {}))
+    privileges = merge_privilege_options(
+        privileges,
+        self.pop('acl_dict', {}),
         self.pop('acl_groups', {}),
     )
 
-    acls, _, self['acl_aliases'] = process_acls(acls)
+    privileges, _, self['privilege_aliases'] = process_privileges(privileges)
 
-    # Clean unused ACL starting with _ or .
-    for k in list_unused_acl(acls, self['acl_aliases']):
-        logger.debug("Drop unused hidden ACL %s", k)
-        del acls[k]
+    # Clean unused privilege starting with _ or .
+    for k in list_unused_privilege(privileges, self['privilege_aliases']):
+        logger.debug("Drop unused hidden privilege %s", k)
+        del privileges[k]
 
-    self['acl_dict'] = dict([
-        (k, Acl.factory(k, **v)) for k, v in acls.items()
+    self['privileges'] = dict([
+        (k, Privilege.factory(k, **v)) for k, v in privileges.items()
     ])
 
 
@@ -363,6 +364,7 @@ class Configuration(dict):
             ORDER BY 1;
             """),
         },
+        'privileges': {},
         'acls': {},
         'acl_dict': {},
         'acl_groups': {},
@@ -390,8 +392,9 @@ class Configuration(dict):
         Mapping('postgres:roles_query', env=None),
         Mapping('postgres:managed_roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
-        Mapping('acls', env=None, processor=V.acls),
-        Mapping('acl_dict', processor=V.acls),
+        Mapping('privileges', env=None, processor=V.privileges),
+        Mapping('acls', env=None, processor=V.privileges),
+        Mapping('acl_dict', processor=V.privileges),
         Mapping('acl_groups', env=None),
         Mapping('sync_map', env=None, processor=V.syncmap)
     ]
@@ -457,7 +460,7 @@ class Configuration(dict):
             # Only store value from argv. Defaults are managed by
             # Configuration.
             argument_default=SUPPRESS_ARG,
-            description="PostgreSQL roles and ACL management.",
+            description="PostgreSQL roles and privileges management.",
             epilog=self.EPILOG,
         )
         define_arguments(parser)
@@ -497,10 +500,10 @@ class Configuration(dict):
         check_yaml_gotchas(file_config)
 
         # Now merge all config sources.
-        acl_defaults = make_well_known_acls()
+        default_privileges = make_well_known_privileges()
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
-            postprocess_acl_options(self, acl_defaults)
+            postprocess_privilege_options(self, default_privileges)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 

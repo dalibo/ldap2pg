@@ -17,7 +17,7 @@ and mappings.
 
 - `postgres` : setup Postgres connexion and queries.
 - `ldap` : setup LDAP connexion.
-- `acls` : the definition of privileges.
+- `privileges` : the definition of privileges.
 - `sync_map` : the list of LDAP queries and associated mapping to roles and
   grants.
 - finally some global parameters (verbosity, etc.).

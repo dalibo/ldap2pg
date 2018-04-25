@@ -11,8 +11,8 @@ In `ldap2pg.yml`, you specify privileges in a dictionnary named `acls` and grant
 them with `grant` rules in the `sync_map`:
 
 ```yaml
-acls:
-  myacl:
+privileges:
+  mypriv:
     type: nspacl
     grant: 'GRANT ALL ON LARGE OBJECTS IN SCHEMA {schema}'
 
@@ -22,7 +22,7 @@ acls:
 
 sync_map:
 - grant:
-    acl: myacl
+    privilege: mypriv
     role: admin
 ```
 
@@ -41,7 +41,7 @@ is a privilege whose name does not start with `_` or `.` and is not included in
 an enabled privilege.
 
 ``` yaml
-acls:
+privileges:
   _disabled:
     inspect: NEVER EXECUTED
 
@@ -54,7 +54,7 @@ acls:
   
 sync_map:
 - grant:
-    acl: group
+    privilege: group
     role: myrole
 ```
 
@@ -70,7 +70,7 @@ In `sync_map`, you can grant privilege with the `grant` rule. Here is a full
 sample:
 
 ``` yaml
-acls:
+privileges:
   ro:
   - __connect__
   - __usage_on_schema__
@@ -80,7 +80,7 @@ sync_map:
     base: ...
   grant:
     database: appdb
-    acl: ro
+    privilege: ro
     schema: appns
     role_attribute: cn
     role_match: *_RO
@@ -138,7 +138,7 @@ grant the privilege and one to revoke it.
 Here is a full sample of custom privilege:
 
 ``` yaml
-acls:
+privileges:
   execute_myfunc:
     type: nspacl
     grant: GRANT EXECUTE ON {schema}.myfunc TO {role};
@@ -162,7 +162,7 @@ sync_map:
 - grant:
     database: mydb
     schema: public
-    acl: execut_myfunc
+    privilege: execute_myfunc
     role: admin
 ```
 

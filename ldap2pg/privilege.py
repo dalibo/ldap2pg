@@ -4,9 +4,9 @@ from .psql import Query
 from .utils import AllDatabases, UserError, unicode, make_group_map
 
 
-class Acl(object):
+class Privilege(object):
     TYPES = {}
-    itemfmt = "%(dbname)s.%(schema)s for %(owner)s"
+    grantfmt = "%(dbname)s.%(schema)s for %(owner)s"
 
     def __init__(self, name, inspect=None, grant=None, revoke=None):
         self.name = name
@@ -36,93 +36,93 @@ class Acl(object):
         cls.TYPES[subclass.__name__.lower()] = subclass
         return subclass
 
-    def grant(self, item):
-        fmt = "Grant %(acl)s on " + self.itemfmt + " to %(role)s."
+    def grant(self, grant):
+        fmt = "Grant %(privilege)s on " + self.grantfmt + " to %(role)s."
         return Query(
-            fmt % item.__dict__,
-            item.dbname,
+            fmt % grant.__dict__,
+            grant.dbname,
             self.grant_sql.format(
-                database='"%s"' % item.dbname,
-                schema='"%s"' % item.schema,
-                owner='"%s"' % item.owner,
-                role='"%s"' % item.role,
+                database='"%s"' % grant.dbname,
+                schema='"%s"' % grant.schema,
+                owner='"%s"' % grant.owner,
+                role='"%s"' % grant.role,
             ),
         )
 
-    def revoke(self, item):
-        fmt = "Revoke %(acl)s on " + self.itemfmt + " from %(role)s."
+    def revoke(self, grant):
+        fmt = "Revoke %(privilege)s on " + self.grantfmt + " from %(role)s."
         return Query(
-            fmt % item.__dict__,
-            item.dbname,
+            fmt % grant.__dict__,
+            grant.dbname,
             self.revoke_sql.format(
-                database='"%s"' % item.dbname,
-                schema='"%s"' % item.schema,
-                owner='"%s"' % item.owner,
-                role='"%s"' % item.role,
+                database='"%s"' % grant.dbname,
+                schema='"%s"' % grant.schema,
+                owner='"%s"' % grant.owner,
+                role='"%s"' % grant.role,
             ),
         )
 
 
-@Acl.register
-class DatAcl(Acl):
-    itemfmt = '%(dbname)s'
+@Privilege.register
+class DatAcl(Privilege):
+    grantfmt = '%(dbname)s'
 
-    def expanddb(self, item, databases):
-        if item.dbname is AclItem.ALL_DATABASES:
+    def expanddb(self, grant, databases):
+        if grant.dbname is Grant.ALL_DATABASES:
             dbnames = databases.keys()
         else:
-            dbnames = item.dbname
+            dbnames = grant.dbname
 
         for dbname in dbnames:
-            yield item.copy(acl=self.name, dbname=dbname)
+            yield grant.copy(privilege=self.name, dbname=dbname)
 
-    def expand(self, item, databases):
-        for exp in self.expanddb(item, databases):
-            # inspect query will return AclItem with NULL schema, so ensure we
+    def expand(self, grant, databases):
+        for exp in self.expanddb(grant, databases):
+            # inspect query will return Grant with NULL schema, so ensure we
             # have schema None.
             exp.schema = None
             yield exp
 
 
-@Acl.register
+@Privilege.register
 class GlobalDefAcl(DatAcl):
-    itemfmt = '%(dbname)s for %(owner)s'
+    grantfmt = '%(dbname)s for %(owner)s'
 
-    def expand(self, item, databases):
-        for exp in super(GlobalDefAcl, self).expand(item, databases):
+    def expand(self, grant, databases):
+        for exp in super(GlobalDefAcl, self).expand(grant, databases):
             for schema in databases[exp.dbname]:
                 for owner in databases[exp.dbname][schema]:
                     yield exp.copy(owner=owner)
 
 
-@Acl.register
+@Privilege.register
 class NspAcl(DatAcl):
-    itemfmt = '%(dbname)s.%(schema)s'
+    grantfmt = '%(dbname)s.%(schema)s'
 
-    def expandschema(self, item, databases):
-        if item.schema is AclItem.ALL_SCHEMAS:
+    def expandschema(self, grant, databases):
+        if grant.schema is Grant.ALL_SCHEMAS:
             try:
-                schemas = databases[item.dbname]
+                schemas = databases[grant.dbname]
             except KeyError:
                 fmt = "Database %s does not exists or is not managed."
-                raise UserError(fmt % (item.dbname))
+                raise UserError(fmt % (grant.dbname))
         else:
-            schemas = item.schema
+            schemas = grant.schema
         for schema in schemas:
-            yield item.copy(acl=self.name, schema=schema)
+            yield grant.copy(privilege=self.name, schema=schema)
 
-    def expand(self, item, databases):
-        for datexp in self.expanddb(item, databases):
+    def expand(self, grant, databases):
+        for datexp in self.expanddb(grant, databases):
             for nspexp in self.expandschema(datexp, databases):
                 yield nspexp
 
 
-@Acl.register
+@Privilege.register
 class DefAcl(NspAcl):
-    itemfmt = '%(dbname)s.%(schema)s for %(owner)s'
+    grantfmt = '%(dbname)s.%(schema)s for %(owner)s'
 
-    def expand(self, item, databases):
-        for expand in super(DefAcl, self).expand(item, databases):
+    def expand(self, grant, databases):
+        for expand in super(DefAcl, self).expand(grant, databases):
             try:
                 owners = databases[expand.dbname][expand.schema]
             except KeyError as e:
@@ -133,7 +133,7 @@ class DefAcl(NspAcl):
                 yield expand.copy(owner=owner)
 
 
-class AclItem(object):
+class Grant(object):
     ALL_DATABASES = AllDatabases()
     ALL_SCHEMAS = None
 
@@ -141,9 +141,10 @@ class AclItem(object):
     def from_row(cls, *args):
         return cls(*args)
 
-    def __init__(self, acl, dbname=None, schema=None, role=None, full=True,
-                 owner=None):
-        self.acl = acl
+    def __init__(
+            self, privilege, dbname=None, schema=None, role=None, full=True,
+            owner=None):
+        self.privilege = privilege
         self.dbname = dbname
         self.schema = schema
         self.role = role
@@ -156,7 +157,7 @@ class AclItem(object):
     def __str__(self):
         full_map = {None: 'n/a', True: 'full', False: 'partial'}
         fmt = (
-            '%(acl)s on %(dbname)s.%(schema)s for %(owner)s'
+            '%(privilege)s on %(dbname)s.%(schema)s for %(owner)s'
             ' to %(role)s (%(full)s)'
         )
         return fmt % dict(
@@ -177,11 +178,12 @@ class AclItem(object):
 
     def as_tuple(self):
         return (
-            self.dbname or '', self.role, self.acl, self.schema, self.owner)
+            self.dbname or '', self.role, self.privilege, self.schema,
+            self.owner)
 
     def copy(self, **kw):
         return self.__class__(**dict(dict(
-            acl=self.acl,
+            privilege=self.privilege,
             role=self.role,
             dbname=self.dbname,
             schema=self.schema,
@@ -190,43 +192,44 @@ class AclItem(object):
         ), **kw))
 
 
-class AclSet(set):
-    def expanditems(self, aliases, acl_dict, databases):
-        for item in self:
+class Acl(set):
+    def expandgrants(self, aliases, privileges, databases):
+        for grant in self:
             try:
-                aclnames = aliases[item.acl]
+                privnames = aliases[grant.privilege]
             except KeyError:
-                raise ValueError("Unknown ACL %s" % (item.acl,))
+                raise ValueError("Unknown privilege %s" % (grant.privilege,))
 
-            for aclname in aclnames:
+            for name in privnames:
                 try:
-                    acl = acl_dict[aclname]
+                    priv = privileges[name]
                 except KeyError:
-                    raise ValueError("Unknown ACL %s" % (aclname,))
+                    raise ValueError("Unknown privilege %s" % (name,))
 
-                for expansion in acl.expand(item, databases):
+                for expansion in priv.expand(grant, databases):
                     yield expansion
 
 
-def check_group_definitions(acls, groups):
-    known = set(acls.keys()) | set(groups.keys())
+def check_group_definitions(privileges, groups):
+    known = set(privileges.keys()) | set(groups.keys())
     for name, children in groups.items():
         unknown = [c for c in children if c not in known]
         if unknown:
-            msg = 'Unknown ACL %s in group %s' % (
+            msg = 'Unknown privilege %s in group %s' % (
                 ', '.join(sorted(unknown)), name)
             raise ValueError(msg)
 
 
-def process_definitions(acls):
-    # Check and manage ACL and ACL group definitions in same namespace.
+def process_definitions(privileges):
+    # Check and manage privileges and privilege groups definitions in same
+    # namespace.
     groups = {}
-    for k, v in sorted(acls.items()):
+    for k, v in sorted(privileges.items()):
         if isinstance(v, list):
             groups[k] = v
-            acls.pop(k)
+            privileges.pop(k)
 
-    check_group_definitions(acls, groups)
-    aliases = make_group_map(acls, groups)
+    check_group_definitions(privileges, groups)
+    aliases = make_group_map(privileges, groups)
 
-    return acls, groups, aliases
+    return privileges, groups, aliases

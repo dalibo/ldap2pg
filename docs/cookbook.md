@@ -167,13 +167,11 @@ ban any `role` rule from the file. You can still trigger LDAP searches to
 determine to which role you want to grant a privilege.
 
 ``` yaml
-# File `ldap2pg.acl.yml`
-
 postgres:
   # Disable roles introspection by setting query to null
   roles_query: null
 
-acl_dict:
+privileges:
   rw: {}  # here define your privilege
 
 sync_map:
@@ -183,5 +181,5 @@ sync_map:
     scope: sub
   grant:
     role_attribute: member
-    acl: rw
+    privilege: rw
 ```

@@ -418,8 +418,8 @@ def test_has_ldap():
     assert config.has_ldap_query()
 
 
-def test_acl_options():
-    from ldap2pg.config import postprocess_acl_options
+def test_privilege_options():
+    from ldap2pg.config import postprocess_privilege_options
 
     config_v33 = dict(
         acl_dict=dict(
@@ -428,16 +428,25 @@ def test_acl_options():
         acl_groups=dict(ro=['select'])
     )
 
-    postprocess_acl_options(config_v33)
+    postprocess_privilege_options(config_v33)
 
     config_v34 = dict(acls=dict(
         select=dict(type='nspacl', inspect='INSPECT'),
         ro=['select'],
     ))
 
-    postprocess_acl_options(config_v34)
+    postprocess_privilege_options(config_v34)
 
     assert config_v33 == config_v34
+
+    config_v49 = dict(privileges=dict(
+        select=dict(type='nspacl', inspect='INSPECT'),
+        ro=['select'],
+    ))
+
+    postprocess_privilege_options(config_v49)
+
+    assert config_v49 == config_v34
 
 
 def test_yaml_gotchas():

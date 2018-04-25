@@ -7,10 +7,8 @@ from itertools import chain
 
 import psycopg2
 
-from .acl import (
-    AclItem,
-    AclSet,
-)
+from .privilege import Grant
+from .privilege import Acl
 from .role import (
     Role,
     RoleOptions,
@@ -27,9 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresInspector(object):
-    def __init__(self, psql=None, acls=None, roles_blacklist=None, **queries):
+    def __init__(
+            self, psql=None, privileges=None, roles_blacklist=None, **queries):
         self.psql = psql
-        self.acls = acls or {}
+        self.privileges = privileges or {}
         self.queries = queries
         self.roles_blacklist = roles_blacklist or []
 
@@ -58,14 +57,14 @@ class PostgresInspector(object):
         for row in rows:
             yield Role.from_row(*row)
 
-    def process_grants(self, acl, dbname, rows):
-        # GRANT query signatures: schema, role, [<acltype options> ...]
+    def process_grants(self, privilege, dbname, rows):
+        # GRANT query signatures: schema, role, [<privilege options> ...]
         for row in rows:
             if len(row) < 2:
-                fmt = "%s ACL's inspect query doesn't return role as column 2"
-                raise UserError(fmt % (acl,))
+                fmt = "%s's inspect query doesn't return role as column 2"
+                raise UserError(fmt % (privilege,))
 
-            yield AclItem.from_row(acl, dbname, *row)
+            yield Grant.from_row(privilege, dbname, *row)
 
     def process_schemas(self, rows):
         for row in rows:
@@ -87,17 +86,17 @@ class PostgresInspector(object):
 
     # is_*_managed check whether an object should be ignored from inspection.
 
-    def is_aclitem_managed(self, aclitem, schemas, roles, all_owners):
-        if not self.is_role_managed(aclitem.role, roles):
+    def is_grant_managed(self, grant, schemas, roles, all_owners):
+        if not self.is_role_managed(grant.role, roles):
             return False
 
-        dbname, schema = aclitem.dbname, aclitem.schema
+        dbname, schema = grant.dbname, grant.schema
         if not self.is_schema_managed(schema, schemas[dbname]):
             return False
 
-        # Use all owners in database for schema-less ACLs
+        # Use all owners in database for schema-less privileges
         owners = all_owners if not schema else schemas[dbname][schema]
-        if not self.is_owner_managed(aclitem.owner, owners):
+        if not self.is_owner_managed(grant.owner, owners):
             return False
 
         return True
@@ -231,22 +230,22 @@ class PostgresInspector(object):
     def fetch_grants(self, schemas, roles):
         # Loop all defined ACL to inspect grants.
 
-        pgacls = AclSet()
-        for name, acl in sorted(self.acls.items()):
-            if not acl.inspect:
-                logger.warn("Can't inspect ACL %s: query not defined.", acl)
+        pgacl = Acl()
+        for name, privilege in sorted(self.privileges.items()):
+            if not privilege.inspect:
+                logger.warn(
+                    "Can't inspect privilege %s: query not defined.",
+                    privilege)
                 continue
 
-            logger.debug("Searching GRANTs of ACL %s.", acl)
+            logger.debug("Searching GRANTs of privilege %s.", privilege)
             for dbname, psql in self.psql.itersessions(schemas):
-                rows = psql(acl.inspect)
+                rows = psql(privilege.inspect)
                 # Gather all owners in database for global ACL
                 owners = set(chain(*schemas[dbname].values()))
-                for aclitem in self.process_grants(name, dbname, rows):
-                    if not self.is_aclitem_managed(
-                            aclitem, schemas, roles, owners):
-                        continue
-                    logger.debug("Found GRANT %s.", aclitem)
-                    pgacls.add(aclitem)
+                for grant in self.process_grants(name, dbname, rows):
+                    if self.is_grant_managed(grant, schemas, roles, owners):
+                        logger.debug("Found GRANT %s.", grant)
+                        pgacl.add(grant)
 
-        return pgacls
+        return pgacl
