@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from fnmatch import filter as fnfilter
+
 import pytest
 
 
@@ -159,3 +161,31 @@ def test_check_groups():
 
     with pytest.raises(ValueError):
         check_group_definitions(dict(), privileges)
+
+
+def test_diff(mocker):
+    from ldap2pg.privilege import Privilege, Grant, Acl
+
+    priv = Privilege(name='priv', revoke='REVOKE {role}', grant='GRANT {role}')
+    nogrant = Privilege(name='nogrant', revoke='REVOKE')
+    norvk = Privilege(name='norvk', grant='GRANT')
+    privileges = {p.name: p for p in [priv, nogrant, norvk]}
+
+    item0 = Grant(privilege=priv.name, dbname='backend', role='daniel')
+    pgacl = Acl([
+        item0,
+        Grant(privilege=priv.name, dbname='backend', role='alice'),
+        Grant(priv.name, dbname='backend', role='irrelevant', full=None),
+        Grant(privilege=norvk.name, role='torevoke'),
+    ])
+    ldapacl = Acl([
+        item0,
+        Grant(privilege=priv.name, dbname='backend', role='david'),
+        Grant(privilege=nogrant.name, role='togrant'),
+    ])
+
+    queries = [q.args[0] for q in pgacl.diff(ldapacl, privileges)]
+
+    assert not fnfilter(queries, 'REVOKE "daniel"*')
+    assert fnfilter(queries, 'REVOKE "alice"*')
+    assert fnfilter(queries, 'GRANT "david"*')
