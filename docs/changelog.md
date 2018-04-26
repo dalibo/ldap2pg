@@ -11,6 +11,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix mix of parents in same role rule
 - Renamed `acl` to `privilege` in configuration. See documentation for details.
+- Run as non-superuser, in a degraded mode. See Cookbook for details.
 
 
 # ldap2pg 4.8

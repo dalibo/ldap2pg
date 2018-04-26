@@ -394,7 +394,15 @@ def test_inspect_roles_duplicate_differents_options(mocker):
 
 
 def test_sync(mocker):
-    cls = 'ldap2pg.manager.SyncManager'
+    from ldap2pg.manager import RoleOptions
+
+    mod = 'ldap2pg.manager'
+    mocker.patch(
+        mod + '.RoleOptions.SUPPORTED_COLUMNS',
+        RoleOptions.SUPPORTED_COLUMNS[:],
+    )
+
+    cls = mod + '.SyncManager'
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
     mocker.patch(cls + '.postprocess_acl', autospec=True)
 
@@ -404,6 +412,8 @@ def test_sync(mocker):
     inspector = mocker.Mock(name='inspector')
     manager = SyncManager(psql=psql, inspector=inspector)
 
+    inspector.fetch_me.return_value = ('postgres', False)
+    inspector.roles_blacklist = ['pg_*']
     inspector.fetch_roles.return_value = (['postgres'], set(), set())
     pgroles = mocker.Mock(name='pgroles')
     # Simple diff with one query
