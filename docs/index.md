@@ -43,3 +43,9 @@ good way to start.
 ```
 
 Finally, it's up to you to use `ldap2pg` in a crontab or a playbook. Have fun!
+
+
+## Support
+
+If you need support for `ldap2pg`, just drop an [issue on
+GitHub](https://github.com/dalibo/ldap2pg/issues/new)!
