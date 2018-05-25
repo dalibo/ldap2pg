@@ -74,17 +74,13 @@ def wrapped_main(config=None):
 
 
 def main():
-    debug = os.environ.get('DEBUG', '').lower() in ('1', 'y')
-    verbose = os.environ.get('VERBOSE', '').lower() in ('1', 'y')
-
     config = Configuration()
-    config['debug'] = debug
-    config['verbose'] = debug or verbose
-    config['color'] = sys.stderr.isatty()
-    dictConfig(config.logging_dict())
-    logger.debug("Debug mode enabled.")
+    debug = False
 
     try:
+        debug = config.bootstrap(environ=os.environ)
+        if debug:
+            logger.debug("Debug mode enabled.")
         exit(wrapped_main(config))
     except pdb.bdb.BdbQuit:
         logger.info("Graceful exit from debugger.")
