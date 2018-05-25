@@ -59,6 +59,7 @@ class ColoredStreamHandler(logging.StreamHandler):
     _color_map = {
         logging.DEBUG: '37',
         logging.INFO: '1;39',
+        logging.CHANGE: '1;39',
         logging.WARN: '96',
         logging.ERROR: '91',
         logging.CRITICAL: '1;91',
