@@ -115,8 +115,8 @@ behaviour.
 # Colorization. env var: COLOR=<anything>
 color: yes
 
-# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSE
-verbose: no
+# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSITY
+verbosity: 5
 
 # Dry mode. env var: DRY=<anything>
 dry: yes

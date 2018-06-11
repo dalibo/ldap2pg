@@ -262,3 +262,26 @@ def syncmap(value):
 
 def raw(v):
     return v
+
+
+VERBOSITIES = [
+    'CRITICAL',
+    'ERROR',
+    'WARNING',
+    'CHANGE',
+    'INFO',
+    'DEBUG',
+]
+
+
+def verbosity(v):
+    if isinstance(v, list):
+        v = sum(v)
+        v = max(0, v)
+        v = min(v, 5)
+        v = VERBOSITIES[v]
+
+    if v not in VERBOSITIES:
+        raise ValueError("Unknown verbosity '%s'" % (v,))
+
+    return v

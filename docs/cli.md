@@ -28,9 +28,8 @@ optional arguments:
   -n, --dry             don't touch Postgres, just print what to do (env:
                         DRY=1)
   -N, --real            real mode, apply changes to Postgres (env: DRY='')
-  -q, --quiet           hide debugging messages
-  -v, --verbose         add debug messages including SQL and LDAP queries
-                        (env: VERBOSE)
+  -q, --quiet           decrease log verbosity (env: VERBOSITY)
+  -v, --verbose         increase log verbosity (env: VERBOSITY)
   --color               force color output (env: COLOR=1)
   --no-color            force plain text output (env: COLOR='')
   -?, --help            show this help message and exit
@@ -103,3 +102,39 @@ sample or CLI help.
 
 
 You can also configure Postgres and LDAP connection through `ldap2pg.yml`.
+
+
+## Logging setup
+
+`ldap2pg` have several level of logging:
+
+- `CRITICAL`: panic message before stopping on error.
+- `ERROR`: error details. When this happend, `ldap2pg` will
+  crash.
+- `WARNING`: `ldap2pg` warns about choices you should be aware
+  of.
+- `CHANGE`: special level for changes in Postgres.
+- `INFO` (default): tells what `ldap2pg` is doing, especially
+  before long task.
+- `DEBUG`: includes raw SQL and LDAP queries and introspection
+  details.
+
+The `--quiet` and `--verbose` switches respectively decrease and increase
+verbosity.
+
+You can select the highest level of verbosity with `VERBOSITY` envvar or
+`verbosity` value in `ldap2pg.yml`. For example:
+
+
+``` console
+$ VERBOSITY=DEBUG ldap2pg
+[ldap2pg.config        INFO] Starting ldap2pg 4.9.
+[ldap2pg.config       DEBUG] Trying ./ldap2pg.yml.
+...zillions of debug messages
+[ldap2pg.psql         DEBUG] Closing Postgres connexion to 'postgres://postgres@postgres.ldap2pg.docker/postgres'.
+$ ldap2pg -v  # Same as above
+...
+$ ldap2pg -q  # no info, just changes, warnings and errors.
+Running in dry mode. Postgres will be untouched.
+$
+```

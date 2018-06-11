@@ -89,9 +89,9 @@ class PSQL(object):
         for session, query in self.iter_queries_by_session(queries):
             count += 1
             if self.dry:
-                logger.info('Would ' + lower1(query.message))
+                logger.change('Would ' + lower1(query.message))
             else:
-                logger.info(query.message)
+                logger.change(query.message)
 
             sql = session.mogrify(*query.args)
             if self.dry:

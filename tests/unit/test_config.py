@@ -53,17 +53,16 @@ def test_color_handler():
 
 
 def test_logging_config():
-    from ldap2pg.config import Configuration
+    from ldap2pg.config import Configuration, UserError
 
     config = Configuration()
 
-    config['verbose'] = True
+    config['verbosity'] = 'DEBUG'
     dict_ = config.logging_dict()
     assert 'DEBUG' == dict_['loggers']['ldap2pg']['level']
 
-    config['verbose'] = False
-    dict_ = config.logging_dict()
-    assert 'INFO' == dict_['loggers']['ldap2pg']['level']
+    with pytest.raises(UserError):
+        config.bootstrap(environ=dict(VERBOSITY='TOTO'))
 
 
 def test_mapping():
@@ -246,7 +245,7 @@ def test_merge():
     config = Configuration()
     config.merge(file_config={}, environ={})
 
-    minimal_config = dict(sync_map=[])
+    minimal_config = dict(verbose=True, sync_map=[])
     config.merge(
         file_config=minimal_config,
         environ=dict(),
@@ -338,7 +337,7 @@ def test_load_badfiles(mocker):
 
     # No file specified
     ff.side_effect = NoConfigurationError()
-    config.load(argv=[])
+    config.load(argv=['--color'])
 
     ff.side_effect = None
     # Invalid file
@@ -395,7 +394,7 @@ def test_load_file(mocker):
     assert 'envpass' == config['ldap']['password']
     maplist = config['sync_map']
     assert 1 == len(maplist)
-    assert config['verbose'] is True
+    assert 'DEBUG' == config['verbosity']
 
 
 def test_show_versions(mocker):

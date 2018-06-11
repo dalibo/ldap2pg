@@ -59,6 +59,7 @@ class ColoredStreamHandler(logging.StreamHandler):
     _color_map = {
         logging.DEBUG: '37',
         logging.INFO: '1;39',
+        logging.CHANGE: '1;39',
         logging.WARN: '96',
         logging.ERROR: '91',
         logging.CRITICAL: '1;91',
@@ -119,13 +120,14 @@ def define_arguments(parser):
     )
     parser.add_argument(
         '-q', '--quiet',
-        action='store_false', dest='verbose',
-        help="hide debugging messages",
+        action='append_const', dest='verbosity', const=-1,
+        default=[V.VERBOSITIES.index(Configuration.DEFAULTS['verbosity'])],
+        help="decrease log verbosity (env: VERBOSITY)",
     )
     parser.add_argument(
         '-v', '--verbose',
-        action='store_true', dest='verbose',
-        help="add debug messages including SQL and LDAP queries (env: VERBOSE)"
+        action='append_const', dest='verbosity', const=+1,
+        help="increase log verbosity (env: VERBOSITY)"
     )
     parser.add_argument(
         '--color',
@@ -321,7 +323,8 @@ class Configuration(dict):
     DEFAULTS = {
         'check': False,
         'dry': True,
-        'verbose': False,
+        'verbose': None,
+        'verbosity': 'INFO',
         'color': False,
         'ldap': {
             'uri': '',
@@ -375,7 +378,8 @@ class Configuration(dict):
         Mapping('color'),
         Mapping('check'),
         Mapping('dry'),
-        Mapping('verbose', env=['VERBOSE', 'DEBUG']),
+        Mapping('verbose', env=[]),
+        Mapping('verbosity', processor=V.verbosity),
         Mapping('ldap:uri'),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
@@ -452,6 +456,21 @@ class Configuration(dict):
     def has_ldap_query(self):
         return [m['ldap'] for m in self['sync_map'] if 'ldap' in m]
 
+    def bootstrap(self, environ=os.environ):
+        debug = environ.get('DEBUG', '').lower() in ('1', 'y')
+        verbose = debug or environ.get('VERBOSE', '').lower() in ('1', 'y')
+        verbosity = environ.get('VERBOSITY', 'DEBUG' if verbose else 'INFO')
+
+        self['debug'] = debug
+        try:
+            self['verbosity'] = V.verbosity(verbosity)
+        except ValueError as e:
+            raise UserError('Failed to boostrap: %s.' % (e,))
+        self['color'] = sys.stderr.isatty()
+
+        dictConfig(self.logging_dict())
+        return debug
+
     def load(self, argv=None):
         # argv processing.
         logger.debug("Processing CLI arguments.")
@@ -466,11 +485,13 @@ class Configuration(dict):
         define_arguments(parser)
         args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
-        if hasattr(args, 'verbose') or hasattr(args, 'color'):
-            # Switch to verbose before loading file.
-            self['verbose'] = getattr(args, 'verbose', self['verbose'])
-            self['color'] = getattr(args, 'color', self['color'])
-            dictConfig(self.logging_dict())
+        # Setup logging before parsing options. Reset verbosity with env var,
+        # and compute verbosity from cumulated args.
+        args.verbosity[0] = V.VERBOSITIES.index(self['verbosity'])
+        self['verbosity'] = V.verbosity(args.verbosity)
+        if hasattr(args, 'color'):
+            self['color'] = args.color
+        dictConfig(self.logging_dict())
 
         logger.info("Starting ldap2pg %s.", __version__)
 
@@ -522,6 +543,9 @@ class Configuration(dict):
             )
             deepset(self, mapping.path, value)
 
+        if self['verbose'] is not None:
+            self['verbosity'] = 'DEBUG' if self['verbose'] else 'INFO'
+
     def read(self, fo, name, mode):
         try:
             payload = yaml.load(fo) or {}
@@ -537,8 +561,7 @@ class Configuration(dict):
         return payload
 
     def logging_dict(self):
-        formatter = 'verbose' if self['verbose'] else 'info'
-
+        formatter = 'verbose' if self['verbosity'] == 'DEBUG' else 'info'
         return {
             'version': 1,
             'formatters': {
@@ -567,7 +590,7 @@ class Configuration(dict):
             },
             'loggers': {
                 __package__: {
-                    'level': 'DEBUG' if self['verbose'] else 'INFO',
+                    'level': self['verbosity'],
                 },
             },
         }

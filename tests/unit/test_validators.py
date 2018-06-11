@@ -193,3 +193,14 @@ def test_privileges():
     )
     value = privileges(raw)
     assert raw == value
+
+
+def test_verbosity():
+    from ldap2pg.validators import verbosity
+
+    assert 'WARNING' == verbosity('WARNING')
+    assert 'DEBUG' == verbosity([10])
+    assert 'CRITICAL' == verbosity([4, 1, -10])
+
+    with pytest.raises(ValueError):
+        verbosity('TOTO')
