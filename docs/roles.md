@@ -40,11 +40,8 @@ sync_map:
 
 The `role` rule accepts the following keys:
 
-`name_attribute` maps a LDAP entry attribute to a role name.
-
-`name` or `names` contains one or more static name of role you want in Postgres.
-This is useful to e.g. define a `ro` group. `names` parameter overrides
-`name_attribute` parameter.
+`name` or `names` contains one or more name of role you want in Postgres. This
+is useful to e.g. define a `ro` group.
 
 `options` statically defines [Postgres role
 options](https://www.postgresql.org/docs/current/static/sql-createrole.html).
@@ -53,12 +50,12 @@ Currently, only boolean options are supported. Namely: `BYPASSRLS`, `LOGIN`,
 can be a SQL snippet like `SUPERUSER NOLOGIN`, a YAML list like `[LOGIN,
 NOCREATEDB]` or a dict like `{LOGIN: yes, SUPERUSER: no}`.
 
-`members` or `members_attribute` define members of the Postgres role. Note that
-members roles are **not** automatically created in Postres cluster. You must
-define a `role` rule for each member too, with their own options.
+`members` define members of the Postgres role. Note that members roles are
+**not** automatically created in Postres cluster. You must define a `role` rule
+for each member too, with their own options.
 
-`parent`, `parents` or `parents_attribute` define one or more parent role. It's
-the reverse meaning of `members_attribute`.
+`parent`, `parents` define one or more parent role. It's the reverse meaning of
+`members`. `parents` and `members` are combined together.
 
 
 ## Ignoring roles

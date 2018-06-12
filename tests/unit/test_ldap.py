@@ -141,8 +141,22 @@ def test_lower_attrs():
     assert 'samaccountname' in entry[1]
 
 
+def test_expand_attributes():
+    from ldap2pg.ldap import expand_attributes
+
+    entry = ('dn', {
+        'cn': ['cn=pouet,ou=POU ET,dc=org'], 'uid': ['toto', 'titi']
+    })
+
+    names = list(expand_attributes(entry, ['static', '{uid}', '{cn.dc}']))
+    assert 'toto' in names
+    assert 'static' in names
+    assert 'titi' in names
+    assert 'org' in names
+
+
 def test_get_attribute():
-    from ldap2pg.manager import get_attribute
+    from ldap2pg.ldap import get_attribute
 
     with pytest.raises(ValueError):
         list(get_attribute(entry=('dn', {}), attribute='pouet'))

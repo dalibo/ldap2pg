@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Fine grained logging setup.
+- Unify `roles` and `role_attribute` with string formatting.
 
 
 # ldap2pg 4.9

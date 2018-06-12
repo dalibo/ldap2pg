@@ -1,7 +1,7 @@
 from .ldap import parse_scope
 from .role import RoleOptions
 from .utils import string_types
-
+from .utils import iter_format_fields
 
 default_ldap_query = {
     'base': '',
@@ -63,11 +63,17 @@ def rolerule(value):
         rule = dict(names=[rule])
 
     strlist_alias(rule, 'names', 'name')
-    if 'names' not in rule and 'name_attribute' not in rule:
+    compat_ldap_attribute(rule, 'name')
+    if 'names' not in rule:
         raise ValueError("Missing role name")
 
     strlist_alias(rule, 'parents', 'parent')
+    compat_ldap_attribute(rule, 'parent')
     rule.setdefault('parents', [])
+
+    strlist_alias(rule, 'members', 'member')
+    compat_ldap_attribute(rule, 'member')
+    rule.setdefault('members', [])
 
     options = rule.setdefault('options', {})
 
@@ -102,11 +108,20 @@ def strlist_alias(dict_, key, alias_, exceptions=[]):
     return strorlist(dict_, key, exceptions)
 
 
+def compat_ldap_attribute(rule, name):
+    name_attribute = name + '_attribute'
+    names = name + 's'
+    if name_attribute in rule:
+        value = rule.get(names, [])
+        rule[names] = value + ['{%s}' % rule.pop(name_attribute)]
+
+
 def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if not isinstance(value, dict):
         raise ValueError('Grant rule must be a dict.')
 
     alias(value, 'privilege', 'acl')
+    compat_ldap_attribute(value, 'role')
     strlist_alias(value, 'roles', 'role')
 
     value.setdefault('database', defaultdb)
@@ -120,7 +135,7 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
 
     allowed_keys = set([
         'privilege', 'databases', 'schemas',
-        'roles', 'role_match', 'role_attribute',
+        'roles', 'role_match',
     ])
     defined_keys = set(value.keys())
 
@@ -130,7 +145,7 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
         )
         raise ValueError(msg)
 
-    if 'roles' not in value and 'role_attribute' not in value:
+    if 'roles' not in value:
         raise ValueError('Missing role in grant rule.')
 
     return value
@@ -143,11 +158,14 @@ def ismapping(value):
     return bool(set(['grant', 'ldap', 'role', 'roles']) >= set(value.keys()))
 
 
-def gather_queried_attributes(mapping):
-    for role in mapping.get('roles', []):
+def iter_mapping_strings(mapping):
+    for role in mapping.get('roles', []) + mapping.get('grant', []):
         for k, v in role.items():
-            if k.endswith('_attribute'):
-                yield v.partition('.')[0]
+            if not isinstance(v, list):
+                v = [v]
+            for v1 in v:
+                if isinstance(v1, str):
+                    yield v1
 
 
 def mapping(value, **kw):
@@ -178,7 +196,7 @@ def mapping(value, **kw):
     if 'ldap' in value:
         value['ldap'] = ldapquery(value['ldap'])
         value['ldap']['attributes'] = list(set(
-            gather_queried_attributes(value)))
+            iter_format_fields(iter_mapping_strings(value), split=True)))
 
     return value
 

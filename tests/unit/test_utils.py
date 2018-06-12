@@ -51,3 +51,22 @@ def test_make_map():
     )
 
     assert wanted == aliases
+
+
+def test_iter_format_field():
+    from ldap2pg.utils import iter_format_fields
+
+    fields = list(iter_format_fields(
+        ['static', '{simple}', '{dot.ted}'], split=True,
+    ))
+
+    assert 'simple' in fields
+    assert 'dot' in fields
+
+
+def test_settable():
+    from ldap2pg.utils import Settable
+
+    my = Settable(toto='titi')
+    assert 'titi' == my.toto
+    assert 'toto=titi' in repr(my)

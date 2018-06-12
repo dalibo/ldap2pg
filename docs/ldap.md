@@ -5,8 +5,9 @@
 A `ldap` entry contains `base`, `scope` and `filter`. The meaning of `base`,
 `scope` and `filter` is strictly the same as in `ldapsearch`. `base` must be
 defined. `filter` defaults to `(objectClass=*)`, just like `ldapsearch(1)`.
-`scope` defaults to `sub`, likewise. `ldap2pg` determine which attribute to
-query depending on `_attribute` values in `grant` and `roles` rules.
+`scope` defaults to `sub`, likewise. To inject an attribute in a property, use
+`{attributename}` format. `ldap2pg` determines which attributes to query
+depending on values in `grant` and `roles` rules.
 
 !!! tip
 
@@ -23,17 +24,22 @@ deduplication of LDAP searches.
 
 ## Mapping LDAP attributes to Postgres
 
-In `role` and `grant` rules, each key ending with `_attribute` maps to an
-attribute in the LDAP entry.
+In `role` and `grant` rules, you can inject LDAP attributes using curly brace
+formatting. E.g. a role name `{uid}` will generate a role for each `uid` value
+in LDAP object.
 
-`ldap2pg` apply the `role` or `grant` rule for each value of the attribute of
-each entries returned by the directory.
+`ldap2pg` generate a `role` or `grant` for each value of the attribute of each
+entries returned by the directory. If there is multiple attributes in the format
+string, a product of all combination is generated.
 
 If the attribute is of type Distinguished Name (DN), you can refer to the first
-Relative Distinguished Name (RDN) of the value like this: `attrname.rdn`. For
-example, if a LDAP entry has `member` attribute with value
-`cn=toto,ou=people,dc=ldap,dc=acme,dc=fr`, `name_attribute: member.cn` will
+Relative Distinguished Name (RDN) of the value with a dot, like this:
+`<attrname>.<rdn>`. For example, if a LDAP entry has `member` attribute with
+value `cn=toto,ou=people,dc=ldap,dc=acme,dc=fr`, `name: '{member.cn}''` will
 generate `toto`.
+
+You can inject attributes in `role:names`, `role:parents`, `role:members` and
+`grant:role`.
 
 
 ## Examples
@@ -42,7 +48,7 @@ generate `toto`.
 - ldap:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
   role:
-    name_attribute: cn
+    name: '{cn}'
     options: LOGIN
 
 - ldap:
@@ -54,6 +60,7 @@ generate `toto`.
         (memberOf=cn=dba,ou=groups,ou=site,dc=ldap,dc=local)
       )
   roles:
-  - name_attribute: member.cn
+  - names:
+    - dba_{member.cn}
     options: LOGIN
 ```

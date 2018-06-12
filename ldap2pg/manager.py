@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
-from .ldap import LDAPError, get_attribute, lower_attributes
+from .ldap import LDAPError, expand_attributes, lower_attributes
 
 from .privilege import Grant
 from .privilege import Acl
@@ -44,27 +44,20 @@ class SyncManager(object):
         entries = decode_value(entries)
         return [lower_attributes(e) for e in entries]
 
-    def process_ldap_entry(self, entry, **kw):
-        if 'names' in kw:
-            names = kw['names']
-            log_source = " from YAML"
-        else:
-            name_attribute = kw['name_attribute']
-            names = get_attribute(entry, name_attribute)
-            log_source = " from %s %s" % (entry[0], name_attribute)
+    def process_ldap_entry(self, entry, names, **kw):
+        members = [
+            m.lower() for m in
+            expand_attributes(entry, kw.get('members', []))
+        ]
+        parents = [
+            p.lower() for p in
+            expand_attributes(entry, kw.get('parents', []))
+        ]
 
-        members = kw.get('members', [])[:]
-        if kw.get('members_attribute'):
-            members += get_attribute(entry, kw['members_attribute'])
-        members = [m.lower() for m in members]
-
-        parents = kw.get('parents', [])[:]
-        if kw.get('parents_attribute'):
-            parents += get_attribute(entry, kw['parents_attribute'])
-        parents = [p.lower() for p in parents]
-
-        for name in names:
+        for name in expand_attributes(entry, names):
+            log_source = " from " + "YAML" if name in names else entry[0]
             name = name.lower()
+
             logger.debug("Found role %s%s.", name, log_source)
             if members:
                 logger.debug(
@@ -75,7 +68,7 @@ class SyncManager(object):
                     "Role %s is member of %s.", name, ', '.join(parents))
             role = Role(
                 name=name,
-                members=members,
+                members=members[:],
                 options=kw.get('options', {}),
                 parents=parents[:],
             )
@@ -107,14 +100,11 @@ class SyncManager(object):
             pattern = rule.get('role_match')
 
             for entry in entries:
-                if 'roles' in rule:
-                    roles = rule['roles']
-                else:
-                    try:
-                        roles = get_attribute(entry, rule['role_attribute'])
-                    except ValueError as e:
-                        msg = "Failed to process %.32s: %s" % (entry, e,)
-                        raise UserError(msg)
+                try:
+                    roles = list(expand_attributes(entry, rule['roles']))
+                except ValueError as e:
+                    msg = "Failed to process %.32s: %s" % (entry, e,)
+                    raise UserError(msg)
 
                 for role in roles:
                     role = role.lower()

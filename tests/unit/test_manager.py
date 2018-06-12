@@ -55,7 +55,7 @@ def test_process_entry_user():
     entry = ('dn', {'cn': ['alice', 'bob']})
 
     roles = manager.process_ldap_entry(
-        entry, name_attribute='cn',
+        entry, names=['{cn}'],
         options=dict(LOGIN=True),
     )
     roles = list(roles)
@@ -73,7 +73,7 @@ def test_process_entry_dn():
 
     entry = ('dn', {'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit']})
 
-    roles = manager.process_ldap_entry(entry, name_attribute='member.cn')
+    roles = manager.process_ldap_entry(entry, names=['{member.cn}'])
     roles = list(roles)
     names = {r.name for r in roles}
 
@@ -98,9 +98,8 @@ def test_process_entry_membership(mocker):
 
     roles = []
     rule = dict(
-        parents=[],
-        members_attribute='member.cn',
-        parents_attribute='cn',
+        members=['{member.cn}'],
+        parents=['{cn}'],
     )
     for i, entry in enumerate(entries):
         name = 'role%d' % i
@@ -124,7 +123,7 @@ def test_process_entry_membership(mocker):
 
 
 def test_apply_role_rule_ko(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
 
     from ldap2pg.manager import SyncManager, UserError
 
@@ -133,16 +132,14 @@ def test_apply_role_rule_ko(mocker):
     gla.side_effect = ValueError
     items = manager.apply_role_rules(
         entries=[('dn0',), ('dn1',)],
-        rules=[dict(
-            name_attribute='cn',
-        )],
+        rules=[dict(names=['{cn}'])],
     )
     with pytest.raises(UserError):
         list(items)
 
 
 def test_apply_grant_rule_ok(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
 
     from ldap2pg.manager import SyncManager
 
@@ -154,7 +151,7 @@ def test_apply_grant_rule_ok(mocker):
             privilege='connect',
             databases=['postgres'],
             schemas='__any__',
-            role_attribute='cn',
+            roles=['{cn}'],
         )],
         entries=[None, None],
     )
@@ -168,13 +165,13 @@ def test_apply_grant_rule_ok(mocker):
 
 
 def test_apply_grant_rule_wrong_attr(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_attribute')
+    gla = mocker.patch('ldap2pg.manager.expand_attributes')
 
     from ldap2pg.manager import SyncManager, UserError
 
     gla.side_effect = ValueError('POUET')
     items = SyncManager().apply_grant_rules(
-        grant=[dict(role_attribute='cn')],
+        grant=[dict(roles=['{cn}'])],
         entries=[None, None],
     )
     with pytest.raises(UserError):
@@ -182,7 +179,7 @@ def test_apply_grant_rule_wrong_attr(mocker):
 
 
 def test_apply_grant_rule_all_schema(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
 
     from ldap2pg.manager import SyncManager
 
@@ -194,7 +191,7 @@ def test_apply_grant_rule_all_schema(mocker):
             privilege='connect',
             databases=['postgres'],
             schema='__all__',
-            role_attribute='cn',
+            roles=['{cn}'],
         )],
         entries=[None],
     )
@@ -225,7 +222,7 @@ def test_apply_grant_rule_filter(mocker):
 
 
 def test_apply_grant_rule_nodb(mocker):
-    gla = mocker.patch('ldap2pg.manager.get_attribute', autospec=True)
+    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
 
     from ldap2pg.manager import Grant, SyncManager
 
@@ -236,7 +233,7 @@ def test_apply_grant_rule_nodb(mocker):
         grant=[dict(
             privilege='connect',
             database='__all__', schema='__any__',
-            role_attribute='cn',
+            roles=['{cn}'],
         )],
         entries=[None],
     ))
