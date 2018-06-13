@@ -120,7 +120,7 @@ roles from each values of each entries returned by the LDAP search:
 - ldap:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
   role:
-    name_attribute: member.cn
+    name: '{member.cn}'
     options: LOGIN SUPERUSER
 ```
 
@@ -180,7 +180,7 @@ sync_map:
     filter: "(objectClass=groupOfNames)"
     scope: sub
   grant:
-    role_attribute: member
+    role: '{member}'
     privilege: rw
 ```
 

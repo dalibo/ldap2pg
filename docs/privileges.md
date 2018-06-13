@@ -82,7 +82,7 @@ sync_map:
     database: appdb
     privilege: ro
     schema: appns
-    role_attribute: cn
+    role: '{cn}'
     role_match: *_RO
 ```
 
@@ -106,10 +106,6 @@ database.
 `role` or `roles` keys allow to specify statically one or more grantee name.
 `role` must be a string or a list of strings. Referenced roles must be created
 in the cluster and won't be implicitly created.
-
-`role_attribute` maps an attribute from LDAP entries to a role name in the
-GRANT. Just like any `*_attribute` key, it accepts a `DN` member as well e.g:
-`distinguished_name.cn`.
 
 `role_match` is a pattern allowing you to limit the grant to roles whom name
 matches `role_match`.

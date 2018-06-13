@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import sys
 from fnmatch import fnmatch
+from string import Formatter
 import textwrap
 
 
@@ -105,6 +106,17 @@ def encode_value(value):
         return value
 
 
+def iter_format_fields(strings, split=False):
+    formatter = Formatter()
+    for string in strings:
+        for _, field, _, _ in formatter.parse(string):
+            if field is None:
+                continue
+            if split:
+                field = field.partition('.')[0]
+            yield field
+
+
 def list_descendant(groups, name):
     # Returns the recursive list of all descendant of name in hierarchy
     # `groups`. `groups` is a flat dict of `groups`
@@ -137,3 +149,14 @@ def uniq(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
+
+
+class Settable(object):
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+    def __repr__(self):
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            ' '.join(['%s=%s' % i for i in self.__dict__.items()])
+        )

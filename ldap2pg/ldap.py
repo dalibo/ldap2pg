@@ -4,6 +4,7 @@ from codecs import open
 from collections import namedtuple
 import logging
 import os
+from itertools import product
 
 import ldap
 
@@ -16,7 +17,8 @@ except ImportError:  # pragma: nocover
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
-from .utils import decode_value, encode_value, PY2, uniq
+from .utils import decode_value, encode_value, PY2, uniq, iter_format_fields
+from .utils import Settable
 
 
 logger = logging.getLogger(__name__)
@@ -61,6 +63,27 @@ def str2dn(value):
         [(k.lower(), v, _) for k, v, _ in t]
         for t in value
     ]
+
+
+def expand_attributes(entry, formats):
+    if entry is None:
+        for f in formats:
+            yield f
+        return
+
+    attributes = dict()
+    for k in iter_format_fields(formats):
+        v = list(get_attribute(entry, k))
+        if '.' in k:
+            k, _, attr = k.partition('.')
+            v = [Settable(**dict({attr: v1})) for v1 in v]
+        attributes[k] = v
+
+    for format_ in formats:
+        fields = list(iter_format_fields([format_], split=True))
+        values = [attributes[k] for k in fields]
+        for items in product(*values):
+            yield format_.format(**dict(zip(fields, items)))
 
 
 def get_attribute(entry, attribute):

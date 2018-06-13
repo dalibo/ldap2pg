@@ -118,7 +118,7 @@ sync_map:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=dba)"
   role:
-    name_attribute: member.cn
+    name: '{member.cn}'
     options: LOGIN SUPERUSER
     parent:
     - ldap_roles
@@ -127,7 +127,7 @@ sync_map:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=app*)"
   role:
-    name_attribute: member.cn
+    name: '{member.cn}'
     options: LOGIN
     parent:
     - ldap_roles
@@ -136,7 +136,7 @@ sync_map:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=bi)"
   role:
-    name_attribute: member.cn
+    name: '{member.cn}'
     options: LOGIN
     parent:
     - ldap_roles

@@ -10,13 +10,24 @@ def test_process_grant():
         acl='ro',
         database='postgres',
         schema='public',
-        role_attribute='cn',
+        role='{cn}',
     ))
 
     assert 'schemas' in rule
     assert 'databases' in rule
     assert 'privilege' in rule
     assert 'acl' not in rule
+    assert 'roles' in rule
+
+    rule = grantrule(dict(
+        acl='ro',
+        database='postgres',
+        schema='public',
+        role_attribute='cn',
+    ))
+
+    assert 'role_attribute' not in rule
+    assert '{cn}' in rule['roles']
 
     with pytest.raises(ValueError):
         grantrule([])
@@ -130,7 +141,18 @@ def test_process_ldapquery():
     with pytest.raises(ValueError):
         ldapquery(dict(raw, scope='unkqdsfq'))
 
-    v = mapping(dict(role=dict(name_attribute='cn'), ldap=dict(base='o=acme')))
+    v = mapping(dict(
+        role=dict(name='static', name_attribute='cn'),
+        ldap=dict(base='o=acme'))
+    )
+
+    assert ['cn'] == v['ldap']['attributes']
+    assert 'names' in v['roles'][0]
+    assert '{cn}' in v['roles'][0]['names']
+    assert 'static' in v['roles'][0]['names']
+    assert 'role_attribute' not in v['roles'][0]
+
+    v = mapping(dict(role=dict(name='{cn}'), ldap=dict(base='o=acme')))
 
     assert ['cn'] == v['ldap']['attributes']
 
@@ -166,6 +188,10 @@ def test_process_rolerule():
     with pytest.raises(ValueError) as ei:
         rolerule(dict(name='r', options='OLOLOL'))
     assert 'OLOLOL' in str(ei.value)
+
+    rule = rolerule(dict(name_attribute='cn'))
+    assert 'name_attribute' not in rule
+    assert '{cn}' in rule['names']
 
 
 def test_privileges():
