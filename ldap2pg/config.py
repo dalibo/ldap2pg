@@ -296,7 +296,7 @@ def construct_yaml_str(self, node):
     return self.construct_scalar(node)
 
 
-yaml.Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
+yaml.SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
 
 def check_yaml_gotchas(file_config):
@@ -548,7 +548,7 @@ class Configuration(dict):
 
     def read(self, fo, name, mode):
         try:
-            payload = yaml.load(fo) or {}
+            payload = yaml.safe_load(fo) or {}
         except yaml.error.YAMLError as e:
             msg = "YAML error with %s: %s" % (name, e)
             raise ConfigurationError(msg)
