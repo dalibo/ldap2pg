@@ -21,7 +21,6 @@ pages:
 - Hacking: hacking.md
 - Changelog: changelog.md
 
-theme: readthedocs
 site_dir: build/docs/
 
 # Markdown settings
