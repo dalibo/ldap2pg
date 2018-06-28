@@ -156,6 +156,9 @@ def test_process_ldapquery():
 
     assert ['cn'] == v['ldap']['attributes']
 
+    with pytest.raises(ValueError):
+        mapping(dict(role='static', ldap=dict(base='dc=lol')))
+
 
 def test_process_rolerule():
     from ldap2pg.validators import rolerule
