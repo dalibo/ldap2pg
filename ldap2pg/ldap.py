@@ -161,7 +161,9 @@ class LDAPLogger(object):
         return self.wrapped.search_s(base, scope, filter, attributes)
 
     def simple_bind_s(self, binddn, password):
-        self.connect_opts = ' -x -D %s' % (binddn,)
+        self.connect_opts = ' -x'
+        if binddn:
+            self.connect_opts += ' -D %s' % (binddn,)
         if password:
             self.connect_opts += ' -W'
         self.log_connect()
