@@ -164,7 +164,7 @@ def iter_mapping_strings(mapping):
             if not isinstance(v, list):
                 v = [v]
             for v1 in v:
-                if isinstance(v1, str):
+                if hasattr(v1, 'splitlines'):
                     yield v1
 
 
