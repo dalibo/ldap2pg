@@ -142,19 +142,22 @@ def test_process_ldapquery():
         ldapquery(dict(raw, scope='unkqdsfq'))
 
     v = mapping(dict(
-        role=dict(name='static', name_attribute='cn'),
+        role=dict(name='static', name_attribute=u'sAMAccountName'),
         ldap=dict(base='o=acme'))
     )
 
-    assert ['cn'] == v['ldap']['attributes']
+    assert ['sAMAccountName'] == v['ldap']['attributes']
     assert 'names' in v['roles'][0]
-    assert '{cn}' in v['roles'][0]['names']
+    assert '{sAMAccountName}' in v['roles'][0]['names']
     assert 'static' in v['roles'][0]['names']
     assert 'role_attribute' not in v['roles'][0]
 
     v = mapping(dict(role=dict(name='{cn}'), ldap=dict(base='o=acme')))
 
     assert ['cn'] == v['ldap']['attributes']
+
+    with pytest.raises(ValueError):
+        mapping(dict(role='static', ldap=dict(base='dc=lol')))
 
 
 def test_process_rolerule():

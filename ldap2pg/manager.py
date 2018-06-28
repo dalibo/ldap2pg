@@ -33,16 +33,23 @@ class SyncManager(object):
 
     def query_ldap(self, base, filter, attributes, scope):
         try:
-            entries = self.ldapconn.search_s(
+            raw_entries = self.ldapconn.search_s(
                 base, scope, filter, attributes,
             )
         except LDAPError as e:
             message = "Failed to query LDAP: %s." % (e,)
             raise UserError(message)
 
-        logger.debug('Got %d entries from LDAP.', len(entries))
-        entries = decode_value(entries)
-        return [lower_attributes(e) for e in entries]
+        logger.debug('Got %d entries from LDAP.', len(raw_entries))
+        entries = []
+        for dn, attributes in raw_entries:
+            try:
+                entry = decode_value((dn, attributes))
+            except UnicodeDecodeError as e:
+                message = "Failed to decode data from %r: %s." % (dn, e,)
+                raise UserError(message)
+            entries.append(lower_attributes(entry))
+        return entries
 
     def process_ldap_entry(self, entry, names, **kw):
         members = [
@@ -55,7 +62,7 @@ class SyncManager(object):
         ]
 
         for name in expand_attributes(entry, names):
-            log_source = " from " + "YAML" if name in names else entry[0]
+            log_source = " from " + ("YAML" if name in names else entry[0])
             name = name.lower()
 
             logger.debug("Found role %s%s.", name, log_source)

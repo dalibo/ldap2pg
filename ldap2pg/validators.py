@@ -164,7 +164,7 @@ def iter_mapping_strings(mapping):
             if not isinstance(v, list):
                 v = [v]
             for v1 in v:
-                if isinstance(v1, str):
+                if hasattr(v1, 'splitlines'):
                     yield v1
 
 
@@ -197,6 +197,9 @@ def mapping(value, **kw):
         value['ldap'] = ldapquery(value['ldap'])
         value['ldap']['attributes'] = list(set(
             iter_format_fields(iter_mapping_strings(value), split=True)))
+        if not value['ldap']['attributes']:
+            fmt = "No attributes are used from LDAP query %(base)s"
+            raise ValueError(fmt % value['ldap'])
 
     return value
 

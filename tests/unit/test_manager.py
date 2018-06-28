@@ -4,7 +4,7 @@ import pytest
 
 
 def test_query_ldap(mocker):
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, UserError
 
     manager = SyncManager(ldapconn=mocker.Mock())
     manager.ldapconn.search_s.return_value = [('dn=a', {}), ('dn=b', {})]
@@ -15,6 +15,13 @@ def test_query_ldap(mocker):
     )
 
     assert 2 == len(entries)
+
+    manager.ldapconn.search_s.return_value = [('dn=a', {'a': b'\xbb'})]
+    with pytest.raises(UserError):
+        manager.query_ldap(
+            base='ou=people,dc=global', filter='(objectClass=*)',
+            scope=2, attributes=['cn'],
+        )
 
 
 def test_query_ldap_bad_filter(mocker):
