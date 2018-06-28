@@ -55,7 +55,7 @@ class SyncManager(object):
         ]
 
         for name in expand_attributes(entry, names):
-            log_source = " from " + "YAML" if name in names else entry[0]
+            log_source = " from " + ("YAML" if name in names else entry[0])
             name = name.lower()
 
             logger.debug("Found role %s%s.", name, log_source)
