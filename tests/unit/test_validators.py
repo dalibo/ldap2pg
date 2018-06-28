@@ -142,13 +142,13 @@ def test_process_ldapquery():
         ldapquery(dict(raw, scope='unkqdsfq'))
 
     v = mapping(dict(
-        role=dict(name='static', name_attribute='cn'),
+        role=dict(name='static', name_attribute='sAMAccountName'),
         ldap=dict(base='o=acme'))
     )
 
-    assert ['cn'] == v['ldap']['attributes']
+    assert ['sAMAccountName'] == v['ldap']['attributes']
     assert 'names' in v['roles'][0]
-    assert '{cn}' in v['roles'][0]['names']
+    assert '{sAMAccountName}' in v['roles'][0]['names']
     assert 'static' in v['roles'][0]['names']
     assert 'role_attribute' not in v['roles'][0]
 
