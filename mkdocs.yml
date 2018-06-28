@@ -24,7 +24,6 @@ pages:
 site_dir: build/docs/
 
 # Markdown settings
-strict: yes
 markdown_extensions:
 - admonition
 - fenced_code
