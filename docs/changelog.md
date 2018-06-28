@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Use PyYAML safe loading.
+- Don't log `-D` switch for anonymous `ldapsearch`.
 
 
 # ldap2pg 4.10
