@@ -16,6 +16,8 @@ def ldapquery(value):
 
     query = dict(default_ldap_query, **value)
     query['scope'] = parse_scope(query['scope'])
+    if 'filter' in query:
+        query['filter'] = query['filter'].rstrip('\r\n')
 
     # Clean value from old manual attribute
     query.pop('attribute', None)
