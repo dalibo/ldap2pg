@@ -134,7 +134,11 @@ sync_map:
     - writers
 - ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: "(cn=bi)"
+    filter: |
+      (&
+        (cn=bi)
+        (objectClass=*)
+      )
   role:
     name: '{member.cn}'
     options: LOGIN
