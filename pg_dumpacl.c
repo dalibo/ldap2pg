@@ -159,6 +159,8 @@ main(int argc, char *argv[])
 		}
 	}
 
+	pgdumpopts = createPQExpBuffer();
+
 	while ((c = getopt_long(argc, argv, "ac:d:f:h:l:p:U:wW", long_options, &optindex)) != -1)
 	{
 		switch (c)
