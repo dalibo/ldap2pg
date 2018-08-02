@@ -40,4 +40,4 @@ jobs:
     steps:
     - checkout
     - run: ./pkg
-    - store_artifacts: {path: /tmp/cci/rpm/x86_64}
+    - store_artifacts: {path: /tmp/cci/rpms/x86_64}

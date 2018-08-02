@@ -28,6 +28,6 @@ defines=(
 sudo yum install -y $(rpmspec -q --buildrequires "${defines[@]}" pg_dumpacl.spec)
 rpmbuild \
     --define "_sourcedir ${PWD}" \
-    --define "_rpmdir ${PWD}/rpm" \
+    --define "_rpmdir ${PWD}/rpms" \
 	"${defines[@]}" \
 	-ba pg_dumpacl.spec

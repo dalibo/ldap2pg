@@ -28,6 +28,7 @@ clean distclean maintainer-clean:
 	rm -f pg_dumpacl pg_dumpacl.o
 
 PGDG=https://download.postgresql.org/pub/repos/yum
+.PHONY: rpms
 rpms:
 	PGDG_RPM=$(PGDG)/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm PGVERSION=10 \
 		docker-compose run --rm rpm
