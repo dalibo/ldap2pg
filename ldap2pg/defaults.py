@@ -162,8 +162,7 @@ _allrelacl_tpl = dict(
       SELECT
         nsp.oid,
         nsp.nspname,
-        array_agg(rel.relname ORDER BY rel.relname)
-          FILTER (WHERE rel.relname IS NOT NULL) AS rels
+        array_remove(array_agg(rel.relname ORDER BY rel.relname), NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
         ON rel.relnamespace = nsp.oid AND relkind IN %(t)s
@@ -183,7 +182,7 @@ _allrelacl_tpl = dict(
       nspname,
       rolname,
       CASE
-        WHEN nsp.rels IS NULL THEN NULL
+        WHEN nsp.rels = ARRAY[]::name[] THEN NULL
         ELSE nsp.rels = COALESCE(grants.rels, ARRAY[]::name[])
       END AS "full"
     FROM namespace_rels AS nsp
@@ -192,7 +191,7 @@ _allrelacl_tpl = dict(
       ON relnamespace = nsp.oid
          AND grantee = rol.oid
          AND privilege_type = '%(privilege)s'
-    WHERE NOT (nsp.rels IS NOT NULL AND grants.rels IS NULL)
+    WHERE NOT (array_length(nsp.rels, 1) IS NOT NULL AND grants.rels IS NULL)
     ORDER BY 1, 2
     """),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
@@ -228,8 +227,7 @@ _allprocacl_tpl = dict(
     namespaces AS (
       SELECT
         nsp.oid, nsp.nspname,
-        array_agg(DISTINCT pro.proname ORDER BY pro.proname)
-          FILTER (WHERE pro.proname IS NOT NULL) AS procs
+        array_remove(array_agg(DISTINCT pro.proname ORDER BY pro.proname), NULL) AS procs
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_proc AS pro
         ON pro.pronamespace = nsp.oid
@@ -244,17 +242,17 @@ _allprocacl_tpl = dict(
     SELECT
       nspname, rolname,
       CASE
-        WHEN nsp.procs IS NULL THEN NULL
+        WHEN nsp.procs = ARRAY[]::name[] THEN NULL
         ELSE nsp.procs = COALESCE(grants.procs, ARRAY[]::name[])
       END AS "full"
     FROM namespaces AS nsp
     CROSS JOIN roles
     LEFT OUTER JOIN grants
       ON pronamespace = nsp.oid AND grants.grantee = roles.oid
-    WHERE NOT (nsp.procs IS NOT NULL AND grants.procs IS NULL)
+    WHERE NOT (array_length(nsp.procs, 1) IS NOT NULL AND grants.procs IS NULL)
       AND (priv IS NULL OR priv = '%(privilege)s')
     ORDER BY 1, 2;
-    """),
+    """),  # noqa
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
         "REVOKE %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} FROM {role}"),
