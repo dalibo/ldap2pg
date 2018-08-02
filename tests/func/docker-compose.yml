@@ -14,7 +14,7 @@ services:
     domainname: ldap2pg.docker
 
   postgres:
-    image: postgres:10-alpine
+    image: postgres:${PGVERSION-10}-alpine
 
   runner:
     image: ${DIST-centos:7}
