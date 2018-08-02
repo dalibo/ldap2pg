@@ -130,7 +130,8 @@ class SyncManager(object):
             if 'ldap' in mapping:
                 logger.info(
                     "Querying LDAP %.24s... %.12s...",
-                    mapping['ldap']['base'], mapping['ldap']['filter'])
+                    mapping['ldap']['base'],
+                    mapping['ldap']['filter'].replace('\n', ''))
                 entries = self.query_ldap(**mapping['ldap'])
                 log_source = 'in LDAP'
             else:

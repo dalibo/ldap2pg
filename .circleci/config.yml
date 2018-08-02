@@ -7,8 +7,7 @@ version: 2
     LDAP_ADMIN_PASSWORD: communication
     LDAP_ORGANISATION: ldap
 
-.postgres_container: &postgres_container
-  image: postgres:10-alpine
+.postgres_env: &postgres_env
   environment:
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: communication
@@ -113,7 +112,8 @@ jobs:
     docker:
       - image: centos:6
       - *openldap_container
-      - *postgres_container
+      - image: postgres:9.3-alpine
+        <<: *postgres_env
     steps: *func_steps
 
   1-func-centos7:
@@ -121,7 +121,8 @@ jobs:
     docker:
       - image: centos:7
       - *openldap_container
-      - *postgres_container
+      - image: postgres:10-alpine
+        <<: *postgres_env
     steps: *func_steps
 
 workflows:
