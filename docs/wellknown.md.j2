@@ -3,7 +3,7 @@
 <h1>Well-known Privileges</h1>
 
 `ldap2pg` provides some well-known privileges for recurrent usage. There is **no
-warranty** of on these privileges. You have to check privileges configuration on
+warranty** on these privileges. You have to check privileges configuration on
 your databases just like you should do with your own code.
 
 The true added-value of well-known privileges is the `inspect` queries
@@ -12,10 +12,10 @@ associated and the boilerplate saved for declaring all `GRANT` queries.
 
 ## Using Well-known Privileges
 
-Well-known privilege starts and lasts with `__`. `ldap2pg` [disables
-privilege](privileges.md#enabling-privilege) starting with `_`. Thus you have to
-include well-known privileges in a group to enable them. If two groups reference
-the same privilege, it will be deduplicated, don't worry.
+Well-known privilege starts and ends with `__`. `ldap2pg` [disables
+privileges](privileges.md#enabling-privilege) starting with `_`. Thus you have
+to include well-known privileges in a group to enable them. If two groups
+reference the same privilege, it will be deduplicated, don't worry.
 
 ``` yaml
 privileges:
@@ -45,12 +45,13 @@ sync_map:
 Well-known privilege name follows the following loose convention:
 
 - `_on_all_tables__` is equivalent to `GRANT ... ON ALL TABLES IN SCHEMA ...`.
-- `__default_...` is equivalent to `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ...`.
-- `__..._on_tables__` groups `__..._on_all_tables__` and
+- `__default_...__` is equivalent to `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ...`.
+- `__..._on_tables__` gathers `__..._on_all_tables__` and
   `__default_..._on_tables__`.
-- Group starting with `__all_on_` is *equivalent* to `ALL PRIVILEGES` in SQL.
-- A privilege specific to one type does not have `_on_type__` e.g.
-  `__delete_on_tables__` is shorten to `__delete__` .
+- Group starting with `__all_on_...__` is *equivalent* to `ALL PRIVILEGES` in
+  SQL.
+- A privilege specific to one object type does not have `_on_<type>__` e.g.
+  `__delete_on_tables__` is aliased to `__delete__`.
 
 
 ## Privilege Groups
@@ -60,8 +61,8 @@ Next is an extensive, boring, list of all well known privilege groups in
 privilege. Each privilege name point the the detail of privilege definition.
 
 Actually, a group like `__all_on_tables__` is implemented as group of groups.
-But for the sake of simplicity, the documentation lists the resolved list of
-concrete privileges finally included.
+But for the sake of simplicity, the documentation lists the constructed list
+of concrete privileges finally included.
 
 Here we go.
 {% for name in groups|sort %}
@@ -78,11 +79,11 @@ Here we go.
 
 ## Single Privileges
 
-Next is the list of well-known privileg. Each is associated with a `REVOKE`
-query and an `inspect` query implementing full inspection of grantees, including
-built-in grants to PUBLIC.
+Next is the list of well-known privileges. Each is associated with a `REVOKE`
+query and an `inspect` query implementing full inspection of grantees,
+including built-in grants to PUBLIC.
 
-For the actual meaning of each SQL privileges, refer to official [Postgres
+For the actual meaning of each SQL privileges, refer to official [PostgreSQL
 documentation of
 `GRANT`](https://www.postgresql.org/docs/current/static/sql-grant.html)
 statement.

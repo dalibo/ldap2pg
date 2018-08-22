@@ -4,11 +4,11 @@ Managing privileges is tricky. `ldap2pg` tries to make this simpler and safer.
 
 The base design of `ldap2pg` is ambitious. First, it inspects Postgres cluster
 for grants, then loops `sync_map` to determine what privileges should be
-granted, then compares and applies a diff on the cluster with `ALTER DEFAULT
-PRIVILEGES`, `GRANT` or `REVOKE` queries.
+granted, then compares and applies a diff on the cluster with
+`ALTER DEFAULT PRIVILEGES`, `GRANT` or `REVOKE` queries.
 
-In `ldap2pg.yml`, you specify privileges in a dictionnary named `acls` and grant
-them with `grant` rules in the `sync_map`:
+In `ldap2pg.yml`, you specify privileges in a dictionnary named `privileges`
+and grant them with `grant` rules in the `sync_map`:
 
 ```yaml
 privileges:
@@ -26,7 +26,7 @@ sync_map:
     role: admin
 ```
 
-A privileges defined as a YAML list is a *group of priveleges*. A group can
+A privileges defined as a YAML list is a *group of privileges*. A group can
 include other groups.
 
 `ldap2pg` ships an extensive set of [well-known privileges](wellknown.md), see
@@ -35,10 +35,9 @@ dedicated documentation page for them.
 
 ## Enabling Privilege
 
-`ldap2pg` disables privileges whose name starts with `_` or `.` **unless**
-included in an privilege group not starting with `_` or `.`. An enabled privileg
-is a privilege whose name does not start with `_` or `.` and is not included in
-an enabled privilege.
+`ldap2pg` disables privileges whose name start with `_` or `.` **unless**
+included in a privilege group not starting with `_` or `.`. An enabled
+privilege is a privilege whose name does not start with `_` or `.`.
 
 ``` yaml
 privileges:
@@ -83,14 +82,14 @@ sync_map:
     privilege: ro
     schema: appns
     role: '{cn}'
-    role_match: *_RO
+    role_match: '*_RO'
 ```
 
 Grant rule is a bit simpler than role rule. It tells `ldap2pg` to ensure a
 particular role is granted one defined ACL. An ACL assignment is identified by a
 privilege name, a database, a schema and a grantee role name.
 
-`acl` key references a privilege by its name.
+`privilege` key references a privilege by its name.
 
 `database` allows to scope the grant to a database. The special database name
 `__all__` means **all** databases. `__all__` is the default value. With
