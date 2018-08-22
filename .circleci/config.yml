@@ -21,6 +21,7 @@ version: 2
       virtualenv .venv/
       . .venv/bin/activate
       pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
+      pip check
 
 .func_steps: &func_steps
 - checkout
