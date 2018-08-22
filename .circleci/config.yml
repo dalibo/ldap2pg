@@ -70,10 +70,10 @@ version: 2
   steps:
   - checkout
   - restore_cache:
-      keys: [ldap2pg-unit2]
+      keys: [ldap2pg-unit3]
   - <<: *install_reqs
   - save_cache:
-      key: ldap2pg-unit2-{{ epoch }}
+      key: ldap2pg-unit3-{{ epoch }}
       paths:
       - /root/.cache/pip
       - "~/.cache/pip/"
