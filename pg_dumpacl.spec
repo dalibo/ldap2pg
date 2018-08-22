@@ -1,4 +1,4 @@
-%global version 0.2
+%global version 0.3
 %{!?pgversion: %global pgversion 10}
 %{!?pginstdir: %global pginstdir /usr/pgsql-10}
 
@@ -45,3 +45,9 @@ fi
 
 %files
 %{pginstdir}/bin/pg_dumpacl
+
+%changelog
+
+* Wed Aug 22 2018 Étienne BERSAC <etienne.bersac@dalibo.com> - 0.3-1
+
+- Fix options parsing.
