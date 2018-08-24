@@ -333,7 +333,7 @@ class Configuration(dict):
             'binddn': '',
             'user': None,
             'password': '',
-            'activedirectory': None,
+            'referrals': True,
         },
         'postgres': {
             'dsn': '',
@@ -387,7 +387,7 @@ class Configuration(dict):
         Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),
         Mapping('ldap:user'),
         Mapping('ldap:password', secret=True),
-        Mapping('ldap:activedirectory'),
+        Mapping('ldap:referrals', env=['REFERRALS']),
         Mapping(
             'postgres:dsn', env='PGDSN',
             secret=r'(?:password=|:[^/][^/].*@)',
