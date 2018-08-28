@@ -93,6 +93,14 @@ objectclass: organizationalRole
 objectclass: top
 cn: domitille
 
+# dimitri has no cn. For mixing DN.
+dn: uid=dimitri,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectClass: inetOrgPerson
+uid: dimitri
+sn: Dimitri
+cn: dimitri
+
 # Our watchers: e*
 
 dn: cn=eve,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -197,3 +205,4 @@ cn: app2
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: uid=dimitri,ou=people,dc=ldap,dc=ldap2pg,dc=docker

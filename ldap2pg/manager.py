@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from fnmatch import fnmatch
 import logging
 
-from .ldap import LDAPError, expand_attributes, lower_attributes
+from .ldap import LDAPError, RDNError, expand_attributes, lower_attributes
 
 from .privilege import Grant
 from .privilege import Acl
@@ -88,6 +88,8 @@ class SyncManager(object):
                 try:
                     for role in self.process_ldap_entry(entry=entry, **rule):
                         yield role
+                except RDNError as e:
+                    logger.warn("Unexpected DN: %s", e.dn)
                 except ValueError as e:
                     msg = "Failed to process %.48s: %s" % (entry[0], e,)
                     raise UserError(msg)

@@ -86,6 +86,13 @@ def expand_attributes(entry, formats):
             yield format_.format(**dict(zip(fields, items)))
 
 
+class RDNError(NameError):
+    # Raised when an unexpected DN is reached.
+    def __init__(self, message=None, dn=None):
+        super(RDNError, self).__init__(message)
+        self.dn = dn
+
+
 def get_attribute(entry, attribute):
     _, attributes = entry
     path = attribute.lower().split('.')
@@ -96,6 +103,7 @@ def get_attribute(entry, attribute):
     path = path[1:]
     for value in values:
         if path:
+            raw_dn = value
             try:
                 dn = str2dn(value)
             except ValueError:
@@ -109,7 +117,7 @@ def get_attribute(entry, attribute):
             try:
                 value = value[path[0]][0]
             except KeyError:
-                raise ValueError("Unknown attribute %s" % (path[0],))
+                raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
 
         yield value
 
