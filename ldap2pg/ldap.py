@@ -245,12 +245,16 @@ class Options(dict):
     def _parse_raw(self, value):
         return value
 
+    def _parse_bool(self, value):
+        return value not in ('false', 'no', 'off')
+
     parse_uri = _parse_raw
     parse_host = _parse_raw
     parse_port = int
     parse_binddn = _parse_raw
     parse_user = _parse_raw
     parse_password = _parse_raw
+    parse_referrals = _parse_bool
 
 
 def gather_options(environ=None, **kw):
@@ -261,7 +265,7 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
-        REFERRALS='',
+        REFERRALS=True,
     )
 
     environ = environ or os.environ
