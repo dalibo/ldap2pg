@@ -13,6 +13,9 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
   `warn` and `fail`. If a LDAP attribute has references different objectClass,
   accessing a RDN triggers an error. The `on_unexpected_dn` configuration key
   allows to configure this behaviour.
+- LDAPREFERRALS is now disabled by default, just like ldapsearch and other
+  openldap tools. You must explicitly enable REFERRALS with `LDAPREFERRALS=yes`
+  env var, or `REFERRALS yes` ldap.conf(1) parameter.
 
 
 # ldap2pg 4.12

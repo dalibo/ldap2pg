@@ -49,8 +49,8 @@ class SyncManager(object):
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
 
-            logger.debug("Evalutate entry: '%s' dn: '%s' attributes: '%s'", entry, dn, attributes)
             if not dn:
+                logger.debug("Entry without dn: %.40s.")
                 continue
 
             entries.append(lower_attributes(entry))
@@ -144,7 +144,8 @@ class SyncManager(object):
             if 'ldap' in mapping:
                 logger.info(
                     "Querying LDAP %.24s... %.12s...",
-                    mapping['ldap']['base'], mapping['ldap']['filter'])
+                    mapping['ldap']['base'],
+                    mapping['ldap']['filter'].replace('\n', ''))
                 entries = self.query_ldap(**mapping['ldap'])
                 log_source = 'in LDAP'
             else:

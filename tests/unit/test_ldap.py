@@ -91,7 +91,9 @@ def test_gather_options(mocker):
 
     options = gather_options(
         password=None,
-        environ=dict(LDAPBASE=b'dc=local', LDAPPASSWORD=b'envpass'),
+        environ=dict(
+            LDAPBASE=b'dc=local', LDAPPASSWORD=b'envpass',
+            LDAPREFERRALS=b'off'),
     )
 
     assert 'envpass' == options['PASSWORD']
