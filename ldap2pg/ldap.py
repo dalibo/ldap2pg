@@ -273,7 +273,7 @@ def gather_options(environ=None, **kw):
     environ = dict([
         (k[4:], v.decode('utf-8') if hasattr(v, 'decode') else v)
         for k, v in environ.items()
-        if k.startswith('LDAP') and not k.startswith('LDAP2PG')
+        if k.startswith('LDAP') and not k.startswith('LDAP_')
     ])
 
     if 'NOINIT' in environ:
