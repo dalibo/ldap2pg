@@ -210,10 +210,11 @@ def connect(**kw):
         conn = UnicodeModeLDAPObject(conn)
 
     conn = LDAPLogger(conn)
-
-    if not options.get('REFERRALS'):
-        logger.debug("HOTFIX https://stackoverflow.com/questions/18793040/python-ldap-not-able-to-bind-successfully")
-        conn.set_option(ldap.OPT_REFERRALS, 0)
+    # Don't follow referrals by default. This is the behaviour of ldapsearch
+    # and friends. Following referrals leads to strange errors with Active
+    # directory. REFERRALS can still be activated through ldaprc, env var and
+    # even YAML. See https://github.com/dalibo/ldap2pg/issues/228 .
+    conn.set_option(ldap.OPT_REFERRALS, options.get('REFERRALS', True))
 
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
@@ -265,14 +266,14 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
-        REFERRALS=True,
+        REFERRALS=False,
     )
 
     environ = environ or os.environ
     environ = dict([
         (k[4:], v.decode('utf-8') if hasattr(v, 'decode') else v)
         for k, v in environ.items()
-        if k.startswith('LDAP') and not k.startswith('LDAP2PG')
+        if k.startswith('LDAP') and not k.startswith('LDAP_')
     ])
 
     if 'NOINIT' in environ:
