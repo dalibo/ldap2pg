@@ -49,7 +49,6 @@ class SyncManager(object):
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
 
-            logger.debug("Evalutate entry: '%s' dn: '%s' attributes: '%s'", entry, dn, attributes)
             if not dn:
                 continue
 
