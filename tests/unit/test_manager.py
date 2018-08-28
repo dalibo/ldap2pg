@@ -145,19 +145,30 @@ def test_apply_role_rule_ko(mocker):
         list(items)
 
 
-def test_apply_role_rule_warn(mocker):
+def test_apply_role_rule_unexpected_dn(mocker):
     gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
 
-    from ldap2pg.manager import SyncManager, RDNError
+    from ldap2pg.manager import SyncManager, RDNError, UserError
 
     manager = SyncManager()
 
     gla.side_effect = RDNError
-    items = manager.apply_role_rules(
+
+    list(manager.apply_role_rules(
         entries=[('dn0',), ('dn1',)],
-        rules=[dict(names=['{cn}'])],
-    )
-    list(items)
+        rules=[dict(names=['{cn}'], on_unexpected_dn='warn')],
+    ))
+
+    list(manager.apply_role_rules(
+        entries=[('dn0',), ('dn1',)],
+        rules=[dict(names=['{cn}'], on_unexpected_dn='ignore')],
+    ))
+
+    with pytest.raises(UserError):
+        list(manager.apply_role_rules(
+            entries=[('dn0',), ('dn1',)],
+            rules=[dict(names=['{cn}'])],
+        ))
 
 
 def test_apply_grant_rule_ok(mocker):
