@@ -89,6 +89,7 @@ def rolerule(value):
         )
 
     rule['options'] = RoleOptions(**options)
+    rule.setdefault('on_unexpected_dn', 'fail')
     return rule
 
 

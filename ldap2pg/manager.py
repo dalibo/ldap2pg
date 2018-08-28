@@ -84,12 +84,19 @@ class SyncManager(object):
 
     def apply_role_rules(self, rules, entries):
         for rule in rules:
+            on_unexpected_dn = rule.get('on_unexpected_dn', 'fail')
             for entry in entries:
                 try:
                     for role in self.process_ldap_entry(entry=entry, **rule):
                         yield role
                 except RDNError as e:
-                    logger.warn("Unexpected DN: %s", e.dn)
+                    msg = "Unexpected DN: %s" % e.dn
+                    if 'ignore' == on_unexpected_dn:
+                        continue
+                    elif 'warn' == on_unexpected_dn:
+                        logger.warn(msg)
+                    else:
+                        raise UserError(msg)
                 except ValueError as e:
                     msg = "Failed to process %.48s: %s" % (entry[0], e,)
                     raise UserError(msg)

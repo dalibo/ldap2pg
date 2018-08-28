@@ -42,6 +42,14 @@ You can inject attributes in `role:names`, `role:parents`, `role:members` and
 `grant:role`.
 
 
+## Managing heterogeneous DN
+
+If you rely on accessing a member of a DN like `member.cn` and have different DN
+format, you will have an `Unexpected DN` error. This behaviour is configurable
+with the `on_unexpected_dn` key. The possible values are `fail` (the default),
+`warn` or `ignore`.
+
+
 ## Examples
 
 ``` yaml
@@ -63,4 +71,5 @@ You can inject attributes in `role:names`, `role:parents`, `role:members` and
   - names:
     - dba_{member.cn}
     options: LOGIN
+    on_unexpected_dn: fail
 ```

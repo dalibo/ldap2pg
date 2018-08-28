@@ -9,8 +9,10 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
-- Warn when matching unexpected DN instead of failing. This allow to ignore
-  mixed objectClass referenced in a LDAP attribute.
+- Allow to configure behaviour on unexpected DN. Current behaviour are `ignore`,
+  `warn` and `fail`. If a LDAP attribute has references different objectClass,
+  accessing a RDN triggers an error. The `on_unexpected_dn` configuration key
+  allows to configure this behaviour.
 
 
 # ldap2pg 4.12
