@@ -156,12 +156,12 @@ def test_expand_attributes():
 
 
 def test_get_attribute():
-    from ldap2pg.ldap import get_attribute
+    from ldap2pg.ldap import get_attribute, RDNError
 
     with pytest.raises(ValueError):
         list(get_attribute(entry=('dn', {}), attribute='pouet'))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(RDNError):
         list(get_attribute(
             entry=('dn', {'cn': ['cn=pouet']}),
             attribute='cn.pouet',
