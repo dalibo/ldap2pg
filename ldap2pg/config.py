@@ -387,7 +387,7 @@ class Configuration(dict):
         Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),
         Mapping('ldap:user'),
         Mapping('ldap:password', secret=True),
-        Mapping('ldap:referrals', env=['REFERRALS']),
+        Mapping('ldap:referrals'),
         Mapping(
             'postgres:dsn', env='PGDSN',
             secret=r'(?:password=|:[^/][^/].*@)',
