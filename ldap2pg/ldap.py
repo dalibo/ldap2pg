@@ -211,6 +211,10 @@ def connect(**kw):
 
     conn = LDAPLogger(conn)
 
+    if not options.get('REFERRALS'):
+        logger.debug("HOTFIX https://stackoverflow.com/questions/18793040/python-ldap-not-able-to-bind-successfully")
+        conn.set_option(ldap.OPT_REFERRALS, 0)
+
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
         auth = sasl.sasl({
@@ -257,6 +261,7 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
+        REFERRALS='',
     )
 
     environ = environ or os.environ

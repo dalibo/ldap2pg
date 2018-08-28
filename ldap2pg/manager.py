@@ -48,6 +48,11 @@ class SyncManager(object):
             except UnicodeDecodeError as e:
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
+
+            logger.debug("Evalutate entry: '%s' dn: '%s' attributes: '%s'", entry, dn, attributes)
+            if not dn:
+                continue
+
             entries.append(lower_attributes(entry))
         return entries
 
@@ -139,8 +144,7 @@ class SyncManager(object):
             if 'ldap' in mapping:
                 logger.info(
                     "Querying LDAP %.24s... %.12s...",
-                    mapping['ldap']['base'],
-                    mapping['ldap']['filter'].replace('\n', ''))
+                    mapping['ldap']['base'], mapping['ldap']['filter'])
                 entries = self.query_ldap(**mapping['ldap'])
                 log_source = 'in LDAP'
             else:
