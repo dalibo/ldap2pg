@@ -214,7 +214,7 @@ def connect(**kw):
     # and friends. Following referrals leads to strange errors with Active
     # directory. REFERRALS can still be activated through ldaprc, env var and
     # even YAML. See https://github.com/dalibo/ldap2pg/issues/228 .
-    conn.set_option(ldap.OPT_REFERRALS, options.get('REFERRALS', True))
+    conn.set_option(ldap.OPT_REFERRALS, options.get('REFERRALS', False))
 
     if options.get('USER'):
         logger.debug("Trying SASL DIGEST-MD5 auth.")
@@ -266,14 +266,14 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
-        REFERRALS=False,
+        REFERRALS=True,
     )
 
     environ = environ or os.environ
     environ = dict([
         (k[4:], v.decode('utf-8') if hasattr(v, 'decode') else v)
         for k, v in environ.items()
-        if k.startswith('LDAP') and not k.startswith('LDAP_')
+        if k.startswith('LDAP') and not k.startswith('LDAP2PG')
     ])
 
     if 'NOINIT' in environ:

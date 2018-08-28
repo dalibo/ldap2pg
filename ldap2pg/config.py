@@ -333,7 +333,7 @@ class Configuration(dict):
             'binddn': '',
             'user': None,
             'password': '',
-            'referrals': True,
+            'referrals': False,
         },
         'postgres': {
             'dsn': '',
