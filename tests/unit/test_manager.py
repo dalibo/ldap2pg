@@ -7,7 +7,11 @@ def test_query_ldap(mocker):
     from ldap2pg.manager import SyncManager, UserError
 
     manager = SyncManager(ldapconn=mocker.Mock())
-    manager.ldapconn.search_s.return_value = [('dn=a', {}), ('dn=b', {})]
+    manager.ldapconn.search_s.return_value = [
+        ('dn=a', {}),
+        ('dn=b', {}),
+        (None, {'ref': True}),
+    ]
 
     entries = manager.query_ldap(
         base='ou=people,dc=global', filter='(objectClass=*)',

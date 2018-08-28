@@ -50,6 +50,7 @@ class SyncManager(object):
                 raise UserError(message)
 
             if not dn:
+                logger.debug("Entry without dn: %.40s.")
                 continue
 
             entries.append(lower_attributes(entry))
