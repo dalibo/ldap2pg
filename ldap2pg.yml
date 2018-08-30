@@ -30,6 +30,8 @@ postgres:
     WHERE nspname = 'pg_catalog' OR nspname NOT LIKE 'pg_%'
   # Return managed roles which can be dropped or revoked.
   managed_roles_query: |
+    SELECT 'public'
+    UNION
     SELECT DISTINCT role.rolname
     FROM pg_roles AS role
     LEFT OUTER JOIN pg_auth_members AS ms ON ms.member = role.oid

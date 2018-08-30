@@ -105,7 +105,6 @@ class PostgresInspector(object):
     def is_role_managed(self, role, roles):
         return (
             self.queries.get('all_roles', False) is None
-            or role == 'public'
             or role in roles
         )
 
@@ -137,6 +136,9 @@ class PostgresInspector(object):
                         role.name, ','.join(role.members),
                     )
                 managedroles.add(role)
+
+        if 'public' in whitelist:
+            managedroles.add(Role(name='public'))
 
         return allroles, managedroles
 
@@ -194,7 +196,9 @@ class PostgresInspector(object):
             pgallroles = RoleSet(self.fetch(
                 psql, self.format_roles_query(), self.process_roles))
             if not self.queries.get('managed_roles'):
-                pgmanagedroles = set([r.name for r in pgallroles])
+                # Legacy ldap2pg manages public, always. We keep this by
+                # default as it is sound to manage public privileges.
+                pgmanagedroles = set(['public'] + [r.name for r in pgallroles])
             else:
                 logger.debug("Listing managed roles.")
                 pgmanagedroles = set(self.fetch(

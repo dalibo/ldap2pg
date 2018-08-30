@@ -37,6 +37,8 @@ synchronsize only a subset of roles, you need to customize inspection query in
 postgres:
   # Inspect only non SUPERUSER roles.
   managed_roles_query: |
+    SELECT 'public'
+    UNION
     SELECT rolname
     FROM pg_catalog.pg_roles
     WHERE rolsuper IS FALSE
@@ -51,6 +53,12 @@ A common case for this query is to return only members of a group like
 `ldap_roles`. This case is tested in
 [ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) sample.
 This way, `ldap2pg` is scoped to a subset of roles in the cluster.
+
+The `public` role does not exists in the system catalog. Thus if you want
+`ldap2pg` to manage `public` privileges, you must include explicitly `public` in
+the set of managed roles. This is the default. Of course, even if `public` is
+managed, `ldap2pg` won't drop or alter it if it's not in the directory.
+
 
 A safety net to completely ignore some roles is available : `blacklist`.
 `blacklist` is a list of `glob` patterns. Every roles matching one of

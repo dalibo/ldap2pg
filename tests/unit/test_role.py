@@ -173,6 +173,7 @@ def test_diff():
         Role('drop-me'),
         Role('alter-me'),
         Role('nothing'),
+        Role('public'),
     ])
     pgallroles = pgmanagedroles.union({
         Role('reuse-me'),
@@ -195,3 +196,4 @@ def test_diff():
     assert not fnfilter(queries, 'CREATE ROLE "reuse-me" *')
     assert not fnfilter(queries, '*nothing*')
     assert not fnfilter(queries, '*dont-touch-me*')
+    assert not fnfilter(queries, '*public*')
