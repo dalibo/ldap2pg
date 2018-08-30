@@ -53,18 +53,19 @@ def test_filter_roles():
         Role('alice'),
         Role('unmanaged'),
     ]
-    managedroles = {'alice', 'dba'}
+    managedroles = {'alice', 'dba', 'public'}
     allroles, managedroles = inspector.filter_roles(
         allroles, managedroles)
 
     assert 3 == len(allroles)
-    assert 2 == len(managedroles)
+    assert 3 == len(managedroles)
     assert 'dba' in allroles
     assert 'alice' in allroles
     assert 'unmanaged' in allroles
     assert 'unmanaged' not in managedroles
     assert 'postgres' not in allroles
     assert 'postgres' not in managedroles
+    assert 'public' in managedroles
 
 
 def test_process_grants():
@@ -178,7 +179,8 @@ def test_grants(mocker):
 
     grants = inspector.fetch_grants(
         schemas=dict(db=dict(public=['owner'])),
-        roles=['alice'])
+        roles=['alice', 'public'],
+    )
 
     assert 2 == len(grants)
     grantees = [a.role for a in grants]
@@ -214,7 +216,7 @@ def test_roles(mocker):
     assert 'postgres' in databases
     assert 'precreated' in pgallroles
     assert 'spurious' in pgallroles
-    assert pgallroles == pgmanagedroles
+    assert pgallroles < pgmanagedroles
 
     inspector.queries['managed_roles'] = ['precreated']
 
