@@ -177,6 +177,11 @@ _allrelacl_tpl = dict(
       FROM pg_catalog.pg_class
       WHERE relkind IN %(t)s
       GROUP BY 1, 2, 3
+    ),
+    all_roles AS (
+      SELECT 0 AS oid, 'public' AS rolname
+      UNION
+      SELECT oid, rolname from pg_roles
     )
     SELECT
       nspname,
@@ -186,7 +191,7 @@ _allrelacl_tpl = dict(
         ELSE nsp.rels = COALESCE(grants.rels, ARRAY[]::name[])
       END AS "full"
     FROM namespace_rels AS nsp
-    CROSS JOIN pg_catalog.pg_roles AS rol
+    CROSS JOIN all_roles AS rol
     LEFT OUTER JOIN all_grants AS grants
       ON relnamespace = nsp.oid
          AND grantee = rol.oid

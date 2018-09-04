@@ -287,7 +287,7 @@ class RoleSet(set):
                 yield qry
 
         # Don't forget to trash all spurious managed roles!
-        spurious = RoleSet(self - other)
+        spurious = RoleSet(self - other - set(['public']))
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry
