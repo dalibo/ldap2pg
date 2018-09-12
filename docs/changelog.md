@@ -7,7 +7,7 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
-# Unreleased
+# ldap2pg 4.14
 
 - Allow to exclude public from managed roles. When scoping ldap2pg to a subset
   of roles, ldap2pg was including the public role, always. Now you can include
