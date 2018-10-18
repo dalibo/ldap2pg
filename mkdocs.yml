@@ -27,7 +27,6 @@ site_dir: build/docs/
 markdown_extensions:
 - admonition
 - fenced_code
-- headerid
 - sane_lists
 - smarty
 - toc:

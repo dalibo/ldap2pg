@@ -337,7 +337,7 @@ class Configuration(dict):
         },
         'postgres': {
             'dsn': '',
-            'blacklist': ['pg_*', 'postgres'],
+            'blacklist': ['pg_*', 'postgres', 'rds_*', 'rds*admin'],
             'databases_query': dedent("""\
             SELECT datname FROM pg_catalog.pg_database
             WHERE datallowconn IS TRUE ORDER BY 1;
