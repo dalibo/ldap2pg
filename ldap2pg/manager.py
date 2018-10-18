@@ -220,6 +220,8 @@ class SyncManager(object):
             databases=databases))
         if self.privileges:
             logger.info("Inspecting GRANTs in Postgres cluster...")
+            # Inject ldaproles in managed roles to avoid requerying roles.
+            pgmanagedroles.update(ldaproles)
             if self.psql.dry and count:
                 logger.warn(
                     "In dry mode, some owners aren't created, "
