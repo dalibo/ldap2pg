@@ -60,12 +60,18 @@ class PostgresInspector(object):
 
     def process_grants(self, privilege, dbname, rows):
         # GRANT query signatures: schema, role, [<privilege options> ...]
+        sql = str(privilege.grant_sql) + str(privilege.revoke_sql)
+        schema_aware = '{schema}' in sql
         for row in rows:
             if len(row) < 2:
                 fmt = "%s's inspect query doesn't return role as column 2"
                 raise UserError(fmt % (privilege,))
 
-            yield Grant.from_row(privilege, dbname, *row)
+            # Explicitly ignore schema on schema naive privilege.
+            if not schema_aware and row[0]:
+                row = (None,) + row[1:]
+
+            yield Grant.from_row(privilege.name, dbname, *row)
 
     def process_schemas(self, rows):
         for row in rows:
@@ -258,7 +264,7 @@ class PostgresInspector(object):
                 rows = psql(privilege.inspect)
                 # Gather all owners in database for global ACL
                 owners = set(chain(*schemas[dbname].values()))
-                for grant in self.process_grants(name, dbname, rows):
+                for grant in self.process_grants(privilege, dbname, rows):
                     if self.is_grant_managed(grant, schemas, roles, owners):
                         logger.debug("Found GRANT %s.", grant)
                         pgacl.add(grant)

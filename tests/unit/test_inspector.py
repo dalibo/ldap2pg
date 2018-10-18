@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 
 import pytest
@@ -68,17 +70,19 @@ def test_filter_roles():
     assert 'public' in managedroles
 
 
-def test_process_grants():
+def test_process_grants(mocker):
     from ldap2pg.inspector import PostgresInspector, UserError
 
     inspector = PostgresInspector()
+    priv = mocker.Mock(grant_sql='IN {schema} TO {role}')
+    priv.name = 'connect'
     rows = [
         (None, 'postgres', True),
         (None, 'pg_signal_backend'),  # Old signature, fallback to True
         ('public', 'alice', True),
     ]
 
-    items = sorted(inspector.process_grants('connect', 'postgres', rows))
+    items = sorted(inspector.process_grants(priv, 'postgres', rows))
 
     assert 3 == len(items)
     item = items[0]
@@ -87,8 +91,14 @@ def test_process_grants():
     assert 'public' == item.schema
     assert 'alice' == item.role
 
+    # Schema naïve privilege
+    priv.grant_sql = 'TO {role}'
+    rows = [('public', 'alice')]
+    items = sorted(inspector.process_grants(priv, 'postgres', rows))
+    assert items[0].schema is None
+
     with pytest.raises(UserError):
-        list(inspector.process_grants('priv', 'db', [('incomplete',)]))
+        list(inspector.process_grants(priv, 'db', [('incomplete',)]))
 
 
 def test_process_schema_rows():
