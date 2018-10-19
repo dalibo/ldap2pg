@@ -108,11 +108,10 @@ class PSQL(object):
 
 
 class PSQLSession(object):
-    def __init__(self, connstring, dry=False):
+    def __init__(self, connstring):
         self.connstring = connstring
         self.conn = None
         self.cursor = None
-        self.dry = dry
 
     def __del__(self):
         if self.cursor:
