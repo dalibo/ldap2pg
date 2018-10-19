@@ -70,6 +70,9 @@ def wrapped_main(config=None):
     action = "Comparison" if config['dry'] else "Synchronization"
     logger.info("%s complete.", action)
 
+    if ldapconn:
+        logger.debug("Searching directory took %s.", ldapconn.timer.delta)
+
     return int(count > 0) if config['check'] else 0
 
 
