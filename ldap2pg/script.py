@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import logging
 import os
 import pdb
+import resource
 import sys
 
 import psycopg2
@@ -74,6 +75,9 @@ def wrapped_main(config=None):
     if ldapconn:
         logger.debug("Searching directory took %s.", ldapconn.timer.delta)
     logger.debug("Synchronizing Postgres took %s.", psql.timer.delta)
+
+    rusage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.debug("Used up to %.1fMiB of memory.", rusage.ru_maxrss / 1024.)
 
     return int(count > 0) if config['check'] else 0
 
