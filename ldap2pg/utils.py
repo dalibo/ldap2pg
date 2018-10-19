@@ -170,9 +170,19 @@ class Timer(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.delta)
 
+    def time_iter(self, iterator):
+        while True:
+            try:
+                with self:
+                    item = next(iterator)
+                yield item
+            except StopIteration:
+                break
+
     def __enter__(self):
         self.start = datetime.utcnow()
 
     def __exit__(self, *_):
-        self.delta += datetime.utcnow() - self.start
+        context_delta = datetime.utcnow() - self.start
+        self.delta += context_delta
         self.start = None

@@ -92,3 +92,7 @@ def test_timer():
     with my:
         pass
     assert my.delta.microseconds > first
+
+    # Time iteration
+    for _ in my.time_iter(iter([0, 1])):
+        pass
