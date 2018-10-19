@@ -77,8 +77,10 @@ def test_pdb(mocker):
 
 
 def test_wrapped_main(mocker):
+    from ldap2pg.utils import Timer
     mocker.patch('ldap2pg.script.dictConfig', autospec=True)
     PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
+    PSQL.return_value.timer = Timer()
     clc = mocker.patch('ldap2pg.script.ldap.connect')
     SM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     manager = SM.return_value

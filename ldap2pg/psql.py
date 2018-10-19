@@ -5,7 +5,13 @@ import re
 
 import psycopg2.extensions
 
-from .utils import AllDatabases, UserError, urlparse, urlunparse
+from .utils import (
+    AllDatabases,
+    Timer,
+    UserError,
+    urlparse,
+    urlunparse,
+)
 from .utils import lower1
 
 
@@ -42,6 +48,7 @@ class PSQL(object):
         self.pool = {}
         self.max_pool_size = max_pool_size
         self.dry = dry
+        self.timer = Timer()
 
     def __call__(self, dbname=None):
         if dbname in self.pool:
@@ -99,7 +106,8 @@ class PSQL(object):
                 continue
 
             try:
-                session(sql)
+                with self.timer:
+                    session(sql)
             except Exception as e:
                 msg = "Error while executing SQL query:\n%s" % (e,)
                 raise UserError(msg)

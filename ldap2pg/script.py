@@ -73,6 +73,7 @@ def wrapped_main(config=None):
     logger.debug("Inspecting Postgres took %s.", inspector.timer.delta)
     if ldapconn:
         logger.debug("Searching directory took %s.", ldapconn.timer.delta)
+    logger.debug("Synchronizing Postgres took %s.", psql.timer.delta)
 
     return int(count > 0) if config['check'] else 0
 
