@@ -12,6 +12,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Add Amazon RDS admin roles in default blacklist.
 - Fix schema naïve privilege inspection.
 - Fix newly created roles excluded from privilege inspection.
+- Time LDAP searches, Postgres inspection and Postgres synchronization. Time
+  delta are shown in debug messages.
 
 
 # ldap2pg 4.14

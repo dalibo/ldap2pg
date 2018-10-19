@@ -19,6 +19,7 @@ from ldap import sasl
 
 from .utils import decode_value, encode_value, PY2, uniq, iter_format_fields
 from .utils import Settable
+from .utils import Timer
 
 
 logger = logging.getLogger(__name__)
@@ -156,6 +157,7 @@ class LDAPLogger(object):
     def __init__(self, wrapped):
         self.wrapped = wrapped
         self.connect_opts = ''
+        self.timer = Timer()
 
     def __getattr__(self, name):
         return getattr(self.wrapped, name)
@@ -166,7 +168,8 @@ class LDAPLogger(object):
             self.connect_opts,
             base, SCOPES_STR[scope], filter, ' '.join(attributes or []),
         )
-        return self.wrapped.search_s(base, scope, filter, attributes)
+        with self.timer:
+            return self.wrapped.search_s(base, scope, filter, attributes)
 
     def simple_bind_s(self, binddn, password):
         self.connect_opts = ' -x'

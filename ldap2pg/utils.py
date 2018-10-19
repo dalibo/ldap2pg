@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import sys
+from datetime import timedelta, datetime
 from fnmatch import fnmatch
 from string import Formatter
 import textwrap
@@ -160,3 +161,28 @@ class Settable(object):
             self.__class__.__name__,
             ' '.join(['%s=%s' % i for i in self.__dict__.items()])
         )
+
+
+class Timer(object):
+    def __init__(self):
+        self.delta = timedelta()
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.delta)
+
+    def time_iter(self, iterator):
+        while True:
+            try:
+                with self:
+                    item = next(iterator)
+                yield item
+            except StopIteration:
+                break
+
+    def __enter__(self):
+        self.start = datetime.utcnow()
+
+    def __exit__(self, *_):
+        context_delta = datetime.utcnow() - self.start
+        self.delta += context_delta
+        self.start = None
