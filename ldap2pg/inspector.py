@@ -16,6 +16,7 @@ from .role import (
     RoleSet,
 )
 from .utils import (
+    Timer,
     UserError,
     match,
     unicode,
@@ -32,6 +33,7 @@ class PostgresInspector(object):
         self.privileges = privileges or {}
         self.queries = queries
         self.roles_blacklist = roles_blacklist or []
+        self.timer = Timer()
 
     def format_roles_query(self, name='all_roles'):
         query = self.queries[name]
@@ -172,12 +174,15 @@ class PostgresInspector(object):
                 if rows and not isinstance(rows[0], (list, tuple)):
                     rows = [(v,) for v in rows]
             else:
-                rows = psql(sql)
+                with self.timer:
+                    rows = psql(sql)
 
             if processor:
                 rows = processor(rows)
             if not isinstance(rows, list):
-                rows = list(rows)
+                # Track time spent fetching data from Postgres. It's about 5%
+                # on testing env.
+                rows = list(self.timer.time_iter(rows))
             return rows
         except psycopg2.ProgrammingError as e:
             # Consider the query as user defined
@@ -261,10 +266,12 @@ class PostgresInspector(object):
 
             logger.debug("Searching GRANTs of privilege %s.", privilege)
             for dbname, psql in self.psql.itersessions(schemas):
-                rows = psql(privilege.inspect)
+                with self.timer:
+                    rows = psql(privilege.inspect)
                 # Gather all owners in database for global ACL
                 owners = set(chain(*schemas[dbname].values()))
-                for grant in self.process_grants(privilege, dbname, rows):
+                grants = self.process_grants(privilege, dbname, rows)
+                for grant in self.timer.time_iter(iter(grants)):
                     if self.is_grant_managed(grant, schemas, roles, owners):
                         logger.debug("Found GRANT %s.", grant)
                         pgacl.add(grant)

@@ -70,6 +70,7 @@ def wrapped_main(config=None):
     action = "Comparison" if config['dry'] else "Synchronization"
     logger.info("%s complete.", action)
 
+    logger.debug("Inspecting Postgres took %s.", inspector.timer.delta)
     if ldapconn:
         logger.debug("Searching directory took %s.", ldapconn.timer.delta)
 
