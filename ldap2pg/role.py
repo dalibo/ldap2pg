@@ -11,6 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 class Role(object):
+    __slots__ = (
+        'members',
+        'name',
+        'options',
+        'parents',
+    )
+
     def __init__(self, name, options=None, members=None, parents=None):
         self.name = name
         self.members = members or []
