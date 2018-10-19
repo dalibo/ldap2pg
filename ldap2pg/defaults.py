@@ -90,6 +90,7 @@ _defacl_tpl = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND priv = '%(privilege)s'
+      AND nspname NOT LIKE 'pg\_%%temp\_%%'
     ORDER BY 1, 2, 4;
     """),
     grant=dedent("""\
@@ -119,6 +120,7 @@ _nspacl_tpl = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND grants.priv = '%(privilege)s'
+      AND nspname NOT LIKE 'pg\_%%temp\_%%'
     ORDER BY 1, 2;
     """),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
@@ -197,6 +199,7 @@ _allrelacl_tpl = dict(
          AND grantee = rol.oid
          AND privilege_type = '%(privilege)s'
     WHERE NOT (array_length(nsp.rels, 1) IS NOT NULL AND grants.rels IS NULL)
+      AND nspname NOT LIKE 'pg\_%%temp\_%%'
     ORDER BY 1, 2
     """),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
@@ -256,6 +259,7 @@ _allprocacl_tpl = dict(
       ON pronamespace = nsp.oid AND grants.grantee = roles.oid
     WHERE NOT (array_length(nsp.procs, 1) IS NOT NULL AND grants.procs IS NULL)
       AND (priv IS NULL OR priv = '%(privilege)s')
+      AND nspname NOT LIKE 'pg\_%%temp\_%%'
     ORDER BY 1, 2;
     """),  # noqa
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
