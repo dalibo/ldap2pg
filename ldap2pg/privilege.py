@@ -44,7 +44,7 @@ class Privilege(object):
     def grant(self, grant):
         fmt = "Grant %(privilege)s on " + self.grantfmt + " to %(role)s."
         return Query(
-            fmt % grant.__dict__,
+            fmt % grant.as_dict(),
             grant.dbname,
             self.grant_sql.format(
                 database='"%s"' % grant.dbname,
@@ -57,7 +57,7 @@ class Privilege(object):
     def revoke(self, grant):
         fmt = "Revoke %(privilege)s on " + self.grantfmt + " from %(role)s."
         return Query(
-            fmt % grant.__dict__,
+            fmt % grant.as_dict(),
             grant.dbname,
             self.revoke_sql.format(
                 database='"%s"' % grant.dbname,
@@ -142,6 +142,15 @@ class Grant(object):
     ALL_DATABASES = AllDatabases()
     ALL_SCHEMAS = None
 
+    __slots__ = (
+        'dbname',
+        'full',
+        'owner',
+        'privilege',
+        'role',
+        'schema',
+    )
+
     @classmethod
     def from_row(cls, *args):
         return cls(*args)
@@ -159,17 +168,20 @@ class Grant(object):
     def __lt__(self, other):
         return self.as_tuple() < other.as_tuple()
 
+    _full_map = {None: 'n/a', True: 'full', False: 'partial'}
+
     def __str__(self):
-        full_map = {None: 'n/a', True: 'full', False: 'partial'}
         fmt = (
-            '%(privilege)s on %(dbname)s.%(schema)s for %(owner)s'
-            ' to %(role)s (%(full)s)'
+            '%s on %s.%s for %s'
+            ' to %s (%s)'
         )
-        return fmt % dict(
-            self.__dict__,
-            schema=self.schema or '*',
-            owner=self.owner or '*',
-            full=full_map[self.full],
+        return fmt % (
+            self.privilege,
+            self.dbname,
+            self.schema or '*',
+            self.owner or '*',
+            self.role,
+            self._full_map[self.full],
         )
 
     def __repr__(self):
@@ -181,20 +193,23 @@ class Grant(object):
     def __eq__(self, other):
         return self.as_tuple() == other.as_tuple()
 
-    def as_tuple(self):
-        return (
-            self.dbname or '', self.role, self.privilege, self.schema,
-            self.owner)
-
-    def copy(self, **kw):
-        return self.__class__(**dict(dict(
+    def as_dict(self):
+        return dict(
             privilege=self.privilege,
             role=self.role,
             dbname=self.dbname,
             schema=self.schema,
             full=self.full,
             owner=self.owner,
-        ), **kw))
+        )
+
+    def as_tuple(self):
+        return (
+            self.dbname or '', self.role, self.privilege, self.schema,
+            self.owner)
+
+    def copy(self, **kw):
+        return self.__class__(**dict(self.as_dict(), **kw))
 
 
 class Acl(set):

@@ -16,6 +16,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Time LDAP searches, Postgres inspection and Postgres synchronization. Time
   delta are shown in debug messages.
 - Trace maximum memory used in debug message.
+- Reduce memory usage of grants.
 
 
 # ldap2pg 4.14
