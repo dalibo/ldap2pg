@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Add Amazon RDS admin roles in default blacklist.
+- Skip `pg_temp_*` and `pg_toast_temp_*` schemas when inspecting grants.
 - Fix schema naïve privilege inspection.
 - Fix newly created roles excluded from privilege inspection.
 
