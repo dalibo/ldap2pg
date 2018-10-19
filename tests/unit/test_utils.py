@@ -70,3 +70,25 @@ def test_settable():
     my = Settable(toto='titi')
     assert 'titi' == my.toto
     assert 'toto=titi' in repr(my)
+
+
+def test_timer():
+    from ldap2pg.utils import Timer
+
+    my = Timer()
+    assert repr(my)
+
+    # Init checks
+    assert 0 == my.delta.seconds
+    assert 0 == my.delta.microseconds
+
+    # Just do nothing.
+    with my:
+        pass
+    assert my.delta.microseconds
+
+    # Ensure delta is increased.
+    first = my.delta.microseconds
+    with my:
+        pass
+    assert my.delta.microseconds > first
