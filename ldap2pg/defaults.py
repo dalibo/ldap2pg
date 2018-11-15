@@ -1,3 +1,4 @@
+from itertools import chain
 from textwrap import dedent
 
 from .utils import string_types
@@ -175,7 +176,7 @@ _allrelacl_tpl = dict(
         array_remove(array_agg(rel.relname ORDER BY rel.relname), NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
-        ON rel.relnamespace = nsp.oid AND relkind IN %(t)s
+        ON rel.relnamespace = nsp.oid AND relkind IN %(t_array)s
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -185,7 +186,7 @@ _allrelacl_tpl = dict(
         (aclexplode(relacl)).grantee,
         array_agg(relname ORDER BY relname) AS rels
       FROM pg_catalog.pg_class
-      WHERE relkind IN %(t)s
+      WHERE relkind IN %(t_array)s
       GROUP BY 1, 2, 3
     ),
     all_roles AS (
@@ -284,13 +285,20 @@ _types = {
 }
 
 
+def format_keys(fmt, fmt_kwargs):
+    if '%(t)' in fmt:
+        for t in fmt_kwargs['t']:
+            yield fmt % dict(fmt_kwargs, t=t)
+    else:
+        yield fmt % fmt_kwargs
+
+
 def make_privilege(tpl, name, TYPE, privilege):
     t = _types.get(TYPE)
-    if t:
-        # Loose SQL formatting
-        t = '(%s)' % (', '.join(['%r' % i for i in t]))
     fmt_args = dict(
         t=t,
+        # Loose SQL formatting
+        t_array='(%s)' % (', '.join(['%r' % i for i in t or []])),
         TYPE=TYPE,
         privilege=privilege.upper(),
     )
@@ -304,7 +312,10 @@ def make_privilege(tpl, name, TYPE, privilege):
             v = v.copy()
             if 'key' in v:
                 v['keys'] = [v.pop('key')]
-            v['keys'] = [key % fmt_args for key in v['keys']]
+            v['keys'] = list(chain(*[
+                format_keys(key, fmt_args)
+                for key in v['keys']
+            ]))
         privilege[k] = v
     return name, privilege
 
