@@ -64,6 +64,7 @@ privileges:
 
   # `rw` privilege group lists write-only grants
   rw:
+  - __temporary__
   - __all_on_tables__
   - __all_on_sequences__
 

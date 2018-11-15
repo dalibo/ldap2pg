@@ -288,6 +288,17 @@ def raw(v):
     return v
 
 
+def shared_queries(v):
+    if not v:
+        return {}
+    if not hasattr(v, 'items'):
+        raise ValueError("shared_queries must be dict.")
+    for k, q in v.items():
+        if not isinstance(q, string_types):
+            raise ValueError("Bad query %s." % k)
+    return v
+
+
 VERBOSITIES = [
     'CRITICAL',
     'ERROR',

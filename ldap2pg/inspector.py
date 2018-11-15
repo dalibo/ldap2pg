@@ -28,10 +28,13 @@ logger = logging.getLogger(__name__)
 
 class PostgresInspector(object):
     def __init__(
-            self, psql=None, privileges=None, roles_blacklist=None, **queries):
+            self, psql=None, privileges=None, roles_blacklist=None,
+            shared_queries=None, **queries):
         self.psql = psql
         self.privileges = privileges or {}
+        self.shared_queries = shared_queries or {}
         self.queries = queries
+        self.query_cache = {}
         self.roles_blacklist = roles_blacklist or []
         self.timer = Timer()
 
@@ -254,7 +257,7 @@ class PostgresInspector(object):
         return schemas
 
     def fetch_grants(self, schemas, roles):
-        # Loop all defined ACL to inspect grants.
+        # Loop all defined privileges to inspect grants.
 
         pgacl = Acl()
         for name, privilege in sorted(self.privileges.items()):
@@ -266,8 +269,17 @@ class PostgresInspector(object):
 
             logger.debug("Searching GRANTs of privilege %s.", privilege)
             for dbname, psql in self.psql.itersessions(schemas):
-                with self.timer:
-                    rows = psql(privilege.inspect)
+                if isinstance(privilege.inspect, dict):
+                    rows = self.fetch_shared_query(
+                        name=privilege.inspect['shared_query'],
+                        keys=privilege.inspect['keys'],
+                        dbname=dbname,
+                        psql=psql,
+                    )
+                else:
+                    with self.timer:
+                        rows = psql(privilege.inspect)
+
                 # Gather all owners in database for global ACL
                 owners = set(chain(*schemas[dbname].values()))
                 grants = self.process_grants(privilege, dbname, rows)
@@ -276,4 +288,22 @@ class PostgresInspector(object):
                         logger.debug("Found GRANT %s.", grant)
                         pgacl.add(grant)
 
+        self.query_cache.clear()
+
         return pgacl
+
+    def fetch_shared_query(self, name, keys, dbname, psql):
+        cache_key = '%s_%s' % (name, dbname)
+        if cache_key not in self.query_cache:
+            with self.timer:
+                rows = list(psql(self.shared_queries[name]))
+            # Fill the row cache.
+            self.query_cache[cache_key] = rows
+        else:
+            logger.debug("Reusing shared query cache %s.", name)
+
+        # Now filter row by key, removing key.
+        return [
+            r[1:] for r in self.query_cache[cache_key]
+            if r[0] in keys
+        ]

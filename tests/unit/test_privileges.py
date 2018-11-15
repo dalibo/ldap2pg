@@ -189,3 +189,29 @@ def test_diff(mocker):
     assert not fnfilter(queries, 'REVOKE "daniel"*')
     assert fnfilter(queries, 'REVOKE "alice"*')
     assert fnfilter(queries, 'GRANT "david"*')
+
+
+def test_make_privilege_shared():
+    from ldap2pg.defaults import make_privilege
+
+    kwargs = dict(
+        tpl=dict(
+            inspect=dict(shared_query='datacl', key='%(privilege)s'),
+            grant='GRANT %(TYPE)s;', revoke='REVOK %(TYPE)s;',
+        ),
+        name='__connect__',
+        TYPE='DATABASE',
+        privilege='connect',
+    )
+
+    name, priv = make_privilege(**kwargs)
+    assert ['CONNECT'] == priv['inspect']['keys']
+
+    with pytest.raises(Exception):
+        make_privilege(**dict(
+            kwargs,
+            tpl=dict(
+                kwargs['tpl'],
+                inspect=dict(shared_query='badacl', key='toto'),
+            ),
+        ))

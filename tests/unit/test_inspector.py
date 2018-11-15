@@ -198,6 +198,57 @@ def test_grants(mocker):
     assert 'alice' in grantees
 
 
+def test_grants_cached(mocker):
+    cls = 'ldap2pg.inspector.PostgresInspector'
+    pg = mocker.patch(cls + '.process_grants', autospec=True)
+    mocker.patch(cls + '.fetch_shared_query', autospec=True)
+
+    from ldap2pg.inspector import PostgresInspector
+    from ldap2pg.privilege import NspAcl
+
+    privileges = dict(
+        cached=NspAcl(
+            'cached', inspect=dict(shared_query='shared', keys=['CACHED']))
+    )
+
+    pg.return_value = []
+    psql = mocker.MagicMock(name='psql')
+    psql.itersessions.return_value = [('db', mocker.Mock())]
+    inspector = PostgresInspector(psql=psql, privileges=privileges)
+
+    grants = inspector.fetch_grants(
+        schemas=dict(db=dict(public=['owner'])),
+        roles=['alice', 'public'],
+    )
+
+    assert 0 == len(grants)
+
+
+def test_fetch_cached_query(mocker):
+    from ldap2pg.inspector import PostgresInspector
+
+    shared_queries = dict(shared="SELECT pouet;")
+    inspector = PostgresInspector(shared_queries=shared_queries)
+
+    psql = mocker.Mock(name='psql')
+    psql.return_value = [
+        ('KEY0', 'public', 'alice'),
+        ('KEY0', 'public', 'alain'),
+        ('KEY1', 'public', 'alice'),
+        ('KEY2', 'public', 'adrien'),
+        ('KEY2', 'public', 'armand'),
+    ]
+
+    rows = inspector.fetch_shared_query('shared', ['KEY0'], 'db0', psql)
+    assert 2 == len(rows)
+
+    psql.reset_mock()
+    rows = inspector.fetch_shared_query(
+        'shared', ['KEY1', 'KEY2'], 'db0', psql)
+    assert 3 == len(rows)
+    assert not psql.called
+
+
 def test_me(mocker):
     from ldap2pg.inspector import PostgresInspector
 
