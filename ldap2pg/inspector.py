@@ -278,7 +278,8 @@ class PostgresInspector(object):
                     )
                 else:
                     with self.timer:
-                        rows = psql(privilege.inspect)
+                        rows = list(psql(privilege.inspect))
+                    logger.debug("Took %s.", self.timer.last_delta)
 
                 # Gather all owners in database for global ACL
                 owners = set(chain(*schemas[dbname].values()))
@@ -297,6 +298,7 @@ class PostgresInspector(object):
         if cache_key not in self.query_cache:
             with self.timer:
                 rows = list(psql(self.shared_queries[name]))
+            logger.debug("Took %s.", self.timer.last_delta)
             # Fill the row cache.
             self.query_cache[cache_key] = rows
         else:
