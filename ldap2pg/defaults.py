@@ -25,19 +25,7 @@ shared_queries = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE grantee = 0 OR rolname IS NOT NULL;
     """),
-)
-
-_datacl_tpl = dict(
-    type='datacl',
-    inspect=dict(shared_query='datacl', key='%(privilege)s'),
-    grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
-    revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
-
-)
-
-_global_defacl_tpl = dict(
-    type='globaldefacl',
-    inspect=dedent("""\
+    globaldefacl=dedent("""\
     WITH
     grants AS (
       SELECT
@@ -57,15 +45,28 @@ _global_defacl_tpl = dict(
       WHERE defaclacl IS NULL
     )
     SELECT
+      priv AS key,
       NULL AS "schema",
       COALESCE(rolname, 'public') as rolname,
       TRUE AS "full",
       pg_catalog.pg_get_userbyid(owner) AS owner
     FROM grants
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (rolname IS NOT NULL OR grantee = 0)
-      AND priv = '%(privilege)s'
+    WHERE rolname IS NOT NULL OR grantee = 0
     """),
+)
+
+_datacl_tpl = dict(
+    type='datacl',
+    inspect=dict(shared_query='datacl', key='%(privilege)s'),
+    grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
+    revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
+
+)
+
+_global_defacl_tpl = dict(
+    type='globaldefacl',
+    inspect=dict(shared_query='globaldefacl', key='%(privilege)s'),
     grant=(
         "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
         " GRANT %(privilege)s ON %(TYPE)s TO {role};"),
