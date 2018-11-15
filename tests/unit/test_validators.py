@@ -233,3 +233,17 @@ def test_verbosity():
 
     with pytest.raises(ValueError):
         verbosity('TOTO')
+
+
+def test_shared_queries():
+    from ldap2pg.validators import shared_queries
+
+    with pytest.raises(ValueError):
+        shared_queries(['toto'])
+
+    with pytest.raises(ValueError):
+        shared_queries({'toto': {'not': 'string'}})
+
+    assert {} == shared_queries(None)
+    assert {} == shared_queries([])
+    assert {'toto': 'SELECT 1;'} == shared_queries({'toto': 'SELECT 1;'})

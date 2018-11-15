@@ -33,6 +33,7 @@ from .utils import (
 )
 from . import validators as V
 from .defaults import make_well_known_privileges
+from .defaults import shared_queries as default_shared_queries
 
 
 logger = logging.getLogger(__name__)
@@ -170,6 +171,12 @@ def list_unused_privilege(privileges, aliases):
 
 
 def postprocess_privilege_options(self, defaults=None):
+    # Inject default shared_queries.
+    self.setdefault('postgres', {})
+    conf_shared_queries = self['postgres'].get('shared_queries', {})
+    self['postgres']['shared_queries'] = dict(
+        default_shared_queries, **conf_shared_queries)
+
     # Compat with user defined acl_dict and acl_groups, merge in the same
     # namespace.
     privileges = defaults or {}
@@ -367,6 +374,7 @@ class Configuration(dict):
             SELECT nspname FROM pg_catalog.pg_namespace
             ORDER BY 1;
             """),
+            'shared_queries': {},
         },
         'privileges': {},
         'acls': {},
@@ -398,6 +406,8 @@ class Configuration(dict):
         Mapping('postgres:roles_query', env=None),
         Mapping('postgres:managed_roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
+        Mapping(
+            'postgres:shared_queries', processor=V.shared_queries, env=None),
         Mapping('privileges', env=None, processor=V.privileges),
         Mapping('acls', env=None, processor=V.privileges),
         Mapping('acl_dict', processor=V.privileges),

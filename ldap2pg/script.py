@@ -60,6 +60,7 @@ def wrapped_main(config=None):
         managed_roles=config['postgres']['managed_roles_query'],
         owners=config['postgres']['owners_query'],
         roles_blacklist=config['postgres']['blacklist'],
+        shared_queries=config['postgres']['shared_queries'],
     )
     manager = SyncManager(
         ldapconn=ldapconn, psql=psql, inspector=inspector,

@@ -1,8 +1,10 @@
 from textwrap import dedent
 
-_datacl_tpl = dict(
-    type='datacl',
-    inspect=dedent("""\
+from .utils import string_types
+
+
+shared_queries = dict(
+    datacl=dedent("""\
     WITH grants AS (
       SELECT
         (aclexplode(datacl)).grantee AS grantee,
@@ -16,13 +18,18 @@ _datacl_tpl = dict(
       WHERE datacl IS NULL AND datname = current_database()
     )
     SELECT
+      grants.priv AS key,
       NULL as namespace,
       COALESCE(rolname, 'public')
     FROM grants
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND grants.priv = '%(privilege)s';
+    WHERE grantee = 0 OR rolname IS NOT NULL;
     """),
+)
+
+_datacl_tpl = dict(
+    type='datacl',
+    inspect=dict(shared_query='datacl', key='%(privilege)s'),
     grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
     revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
 
@@ -281,14 +288,24 @@ def make_privilege(tpl, name, TYPE, privilege):
     if t:
         # Loose SQL formatting
         t = '(%s)' % (', '.join(['%r' % i for i in t]))
-    return name, dict(
-        (k, v % (dict(
-            t=t,
-            TYPE=TYPE,
-            privilege=privilege.upper(),
-        )))
-        for k, v in tpl.items()
+    fmt_args = dict(
+        t=t,
+        TYPE=TYPE,
+        privilege=privilege.upper(),
     )
+    privilege = dict()
+    for k, v in tpl.items():
+        if isinstance(v, string_types):
+            v = v % fmt_args
+        else:
+            if v['shared_query'] not in shared_queries:
+                raise Exception("Unknown query %s." % v['shared_query'])
+            v = v.copy()
+            if 'key' in v:
+                v['keys'] = [v.pop('key')]
+            v['keys'] = [key % fmt_args for key in v['keys']]
+        privilege[k] = v
+    return name, privilege
 
 
 def make_proc_privileges(
