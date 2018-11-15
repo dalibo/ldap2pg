@@ -26,6 +26,30 @@ shared_queries = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE grantee = 0 OR rolname IS NOT NULL;
     """),
+    defacl=dedent("""\
+    WITH
+    grants AS (
+      SELECT
+        defaclnamespace,
+        defaclrole,
+        (aclexplode(defaclacl)).grantee AS grantee,
+        (aclexplode(defaclacl)).privilege_type AS priv,
+        defaclobjtype AS objtype
+      FROM pg_catalog.pg_default_acl
+    )
+    SELECT
+      priv || '_on_' || objtype AS key,
+      nspname,
+      COALESCE(rolname, 'public') AS rolname,
+      TRUE AS full,
+      pg_catalog.pg_get_userbyid(defaclrole) AS owner
+    FROM grants
+    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND nspname NOT LIKE 'pg\_%temp\_%'
+    ORDER BY 1, 2, 3, 5;
+    """),
     globaldefacl=dedent("""\
     WITH
     grants AS (
@@ -78,30 +102,7 @@ _global_defacl_tpl = dict(
 
 _defacl_tpl = dict(
     type="defacl",
-    inspect=dedent("""\
-    WITH
-    grants AS (
-      SELECT
-        defaclnamespace,
-        defaclrole,
-        (aclexplode(defaclacl)).grantee AS grantee,
-        (aclexplode(defaclacl)).privilege_type AS priv
-      FROM pg_catalog.pg_default_acl
-      WHERE defaclobjtype IN %(t)s
-    )
-    SELECT
-      nspname,
-      COALESCE(rolname, 'public') AS rolname,
-      TRUE AS full,
-      pg_catalog.pg_get_userbyid(defaclrole) AS owner
-    FROM grants
-    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND priv = '%(privilege)s'
-      AND nspname NOT LIKE 'pg\_%%temp\_%%'
-    ORDER BY 1, 2, 4;
-    """),
+    inspect=dict(shared_query='defacl', key='%(privilege)s_on_%(t)s'),
     grant=dedent("""\
     ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
     GRANT %(privilege)s ON %(TYPE)s TO {role};
