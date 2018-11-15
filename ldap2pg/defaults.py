@@ -101,7 +101,7 @@ shared_queries = dict(
 
 _datacl_tpl = dict(
     type='datacl',
-    inspect=dict(shared_query='datacl', key='%(privilege)s'),
+    inspect=dict(shared_query='datacl', keys=['%(privilege)s']),
     grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
     revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
 
@@ -109,7 +109,7 @@ _datacl_tpl = dict(
 
 _global_defacl_tpl = dict(
     type='globaldefacl',
-    inspect=dict(shared_query='globaldefacl', key='%(privilege)s'),
+    inspect=dict(shared_query='globaldefacl', keys=['%(privilege)s']),
     grant=(
         "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
         " GRANT %(privilege)s ON %(TYPE)s TO {role};"),
@@ -120,7 +120,7 @@ _global_defacl_tpl = dict(
 
 _defacl_tpl = dict(
     type="defacl",
-    inspect=dict(shared_query='defacl', key='%(privilege)s_on_%(t)s'),
+    inspect=dict(shared_query='defacl', keys=['%(privilege)s_on_%(t)s']),
     grant=dedent("""\
     ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
     GRANT %(privilege)s ON %(TYPE)s TO {role};
@@ -133,7 +133,7 @@ _defacl_tpl = dict(
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect=dict(shared_query='nspacl', key='%(privilege)s'),
+    inspect=dict(shared_query='nspacl', keys=['%(privilege)s']),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
@@ -312,8 +312,6 @@ def make_privilege(tpl, name, TYPE, privilege):
             if v['shared_query'] not in shared_queries:
                 raise Exception("Unknown query %s." % v['shared_query'])
             v = v.copy()
-            if 'key' in v:
-                v['keys'] = [v.pop('key')]
             v['keys'] = list(chain(*[
                 format_keys(key, fmt_args)
                 for key in v['keys']
