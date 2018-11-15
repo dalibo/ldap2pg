@@ -79,6 +79,24 @@ shared_queries = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE rolname IS NOT NULL OR grantee = 0
     """),
+    nspacl=dedent("""\
+    WITH grants AS (
+      SELECT
+        nspname,
+        (aclexplode(nspacl)).grantee AS grantee,
+        (aclexplode(nspacl)).privilege_type AS priv
+      FROM pg_catalog.pg_namespace
+    )
+    SELECT
+      grants.priv AS key,
+      nspname,
+      COALESCE(rolname, 'public') AS rolname
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND nspname NOT LIKE 'pg\_%temp\_%'
+    ORDER BY 1, 2;
+    """)
 )
 
 _datacl_tpl = dict(
@@ -115,24 +133,7 @@ _defacl_tpl = dict(
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect=dedent("""\
-    WITH grants AS (
-      SELECT
-        nspname,
-        (aclexplode(nspacl)).grantee AS grantee,
-        (aclexplode(nspacl)).privilege_type AS priv
-      FROM pg_catalog.pg_namespace
-    )
-    SELECT
-      nspname,
-      COALESCE(rolname, 'public') AS rolname
-    FROM grants
-    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND grants.priv = '%(privilege)s'
-      AND nspname NOT LIKE 'pg\_%%temp\_%%'
-    ORDER BY 1, 2;
-    """),
+    inspect=dict(shared_query='nspacl', key='%(privilege)s'),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
