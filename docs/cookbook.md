@@ -201,3 +201,31 @@ Let's call the non-super role creating other roles `creator`.
   privileges on this. This include `public` schema.
 - Granting `CREATE` on schema requires to grant write access to `pg_catalog`.
   That's tricky to give such privileges to `creator`.
+
+
+# Revoking privileges
+
+There is no explict revoke in ldap2pg. ldap2pg inspects SQL grants, ldap2pg.yml
+tells what privileges should be granted. Every unexpected grant is revoked. This
+is called implicit revoke.
+
+ldap2pg don't require any YAML `grant` to trigger inspection of Postgres for SQL
+`GRANT`, and thus revoke. You just declare a privilege with an `inspect` query.
+Of course, you'll need a `revoke` query too.
+
+The following YAML is enough to revoke `CONNECT ON DATABASE` from `public` role:
+
+``` yaml
+privileges:
+  mypriv:
+    type: datacl
+    inspect: |
+      SELECT NULL, 'public';
+    revoke: |
+      REVOKE CONNECT ON DATABASE {database} FROM {role};
+```
+
+The bug here, is that inspect does not truly inspect Postgres and always returns
+the same result. `ldap2pg` will always execute the revoke query, thinking
+`mypriv` is granted to `public`, whatever the actual state of the cluster. It's
+up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.

@@ -131,19 +131,19 @@ class PostgresInspector(object):
             pattern = match(role.name, self.roles_blacklist)
             if pattern:
                 logger.debug(
-                    "Ignoring role %s. Matches %r.", role.name, pattern)
+                    "Ignoring role '%s'. Matches %r.", role.name, pattern)
                 # Remove blacklisted role from allroles. Prefer to fail on
                 # re-CREATE-ing it rather than even altering options of it.
                 allroles.remove(role)
             elif role.name not in whitelist:
-                logger.debug("May reuse role %s.", role.name)
+                logger.debug("May reuse role '%s'.", role.name)
             else:
-                logger.debug("Managing role %r %s.", role.name, role.options)
+                logger.debug("Managing role '%s' %s.", role.name, role.options)
                 if role.members:
                     # Filter members to not revoke unmanaged roles.
                     role.members = list(set(role.members) & whitelist)
                     logger.debug(
-                        "Role %s has members %s.",
+                        "Role '%s' has members %s.",
                         role.name, ','.join(role.members),
                     )
                 managedroles.add(role)
