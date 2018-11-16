@@ -196,7 +196,7 @@ def test_make_privilege_shared():
 
     kwargs = dict(
         tpl=dict(
-            inspect=dict(shared_query='datacl', key='%(privilege)s'),
+            inspect=dict(shared_query='datacl', keys=['%(privilege)s']),
             grant='GRANT %(TYPE)s;', revoke='REVOK %(TYPE)s;',
         ),
         name='__connect__',
@@ -212,6 +212,6 @@ def test_make_privilege_shared():
             kwargs,
             tpl=dict(
                 kwargs['tpl'],
-                inspect=dict(shared_query='badacl', key='toto'),
+                inspect=dict(shared_query='badacl', keys=['toto']),
             ),
         ))

@@ -1,3 +1,4 @@
+from itertools import chain
 from textwrap import dedent
 
 from .utils import string_types
@@ -25,19 +26,31 @@ shared_queries = dict(
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE grantee = 0 OR rolname IS NOT NULL;
     """),
-)
-
-_datacl_tpl = dict(
-    type='datacl',
-    inspect=dict(shared_query='datacl', key='%(privilege)s'),
-    grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
-    revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
-
-)
-
-_global_defacl_tpl = dict(
-    type='globaldefacl',
-    inspect=dedent("""\
+    defacl=dedent("""\
+    WITH
+    grants AS (
+      SELECT
+        defaclnamespace,
+        defaclrole,
+        (aclexplode(defaclacl)).grantee AS grantee,
+        (aclexplode(defaclacl)).privilege_type AS priv,
+        defaclobjtype AS objtype
+      FROM pg_catalog.pg_default_acl
+    )
+    SELECT
+      priv || '_on_' || objtype AS key,
+      nspname,
+      COALESCE(rolname, 'public') AS rolname,
+      TRUE AS full,
+      pg_catalog.pg_get_userbyid(defaclrole) AS owner
+    FROM grants
+    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND nspname NOT LIKE 'pg\_%temp\_%'
+    ORDER BY 1, 2, 3, 5;
+    """),
+    globaldefacl=dedent("""\
     WITH
     grants AS (
       SELECT
@@ -57,15 +70,46 @@ _global_defacl_tpl = dict(
       WHERE defaclacl IS NULL
     )
     SELECT
+      priv AS key,
       NULL AS "schema",
       COALESCE(rolname, 'public') as rolname,
       TRUE AS "full",
       pg_catalog.pg_get_userbyid(owner) AS owner
     FROM grants
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (rolname IS NOT NULL OR grantee = 0)
-      AND priv = '%(privilege)s'
+    WHERE rolname IS NOT NULL OR grantee = 0
     """),
+    nspacl=dedent("""\
+    WITH grants AS (
+      SELECT
+        nspname,
+        (aclexplode(nspacl)).grantee AS grantee,
+        (aclexplode(nspacl)).privilege_type AS priv
+      FROM pg_catalog.pg_namespace
+    )
+    SELECT
+      grants.priv AS key,
+      nspname,
+      COALESCE(rolname, 'public') AS rolname
+    FROM grants
+    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
+    WHERE (grantee = 0 OR rolname IS NOT NULL)
+      AND nspname NOT LIKE 'pg\_%temp\_%'
+    ORDER BY 1, 2;
+    """)
+)
+
+_datacl_tpl = dict(
+    type='datacl',
+    inspect=dict(shared_query='datacl', keys=['%(privilege)s']),
+    grant="GRANT %(privilege)s ON DATABASE {database} TO {role};",
+    revoke="REVOKE %(privilege)s ON DATABASE {database} FROM {role};",
+
+)
+
+_global_defacl_tpl = dict(
+    type='globaldefacl',
+    inspect=dict(shared_query='globaldefacl', keys=['%(privilege)s']),
     grant=(
         "ALTER DEFAULT PRIVILEGES FOR ROLE {owner}"
         " GRANT %(privilege)s ON %(TYPE)s TO {role};"),
@@ -76,30 +120,7 @@ _global_defacl_tpl = dict(
 
 _defacl_tpl = dict(
     type="defacl",
-    inspect=dedent("""\
-    WITH
-    grants AS (
-      SELECT
-        defaclnamespace,
-        defaclrole,
-        (aclexplode(defaclacl)).grantee AS grantee,
-        (aclexplode(defaclacl)).privilege_type AS priv
-      FROM pg_catalog.pg_default_acl
-      WHERE defaclobjtype IN %(t)s
-    )
-    SELECT
-      nspname,
-      COALESCE(rolname, 'public') AS rolname,
-      TRUE AS full,
-      pg_catalog.pg_get_userbyid(defaclrole) AS owner
-    FROM grants
-    JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
-    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND priv = '%(privilege)s'
-      AND nspname NOT LIKE 'pg\_%%temp\_%%'
-    ORDER BY 1, 2, 4;
-    """),
+    inspect=dict(shared_query='defacl', keys=['%(privilege)s_on_%(t)s']),
     grant=dedent("""\
     ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
     GRANT %(privilege)s ON %(TYPE)s TO {role};
@@ -112,24 +133,7 @@ _defacl_tpl = dict(
 
 _nspacl_tpl = dict(
     type="nspacl",
-    inspect=dedent("""\
-    WITH grants AS (
-      SELECT
-        nspname,
-        (aclexplode(nspacl)).grantee AS grantee,
-        (aclexplode(nspacl)).privilege_type AS priv
-      FROM pg_catalog.pg_namespace
-    )
-    SELECT
-      nspname,
-      COALESCE(rolname, 'public') AS rolname
-    FROM grants
-    LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
-    WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND grants.priv = '%(privilege)s'
-      AND nspname NOT LIKE 'pg\_%%temp\_%%'
-    ORDER BY 1, 2;
-    """),
+    inspect=dict(shared_query='nspacl', keys=['%(privilege)s']),
     grant="GRANT %(privilege)s ON SCHEMA {schema} TO {role};",
     revoke="REVOKE %(privilege)s ON SCHEMA {schema} FROM {role};",
 )
@@ -174,7 +178,7 @@ _allrelacl_tpl = dict(
         array_remove(array_agg(rel.relname ORDER BY rel.relname), NULL) AS rels
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
-        ON rel.relnamespace = nsp.oid AND relkind IN %(t)s
+        ON rel.relnamespace = nsp.oid AND relkind IN %(t_array)s
       GROUP BY 1, 2
     ),
     all_grants AS (
@@ -184,7 +188,7 @@ _allrelacl_tpl = dict(
         (aclexplode(relacl)).grantee,
         array_agg(relname ORDER BY relname) AS rels
       FROM pg_catalog.pg_class
-      WHERE relkind IN %(t)s
+      WHERE relkind IN %(t_array)s
       GROUP BY 1, 2, 3
     ),
     all_roles AS (
@@ -283,13 +287,20 @@ _types = {
 }
 
 
+def format_keys(fmt, fmt_kwargs):
+    if '%(t)' in fmt:
+        for t in fmt_kwargs['t']:
+            yield fmt % dict(fmt_kwargs, t=t)
+    else:
+        yield fmt % fmt_kwargs
+
+
 def make_privilege(tpl, name, TYPE, privilege):
     t = _types.get(TYPE)
-    if t:
-        # Loose SQL formatting
-        t = '(%s)' % (', '.join(['%r' % i for i in t]))
     fmt_args = dict(
         t=t,
+        # Loose SQL formatting
+        t_array='(%s)' % (', '.join(['%r' % i for i in t or []])),
         TYPE=TYPE,
         privilege=privilege.upper(),
     )
@@ -301,9 +312,10 @@ def make_privilege(tpl, name, TYPE, privilege):
             if v['shared_query'] not in shared_queries:
                 raise Exception("Unknown query %s." % v['shared_query'])
             v = v.copy()
-            if 'key' in v:
-                v['keys'] = [v.pop('key')]
-            v['keys'] = [key % fmt_args for key in v['keys']]
+            v['keys'] = list(chain(*[
+                format_keys(key, fmt_args)
+                for key in v['keys']
+            ]))
         privilege[k] = v
     return name, privilege
 

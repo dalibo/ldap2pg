@@ -183,6 +183,6 @@ class Timer(object):
         self.start = datetime.utcnow()
 
     def __exit__(self, *_):
-        context_delta = datetime.utcnow() - self.start
-        self.delta += context_delta
+        self.last_delta = datetime.utcnow() - self.start
+        self.delta += self.last_delta
         self.start = None
