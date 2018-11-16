@@ -49,7 +49,7 @@ shared_queries = dict(
     WHERE (grantee = 0 OR rolname IS NOT NULL)
       AND nspname NOT LIKE 'pg\_%temp\_%'
       AND nspname <> 'pg_toast'
-    ORDER BY 1, 2, 3, 5
+    -- ORDER BY 1, 2, 3, 5
     """),
     globaldefacl=dedent("""\
     WITH
@@ -214,7 +214,7 @@ _allrelacl_tpl = dict(
          AND grantee = rol.oid
          AND privilege_type = '%(privilege)s'
     WHERE NOT (array_length(nsp.rels, 1) IS NOT NULL AND grants.rels IS NULL)
-    ORDER BY 1, 2
+    -- ORDER BY 1, 2
     """),
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
@@ -274,7 +274,7 @@ _allprocacl_tpl = dict(
     WHERE NOT (array_length(nsp.procs, 1) IS NOT NULL AND grants.procs IS NULL)
       AND (priv IS NULL OR priv = '%(privilege)s')
       AND nspname NOT LIKE 'pg\_%%temp\_%%'
-    ORDER BY 1, 2
+    -- ORDER BY 1, 2
     """),  # noqa
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
     revoke=(
