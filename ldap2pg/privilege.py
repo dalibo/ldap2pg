@@ -175,10 +175,16 @@ class Grant(object):
             '%s on %s.%s for %s'
             ' to %s (%s)'
         )
+        dbname = self.dbname or '*'
+        if isinstance(dbname, list):
+            dbname = ','.join(dbname)
+        schema = self.schema or '*'
+        if isinstance(schema, list):
+            schema = ','.join(schema)
         return fmt % (
             self.privilege,
-            self.dbname,
-            self.schema or '*',
+            dbname,
+            schema,
             self.owner or '*',
             self.role,
             self._full_map[self.full],

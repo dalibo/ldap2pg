@@ -25,6 +25,8 @@ def test_grant_object():
     assert 'GRANT "backend"' in qry.args[0]
     assert 'daniel' in qry.args[0]
 
+    assert 'db' in repr(Grant('p', ['db'], ['schema']))
+
 
 def test_grant_set():
     from ldap2pg.privilege import Grant, Acl

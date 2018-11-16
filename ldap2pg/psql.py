@@ -127,15 +127,17 @@ class PSQLSession(object):
             self.cursor = None
         if self.conn:
             logger.debug(
-                "Closing Postgres connexion to '%s'.", self.connstring)
+                "Closing Postgres connexion to %s.",
+                self.connstring or 'libpq default')
             self.conn.close()
             self.conn = None
 
     def __enter__(self):
+        connmsg = self.connstring or 'libpq default'
         if self.conn:
-            logger.debug("Using Postgres connection to '%s'.", self.connstring)
+            logger.debug("Using Postgres connection to %s.", connmsg)
         else:
-            logger.debug("Connecting to Postgres '%s'.", self.connstring)
+            logger.debug("Connecting to Postgres %s.", connmsg)
             self.conn = psycopg2.connect(self.connstring)
         if not self.cursor:
             self.cursor = self.conn.cursor()

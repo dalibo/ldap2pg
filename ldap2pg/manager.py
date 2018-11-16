@@ -131,7 +131,7 @@ class SyncManager(object):
                     role = role.lower()
                     if pattern and not fnmatch(role, pattern):
                         logger.debug(
-                            "Don't grant %s to %s not matching %s",
+                            "Don't grant %s to %s not matching %s.",
                             privilege, role, pattern,
                         )
                         continue
@@ -206,7 +206,7 @@ class SyncManager(object):
         pgallroles, pgmanagedroles = self.inspector.filter_roles(
             pgallroles, pgmanagedroles)
 
-        logger.debug("Postgres inspection done.")
+        logger.debug("Postgres roles inspection done.")
         ldaproles, ldapacl = self.inspect_ldap(syncmap)
         logger.debug("LDAP inspection completed. Post processing.")
         try:
