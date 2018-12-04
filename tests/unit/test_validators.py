@@ -142,7 +142,8 @@ def test_process_ldapquery():
         ldapquery(dict(raw, scope='unkqdsfq'))
 
     v = mapping(dict(
-        role=dict(name='static', name_attribute=u'sAMAccountName'),
+        role=dict(
+            name='static', name_attribute=u'sAMAccountName', comment='{dn}',),
         ldap=dict(base='o=acme'))
     )
 

@@ -198,11 +198,14 @@ def mapping(value, **kw):
 
     if 'ldap' in value:
         value['ldap'] = ldapquery(value['ldap'])
-        value['ldap']['attributes'] = list(set(
-            iter_format_fields(iter_mapping_strings(value), split=True)))
-        if not value['ldap']['attributes']:
+        strings = iter_mapping_strings(value)
+        attrs = set(iter_format_fields(strings, split=True))
+        if 'dn' in attrs:
+            attrs.remove('dn')
+        if not attrs:
             fmt = "No attributes are used from LDAP query %(base)s"
             raise ValueError(fmt % value['ldap'])
+        value['ldap']['attributes'] = list(attrs)
 
     return value
 
