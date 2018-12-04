@@ -43,6 +43,7 @@ class SyncManager(object):
         logger.debug('Got %d entries from LDAP.', len(raw_entries))
         entries = []
         for dn, attributes in raw_entries:
+            attributes['dn'] = [dn]
             try:
                 entry = decode_value((dn, attributes))
             except UnicodeDecodeError as e:
@@ -65,6 +66,9 @@ class SyncManager(object):
             p.lower() for p in
             expand_attributes(entry, kw.get('parents', []))
         ]
+        comment = kw.get('comment', None)
+        if comment:
+            comment = next(expand_attributes(entry, [comment]))
 
         for name in expand_attributes(entry, names):
             log_source = " from " + ("YAML" if name in names else entry[0])
@@ -83,6 +87,7 @@ class SyncManager(object):
                 members=members[:],
                 options=kw.get('options', {}),
                 parents=parents[:],
+                comment=comment,
             )
 
             yield role

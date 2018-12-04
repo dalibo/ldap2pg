@@ -57,6 +57,9 @@ for each member too, with their own options.
 `parent`, `parents` define one or more parent role. It's the reverse meaning of
 `members`. `parents` and `members` are combined together.
 
+`comment` define a template string for comment on role. By default, each roles
+is commented with `Managed by ldap2pg.`.
+
 
 ## Ignoring roles
 

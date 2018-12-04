@@ -49,13 +49,14 @@ def test_process_entry_static():
 
     roles = manager.process_ldap_entry(
         entry=('dn',), names=['ALICE'], parents=['postgres'],
-        options=dict(LOGIN=True),
+        options=dict(LOGIN=True), comment='Custom.',
     )
     roles = list(roles)
 
     assert 1 == len(roles)
     assert 'alice' in roles
     assert 'postgres' in roles[0].parents
+    assert 'Custom.' == roles[0].comment
 
 
 def test_process_entry_user():

@@ -22,12 +22,13 @@ def test_role():
 def test_create():
     from ldap2pg.manager import Role
 
-    role = Role(name='toto', members=['titi'])
+    role = Role(name='toto', members=['titi'], comment='Mycom')
 
     queries = [q.args[0] for q in role.create()]
 
     assert fnfilter(queries, 'CREATE ROLE "toto" *;')
     assert fnfilter(queries, 'GRANT "toto" TO "titi";')
+    assert fnfilter(queries, '*Mycom*')
 
 
 def test_alter():

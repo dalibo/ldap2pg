@@ -12,17 +12,20 @@ logger = logging.getLogger(__name__)
 
 class Role(object):
     __slots__ = (
+        'comment',
         'members',
         'name',
         'options',
         'parents',
     )
 
-    def __init__(self, name, options=None, members=None, parents=None):
+    def __init__(self, name, options=None, members=None, parents=None,
+                 comment=None):
         self.name = name
         self.members = members or []
         self.options = RoleOptions(options or {})
         self.parents = parents or []
+        self.comment = comment
 
     def __eq__(self, other):
         return self.name == unicode(other)
@@ -52,8 +55,10 @@ class Role(object):
             None,
             dedent("""\
             CREATE ROLE "{role}" WITH {options};
-            COMMENT ON ROLE "{role}" IS 'Managed by ldap2pg.';
-            """).format(role=self.name, options=self.options)
+            COMMENT ON ROLE "{role}" IS '{comment}';
+            """).format(
+                role=self.name, options=self.options,
+                comment=self.comment or 'Managed by ldap2pg.')
         )
         if self.members:
             yield Query(
