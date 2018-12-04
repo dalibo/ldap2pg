@@ -34,6 +34,20 @@ def test_decode_decode():
     assert 'décoded' == decode_value('décoded')
 
 
+def test_ensure_unicode():
+    from ldap2pg.utils import ensure_unicode, PY2
+
+    assert u"accentué" == ensure_unicode(u"accentué")
+    assert u"accentué" == ensure_unicode(u"accentué".encode('utf-8'))
+    assert u"accentué" == ensure_unicode(Exception(u"accentué"))
+    e = Exception(u"accentué".encode('utf-8'))
+    if PY2:
+        wanted = u"accentué"
+    else:
+        wanted = u"%r" % u"accentué".encode('utf-8')
+    assert wanted == ensure_unicode(e)
+
+
 def test_make_map():
     from ldap2pg.utils import make_group_map
 

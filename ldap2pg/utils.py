@@ -16,6 +16,7 @@ if PY2:  # pragma: nocover_py3
 else:  # pragma: nocover_py2
     string_types = (str,)
     unicode = str
+    bytes = bytes  # noqa
 
 try:  # pragma: nocover_py2
     from urllib.parse import urlparse, urlunparse
@@ -105,6 +106,18 @@ def encode_value(value):
         return tuple([encode_value(v) for v in value])
     else:
         return value
+
+
+def ensure_unicode(obj):
+    if isinstance(obj, unicode):
+        return obj
+    elif isinstance(obj, bytes):
+        return obj.decode('utf-8')
+    else:
+        try:
+            return unicode(obj)
+        except UnicodeDecodeError:  # pragma: nocover_py3
+            return bytes(obj).decode('utf-8')
 
 
 def iter_format_fields(strings, split=False):
