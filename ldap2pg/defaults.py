@@ -284,7 +284,7 @@ _allprocacl_tpl = dict(
 
 _types = {
     'FUNCTIONS': ('f',),
-    'TABLES': ('r', 'v'),
+    'TABLES': ('r', 'v', 'f'),
     'TYPES': ('T',),
     'SEQUENCES': ('S',),
 }
