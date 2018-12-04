@@ -9,6 +9,7 @@ from .utils import (
     AllDatabases,
     Timer,
     UserError,
+    ensure_unicode,
     urlparse,
     urlunparse,
 )
@@ -109,8 +110,8 @@ class PSQL(object):
                 with self.timer:
                     session(sql)
             except Exception as e:
-                msg = "Error while executing SQL query:\n%s" % (e,)
-                raise UserError(msg)
+                fmt = "Error while executing SQL query:\n%s"
+                raise UserError(fmt % ensure_unicode(e))
 
         return count
 
