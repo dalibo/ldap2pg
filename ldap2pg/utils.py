@@ -120,6 +120,15 @@ def ensure_unicode(obj):
             return bytes(obj).decode('utf-8')
 
 
+def iter_deep_keys(dict_):
+    for k, v in dict_.items():
+        if hasattr(v, 'items'):
+            for kk in iter_deep_keys(v):
+                yield '%s:%s' % (k, kk)
+        else:
+            yield k
+
+
 def iter_format_fields(strings, split=False):
     formatter = Formatter()
     for string in strings:

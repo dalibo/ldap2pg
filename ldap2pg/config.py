@@ -28,6 +28,7 @@ from .privilege import process_definitions as process_privileges
 from .utils import (
     deepget,
     deepset,
+    iter_deep_keys,
     UserError,
     string_types,
 )
@@ -531,6 +532,7 @@ class Configuration(dict):
             sys.stdin.close()
 
         check_yaml_gotchas(file_config)
+        self.warn_unknown_config(file_config)
 
         # Now merge all config sources.
         default_privileges = make_well_known_privileges()
@@ -606,3 +608,13 @@ class Configuration(dict):
                 },
             },
         }
+
+    def warn_unknown_config(self, config):
+        known_keys = set([m.path for m in self.MAPPINGS] + ['world_readable'])
+
+        for k in iter_deep_keys(config):
+            if k.startswith('privileges'):
+                continue
+
+            if k not in known_keys:
+                logger.warning("Unknown config entry: %s.", k)
