@@ -375,17 +375,25 @@ def test_load_stdin(mocker):
 
 def test_load_file(mocker):
     environ = dict()
-    mocker.patch('ldap2pg.config.os.environ', environ)
-    ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
-    mocker.patch('ldap2pg.config.open', create=True)
-    read = mocker.patch('ldap2pg.config.Configuration.read')
+    mod = 'ldap2pg.config.'
+    mocker.patch(mod + 'os.environ', environ)
+    ff = mocker.patch(mod + 'Configuration.find_filename')
+    mocker.patch(mod + 'open', create=True)
+    read = mocker.patch(mod + 'Configuration.read')
+    warn = mocker.patch(mod + 'logger.warning')
 
     from ldap2pg.config import Configuration
 
     config = Configuration()
 
     ff.return_value = ['filename.yml', 0o0]
-    read.return_value = dict(sync_map=[dict(role='alice')])
+    read.return_value = dict(
+        sync_map=[dict(role='alice')],
+        # To trigger a warning.
+        unknown_key=True,
+        # Should not trigger a warning.
+        privileges=dict(ro=['__connect__']),
+    )
     # send one env var for LDAP bind
     environ.update(dict(LDAPPASSWORD=b'envpass'))
 
@@ -395,6 +403,8 @@ def test_load_file(mocker):
     maplist = config['sync_map']
     assert 1 == len(maplist)
     assert 'DEBUG' == config['verbosity']
+    # logger.warn is called once for unknown_key, not for privileges.
+    assert 1 == warn.call_count
 
 
 def test_show_versions(mocker):

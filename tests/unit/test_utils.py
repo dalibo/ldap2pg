@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+from time import sleep
+
 import pytest
 
 
@@ -67,6 +69,17 @@ def test_make_map():
     assert wanted == aliases
 
 
+def test_iter_deep_keys():
+    from ldap2pg.utils import iter_deep_keys
+
+    data = dict(prefix=dict(subkey="Value"), key="value")
+    keys = list(iter_deep_keys(data))
+
+    assert 2 == len(keys)
+    assert "prefix:subkey" in keys
+    assert "key" in keys
+
+
 def test_iter_format_field():
     from ldap2pg.utils import iter_format_fields
 
@@ -104,7 +117,9 @@ def test_timer():
     # Ensure delta is increased.
     first = my.delta.microseconds
     with my:
-        pass
+        # For the test, we only need to waste 1ms. Actually the syscall is
+        # enough.
+        sleep(0.00001)
     assert my.delta.microseconds > first
 
     # Time iteration

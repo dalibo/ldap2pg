@@ -7,6 +7,12 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# Unreleased
+
+- Gently raise connection errors.
+- Warn on possible typo in config key.
+
+
 # ldap2pg 4.16
 
 - Allow to customize comment on role creation.

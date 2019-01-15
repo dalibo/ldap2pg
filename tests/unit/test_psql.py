@@ -28,13 +28,22 @@ def test_connstring():
 def test_psql(mocker):
     connect = mocker.patch('ldap2pg.psql.psycopg2.connect')
 
-    from ldap2pg.psql import PSQL
+    from ldap2pg.psql import PSQL, UserError, psycopg2
     conn = connect.return_value
     cursor = conn.cursor.return_value
 
     psql = PSQL()
     session = psql('postgres')
 
+    # Connection failure is raise to user.
+    connect.side_effect = psycopg2.OperationalError()
+    with pytest.raises(UserError):
+        with session:
+            pass
+
+    # Connection success
+    connect.reset_mock()
+    connect.side_effect = None
     with session:
         assert connect.called is True
         assert session.cursor
@@ -45,10 +54,12 @@ def test_psql(mocker):
         rows = session('SQL')
         assert rows
 
+    # Reuse connexion until session is actually cleaned.
     connect.reset_mock()
     with session:
         assert connect.called is False
 
+    # Cleaning session triggers connexion closing.
     del psql, session
 
     assert cursor.close.called is True
