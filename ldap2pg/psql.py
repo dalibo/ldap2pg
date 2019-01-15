@@ -139,7 +139,10 @@ class PSQLSession(object):
             logger.debug("Using Postgres connection to %s.", connmsg)
         else:
             logger.debug("Connecting to Postgres %s.", connmsg)
-            self.conn = psycopg2.connect(self.connstring)
+            try:
+                self.conn = psycopg2.connect(self.connstring)
+            except psycopg2.OperationalError as e:
+                raise UserError("Failed to connect: %s" % e)
         if not self.cursor:
             self.cursor = self.conn.cursor()
         return self
