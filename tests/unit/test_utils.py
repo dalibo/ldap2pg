@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+from time import sleep
+
 import pytest
 
 
@@ -104,7 +106,9 @@ def test_timer():
     # Ensure delta is increased.
     first = my.delta.microseconds
     with my:
-        pass
+        # For the test, we only need to waste 1ms. Actually the syscall is
+        # enough.
+        sleep(0.00001)
     assert my.delta.microseconds > first
 
     # Time iteration
