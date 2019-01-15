@@ -10,10 +10,10 @@ from .utils import (
     Timer,
     UserError,
     ensure_unicode,
+    lower1,
     urlparse,
     urlunparse,
 )
-from .utils import lower1
 
 
 logger = logging.getLogger(__name__)
