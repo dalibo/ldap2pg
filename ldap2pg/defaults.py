@@ -357,8 +357,12 @@ def make_well_known_privileges():
         make_privilege(_datacl_tpl, '__temporary__', None, 'TEMPORARY'),
         make_privilege(_nspacl_tpl, '__create_on_schemas__', None, 'CREATE'),
         make_privilege(_nspacl_tpl, '__usage_on_schemas__', None, 'USAGE'),
-        make_privilege(_nspacl_tpl, '__usage_on_types__', 'TYPES', 'USAGE'),
+        make_privilege(
+            _defacl_tpl, '__default_usage_on_types__', 'TYPES', 'USAGE'),
     ])
+
+    # This is a compatibility alias.
+    privileges['__usage_on_types__'] = ['__default_usage_on_types__']
 
     privileges.update(make_proc_privileges('EXECUTE', 'FUNCTIONS'))
     privileges['__execute__'] = ['__execute_on_functions__']

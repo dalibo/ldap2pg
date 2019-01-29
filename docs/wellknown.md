@@ -232,6 +232,12 @@ Here we go.
 - [`__usage_on_all_sequences__`](#usage-on-all-sequences)
 
 
+<a name="usage-on-types"></a>
+### Group `__usage_on_types__`
+
+- [`__default_usage_on_types__`](#default-usage-on-types)
+
+
 ## Single Privileges
 
 Next is the list of well-known privileges. Each is associated with a `REVOKE`
@@ -360,6 +366,15 @@ GRANT USAGE ON SEQUENCES TO {role};
 ```
 
 
+<a name="default-usage-on-types"></a>
+### Privilege `__default_usage_on_types__`
+
+``` SQL
+ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
+GRANT USAGE ON TYPES TO {role};
+```
+
+
 <a name="delete-on-all-tables"></a>
 ### Privilege `__delete_on_all_tables__`
 
@@ -466,14 +481,6 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 
 <a name="usage-on-schemas"></a>
 ### Privilege `__usage_on_schemas__`
-
-``` SQL
-GRANT USAGE ON SCHEMA {schema} TO {role};
-```
-
-
-<a name="usage-on-types"></a>
-### Privilege `__usage_on_types__`
 
 ``` SQL
 GRANT USAGE ON SCHEMA {schema} TO {role};
