@@ -47,7 +47,7 @@ shared_queries = dict(
     JOIN pg_catalog.pg_namespace nsp ON nsp.oid = defaclnamespace
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND nspname NOT LIKE 'pg\_%temp\_%'
+      AND nspname NOT LIKE 'pg\\_%temp\\_%'
       AND nspname <> 'pg_toast'
     -- ORDER BY 1, 2, 3, 5
     """),
