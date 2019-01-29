@@ -54,6 +54,12 @@ Well-known privilege name follows the following loose convention:
 - A privilege specific to one object type does not have `_on_<type>__` e.g.
   `__delete_on_tables__` is aliased to `__delete__`.
 
+This page does not document the SQL standard and the meaning of each SQL
+privileges. You will find the documentation of SQL privileges in [Postgresql
+GRANT documentation](https://www.postgresql.org/docs/current/sql-grant.html) and
+[ALTER DEFAULT PRIVILEGES
+documentation](https://www.postgresql.org/docs/current/sql-alterdefaultprivileges.html).
+
 
 ## Privilege Groups
 
