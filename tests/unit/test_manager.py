@@ -382,7 +382,7 @@ def test_inspect_ldap_roles(mocker):
 
     ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
 
-    assert 2 is r.call_count, "sync did not iterate over each rules."
+    assert 2 == r.call_count, "sync did not iterate over each rules."
 
     assert 'alice' in ldaproles
     assert 'bob' in ldaproles

@@ -130,7 +130,7 @@ class DefAcl(NspAcl):
         for expand in super(DefAcl, self).expand(grant, databases):
             try:
                 owners = databases[expand.dbname][expand.schema]
-            except KeyError as e:
+            except KeyError:
                 msg = "Unknown schema %s.%s." % (
                     expand.dbname, expand.schema)
                 raise UserError(msg)

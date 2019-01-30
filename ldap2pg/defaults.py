@@ -95,7 +95,7 @@ shared_queries = dict(
     FROM grants
     LEFT OUTER JOIN pg_catalog.pg_roles AS rol ON grants.grantee = rol.oid
     WHERE (grantee = 0 OR rolname IS NOT NULL)
-      AND nspname NOT LIKE 'pg\_%temp\_%'
+      AND nspname NOT LIKE 'pg\\_%temp\\_%'
       AND nspname <> 'pg_toast'
     ORDER BY 1, 2
     """)
@@ -181,7 +181,7 @@ _allrelacl_tpl = dict(
       FROM pg_catalog.pg_namespace nsp
       LEFT OUTER JOIN pg_catalog.pg_class AS rel
         ON rel.relnamespace = nsp.oid AND relkind IN %(t_array)s
-      WHERE nspname NOT LIKE 'pg\_%%temp\_%%'
+      WHERE nspname NOT LIKE 'pg\\_%%temp\\_%%'
         AND nspname <> 'pg_toast'
       GROUP BY 1, 2
     ),
@@ -273,7 +273,7 @@ _allprocacl_tpl = dict(
       ON pronamespace = nsp.oid AND grants.grantee = roles.oid
     WHERE NOT (array_length(nsp.procs, 1) IS NOT NULL AND grants.procs IS NULL)
       AND (priv IS NULL OR priv = '%(privilege)s')
-      AND nspname NOT LIKE 'pg\_%%temp\_%%'
+      AND nspname NOT LIKE 'pg\\_%%temp\\_%%'
     -- ORDER BY 1, 2
     """),  # noqa
     grant="GRANT %(privilege)s ON ALL %(TYPE)s IN SCHEMA {schema} TO {role}",
