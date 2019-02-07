@@ -91,6 +91,7 @@ def test_gather_options(mocker):
 
     options = gather_options(
         password=None,
+        unknown='pouet',
         environ=dict(
             LDAPBASE=b'dc=local', LDAPPASSWORD=b'envpass',
             LDAPREFERRALS=b'off'),

@@ -249,7 +249,7 @@ class Options(dict):
         return value
 
     def _parse_bool(self, value):
-        return value not in ('false', 'no', 'off')
+        return value not in (False, 'false', 'no', 'off')
 
     parse_uri = _parse_raw
     parse_host = _parse_raw
@@ -291,11 +291,14 @@ def gather_options(environ=None, **kw):
             logger.debug('Read %s from env.', option)
             options.set_raw(option, value)
 
-    options.update(dict(
-        (k.upper(), v)
-        for k, v in kw.items()
-        if k.upper() in options and v
-    ))
+    for k, v in kw.items():
+        if v is None:
+            continue
+        k = k.upper()
+        if k not in options:
+            continue
+        logger.debug('Read %s from YAML.', k)
+        options.set_raw(k, v)
 
     if not options['URI']:
         options['URI'] = 'ldap://%(HOST)s:%(PORT)s' % options
