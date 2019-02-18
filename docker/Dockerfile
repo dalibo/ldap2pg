@@ -18,3 +18,5 @@ RUN set -ex; \
     pip3 --no-cache-dir install --no-deps ldap2pg; \
     ldap2pg --version; \
     :
+
+ENTRYPOINT ["ldap2pg"]
