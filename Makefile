@@ -10,6 +10,12 @@ clean-pyc:
 	python docs/auto-privileges-doc.py $< >> $@.tmp
 	mv -f $@.tmp $@
 
+# This target helps building local image when editing Dockerfil. http_proxy arg
+# is transmitted to build env to enable APT cacher.
+.PHONY: docker
+docker:
+	docker build --build-arg http_proxy -t dalibo/ldap2pg:local .
+
 .PHONY: docs
 docs: docs/wellknown.md
 	mkdocs build --clean --strict
