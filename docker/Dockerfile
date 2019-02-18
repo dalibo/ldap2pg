@@ -16,7 +16,6 @@ RUN set -ex; \
 
 RUN set -ex; \
     pip3 --no-cache-dir install --no-deps ldap2pg; \
-    mkdir -p /workspace; \
     ldap2pg --version; \
     :
 
