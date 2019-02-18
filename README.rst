@@ -1,6 +1,6 @@
 |ldap2pg|
 
-| |CircleCI| |Codecov| |RTD| |PyPI|
+| |CircleCI| |Codecov| |RTD| |PyPI| |Docker|
 
 Swiss-army knife to synchronize Postgres roles and privileges from YAML or LDAP.
 
@@ -92,6 +92,10 @@ You're welcome!
 .. |CircleCI| image:: https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield
    :target: https://circleci.com/gh/dalibo/ldap2pg
    :alt: Continuous Integration report
+
+.. |Docker| image:: https://img.shields.io/docker/automated/dalibo/ldap2pg.svg
+   :target: https://hub.docker.com/r/dalibo/ldap2pg
+   :alt: Docker Image Available
 
 .. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
    :target: https://github.com/dalibo/ldap2pg
