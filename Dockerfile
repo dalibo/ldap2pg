@@ -1,5 +1,4 @@
-FROM python:3.7
-
+FROM python:3.7-slim
 
 RUN  apt-get update && apt-get install -y libldap2-dev libsasl2-dev python3-pip && pip install psycopg2==2.7.3.2 ldap2pg # installing 
 #Installing psycopg2==2.7.3.2 avoiding warning on tool run:
