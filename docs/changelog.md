@@ -7,6 +7,11 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# Unreleased
+
+- Ship official docker image: dalibo/ldap2pg.
+
+
 # ldap2pg 4.17
 
 - Fix broken `__usage_on_types__`. Replaced by `__default_usage_on_types__`.
