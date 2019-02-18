@@ -1,5 +1,20 @@
-FROM python:3.7-slim
+FROM debian:buster-slim
 
-RUN  apt-get update && apt-get install -y libldap2-dev libsasl2-dev python3-pip && pip install psycopg2==2.7.3.2 ldap2pg # installing 
-#Installing psycopg2==2.7.3.2 avoiding warning on tool run:
-#The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+RUN set -ex; \
+    apt-get update -y; \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-ldap \
+        python3-pip \
+        python3-psycopg2 \
+        python3-setuptools \
+        python3-yaml \
+    ; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
+    :
+
+RUN set -ex; \
+    pip3 --no-cache-dir install --no-deps ldap2pg; \
+    ldap2pg --version; \
+    :
