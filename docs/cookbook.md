@@ -240,7 +240,7 @@ To run the container simply use the command:
 $ docker run --rm dalibo/ldap2pg --help
 ```
 
-The Docker image of ldap2pg use the same configuration options as explained in the [cli](https://ldap2pg.readthedocs.io/en/latest/cli/) and [ldap2pg.yml](https://ldap2pg.readthedocs.io/en/latest/config/) sections.
+The Docker image of ldap2pg use the same configuration options as explained in the [cli](cli.md) and [ldap2pg.yml](config.md) sections.
 You can mount the ldap2pg.yml configuration file.
 ``` console
 $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
