@@ -237,19 +237,19 @@ Already familiar with Docker and willing to save the setup time you're at the ri
 
 To run the container simply use the command:
 ``` console
-$ docker run dalibo/ldap2pg --help
+$ docker run --rm dalibo/ldap2pg --help
 ```
 
 The Docker image of ldap2pg use the same configuration options as explained in the [cli](https://ldap2pg.readthedocs.io/en/latest/cli/) and [ldap2pg.yml](https://ldap2pg.readthedocs.io/en/latest/config/) sections.
-You can either export the environmnet variables with the **-e** option:
-
+You can mount the ldap2pg.yml configuration file.
 ``` console
-$ docker run -e PGDSN=postgres://postgres@localhost:5432/ -e LDAPURI=ldaps://localhost -e LDAPBINDDN=cn=you,dc=entreprise,dc=fr -e LDAPPASSWORD=pasglop dalibo/ldap2pg
+$ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
 ```
 
- or directly mount the ldap2pg.yml configuration file.
+You can also export some environmnent variables with the **-e** option:
+
 ``` console
-$ docker run -v ABSOLUT_PATH/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
+$ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml -e PGDSN=postgres://postgres@localhost:5432/ -e LDAPURI=ldaps://localhost -e LDAPBINDDN=cn=you,dc=entreprise,dc=fr -e LDAPPASSWORD=pasglop dalibo/ldap2pg
 ```
 
 Make sure your container can resolve the hostname your pointing to. If you use some internal name resolution be sure to add the **--dns=** option to your command pointing to your internal DNS server.
