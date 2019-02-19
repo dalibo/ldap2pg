@@ -229,3 +229,28 @@ The bug here, is that inspect does not truly inspect Postgres and always returns
 the same result. `ldap2pg` will always execute the revoke query, thinking
 `mypriv` is granted to `public`, whatever the actual state of the cluster. It's
 up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.
+
+
+# ldap2pg as Docker container
+
+Already familiar with Docker and willing to save the setup time you're at the right place.
+
+To run the container simply use the command:
+``` console
+$ docker run --rm dalibo/ldap2pg --help
+```
+
+The Docker image of ldap2pg use the same configuration options as explained in the [cli](cli.md) and [ldap2pg.yml](config.md) sections.
+You can mount the ldap2pg.yml configuration file.
+``` console
+$ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
+```
+
+You can also export some environmnent variables with the **-e** option:
+
+``` console
+$ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml -e PGDSN=postgres://postgres@localhost:5432/ -e LDAPURI=ldaps://localhost -e LDAPBINDDN=cn=you,dc=entreprise,dc=fr -e LDAPPASSWORD=pasglop dalibo/ldap2pg
+```
+
+Make sure your container can resolve the hostname your pointing to. If you use some internal name resolution be sure to add the **--dns=** option to your command pointing to your internal DNS server.
+More [info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)
