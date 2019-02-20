@@ -1,3 +1,5 @@
+import gc
+
 import pytest
 
 
@@ -61,6 +63,7 @@ def test_psql(mocker):
 
     # Cleaning session triggers connexion closing.
     del psql, session
+    gc.collect()
 
     assert cursor.close.called is True
     assert conn.close.called is True
