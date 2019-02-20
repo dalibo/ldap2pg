@@ -104,7 +104,7 @@ class SyncManager(object):
                     if 'ignore' == on_unexpected_dn:
                         continue
                     elif 'warn' == on_unexpected_dn:
-                        logger.warn(msg)
+                        logger.warning(msg)
                     else:
                         raise UserError(msg)
                 except ValueError as e:
@@ -204,7 +204,7 @@ class SyncManager(object):
             self.inspector.roles_blacklist.append(me)
 
         if not issuper:
-            logger.warn("Running ldap2pg as non superuser.")
+            logger.warning("Running ldap2pg as non superuser.")
             RoleOptions.filter_super_columns()
 
         databases, pgallroles, pgmanagedroles = self.inspector.fetch_roles()
@@ -228,7 +228,7 @@ class SyncManager(object):
             # Inject ldaproles in managed roles to avoid requerying roles.
             pgmanagedroles.update(ldaproles)
             if self.psql.dry and count:
-                logger.warn(
+                logger.warning(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
             schemas = self.inspector.fetch_schemas(databases, ldaproles)

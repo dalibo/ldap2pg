@@ -39,7 +39,7 @@ def wrapped_main(config=None):
         ldapconn = None
 
     if config.get('dry', True):
-        logger.warn("Running in dry mode. Postgres will be untouched.")
+        logger.warning("Running in dry mode. Postgres will be untouched.")
     else:
         logger.info("Running in real mode.")
     psql = PSQL(connstring=config['postgres']['dsn'], dry=config['dry'])

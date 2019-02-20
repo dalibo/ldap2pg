@@ -246,7 +246,7 @@ class Acl(set):
         for priv, grants in groupby(spurious, lambda i: i.privilege):
             acl = privileges[priv]
             if not acl.revoke_sql:
-                logger.warn("Can't revoke %s: query not defined.", acl)
+                logger.warning("Can't revoke %s: query not defined.", acl)
                 continue
             for grant in grants:
                 yield acl.revoke(grant)
@@ -257,7 +257,7 @@ class Acl(set):
         for priv, grants in groupby(missing, lambda i: i.privilege):
             priv = privileges[priv]
             if not priv.grant_sql:
-                logger.warn("Can't grant %s: query not defined.", priv)
+                logger.warning("Can't grant %s: query not defined.", priv)
                 continue
             for grant in grants:
                 yield priv.grant(grant)

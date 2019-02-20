@@ -293,7 +293,7 @@ class RoleSet(set):
             mine = my_roles_index[role.name]
             its = other_roles_index[role.name]
             if role not in self:
-                logger.warn(
+                logger.warning(
                     "Role %s already exists in cluster. Reusing.", role.name)
             for qry in mine.alter(its):
                 yield qry
