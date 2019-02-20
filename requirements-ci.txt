@@ -1,7 +1,7 @@
+-r docs/requirements.txt
 codecov
 docutils
 flake8
-mkdocs==0.17.3  # Map to RTD version
 pytest
 pytest-cov
 pytest-mock
