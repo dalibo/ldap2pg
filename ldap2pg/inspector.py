@@ -41,7 +41,7 @@ class PostgresInspector(object):
     def format_roles_query(self, name='all_roles'):
         query = self.queries[name]
         if not query:
-            logger.warn("Roles introspection disabled.")
+            logger.warning("Roles introspection disabled.")
             return
 
         if isinstance(query, list):
@@ -262,7 +262,7 @@ class PostgresInspector(object):
         pgacl = Acl()
         for name, privilege in sorted(self.privileges.items()):
             if not privilege.inspect:
-                logger.warn(
+                logger.warning(
                     "Can't inspect privilege %s: query not defined.",
                     privilege)
                 continue

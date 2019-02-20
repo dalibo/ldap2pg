@@ -6,4 +6,5 @@ pytest
 pytest-cov
 pytest-mock
 pyyaml==3.10  # From CentOS7
+psycopg2-binary
 sh

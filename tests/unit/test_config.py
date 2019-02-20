@@ -403,7 +403,7 @@ def test_load_file(mocker):
     maplist = config['sync_map']
     assert 1 == len(maplist)
     assert 'DEBUG' == config['verbosity']
-    # logger.warn is called once for unknown_key, not for privileges.
+    # logger.warning is called once for unknown_key, not for privileges.
     assert 1 == warn.call_count
 
 

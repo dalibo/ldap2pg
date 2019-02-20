@@ -449,7 +449,7 @@ class Configuration(dict):
                 return os.path.realpath(candidate), stat_.st_mode
             except OSError as e:
                 if e.errno == errno.EACCES:
-                    logger.warn("Can't read %s: permission denied.", candidate)
+                    logger.warning("Can't read %s: permission denied.", candidate)
 
         if custom:
             message = "Can't access configuration file %s." % (custom,)
@@ -545,7 +545,7 @@ class Configuration(dict):
         logger.debug("Configuration loaded.")
 
         if not self['sync_map']:
-            logger.warn("Empty synchronization map!")
+            logger.warning("Empty synchronization map!")
 
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
