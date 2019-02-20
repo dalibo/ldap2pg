@@ -9,7 +9,7 @@ repo_url: https://github.com/dalibo/ldap2pg
 theme:
   name: readthedocs
 
-pages:
+nav:
 - Home: index.md
 - Installation: install.md
 - Configuration:
