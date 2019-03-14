@@ -43,16 +43,16 @@ class SyncManager(object):
         logger.debug('Got %d entries from LDAP.', len(raw_entries))
         entries = []
         for dn, attributes in raw_entries:
+            if not dn:
+                logger.debug("Discarding ref: %.40s.", attributes)
+                continue
+
             attributes['dn'] = [dn]
             try:
                 entry = decode_value((dn, attributes))
             except UnicodeDecodeError as e:
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
-
-            if not dn:
-                logger.debug("Entry without dn: %.40s.")
-                continue
 
             entries.append(lower_attributes(entry))
         return entries
