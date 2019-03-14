@@ -11,6 +11,7 @@ def test_query_ldap(mocker):
         ('dn=a', {}),
         ('dn=b', {}),
         (None, {'ref': True}),
+        (None, ['ldap://list_ref']),
     ]
 
     entries = manager.query_ldap(
