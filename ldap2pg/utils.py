@@ -140,6 +140,13 @@ def iter_format_fields(strings, split=False):
             yield field
 
 
+def iter_format_sub_fields(strings):
+    for field in iter_format_fields(strings, split=False):
+        field, _, attr = field.partition('.')
+        if attr:
+           yield (field, attr)
+
+
 def list_descendant(groups, name):
     # Returns the recursive list of all descendant of name in hierarchy
     # `groups`. `groups` is a flat dict of `groups`

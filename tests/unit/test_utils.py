@@ -91,6 +91,16 @@ def test_iter_format_field():
     assert 'dot' in fields
 
 
+def test_iter_format_sub_field():
+    from ldap2pg.utils import iter_format_sub_fields
+
+    fields = list(iter_format_sub_fields(
+        ['static', '{simple}', '{dot.ted}'],
+    ))
+
+    assert ('dot', 'ted') in fields
+
+
 def test_settable():
     from ldap2pg.utils import Settable
 

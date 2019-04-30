@@ -1,7 +1,9 @@
 from .ldap import parse_scope
+from .ldap import DN_COMPONENTS
 from .role import RoleOptions
 from .utils import string_types
 from .utils import iter_format_fields
+from .utils import iter_format_sub_fields
 
 default_ldap_query = {
     'base': '',
@@ -206,6 +208,23 @@ def mapping(value, **kw):
             fmt = "No attributes are used from LDAP query %(base)s"
             raise ValueError(fmt % value['ldap'])
         value['ldap']['attributes'] = list(attrs)
+
+        if 'join' in value['ldap']:
+            value['ldap']['joins'] = value['ldap'].pop('join')
+        if 'joins' not in value['ldap']:
+            value['ldap']['joins'] = {}
+
+        joins = value['ldap']['joins']
+        for field in joins.keys():
+            joins[field] = ldapquery(joins[field])
+
+        strings = iter_mapping_strings(value)
+        for field, attr in set(iter_format_sub_fields(strings)):
+            if field not in joins:
+                joins[field] = ldapquery({})
+            sub_attrs = joins[field].setdefault('attributes', [])
+            if attr not in DN_COMPONENTS:
+                sub_attrs.append(attr)
 
     return value
 

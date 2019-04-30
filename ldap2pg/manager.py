@@ -31,7 +31,7 @@ class SyncManager(object):
         self.privilege_aliases = privilege_aliases or {}
         self._blacklist = blacklist
 
-    def query_ldap(self, base, filter, attributes, scope):
+    def _query_ldap(self, base, filter, attributes, scope):
         try:
             raw_entries = self.ldapconn.search_s(
                 base, scope, filter, attributes,
@@ -55,6 +55,41 @@ class SyncManager(object):
                 raise UserError(message)
 
             entries.append(lower_attributes(entry))
+
+        return entries
+
+    def query_ldap(self, base, filter, attributes, joins, scope):
+        entries = self._query_ldap(base, filter, attributes, scope)
+        sub_attrs_cache = dict()
+        for entry in entries:
+            for attr, values in list(entry[1].items()):
+                values_with_attrs = []
+                for value in values:
+                    join = joins.get(attr)
+                    if join is None:
+                        values_with_attrs.append((value, dict()))
+                        continue
+
+                    sub_attrs = sub_attrs_cache.get((attr, value))
+                    if sub_attrs:
+                        values_with_attrs.append((value, dict(sub_attrs)))
+                        continue
+
+                    sub_attrs = { 'dn': [value] }
+
+                    if not join['attributes']:
+                        values_with_attrs.append((value, sub_attrs))
+                        sub_attrs_cache[(attr, value)] = sub_attrs
+                        continue
+
+                    join = dict(join, base=value)
+                    join_values = self._query_ldap(**join)
+                    if join_values:
+                        sub_attrs.update(join_values[0][1])
+                        values_with_attrs.append((value, sub_attrs))
+                        sub_attrs_cache[(attr, value)] = sub_attrs
+
+                entry[1][attr] = values_with_attrs
         return entries
 
     def process_ldap_entry(self, entry, names, **kw):
