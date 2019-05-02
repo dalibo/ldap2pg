@@ -149,7 +149,9 @@ def test_expand_attributes():
 
     entry = ('dn', {
         'cn': [('cn=pouet,ou=POU ET,dc=org', {})],
-        'member': [('cn=pouet,ou=POU ET,dc=org', {'samaccountname': ['alice']})],
+        'member': [
+            ('cn=pouet,ou=POU ET,dc=org', {'samaccountname': ['alice']})
+        ],
         'uid': [('toto', {}), ('titi', {})]
     })
 
