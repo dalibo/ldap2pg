@@ -30,7 +30,7 @@ def test_query_ldap(mocker):
 
 
 def test_query_ldap_joins(mocker):
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, LDAPError
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
@@ -106,6 +106,38 @@ def test_query_ldap_joins(mocker):
             'member': [('cn=P,ou=people,dc=global', {
                 'dn': ['cn=P,ou=people,dc=global'],
             })],
+        }),
+    ]
+
+    assert expected_entries == entries
+
+    search_result = [
+        ('cn=A,ou=people,dc=global', {
+            'cn': ['A'], 'member': ['cn=P,ou=people,dc=global']}),
+    ]
+
+    sub_search_result = LDAPError()
+
+    manager = SyncManager(ldapconn=mocker.Mock())
+    manager.ldapconn.search_s.side_effect = [
+            search_result, sub_search_result]
+
+    entries = manager.query_ldap(
+        base='ou=people,dc=global', filter='(objectClass=group)',
+        scope=2, joins={'member': dict(
+            base='ou=people,dc=global',
+            scope=2,
+            filter='(objectClass=people)',
+            attributes=['sAMAccountName'],
+        )},
+        attributes=['cn', 'member'],
+    )
+
+    expected_entries = [
+        ('cn=A,ou=people,dc=global', {
+            'cn': [('A', {})],
+            'dn': [('cn=A,ou=people,dc=global', {})],
+            'member': [],
         }),
     ]
 

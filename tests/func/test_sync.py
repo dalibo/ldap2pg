@@ -67,6 +67,7 @@ def test_real_mode(dev, psql):
 
     assert 'daniel' in writers
     assert 'david' in writers
+    assert 'didier' in writers
     assert 'alice' in psql.members('ldap_roles')
 
     # Assert that table keepme owned by deleted user spurious is not dropped!
@@ -109,3 +110,25 @@ def test_re_revoke(dev, psql):
     # Synchronize all
     ldap2pg('-N', c=c)
     ldap2pg('-C', c=c)
+
+
+def test_joins_in_real_mode(dev, psql):
+    from sh import ldap2pg
+
+    ldap2pg('-N', c='tests/func/ldap2pg.joins.yml')
+    # Workaround bug in Postgres: execute on functions to public persists
+    # revoke.
+    ldap2pg('-N', c='tests/func/ldap2pg.joins.yml')
+
+    roles = list(psql.roles())
+    writers = list(psql.members('writers'))
+
+    assert 'alan@ldap2pg.docker' in roles
+    assert 'oscar@ldap2pg.docker' not in roles
+
+    assert 'alice@ldap2pg.docker' in psql.superusers()
+
+    assert 'daniel@ldap2pg.docker' in writers
+    assert 'david@ldap2pg.docker' not in writers
+    assert 'didier@ldap2pg.docker' in writers
+    assert 'alice@ldap2pg.docker' in psql.members('ldap_roles')

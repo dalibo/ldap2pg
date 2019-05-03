@@ -75,7 +75,7 @@ class SyncManager(object):
                         values_with_attrs.append((value, dict(sub_attrs)))
                         continue
 
-                    sub_attrs = { 'dn': [value] }
+                    sub_attrs = {'dn': [value]}
 
                     if not join['attributes']:
                         values_with_attrs.append((value, sub_attrs))
@@ -83,11 +83,14 @@ class SyncManager(object):
                         continue
 
                     join = dict(join, base=value)
-                    join_values = self._query_ldap(**join)
-                    if join_values:
-                        sub_attrs.update(join_values[0][1])
-                        values_with_attrs.append((value, sub_attrs))
-                        sub_attrs_cache[(attr, value)] = sub_attrs
+                    try:
+                        join_values = self._query_ldap(**join)
+                        if join_values:
+                            sub_attrs.update(join_values[0][1])
+                            values_with_attrs.append((value, sub_attrs))
+                            sub_attrs_cache[(attr, value)] = sub_attrs
+                    except UserError as e:
+                        logger.warn('Ignoring %s: %s' % (value, e))
 
                 entry[1][attr] = values_with_attrs
         return entries

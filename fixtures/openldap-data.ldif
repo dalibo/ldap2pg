@@ -30,35 +30,55 @@ ou: people
 # Our database Administrators: a*
 dn: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: ALICE
+sn: Alice
+mail: alice@ldap2pg.docker
 
 dn: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: Alan
+sn: Alan
+mail: alan@ldap2pg.docker
 
 dn: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: albert
+sn: Albert
+mail: albert@ldap2pg.docker
 
 # Alter has no luck, his name is a SQL literal ^^
 dn: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: alter
+sn: alter
+mail: alter@ldap2pg.docker
 
 # Our developers: d*
 dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: daniel
+sn: Daniel
+mail: daniel@ldap2pg.docker
 
 dn: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
@@ -68,30 +88,46 @@ cn: david
 
 dn: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: denis
+sn: Denis
+mail: denis@ldap2pg.docker
 
 dn: cn=didier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: didier
+sn: Didier
+mail: didier@ldap2pg.docker
 
 # For unicode test
 dn:: Y249ZG9yb3Row6llLG91PXBlb3BsZSxkYz1sZGFwLGRjPWxkYXAycGcsZGM9ZG9ja2Vy
 changetype: add
-objectClass: organizationalRole
+objectclass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
 objectClass: uidObject
 objectClass: top
 cn:: ZG9yb3Row6ll
+sn:: ZG9yb3Row6ll
 uid: dorothee
+mail: dorothee@ldap2pg.docker
 
 dn: cn=domitille,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: domitille
+sn: Domitille
+mail: domitille@ldap2pg.docker
 
 # dimitri has no cn. For mixing DN.
 dn: uid=dimitri,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -100,32 +136,49 @@ objectClass: inetOrgPerson
 uid: dimitri
 sn: Dimitri
 cn: dimitri
+mail: dimitri@ldap2pg.docker
 
 # Our watchers: e*
 
 dn: cn=eve,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: eve
+sn: Eve
+mail: eve@ldap2pg.docker
 
 dn: cn=eloi,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: eloi
+sn: Eloi
+mail: eloi@ldap2pg.docker
 
 dn: cn=eloise,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: eloise
+sn: Eloise
+mail: eloise@ldap2pg.docker
 
 dn: cn=edouard,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
-objectclass: organizationalRole
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
 objectclass: top
 cn: edouard
+sn: Edouard
+mail: edouard@ldap2pg.docker
 
 # Our outsiders: o*
 

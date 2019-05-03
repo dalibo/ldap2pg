@@ -231,6 +231,49 @@ the same result. `ldap2pg` will always execute the revoke query, thinking
 up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.
 
 
+# Joining LDAP entries
+
+When doing a synchronization with an Active Directory (AD), you can refer to
+the `sAMAccountName` or `userPrincipalName` attributes to name the roles and
+link them to other roles.
+
+For instance, the following YAML will create roles for groups and their members
+using the `sAMAccountName` attribute and link them together:
+
+``` yaml
+sync_map:
+- ldap:
+    base: …
+    filter: "(objectClass=group)"
+  roles:
+  - name: '{sAMAccountName}'
+    member: '{member.sAMAccountName}'
+  - name: '{member.sAMAccountName}'
+```
+
+Behind the scenes, ldap2pg will perform additional LDAP queries to retrieve the
+`sAMAccountName` attribute value of the entries referenced by the `member`
+attribute of the group. To join the entries ldap2pg considers the `member`
+attribute as a DN and uses that as search base of the LDAP query.
+
+It is possible to specify the filter of the LDAP query used to join the entries,
+e.g. to reference only persons that are member of the groups:
+
+``` yaml
+sync_map:
+- ldap:
+    base: …
+    filter: "(objectClass=group)"
+    join:
+      member:
+        filter: "(&(objectClass=person)(sAMAccountName=*))"
+  roles:
+  - name: '{sAMAccountName}'
+    member: '{member.sAMAccountName}'
+  - name: '{member.sAMAccountName}'
+```
+
+
 # ldap2pg as Docker container
 
 Already familiar with Docker and willing to save the setup time you're at the right place.
