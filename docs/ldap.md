@@ -38,6 +38,14 @@ Relative Distinguished Name (RDN) of the value with a dot, like this:
 value `cn=toto,ou=people,dc=ldap,dc=acme,dc=fr`, `name: '{member.cn}''` will
 generate `toto`.
 
+You can also refer to attributes of LDAP entries referenced by the DN with the
+same syntax: `<attrname>.<attrname>`. An additional LDAP query will be
+performed to retrieve the requested attributes of the entry with the given DN.
+For exemple, if a LDAP entry has a `member` attribute with value
+`cn=toto,ou=people,dc=ldap,dc=acme,dc=fr` and the LDAP entry with that DN has
+a `userPrincipalName` attribute with value `toto@acme.fr`,
+`name: '{member.userPrincipalName}'` will generate `toto@acme.fr`.
+
 You can inject attributes in `role:names`, `role:parents`, `role:members` and
 `grant:role`.
 

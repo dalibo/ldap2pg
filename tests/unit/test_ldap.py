@@ -148,14 +148,21 @@ def test_expand_attributes():
     from ldap2pg.ldap import expand_attributes
 
     entry = ('dn', {
-        'cn': ['cn=pouet,ou=POU ET,dc=org'], 'uid': ['toto', 'titi']
+        'cn': [('cn=pouet,ou=POU ET,dc=org', {})],
+        'member': [
+            ('cn=pouet,ou=POU ET,dc=org', {'samaccountname': ['alice']})
+        ],
+        'uid': [('toto', {}), ('titi', {})]
     })
 
-    names = list(expand_attributes(entry, ['static', '{uid}', '{cn.dc}']))
+    names = list(expand_attributes(entry, [
+        'static', '{uid}', '{cn.dc}', '{member.samaccountname}',
+    ]))
     assert 'toto' in names
     assert 'static' in names
     assert 'titi' in names
     assert 'org' in names
+    assert 'alice' in names
 
 
 def test_get_attribute():
@@ -166,13 +173,19 @@ def test_get_attribute():
 
     with pytest.raises(RDNError):
         list(get_attribute(
-            entry=('dn', {'cn': ['cn=pouet']}),
-            attribute='cn.pouet',
+            entry=('dn', {'cn': [('cn=pouet', {})]}),
+            attribute='cn.ou',
         ))
 
     with pytest.raises(ValueError):
         list(get_attribute(
-            entry=('dn', {'cn': 'not a dn'}),
+            entry=('dn', {'cn': [('not a dn', {})]}),
+            attribute='cn.ou',
+        ))
+
+    with pytest.raises(ValueError):
+        list(get_attribute(
+            entry=('dn', {'cn': [('cn=pouet', {})]}),
             attribute='cn.pouet',
         ))
 

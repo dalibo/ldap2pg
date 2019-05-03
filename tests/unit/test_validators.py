@@ -160,6 +160,32 @@ def test_process_ldapquery():
     with pytest.raises(ValueError):
         mapping(dict(role='static', ldap=dict(base='dc=lol')))
 
+    v = mapping(dict(
+        role=dict(
+            name='{sAMAccountName}',
+            members='{member.sAMAccountName}',
+            comment='{member.cn}'),
+        ldap=dict(base='o=acme', join=dict(member=dict(
+            filter='(objectClass=person)'))))
+    )
+
+    assert 'member' in v['ldap']['attributes']
+    assert 'sAMAccountName' in v['ldap']['attributes']
+    assert '(objectClass=person)' == v['ldap']['joins']['member']['filter']
+    assert ['sAMAccountName'] == v['ldap']['joins']['member']['attributes']
+
+    v = mapping(dict(
+        role=dict(
+            name='{sAMAccountName}',
+            members='{member.sAMAccountName}'),
+        ldap=dict(base='o=acme'))
+    )
+
+    assert 'member' in v['ldap']['attributes']
+    assert 'sAMAccountName' in v['ldap']['attributes']
+    assert 'filter' in v['ldap']['joins']['member']
+    assert ['sAMAccountName'] == v['ldap']['joins']['member']['attributes']
+
 
 def test_process_rolerule():
     from ldap2pg.validators import rolerule

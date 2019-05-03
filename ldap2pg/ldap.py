@@ -38,6 +38,8 @@ if SCOPE_SUBORDINATE:
 
 SCOPES_STR = dict((v, k) for k, v in SCOPES.items())
 
+DN_COMPONENTS = ('dn', 'cn', 'l', 'st', 'o', 'ou', 'c', 'street', 'dc', 'uid')
+
 
 def parse_scope(raw):
     if raw in SCOPES_STR:
@@ -102,24 +104,30 @@ def get_attribute(entry, attribute):
     except KeyError:
         raise ValueError("Unknown attribute %r" % (path[0],))
     path = path[1:]
-    for value in values:
+    for (value, attrs) in values:
         if path:
             raw_dn = value
-            try:
-                dn = str2dn(value)
-            except ValueError:
-                msg = "Can't parse DN from attribute %s=%s" % (
-                    attribute, value)
-                raise ValueError(msg)
-            value = dict()
-            for (type_, name, _), in dn:
-                names = value.setdefault(type_.lower(), [])
-                names.append(name)
-            try:
-                value = value[path[0]][0]
-            except KeyError:
-                raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
-
+            if path[0] in DN_COMPONENTS:
+                try:
+                    dn = str2dn(value)
+                except ValueError:
+                    msg = "Can't parse DN from attribute %s=%s" % (
+                        attribute, value)
+                    raise ValueError(msg)
+                value = dict()
+                for (type_, name, _), in dn:
+                    names = value.setdefault(type_.lower(), [])
+                    names.append(name)
+                try:
+                    value = value[path[0]][0]
+                except KeyError:
+                    raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
+            else:
+                try:
+                    value = attrs[path[0]][0]
+                except KeyError:
+                    raise ValueError("Unknown attribute %s for DN %s" % (
+                        path[0], raw_dn,))
         yield value
 
 
