@@ -12,7 +12,7 @@ default_ldap_query = {
 }
 
 
-def ldapquery(value):
+def ldapquery(value, attrs):
     if not isinstance(value, dict):
         raise ValueError("ldap: is not a dict")
 
@@ -21,8 +21,14 @@ def ldapquery(value):
     if 'filter' in query:
         query['filter'] = query['filter'].rstrip('\r\n')
 
-    # Clean value from old manual attribute
-    query.pop('attribute', None)
+    strlist_alias(value, 'attributes', 'attribute')
+    attrs = set(value.get('attributes', [])) | set(attrs or [])
+    if 'dn' in attrs:
+        attrs.remove('dn')
+    if not attrs:
+        fmt = "No attributes are used from LDAP query %(base)s"
+        raise ValueError(fmt % value)
+    query['attributes'] = list(attrs)
 
     return query
 
@@ -199,15 +205,9 @@ def mapping(value, **kw):
         raise ValueError("Missing role or grant rule.")
 
     if 'ldap' in value:
-        value['ldap'] = ldapquery(value['ldap'])
-        strings = iter_mapping_strings(value)
+        strings = list(iter_mapping_strings(value))
         attrs = set(iter_format_fields(strings, split=True))
-        if 'dn' in attrs:
-            attrs.remove('dn')
-        if not attrs:
-            fmt = "No attributes are used from LDAP query %(base)s"
-            raise ValueError(fmt % value['ldap'])
-        value['ldap']['attributes'] = list(attrs)
+        value['ldap'] = ldapquery(value['ldap'], attrs)
 
         if 'join' in value['ldap']:
             value['ldap']['joins'] = value['ldap'].pop('join')
@@ -215,16 +215,10 @@ def mapping(value, **kw):
             value['ldap']['joins'] = {}
 
         joins = value['ldap']['joins']
-        for field in joins.keys():
-            joins[field] = ldapquery(joins[field])
-
-        strings = iter_mapping_strings(value)
         for field, attr in set(iter_format_sub_fields(strings)):
-            if field not in joins:
-                joins[field] = ldapquery({})
-            sub_attrs = joins[field].setdefault('attributes', [])
-            if attr not in DN_COMPONENTS:
-                sub_attrs.append(attr)
+            if attr in DN_COMPONENTS:
+                continue
+            joins[field] = ldapquery(joins.get(field, {}), [attr])
 
     return value
 

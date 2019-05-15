@@ -130,16 +130,16 @@ def test_process_ldapquery():
     from ldap2pg.validators import mapping, ldapquery, parse_scope
 
     with pytest.raises(ValueError):
-        ldapquery(None)
+        ldapquery(None, None)
 
     raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
 
-    v = ldapquery(raw)
+    v = ldapquery(raw, attrs=[])
 
     assert 'filter' in v
 
     with pytest.raises(ValueError):
-        ldapquery(dict(raw, scope='unkqdsfq'))
+        ldapquery(dict(raw, scope='unkqdsfq'), attrs=[])
 
     v = mapping(dict(
         role=dict(
