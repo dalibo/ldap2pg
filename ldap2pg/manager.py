@@ -90,7 +90,7 @@ class SyncManager(object):
                             values_with_attrs.append((value, sub_attrs))
                             sub_attrs_cache[(attr, value)] = sub_attrs
                     except UserError as e:
-                        logger.warn('Ignoring %s: %s' % (value, e))
+                        logger.warning('Ignoring %s: %s', value, e)
 
                 entry[1][attr] = values_with_attrs
         return entries
