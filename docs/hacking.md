@@ -216,14 +216,11 @@ to enter the container and start debugging it. Source tree is mounted at
 `/workspace`. To reduce dev loop, just `pip install -e .` to use WIP code rather
 than rpm version.
 
-To execute tests properly, with envvars loaded, use `pytest` **make target**
-inside the container.
-
 ``` console
 $ make debug
 docker-compose exec runner /bin/bash
 [root@1dedbd5c1533 /]# cd /workspace
-[root@1dedbd5c1533 workspace]# make -C tests/func/ pytest -- -x --pdb
+[root@1dedbd5c1533 workspace]# pytest -x tests/func/ --pdb
 ...
 (Pdb)
 ```
