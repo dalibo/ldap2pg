@@ -20,6 +20,7 @@ from ldap import sasl
 from .utils import decode_value, encode_value, PY2, uniq, iter_format_fields
 from .utils import Settable
 from .utils import Timer
+from .utils import UserError
 
 
 logger = logging.getLogger(__name__)
@@ -227,16 +228,23 @@ def connect(**kw):
     # even YAML. See https://github.com/dalibo/ldap2pg/issues/228 .
     conn.set_option(ldap.OPT_REFERRALS, options.get('REFERRALS', False))
 
-    if options.get('USER'):
-        logger.debug("Trying SASL DIGEST-MD5 auth.")
-        auth = sasl.sasl({
-            sasl.CB_AUTHNAME: options['USER'],
-            sasl.CB_PASS: options['PASSWORD'],
-        }, 'DIGEST-MD5')
-        conn.sasl_interactive_bind_s("", auth)
-    else:
+    if not options.get('SASL_MECH'):
         logger.debug("Trying simple bind.")
         conn.simple_bind_s(options['BINDDN'], options['PASSWORD'])
+    else:
+        logger.debug("Trying SASL %s auth.", options['SASL_MECH'])
+        mech = options['SASL_MECH']
+        if 'DIGEST-MD5' == mech:
+            auth = sasl.sasl({
+                sasl.CB_AUTHNAME: options['USER'],
+                sasl.CB_PASS: options['PASSWORD'],
+            }, mech)
+        elif 'GSSAPI' == mech:
+            auth = sasl.gssapi(options.get('SASL_AUTHZID'))
+        else:
+            raise UserError("Unmanaged SASL mech %s.", mech)
+
+        conn.sasl_interactive_bind_s("", auth)
 
     return conn
 
@@ -265,6 +273,7 @@ class Options(dict):
     parse_binddn = _parse_raw
     parse_user = _parse_raw
     parse_password = _parse_raw
+    parse_sasl_mech = _parse_raw
     parse_referrals = _parse_bool
 
 
@@ -276,6 +285,7 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
+        SASL_MECH=None,
         REFERRALS=False,
     )
 
@@ -310,6 +320,9 @@ def gather_options(environ=None, **kw):
 
     if not options['URI']:
         options['URI'] = 'ldap://%(HOST)s:%(PORT)s' % options
+
+    if options.get('USER'):
+        options['SASL_MECH'] = 'DIGEST-MD5'
 
     return options
 
