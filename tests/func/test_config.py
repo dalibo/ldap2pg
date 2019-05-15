@@ -63,21 +63,23 @@ def test_custom_yaml():
     ldap2pg('--config', LDAP2PG_CONFIG, _env=ldapfree_env())
 
 
-def test_stdin():
+def test_stdin(capsys):
     from sh import ldap2pg
 
-    out = ldap2pg('--config=-', _in="- role: stdinuser", _env=ldapfree_env())
+    ldap2pg('--config=-', _in="- role: stdinuser", _env=ldapfree_env())
 
-    assert b'stdinuser' in out.stderr
+    _, err = capsys.readouterr()
+    assert 'stdinuser' in err
 
 
 @pytest.mark.xfail(
     'CI' in os.environ,
     reason="Can't setup SASL on CircleCI")
-def test_sasl():
+def test_sasl(capsys):
     from sh import ldap2pg
 
     env = dict(os.environ, LDAPUSER='testsasl', LDAPPASSWORD='voyage')
-    out = ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
+    ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
 
-    assert b'SASL' in out.stderr
+    _, err = capsys.readouterr()
+    assert 'SASL' in err

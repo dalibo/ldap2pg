@@ -1,4 +1,6 @@
 import os
+import sys
+from functools import partial
 
 import pytest
 import sh
@@ -111,3 +113,19 @@ def flushall(psql):
         "DELETE FROM pg_catalog.pg_authid "
         "WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';",
     )
+
+
+def lazy_write(attr, data):
+    # Lazy access sys.{stderr,stdout} to mix with capsys.
+    getattr(sys, attr).write(data)
+    return False  # should_quit
+
+
+@pytest.fixture(scope='session', autouse=True)
+def sh_errout():
+    # Duplicate tested command stdio to pytest capsys.
+    sh._SelfWrapper__self_module.Command._call_args.update(dict(
+        err=partial(lazy_write, 'stderr'),
+        out=partial(lazy_write, 'stdout'),
+        tee=True,
+    ))
