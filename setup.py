@@ -5,7 +5,6 @@ from setuptools import setup
 PY26 = sys.version_info < (2, 7)
 
 install_requires = [
-    'psycopg2',
     'python-ldap',
     'pyyaml',
 ]

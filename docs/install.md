@@ -10,7 +10,7 @@ You can fetch all dependencies with PIP. Choose either `pip3` or `pip2`.
 
 ``` console
 # apt install -y libldap2-dev libsasl2-dev python3-pip
-# pip3 install ldap2pg
+# pip3 install ldap2pg psycopg2-binary
 ```
 
 # On CentOS 7

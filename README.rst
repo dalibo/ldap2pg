@@ -67,7 +67,7 @@ Installation
 
 Install it from PyPI tarball::
 
-    pip install ldap2pg
+    pip install ldap2pg pyscopg2-binary
 
 More details can be found in documentation_.
 

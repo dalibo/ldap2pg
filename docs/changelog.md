@@ -9,6 +9,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
+- Let user choose psycopg2 distribution. Affects only pip.
 - Allow joining LDAP entries based on DN attributes, e.g. to support role name
   synchronization using the Active Directory (AD) attributes `sAMAccountName`
   or `userPrincipalName`.
