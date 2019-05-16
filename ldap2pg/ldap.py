@@ -84,7 +84,7 @@ def expand_attributes(entry, formats):
         attributes[k] = v
 
     for format_ in formats:
-        fields = list(iter_format_fields([format_], split=True))
+        fields = [f[0] for f in iter_format_fields([format_], split=True)]
         values = [attributes[k] for k in fields]
         for items in product(*values):
             yield format_.format(**dict(zip(fields, items)))

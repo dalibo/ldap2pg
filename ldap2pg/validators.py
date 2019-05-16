@@ -3,7 +3,6 @@ from .ldap import DN_COMPONENTS
 from .role import RoleOptions
 from .utils import string_types
 from .utils import iter_format_fields
-from .utils import iter_format_sub_fields
 
 default_ldap_query = {
     'base': '',
@@ -205,9 +204,21 @@ def mapping(value, **kw):
         raise ValueError("Missing role or grant rule.")
 
     if 'ldap' in value:
-        strings = list(iter_mapping_strings(value))
-        attrs = set(iter_format_fields(strings, split=True))
-        value['ldap'] = ldapquery(value['ldap'], attrs)
+        strings = iter_mapping_strings(value)
+        all_attrs = iter_format_fields(strings, split=True)
+        main_attrs = []
+        sub_attrs = {}
+        for attr in all_attrs:
+            main_attrs.append(attr[0])
+            if len(attr) == 1:
+                continue
+            if attr[1] in DN_COMPONENTS:
+                continue
+
+            sub_attr = sub_attrs.setdefault(attr[0], [])
+            sub_attr.append(attr[1])
+
+        value['ldap'] = ldapquery(value['ldap'], main_attrs)
 
         if 'join' in value['ldap']:
             value['ldap']['joins'] = value['ldap'].pop('join')
@@ -215,10 +226,8 @@ def mapping(value, **kw):
             value['ldap']['joins'] = {}
 
         joins = value['ldap']['joins']
-        for field, attr in set(iter_format_sub_fields(strings)):
-            if attr in DN_COMPONENTS:
-                continue
-            joins[field] = ldapquery(joins.get(field, {}), [attr])
+        for field, attrs in sub_attrs.items():
+            joins[field] = ldapquery(joins.get(field, {}), attrs)
 
     return value
 

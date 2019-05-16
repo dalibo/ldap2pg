@@ -83,22 +83,27 @@ def test_iter_deep_keys():
 def test_iter_format_field():
     from ldap2pg.utils import iter_format_fields
 
-    fields = list(iter_format_fields(
-        ['static', '{simple}', '{dot.ted}'], split=True,
-    ))
+    fields = list(iter_format_fields([
+        'static',
+        '{simple}',
+        '{dot.ted}',
+        'prefix_{filtered.filter()}',
+    ], split=True,))
+
+    assert ['simple'] in fields
+    assert ['dot', 'ted'] in fields
+    assert ['filtered'] in fields
+
+    fields = list(iter_format_fields([
+        'static',
+        '{simple}',
+        '{dot.ted}',
+        'prefix_{filtered.filter()}',
+    ], split=False,))
 
     assert 'simple' in fields
-    assert 'dot' in fields
-
-
-def test_iter_format_sub_field():
-    from ldap2pg.utils import iter_format_sub_fields
-
-    fields = list(iter_format_sub_fields(
-        ['static', '{simple}', '{dot.ted}'],
-    ))
-
-    assert ('dot', 'ted') in fields
+    assert 'dot.ted' in fields
+    assert 'filtered' in fields
 
 
 def test_settable():
