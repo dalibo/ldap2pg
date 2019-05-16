@@ -126,65 +126,76 @@ def test_process_mapping_grant():
     mapping(dict(grant=dict(privilege='ro', role='alice')))
 
 
-def test_process_ldapquery():
-    from ldap2pg.validators import mapping, ldapquery, parse_scope
+def test_process_mapping_ldap():
+    from ldap2pg.validators import mapping
+
+    v = mapping(dict(
+        ldap=dict(),
+        role=dict(
+            name_attribute='member.sAMAccountName',
+            comment='from {cn.lower()}')),
+    )
+
+    assert v['ldap']['joins']
+    assert 'cn' in v['ldap']['attributes']
+
+
+def test_process_ldapquery_attributes():
+    from ldap2pg.validators import ldapquery, parse_scope
 
     with pytest.raises(ValueError):
         ldapquery(None, None)
 
+    with pytest.raises(ValueError):
+        ldapquery(dict(base='dc=lol'), format_fields=[])
+
     raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
 
-    v = ldapquery(raw, attrs=[])
+    v = ldapquery(raw, format_fields=[])
 
     assert 'filter' in v
+    assert ['cn'] == v['attributes']
+    assert 'attribute' not in v
 
     with pytest.raises(ValueError):
-        ldapquery(dict(raw, scope='unkqdsfq'), attrs=[])
+        ldapquery(dict(raw, scope='unkqdsfq'))
 
-    v = mapping(dict(
-        role=dict(
-            name='static', name_attribute=u'sAMAccountName', comment='{dn}',),
-        ldap=dict(base='o=acme'))
+    v = ldapquery(dict(base='o=acme'), [('sAMAccountName',), ('dn',)])
+
+    assert ['sAMAccountName'] == v['attributes']
+    assert not v['joins']
+
+
+def test_process_ldapquery_joins():
+    from ldap2pg.validators import ldapquery
+
+    v = ldapquery(
+        dict(
+            base='o=acme',
+            join=dict(
+                member=dict(filter='(objectClass=person)'))),
+        format_fields=[
+            ('sAMAccountName',),
+            ('member', 'cn'),
+            ('member', 'sAMAccountName'),
+        ]
     )
 
-    assert ['sAMAccountName'] == v['ldap']['attributes']
-    assert 'names' in v['roles'][0]
-    assert '{sAMAccountName}' in v['roles'][0]['names']
-    assert 'static' in v['roles'][0]['names']
-    assert 'role_attribute' not in v['roles'][0]
+    assert 'member' in v['attributes']
+    assert 'sAMAccountName' in v['attributes']
+    assert '(objectClass=person)' == v['joins']['member']['filter']
+    assert ['sAMAccountName'] == v['joins']['member']['attributes']
 
-    v = mapping(dict(role=dict(name='{cn}'), ldap=dict(base='o=acme')))
-
-    assert ['cn'] == v['ldap']['attributes']
-
-    with pytest.raises(ValueError):
-        mapping(dict(role='static', ldap=dict(base='dc=lol')))
-
-    v = mapping(dict(
-        role=dict(
-            name='{sAMAccountName}',
-            members='{member.sAMAccountName}',
-            comment='{member.cn}'),
-        ldap=dict(base='o=acme', join=dict(member=dict(
-            filter='(objectClass=person)'))))
+    v = ldapquery(
+        dict(base='o=acme', joins=dict(unused=dict())),
+        format_fields=[('sAMAccountName',), ('member', 'sAMAccountName')],
     )
 
-    assert 'member' in v['ldap']['attributes']
-    assert 'sAMAccountName' in v['ldap']['attributes']
-    assert '(objectClass=person)' == v['ldap']['joins']['member']['filter']
-    assert ['sAMAccountName'] == v['ldap']['joins']['member']['attributes']
-
-    v = mapping(dict(
-        role=dict(
-            name='{sAMAccountName}',
-            members='{member.sAMAccountName}'),
-        ldap=dict(base='o=acme'))
-    )
-
-    assert 'member' in v['ldap']['attributes']
-    assert 'sAMAccountName' in v['ldap']['attributes']
-    assert 'filter' in v['ldap']['joins']['member']
-    assert ['sAMAccountName'] == v['ldap']['joins']['member']['attributes']
+    assert 'member' in v['attributes']
+    assert 'sAMAccountName' in v['attributes']
+    assert 'filter' in v['joins']['member']
+    assert ['sAMAccountName'] == v['joins']['member']['attributes']
+    assert len(v['joins']) == 1
 
 
 def test_process_rolerule():
