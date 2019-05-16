@@ -276,7 +276,7 @@ def gather_options(environ=None, **kw):
         BINDDN='',
         USER=None,
         PASSWORD='',
-        REFERRALS=True,
+        REFERRALS=False,
     )
 
     environ = environ or os.environ

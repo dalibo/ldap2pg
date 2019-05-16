@@ -274,6 +274,40 @@ sync_map:
 ```
 
 
+# Inherit unmanaged role
+
+You may want to have a local role, not managed by ldap2pg to have custom
+privileges and grant this role to managed users. This is tricky because ldap2pg
+can't manage members of a role without managing its privileges and other
+options. The solution is to isolate managed membership in a preexisting
+sub-role.
+
+Say you have a `local_readers` roles with custom privileges. Prior to running
+ldap2pg, create a `local_readers_managed_members` role, member of
+`local_readers`:
+
+``` sql
+=# CREATE ROLE local_readers;
+=# CREATE ROLE local_readers_managed_members;
+=# GRANT local_readers TO local_readers_managed_members;
+```
+
+Now, in `ldap2pg.yml`, declare `local_readers_managed_members` and add members:
+
+``` yaml
+- role: local_readers_managed_members
+- role:
+    name: myuser
+    parent: local_readers_managed_members
+```
+
+Ensure that `local_readers` is not returned by `managed_roles_query` to prevent
+any modifications. Now run ldap2pg as usual. You'll see the message **add
+missing local_readers_managed_members members**. That's it, ldap2pg will never
+touch `local_readers` privileges or direct members, but managed roles can
+inherit from it.
+
+
 # ldap2pg as Docker container
 
 Already familiar with Docker and willing to save the setup time you're at the right place.

@@ -22,6 +22,7 @@ services:
     volumes:
     - ../../:/workspace
     - ./bash_history:/root/.bash_history
+    working_dir: /workspace
     environment:
       PGHOST: postgres
       PGUSER: postgres

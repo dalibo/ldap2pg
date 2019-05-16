@@ -13,10 +13,6 @@ top_srcdir=$(readlink -m $0/../../..)
 cd $top_srcdir
 test -f setup.py
 
-if [ -z "${LDAPBINDDN-}" ] ; then
-    exec env $(sed 's/^/LDAP/;s/ \+/=/g' ldaprc) $0 $@
-fi
-
 # Search for the proper RPM package
 rpmdist=$(rpm --eval '%dist')
 test -f dist/noarch/ldap2pg-*${rpmdist}*.noarch.rpm
@@ -52,7 +48,10 @@ fi
 
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
-ldapwhoami -d -1 -xw ${LDAPPASSWORD}
+# ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
+# workaround this.
+ln -fsv ${PWD}/ldaprc ~/ldaprc
+ldapwhoami -x -d 1 -w ${LDAPPASSWORD}
 
 # Install requirements tools with pip.
 pip2 install --no-deps --requirement tests/func/requirements.txt
@@ -63,4 +62,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw ${LDAPPASSWORD} -f ./fixtures/openldap-data.ldif
 fi
 
-make -C tests/func pytest
+pytest -x tests/func/
