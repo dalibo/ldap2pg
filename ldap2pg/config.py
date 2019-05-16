@@ -449,7 +449,8 @@ class Configuration(dict):
                 return os.path.realpath(candidate), stat_.st_mode
             except OSError as e:
                 if e.errno == errno.EACCES:
-                    logger.warning("Can't read %s: permission denied.", candidate)
+                    logger.warning(
+                        "Can't read %s: permission denied.", candidate)
 
         if custom:
             message = "Can't access configuration file %s." % (custom,)

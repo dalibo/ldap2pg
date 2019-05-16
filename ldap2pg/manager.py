@@ -199,7 +199,7 @@ class SyncManager(object):
                 if role in ldaproles:
                     try:
                         role.merge(ldaproles[role])
-                    except ValueError as e:
+                    except ValueError:
                         msg = "Role %s redefined with different options." % (
                             role,)
                         raise UserError(msg)
