@@ -75,12 +75,13 @@ def test_real_mode(dev, psql):
     assert 'keepme' in roles
 
 
-def test_nothing_to_do(dev):
+def test_nothing_to_do(capsys, dev):
     from sh import ldap2pg
 
-    out = ldap2pg('--real', config='ldap2pg.yml')
+    ldap2pg('--real', config='ldap2pg.yml')
 
-    assert b'Nothing to do' in out.stderr
+    _, err = capsys.readouterr()
+    assert 'Nothing to do' in err
 
 
 def test_re_grant(dev, psql):

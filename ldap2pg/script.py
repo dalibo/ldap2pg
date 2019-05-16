@@ -29,7 +29,7 @@ def wrapped_main(config=None):
     dictConfig(logging_config)
 
     if config.has_ldap_query():
-        logger.debug("Connecting to LDAP directory.")
+        logger.debug("Setting up LDAP client.")
         try:
             ldapconn = ldap.connect(**config['ldap'])
         except ldap.LDAPError as e:
