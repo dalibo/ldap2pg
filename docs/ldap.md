@@ -58,6 +58,27 @@ with the `on_unexpected_dn` key. The possible values are `fail` (the default),
 `warn` or `ignore`.
 
 
+## LDAP Sub-query alias Joins
+
+You may need to issue a sub-query to find more attributes than those available
+in Distinguished Name. For example, you may want to query `sAMAccountName` on
+Active Directory.
+
+ldap2pg infer sub-query by detecting attributes missing from Distinguished Name.
+For example, `member.cn` won't trigger a sub-query while `member.sAMAccountName`
+will. The `base` parameter of the sub-query is the value of `member`.
+
+You can adjust sub-query parameters like `scope` and `filter` in the `joins`
+paramater. It's a dict with an entry for each sub-query, key is the attribute to
+recurse. Each entry is a regular dict with `scope` and `filter` paramater.
+
+!!! notice
+
+   Executing a subquery for each entry of a result set can be very heavy. You
+   may optimize the query by using special LDAP query filter like `memberOf`.
+   Refer to your LDAP directory documentation and administrator for details.
+
+
 ## Examples
 
 ``` yaml
@@ -80,4 +101,16 @@ with the `on_unexpected_dn` key. The possible values are `fail` (the default),
     - dba_{member.cn}
     options: LOGIN
     on_unexpected_dn: fail
+- ldap:
+    base: ou=apps,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+    scope: sub
+    joins:
+      member:
+        filter: "(objectClass=User)"
+  roles:
+  - names:
+    - app_{member.sAMAccountName}
+    options: LOGIN
+    on_unexpected_dn: fail
+    comment: "App account from LDAP User {member.cn}."
 ```
