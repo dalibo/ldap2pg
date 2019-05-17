@@ -42,18 +42,46 @@ def test_connect_from_env(mocker):
     assert li.called is True
 
 
-def test_connect_sasl(mocker):
+def test_connect_sasl_digest(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
     li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
 
     from ldap2pg.ldap import connect
 
-    go.return_value = dict(URI='ldaps://host', USER='toto', PASSWORD='pw')
+    go.return_value = dict(
+        URI='ldaps://host', SASL_MECH='DIGEST-MD5',
+        USER='toto', PASSWORD='pw')
 
     connect()
 
     ldap = li.return_value
     assert ldap.sasl_interactive_bind_s.called is True
+
+
+def test_connect_sasl_gssapi(mocker):
+    go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
+
+    from ldap2pg.ldap import connect
+
+    go.return_value = dict(URI='ldaps://host', SASL_MECH='GSSAPI')
+
+    connect()
+
+    ldap = li.return_value
+    assert ldap.sasl_interactive_bind_s.called is True
+
+
+def test_connect_sasl_unhandled_mech(mocker):
+    go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
+    mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
+
+    from ldap2pg.ldap import connect, UserError
+
+    go.return_value = dict(URI='ldaps://host', SASL_MECH='pouet')
+
+    with pytest.raises(UserError):
+        connect()
 
 
 def test_options_dict():
@@ -94,7 +122,7 @@ def test_gather_options(mocker):
         unknown='pouet',
         environ=dict(
             LDAPBASE=b'dc=local', LDAPPASSWORD=b'envpass',
-            LDAPREFERRALS=b'off'),
+            LDAPREFERRALS=b'off', LDAPUSER=b'toto'),
     )
 
     assert 'envpass' == options['PASSWORD']

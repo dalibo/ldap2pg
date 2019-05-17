@@ -144,7 +144,7 @@ def iter_format_sub_fields(strings):
     for field in iter_format_fields(strings, split=False):
         field, _, attr = field.partition('.')
         if attr:
-           yield (field, attr)
+            yield (field, attr)
 
 
 def list_descendant(groups, name):
