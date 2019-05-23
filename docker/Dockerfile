@@ -10,7 +10,6 @@ RUN set -ex; \
         python3-setuptools=40.8.0-1 \
         python3-yaml=3.13-2 \
     ; \
-    apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
     :
 
