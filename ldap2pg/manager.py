@@ -32,6 +32,8 @@ class SyncManager(object):
         self._blacklist = blacklist
 
     def _query_ldap(self, base, filter, attributes, scope):
+        # Query directory returning a list of entries. An entry is a triplet
+        # containing Distinguished name, attributes and joins.
         try:
             raw_entries = self.ldapconn.search_s(
                 base, scope, filter, attributes,
@@ -54,45 +56,33 @@ class SyncManager(object):
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
 
-            entries.append(lower_attributes(entry))
+            entries.append(lower_attributes(entry) + ({},))
 
         return entries
 
     def query_ldap(self, base, filter, attributes, joins, scope):
         entries = self._query_ldap(base, filter, attributes, scope)
-        sub_attrs_cache = dict()
-        for entry in entries:
-            for attr, values in list(entry[1].items()):
-                values_with_attrs = []
-                for value in values:
-                    join = joins.get(attr)
-                    if join is None:
-                        values_with_attrs.append((value, dict()))
-                        continue
 
-                    sub_attrs = sub_attrs_cache.get((attr, value))
-                    if sub_attrs:
-                        values_with_attrs.append((value, dict(sub_attrs)))
-                        continue
+        join_cache = {}
+        for attr, join in joins.items():
+            for dn, attrs, entry_joins in entries:
+                for value in attrs[attr]:
+                    # That would be nice to group all joins of one entry.
+                    join_key = '%s/%s' % (attr, value)
+                    join_entries = join_cache.get(join_key)
+                    if join_entries is None:
+                        join_query = dict(join, base=value)
+                        try:
+                            join_entries = self._query_ldap(**join_query)
+                            join_cache[join_key] = join_entries
+                        except UserError as e:
+                            logger.warning('Ignoring %s: %s', value, e)
+                            join_cache[join_key] = False
+                            continue
+                    if join_entries:
+                        join_entries += entry_joins.get(attr, [])
+                        entry_joins[attr] = join_entries
 
-                    sub_attrs = {'dn': [value]}
-
-                    if not join['attributes']:
-                        values_with_attrs.append((value, sub_attrs))
-                        sub_attrs_cache[(attr, value)] = sub_attrs
-                        continue
-
-                    join = dict(join, base=value)
-                    try:
-                        join_values = self._query_ldap(**join)
-                        if join_values:
-                            sub_attrs.update(join_values[0][1])
-                            values_with_attrs.append((value, sub_attrs))
-                            sub_attrs_cache[(attr, value)] = sub_attrs
-                    except UserError as e:
-                        logger.warning('Ignoring %s: %s', value, e)
-
-                entry[1][attr] = values_with_attrs
         return entries
 
     def process_ldap_entry(self, entry, names, **kw):

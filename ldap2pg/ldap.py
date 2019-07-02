@@ -70,7 +70,9 @@ def str2dn(value):
 
 
 def expand_attributes(entry, formats):
-    if entry is None:
+    # Apply every combination of attibutes as referenced in formats.
+
+    if entry is None:  # Don't format static rules.
         for f in formats:
             yield f
         return
@@ -78,7 +80,7 @@ def expand_attributes(entry, formats):
     attributes = dict()
     for k in iter_format_fields(formats):
         v = list(get_attribute(entry, k))
-        if '.' in k:
+        if '.' in k:  # Implement dot access for deep attributes.
             k, _, attr = k.partition('.')
             v = [Settable(**dict({attr: v1})) for v1 in v]
         attributes[k] = v
@@ -98,38 +100,50 @@ class RDNError(NameError):
 
 
 def get_attribute(entry, attribute):
-    _, attributes = entry
+    # Generate all values from entry for accessor attribute. Attribute can be a
+    # single attribute name, a path to a RDN in a distinguished name, or an
+    # attribute of a join (aka subquery).
+    _, attributes, joins = entry
     path = attribute.lower().split('.')
     try:
         values = attributes[path[0]]
     except KeyError:
         raise ValueError("Unknown attribute %r" % (path[0],))
+
+    attribute = path[0]
     path = path[1:]
-    for (value, attrs) in values:
-        if path:
+    for value in values:
+        if not path:
+            yield value
+            continue
+
+        if path[0] in DN_COMPONENTS:
             raw_dn = value
-            if path[0] in DN_COMPONENTS:
-                try:
-                    dn = str2dn(value)
-                except ValueError:
-                    msg = "Can't parse DN from attribute %s=%s" % (
-                        attribute, value)
-                    raise ValueError(msg)
-                value = dict()
-                for (type_, name, _), in dn:
-                    names = value.setdefault(type_.lower(), [])
-                    names.append(name)
-                try:
-                    value = value[path[0]][0]
-                except KeyError:
-                    raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
-            else:
-                try:
-                    value = attrs[path[0]][0]
-                except KeyError:
-                    raise ValueError("Unknown attribute %s for DN %s" % (
-                        path[0], raw_dn,))
-        yield value
+            try:
+                dn = str2dn(value)
+            except ValueError:
+                msg = "Can't parse DN from attribute %s=%s" % (
+                    attribute, value)
+                raise ValueError(msg)
+            value = dict()
+            for (type_, name, _), in dn:
+                value.setdefault(type_.lower(), name)
+            try:
+                value = value[path[0]]
+            except KeyError:
+                raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
+
+            yield value
+
+        else:
+            try:
+                joined_entries = joins[attribute]
+            except KeyError:
+                msg = "Missing join result for %s" % (attribute,)
+                raise ValueError(msg)
+            for joined_entry in joined_entries:
+                for value in get_attribute(joined_entry, '.'.join(path)):
+                    yield value
 
 
 def lower_attributes(entry):

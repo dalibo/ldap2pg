@@ -175,47 +175,62 @@ def test_lower_attrs():
 def test_expand_attributes():
     from ldap2pg.ldap import expand_attributes
 
-    entry = ('dn', {
-        'cn': [('cn=pouet,ou=POU ET,dc=org', {})],
-        'member': [
-            ('cn=pouet,ou=POU ET,dc=org', {'samaccountname': ['alice']})
-        ],
-        'uid': [('toto', {}), ('titi', {})]
-    })
+    entry = (
+        'dn',
+        {  # Attributes
+            'cn': ['cn=pouet,ou=POU ET,dc=org'],
+            'member': ['cn=member0,cn=pouet,ou=POU ET,dc=org'],
+            'uid': ['toto', 'titi'],
+        },
+        {  # Joins
+            'member': [(
+                'cn=member0,cn=pouet,ou=POU ET,dc=org',
+                {'samaccountname': ['alice']}, {},
+            )],
+        },
+    )
 
-    names = list(expand_attributes(entry, [
+    values = list(expand_attributes(entry, [
         'static', '{uid}', '{cn.dc}', '{member.samaccountname}',
     ]))
-    assert 'toto' in names
-    assert 'static' in names
-    assert 'titi' in names
-    assert 'org' in names
-    assert 'alice' in names
+
+    assert 'alice' in values
+    assert 'org' in values
+    assert 'static' in values
+    assert 'titi' in values
+    assert 'toto' in values
 
 
 def test_get_attribute():
     from ldap2pg.ldap import get_attribute, RDNError
 
     with pytest.raises(ValueError):
-        list(get_attribute(entry=('dn', {}), attribute='pouet'))
+        list(get_attribute(entry=('dn', {}, {}), attribute='pouet'))
 
     with pytest.raises(RDNError):
         list(get_attribute(
-            entry=('dn', {'cn': [('cn=pouet', {})]}),
-            attribute='cn.ou',
+            entry=('dn', {'member': ['cn=pouet']}, {}),
+            attribute='member.ou',
         ))
 
     with pytest.raises(ValueError):
         list(get_attribute(
-            entry=('dn', {'cn': [('not a dn', {})]}),
-            attribute='cn.ou',
+            entry=('dn', {'attr0': ['not a dn']}, {}),
+            attribute='attr0.ou',
         ))
 
     with pytest.raises(ValueError):
         list(get_attribute(
-            entry=('dn', {'cn': [('cn=pouet', {})]}),
-            attribute='cn.pouet',
+            entry=('dn', {'cn': ['cn=pouet']}, {}),
+            attribute='cn.inexistant',
         ))
+
+    entry = (
+        'dn',
+        {'member': ['cn=member0']},
+        {'member': [('cn=member0', {'attr0': ['val0']}, {})]})
+    assert ['val0'] == list(get_attribute(entry, 'member.attr0'))
+    assert ['member0'] == list(get_attribute(entry, 'member.cn'))
 
 
 def test_logger(mocker):
