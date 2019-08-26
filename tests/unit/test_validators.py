@@ -176,6 +176,7 @@ def test_process_ldapquery_joins():
                 member=dict(filter='(objectClass=person)'))),
         format_fields=[
             ('sAMAccountName',),
+            ('member',),
             ('member', 'cn'),
             ('member', 'sAMAccountName'),
         ]
@@ -183,6 +184,7 @@ def test_process_ldapquery_joins():
 
     assert 'member' in v['attributes']
     assert 'sAMAccountName' in v['attributes']
+    assert 'member' in v['joins']
     assert '(objectClass=person)' == v['joins']['member']['filter']
     assert ['sAMAccountName'] == v['joins']['member']['attributes']
 

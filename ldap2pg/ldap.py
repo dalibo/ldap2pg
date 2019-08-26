@@ -82,14 +82,25 @@ def expand_attributes(entry, formats):
         v = list(get_attribute(entry, k))
         if '.' in k:  # Implement dot access for deep attributes.
             k, _, attr = k.partition('.')
-            v = [Settable(**dict({attr: v1})) for v1 in v]
+            v = [
+                Settable(_string=entry[0], **dict({attr: v1}))
+                for v1 in v]
+            # Store container with '.' suffix to not overlap with regular
+            # attribute access. This way, {member} and {member.cn} are both
+            # valids.
+            k = k + '.'
         attributes[k] = v
 
     for format_ in formats:
-        fields = [f[0] for f in iter_format_fields([format_], split=True)]
+        fields = [
+            # Get container values if sub-attributes are requested.
+            f[0] + ('.' if len(f) > 1 else '')
+            for f in iter_format_fields([format_], split=True)
+        ]
         values = [attributes[k] for k in fields]
         for items in product(*values):
-            yield format_.format(**dict(zip(fields, items)))
+            format_vars = [f.rstrip('.') for f in fields]
+            yield format_.format(**dict(zip(format_vars, items)))
 
 
 class RDNError(NameError):

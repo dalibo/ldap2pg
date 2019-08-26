@@ -191,7 +191,7 @@ def test_expand_attributes():
     )
 
     values = list(expand_attributes(entry, [
-        'static', '{uid}', '{cn.dc}', '{member.samaccountname}',
+        'static', '{uid}', '{cn.dc}', '{member}', '{member.samaccountname}',
     ]))
 
     assert 'alice' in values
@@ -199,6 +199,7 @@ def test_expand_attributes():
     assert 'static' in values
     assert 'titi' in values
     assert 'toto' in values
+    assert 'cn=member0,cn=pouet,ou=POU ET,dc=org' in values
 
 
 def test_get_attribute():

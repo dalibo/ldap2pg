@@ -57,13 +57,9 @@ def ldapquery(value, format_fields=None):
     for field in format_fields:
         attr, subattr = field[0], field[1:]
         attrs.add(attr)
-        if not subattr:
-            # Ensure there is no join if join is not needed.
-            query['joins'].pop(attr, None)
+        if not subattr or subattr[0] in DN_COMPONENTS:
             continue
-        if subattr[0] in DN_COMPONENTS:
-            continue
-        join = query['joins'].setdefault(attr, default_ldap_query.copy())
+        join = dict(default_ldap_query, **query['joins'].get(attr, {}))
         join.setdefault('attributes', []).append(subattr[0])
         query['joins'][attr] = ldapquery(join, [])
 
