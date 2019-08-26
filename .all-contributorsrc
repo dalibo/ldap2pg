@@ -1,11 +1,11 @@
 {
   "projectName": "ldap2pg",
   "projectOwner": "bersace",
-  "files": [
-    "CONTRIBUTING.md"
-  ],
+  "files": ["CONTRIBUTING.md"],
   "imageSize": 100,
   "commit": false,
+  "repoType": "github",
+  "commitConvention": "none",
   "contributors": [
     {
       "login": "bersace",
@@ -48,6 +48,15 @@
       "contributions": [
         "code",
         "review"
+      ]
+    },
+    {
+      "login": "hlecleme",
+      "name": "Harold le Clément de Saint-Marcq",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/50139228?v=4",
+      "profile": "https://github.com/hlecleme",
+      "contributions": [
+        "code"
       ]
     }
   ]

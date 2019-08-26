@@ -135,16 +135,11 @@ def iter_format_fields(strings, split=False):
         for _, field, _, _ in formatter.parse(string):
             if field is None:
                 continue
-            if split:
-                field = field.partition('.')[0]
-            yield field
-
-
-def iter_format_sub_fields(strings):
-    for field in iter_format_fields(strings, split=False):
-        field, _, attr = field.partition('.')
-        if attr:
-            yield (field, attr)
+            field = [
+                f for f in field.split('.')
+                if '(' not in f and ')' not in f
+            ]
+            yield field if split else '.'.join(field)
 
 
 def list_descendant(groups, name):

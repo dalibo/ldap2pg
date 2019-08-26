@@ -3,7 +3,6 @@ from .ldap import DN_COMPONENTS
 from .role import RoleOptions
 from .utils import string_types
 from .utils import iter_format_fields
-from .utils import iter_format_sub_fields
 
 default_ldap_query = {
     'base': '',
@@ -12,7 +11,24 @@ default_ldap_query = {
 }
 
 
-def ldapquery(value):
+def ldapquery(value, format_fields=None):
+    # ldapquery specs is following.
+    #
+    # ldap:
+    #   base:
+    #   filter:
+    #   scope:
+    #   attributes:
+    #   joins:
+    #     member:
+    #       base:
+    #       filter:
+    #       scope:
+    #       attributes:
+    #
+    # Attributes are infered from format_fields. Joins are infered from
+    # attributes.
+
     if not isinstance(value, dict):
         raise ValueError("ldap: is not a dict")
 
@@ -21,8 +37,46 @@ def ldapquery(value):
     if 'filter' in query:
         query['filter'] = query['filter'].rstrip('\r\n')
 
-    # Clean value from old manual attribute
-    query.pop('attribute', None)
+    # Accept manual attributes, for legacy. Attribute inference should in all
+    # cases. Also, join attributes as predefined this way.
+    strlist_alias(query, 'attributes', 'attribute')
+    alias(query, 'joins', 'join')
+    query.setdefault('joins', {})
+
+    # ATTRIBUTES AND JOINS INFERENCE
+
+    legacy_attrs = query.get('attributes', [])
+    format_fields = (
+        list(format_fields or []) +
+        [a.split('.') for a in legacy_attrs])
+
+    # Now, loop format fields to list every attributes we need to query from
+    # LDAP directory, and for .sub.attr, detect whether we need a subquery (aka
+    # join).
+    attrs = set()
+    for field in format_fields:
+        attr, subattr = field[0], field[1:]
+        attrs.add(attr)
+        if not subattr or subattr[0] in DN_COMPONENTS:
+            continue
+        join = dict(default_ldap_query, **query['joins'].get(attr, {}))
+        join.setdefault('attributes', []).append(subattr[0])
+        query['joins'][attr] = ldapquery(join, [])
+
+    if 'dn' in attrs:
+        attrs.remove('dn')
+    if not attrs:
+        fmt = "No attributes are used from LDAP query %(base)s"
+        raise ValueError(fmt % value)
+    query['attributes'] = list(attrs)
+
+    # Post process joins.
+    for key, join in query['joins'].copy().items():
+        if not join.get('attributes'):
+            del query['joins'][key]
+            continue
+        join.pop('base', None)
+        join.pop('joins', None)
 
     return query
 
@@ -95,9 +149,9 @@ def rolerule(value):
     return rule
 
 
-def alias(dict_, key, alias, default=None):
+def alias(dict_, key, alias):
     if alias in dict_:
-        dict_.setdefault(key, dict_.pop(alias, default))
+        dict_.setdefault(key, dict_.pop(alias))
 
 
 def strorlist(dict_, key, exceptions=[]):
@@ -199,32 +253,9 @@ def mapping(value, **kw):
         raise ValueError("Missing role or grant rule.")
 
     if 'ldap' in value:
-        value['ldap'] = ldapquery(value['ldap'])
         strings = iter_mapping_strings(value)
-        attrs = set(iter_format_fields(strings, split=True))
-        if 'dn' in attrs:
-            attrs.remove('dn')
-        if not attrs:
-            fmt = "No attributes are used from LDAP query %(base)s"
-            raise ValueError(fmt % value['ldap'])
-        value['ldap']['attributes'] = list(attrs)
-
-        if 'join' in value['ldap']:
-            value['ldap']['joins'] = value['ldap'].pop('join')
-        if 'joins' not in value['ldap']:
-            value['ldap']['joins'] = {}
-
-        joins = value['ldap']['joins']
-        for field in joins.keys():
-            joins[field] = ldapquery(joins[field])
-
-        strings = iter_mapping_strings(value)
-        for field, attr in set(iter_format_sub_fields(strings)):
-            if field not in joins:
-                joins[field] = ldapquery({})
-            sub_attrs = joins[field].setdefault('attributes', [])
-            if attr not in DN_COMPONENTS:
-                sub_attrs.append(attr)
+        format_fields = iter_format_fields(strings, split=True)
+        value['ldap'] = ldapquery(value['ldap'], format_fields)
 
     return value
 

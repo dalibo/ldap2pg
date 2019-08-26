@@ -29,8 +29,8 @@ def test_query_ldap(mocker):
         )
 
 
-def test_query_ldap_joins(mocker):
-    from ldap2pg.manager import SyncManager, LDAPError
+def test_query_ldap_joins_ok(mocker):
+    from ldap2pg.manager import SyncManager
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
@@ -48,72 +48,57 @@ def test_query_ldap_joins(mocker):
             search_result, sub_search_result]
 
     entries = manager.query_ldap(
-        base='ou=people,dc=global', filter='(objectClass=group)',
-        scope=2, joins={'member': dict(
+        base='ou=people,dc=global',
+        filter='(objectClass=group)',
+        scope=2,
+        attributes=['cn', 'member'],
+        joins={'member': dict(
             base='ou=people,dc=global',
             scope=2,
             filter='(objectClass=people)',
             attributes=['sAMAccountName'],
         )},
-        attributes=['cn', 'member'],
     )
 
+    assert 2 == manager.ldapconn.search_s.call_count
+
     expected_entries = [
-        ('cn=A,ou=people,dc=global', {
-            'cn': [('A', {})],
-            'dn': [('cn=A,ou=people,dc=global', {})],
-            'member': [('cn=P,ou=people,dc=global', {
-                'dn': ['cn=P,ou=people,dc=global'],
-                'samaccountname': ['P'],
-            })],
-        }),
-        ('cn=B,ou=people,dc=global', {
-            'cn': [('B', {})],
-            'dn': [('cn=B,ou=people,dc=global', {})],
-            'member': [('cn=P,ou=people,dc=global', {
-                'dn': ['cn=P,ou=people,dc=global'],
-                'samaccountname': ['P'],
-            })],
-        }),
+        ('cn=A,ou=people,dc=global',
+         {
+            'cn': ['A'],
+            'dn': ['cn=A,ou=people,dc=global'],
+            'member': ['cn=P,ou=people,dc=global'],
+         },
+         {
+             'member': [('cn=P,ou=people,dc=global', {
+                 'dn': ['cn=P,ou=people,dc=global'],
+                 'samaccountname': ['P'],
+             }, {})],
+         }),
+        ('cn=B,ou=people,dc=global',
+         {
+             'cn': ['B'],
+             'dn': ['cn=B,ou=people,dc=global'],
+             'member': ['cn=P,ou=people,dc=global'],
+         },
+         {
+             'member': [('cn=P,ou=people,dc=global', {
+                 'dn': ['cn=P,ou=people,dc=global'],
+                 'samaccountname': ['P'],
+             }, {})],
+         }),
     ]
 
     assert expected_entries == entries
 
-    manager.ldapconn.search_s.side_effect = [search_result]
 
-    entries = manager.query_ldap(
-        base='ou=people,dc=global', filter='(objectClass=group)',
-        scope=2, joins={'member': dict(
-            base='ou=people,dc=global',
-            scope=2,
-            filter='(objectClass=people)',
-            attributes=[],
-        )},
-        attributes=['cn', 'member'],
-    )
-
-    expected_entries = [
-        ('cn=A,ou=people,dc=global', {
-            'cn': [('A', {})],
-            'dn': [('cn=A,ou=people,dc=global', {})],
-            'member': [('cn=P,ou=people,dc=global', {
-                'dn': ['cn=P,ou=people,dc=global'],
-            })],
-        }),
-        ('cn=B,ou=people,dc=global', {
-            'cn': [('B', {})],
-            'dn': [('cn=B,ou=people,dc=global', {})],
-            'member': [('cn=P,ou=people,dc=global', {
-                'dn': ['cn=P,ou=people,dc=global'],
-            })],
-        }),
-    ]
-
-    assert expected_entries == entries
+def test_query_ldap_joins_ignore_error(mocker):
+    from ldap2pg.manager import SyncManager, LDAPError
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
-            'cn': ['A'], 'member': ['cn=P,ou=people,dc=global']}),
+            'cn': ['A'],
+            'member': ['cn=P,ou=people,dc=global']}),
     ]
 
     sub_search_result = LDAPError()
@@ -135,10 +120,10 @@ def test_query_ldap_joins(mocker):
 
     expected_entries = [
         ('cn=A,ou=people,dc=global', {
-            'cn': [('A', {})],
-            'dn': [('cn=A,ou=people,dc=global', {})],
-            'member': [],
-        }),
+            'cn': ['A'],
+            'dn': ['cn=A,ou=people,dc=global'],
+            'member': ['cn=P,ou=people,dc=global'],
+        }, {}),
     ]
 
     assert expected_entries == entries
@@ -181,7 +166,7 @@ def test_process_entry_user():
 
     manager = SyncManager()
 
-    entry = ('dn', {'cn': [('alice', {}), ('bob', {})]})
+    entry = ('dn', {'cn': ['alice', 'bob']}, {})
 
     roles = manager.process_ldap_entry(
         entry, names=['{cn}'],
@@ -201,7 +186,8 @@ def test_process_entry_dn():
     manager = SyncManager()
 
     entry = ('dn', {
-        'member': [('cn=alice,dc=unit', {}), ('cn=bob,dc=unit', {})]})
+        'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit'],
+    }, {})
 
     roles = manager.process_ldap_entry(entry, names=['{member.cn}'])
     roles = list(roles)
@@ -219,11 +205,13 @@ def test_process_entry_membership(mocker):
 
     entries = [
         ('cn=group0', {
-            'cn': [('group0', {})],
-            'member': [('cn=alice,dc=unit', {}), ('cn=alain,dc=unit', {})]}),
+            'cn': ['group0'],
+            'member': ['cn=alice,dc=unit', 'cn=alain,dc=unit'],
+        }, {}),
         ('cn=group1', {
-            'cn': [('group1', {})],
-            'member': [('cn=bob,dc=unit', {}), ('cn=benoit,dc=unit', {})]}),
+            'cn': ['group1'],
+            'member': ['cn=bob,dc=unit', 'cn=benoit,dc=unit'],
+        }, {}),
     ]
 
     roles = []
