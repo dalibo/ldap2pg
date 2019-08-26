@@ -61,6 +61,9 @@ class SyncManager(object):
         return entries
 
     def query_ldap(self, base, filter, attributes, joins, scope):
+        logger.info(
+            "Querying LDAP %.24s... %.12s...",
+            base, filter.replace('\n', ''))
         entries = self._query_ldap(base, filter, attributes, scope)
 
         join_cache = {}
@@ -73,6 +76,7 @@ class SyncManager(object):
                     if join_entries is None:
                         join_query = dict(join, base=value)
                         try:
+                            logger.info("Sub-querying LDAP %.24s...", value)
                             join_entries = self._query_ldap(**join_query)
                             join_cache[join_key] = join_entries
                         except UserError as e:
@@ -175,10 +179,6 @@ class SyncManager(object):
         ldapacl = Acl()
         for mapping in syncmap:
             if 'ldap' in mapping:
-                logger.info(
-                    "Querying LDAP %.24s... %.12s...",
-                    mapping['ldap']['base'],
-                    mapping['ldap']['filter'].replace('\n', ''))
                 entries = self.query_ldap(**mapping['ldap'])
                 log_source = 'in LDAP'
             else:
