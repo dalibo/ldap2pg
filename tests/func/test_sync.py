@@ -117,9 +117,6 @@ def test_joins_in_real_mode(dev, psql):
     from sh import ldap2pg
 
     ldap2pg('-N', c='tests/func/ldap2pg.joins.yml')
-    # Workaround bug in Postgres: execute on functions to public persists
-    # revoke.
-    ldap2pg('-N', c='tests/func/ldap2pg.joins.yml')
 
     roles = list(psql.roles())
     writers = list(psql.members('writers'))

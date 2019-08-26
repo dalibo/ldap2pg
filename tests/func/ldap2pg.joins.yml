@@ -36,27 +36,6 @@ postgres:
     ORDER BY 1;
 
 
-privileges:
-  # Define an privilege group `ro` with read-only grants
-  ro:
-  - __connect__
-  - __execute__
-  - __select_on_tables__
-  - __select_on_sequences__
-  - __usage_on_schemas__
-  - __usage_on_types__
-
-  # `rw` privilege group lists write-only grants
-  rw:
-  - __temporary__
-  - __all_on_tables__
-  - __all_on_sequences__
-
-  # `ddl` privilege group lists DDL only grants.
-  ddl:
-  - __create_on_schemas__
-
-
 sync_map:
 # First, setup static roles and grants
 - roles:
@@ -73,33 +52,6 @@ sync_map:
     # Grant read/write to owners
     parent: writers
     options: NOLOGIN
-  # Now grant privileges to each groups
-  grant:
-  - privilege: ro
-    role: readers
-    # Let's everyone see pg_catalog
-    schema: __all__
-  - privilege: rw
-    role: writers
-    # But avoid writers to write in pg_catalog
-    schema: public
-  # Allow ddl to create tables in public only
-  - privilege: ddl
-    role: owners
-    schema: public
-  # owners must have write access to pg_catalog
-  - privilege: rw
-    role: owners
-    schema: pg_catalog
-  # Grants on specific schema appdb.appns:
-  - privilege: rw
-    role: writers
-    database: appdb
-    schema: appns
-  - privilege: ddl
-    role: owners
-    database: appdb
-    schema: appns
 
 # Now query LDAP to create roles and grant them privileges by parenting.
 - ldap:
