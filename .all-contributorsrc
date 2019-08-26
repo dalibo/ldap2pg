@@ -1,7 +1,7 @@
 {
   "projectName": "ldap2pg",
   "projectOwner": "bersace",
-  "files": ["CONTRIBUTING.md"],
+  "files": ["AUTHORS.md"],
   "imageSize": 100,
   "commit": false,
   "repoType": "github",
