@@ -96,9 +96,9 @@ jobs:
     <<: *unit_tpl
     docker: [{image: "circleci/python:2.7"}]
 
-  0-unit-py34:
+  0-unit-py36:
     <<: *unit_tpl
-    docker: [{image: "circleci/python:3.4"}]
+    docker: [{image: "circleci/python:3.6"}]
 
   0-rpm-centos6:
     <<: *rpm_tpl
@@ -131,7 +131,7 @@ workflows:
   pipeline:
     jobs:
     - 0-unit-py27
-    - 0-unit-py34
+    - 0-unit-py36
     - 0-rpm-centos6
     - 0-rpm-centos7
     - 1-func-centos6:
