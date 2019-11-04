@@ -94,14 +94,8 @@ class SyncManager(object):
         return entries
 
     def process_ldap_entry(self, entry, names, **kw):
-        members = [
-            m.lower() for m in
-            expand_attributes(entry, kw.get('members', []))
-        ]
-        parents = [
-            p.lower() for p in
-            expand_attributes(entry, kw.get('parents', []))
-        ]
+        members = list(expand_attributes(entry, kw.get('members', [])))
+        parents = list(expand_attributes(entry, kw.get('parents', [])))
         comment = kw.get('comment', None)
         if comment:
             try:
@@ -114,7 +108,6 @@ class SyncManager(object):
 
         for name in expand_attributes(entry, names):
             log_source = " from " + ("YAML" if name in names else entry[0])
-            name = name.lower()
 
             logger.debug("Found role %s%s.", name, log_source)
             if members:

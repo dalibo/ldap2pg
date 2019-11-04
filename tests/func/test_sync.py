@@ -38,7 +38,7 @@ def test_dry_run(dev, psql):
     superusers = list(psql.superusers())
     # oscar is not dropped
     assert 'oscar' in roles
-    assert 'alice' in superusers
+    assert 'ALICE' in superusers
 
 
 def test_check_mode(dev, psql):
@@ -60,15 +60,15 @@ def test_real_mode(dev, psql):
     roles = list(psql.roles())
     writers = list(psql.members('writers'))
 
-    assert 'alan' in roles
+    assert 'Alan' in roles
     assert 'oscar' not in roles
 
-    assert 'alice' in psql.superusers()
+    assert 'ALICE' in psql.superusers()
 
     assert 'daniel' in writers
     assert 'david' in writers
     assert 'didier' in writers
-    assert 'alice' in psql.members('ldap_roles')
+    assert 'ALICE' in psql.members('ldap_roles')
 
     # Assert that table keepme owned by deleted user spurious is not dropped!
     assert 'keepme' in psql.tables(dbname='olddb')
