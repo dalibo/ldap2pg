@@ -72,6 +72,16 @@ def test_merge():
     assert 1 == len(a.members)
 
 
+def test_rename():
+    from ldap2pg.role import Role
+
+    a = Role(name='Alan')
+    queries = [q.args[0] for q in a.rename()]
+    alter = queries[0]
+
+    assert 'RENAME TO' in alter
+
+
 def test_merge_options():
     from ldap2pg.role import Role
 
@@ -172,9 +182,10 @@ def test_diff():
 
     pgmanagedroles = RoleSet([
         Role('drop-me'),
-        Role('alter-me'),
+        Role('alter-me', members=['rename-me']),
         Role('nothing'),
         Role('public'),
+        Role('rename-me'),
     ])
     pgallroles = pgmanagedroles.union({
         Role('reuse-me'),
@@ -182,9 +193,10 @@ def test_diff():
     })
     ldaproles = RoleSet([
         Role('reuse-me'),
-        Role('alter-me', options=dict(LOGIN=True)),
+        Role('alter-me', options=dict(LOGIN=True), members=['Rename-Me']),
         Role('nothing'),
-        Role('create-me')
+        Role('create-me'),
+        Role('Rename-Me'),
     ])
     queries = [
         q.args[0]
