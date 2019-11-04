@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class Role(object):
     __slots__ = (
         'comment',
+        'lname',
         'members',
         'name',
         'options',
@@ -22,6 +23,7 @@ class Role(object):
     def __init__(self, name, options=None, members=None, parents=None,
                  comment=None):
         self.name = name
+        self.lname = name.lower()
         self.members = members or []
         self.options = RoleOptions(options or {})
         self.parents = parents or []
@@ -282,6 +284,11 @@ class RoleSet(set):
         # First create missing roles
         missing = RoleSet(other - available)
         for role in missing.flatten():
+            if role.lname in self and role.lname not in other:
+                logger.warning(
+                    "%s role will be dropped and %s created. "
+                    "You may need to reassign objets.",
+                    role.lname, role.name)
             for qry in role.create():
                 yield qry
 

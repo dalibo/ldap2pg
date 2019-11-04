@@ -10,7 +10,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 **Beware** when upgrading : **ldap2pg will drop roles having uppercase letter in
-their name!** These roles will be recreated with case respected.
+their name!** These roles will be recreated with case respected. Run with
+`--dry` before and check for warnings about detected name changes.
 
 - ldap2pg now respect case for role names. Thanks to [Sergejs
   Zuromskis](@zurikus) for the report.
