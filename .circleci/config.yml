@@ -122,7 +122,7 @@ jobs:
     docker:
       - image: centos:7
       - *openldap_container
-      - image: postgres:11-alpine
+      - image: postgres:12-alpine
         <<: *postgres_env
     steps: *func_steps
 
