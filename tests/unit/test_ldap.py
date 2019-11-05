@@ -181,17 +181,20 @@ def test_expand_attributes():
             'cn': ['cn=pouet,ou=POU ET,dc=org'],
             'member': ['cn=member0,cn=pouet,ou=POU ET,dc=org'],
             'uid': ['toto', 'titi'],
+            'memberof': [],
         },
         {  # Joins
             'member': [(
                 'cn=member0,cn=pouet,ou=POU ET,dc=org',
-                {'samaccountname': ['alice']}, {},
+                {'samaccountname': ['alice'], 'memberof': []}, {},
             )],
         },
     )
 
+    # import pdb; pdb.set_trace()
     values = list(expand_attributes(entry, [
-        'static', '{uid}', '{cn.dc}', '{member}', '{member.samaccountname}',
+        'static', '{uid}', '{cn.dc}', '{member}', '{member.sAMAccountName}',
+        'inexistant_{memberOf}', 'inexistant_{member.memberOf}',
     ]))
 
     assert 'alice' in values
@@ -200,6 +203,7 @@ def test_expand_attributes():
     assert 'titi' in values
     assert 'toto' in values
     assert 'cn=member0,cn=pouet,ou=POU ET,dc=org' in values
+    assert 'inexistant_' not in ''.join(values)
 
 
 def test_get_attribute():

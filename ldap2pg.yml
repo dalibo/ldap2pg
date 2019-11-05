@@ -137,6 +137,7 @@ sync_map:
     parent:
     - ldap_roles
     - writers
+    comment: 'LDAP desc: {description}'
     on_unexpected_dn: warn
 - ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker

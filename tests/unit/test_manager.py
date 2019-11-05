@@ -161,6 +161,19 @@ def test_process_entry_static():
     assert 'Custom.' == roles[0].comment
 
 
+def test_process_entry_missing_attribute():
+    from ldap2pg.manager import SyncManager
+
+    manager = SyncManager()
+    entry = ('dn', {'cn': ['david'], 'desc': []}, {})
+    roles = list(manager.process_ldap_entry(
+        entry, names=['{cn}'], comment='{desc}',
+    ))
+
+    assert 1 == len(roles)
+    assert roles[0].comment is None
+
+
 def test_process_entry_user():
     from ldap2pg.manager import SyncManager
 
