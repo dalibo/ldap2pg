@@ -3,16 +3,17 @@
 Swiss-army knife to synchronize Postgres roles and privileges from YAML
 or LDAP.
 
+
 ## Features
 
--   Creates, alters and drops PostgreSQL roles from LDAP queries.
--   Creates static roles from YAML to complete LDAP entries.
--   Manages role members (alias *groups*).
--   Grants or revokes privileges statically or from LDAP entries.
--   Dry run.
--   Logs LDAP queries as `ldapsearch` commands.
--   Logs **every** SQL query.
--   Reads settings from an expressive YAML config file.
+- Creates, alters and drops PostgreSQL roles from LDAP queries.
+- Creates static roles from YAML to complete LDAP entries.
+- Manages role members (alias *groups*).
+- Grants or revokes privileges statically or from LDAP entries.
+- Dry run.
+- Logs LDAP queries as `ldapsearch` commands.
+- Logs **every** SQL query.
+- Reads settings from an expressive YAML config file.
 
 
 ## Environment variables
