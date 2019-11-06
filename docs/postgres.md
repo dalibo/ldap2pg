@@ -132,6 +132,18 @@ postgres:
     GROUP BY 1
 ```
 
+`schemas_query` is executed once per database. Thus, you could use
+`schemas_query` to compute **per-database** owners:
+
+``` yaml
+postgres:
+  schemas_query: |
+    SELECT
+      nspname,
+      ARRAY['owner_' || current_database()]
+    FROM pg_catalog.pg_namespace;
+```
+
 
 ## Static Queries
 
