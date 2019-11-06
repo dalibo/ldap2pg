@@ -1,18 +1,19 @@
-[![ldap2pg: PostgreSQL role and privileges management](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)](https://github.com/dalibo/ldap2pg)
+[![ldap2pg: PostgreSQL role and privileges management](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)](https://labs.dalibo.com/ldap2pg)
 
 Swiss-army knife to synchronize Postgres roles and privileges from YAML
 or LDAP.
 
+
 ## Features
 
--   Creates, alters and drops PostgreSQL roles from LDAP queries.
--   Creates static roles from YAML to complete LDAP entries.
--   Manages role members (alias *groups*).
--   Grants or revokes privileges statically or from LDAP entries.
--   Dry run.
--   Logs LDAP queries as `ldapsearch` commands.
--   Logs **every** SQL query.
--   Reads settings from an expressive YAML config file.
+- Creates, alters and drops PostgreSQL roles from LDAP queries.
+- Creates static roles from YAML to complete LDAP entries.
+- Manages role members (alias *groups*).
+- Grants or revokes privileges statically or from LDAP entries.
+- Dry run.
+- Logs LDAP queries as `ldapsearch` commands.
+- Logs **every** SQL query.
+- Reads settings from an expressive YAML config file.
 
 
 ## Environment variables
