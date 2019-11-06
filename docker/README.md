@@ -1,4 +1,4 @@
-[![ldap2pg: PostgreSQL role and privileges management](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)](https://github.com/dalibo/ldap2pg)
+[![ldap2pg: PostgreSQL role and privileges management](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)](https://labs.dalibo.com/ldap2pg)
 
 Swiss-army knife to synchronize Postgres roles and privileges from YAML
 or LDAP.

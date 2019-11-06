@@ -98,7 +98,7 @@ You're welcome!
    :alt: Docker Image Available
 
 .. |ldap2pg| image:: https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png
-   :target: https://github.com/dalibo/ldap2pg
+   :target: https://labs.dalibo.com/ldap2pg
    :alt: ldap2pg: PostgreSQL role and privileges management
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/ldap2pg.svg

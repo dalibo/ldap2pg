@@ -12,6 +12,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Postgres 12 support validated.
 - Fix void attributes raising *Missing attribute error*.
 - Docker image now ensure ldap2pg is pinned to the desired version.
+- Moved to new homepage : https://labs.dalibo.com/ldap2pg .
 
 
 # ldap2pg 5.0
