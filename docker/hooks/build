@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+if ! [[ "${DOCKER_TAG-latest}" =~ "latest" ]] ; then
+    export LDAP2PG_VERSION="${DOCKER_TAG}"
+fi
+
+exec docker build \
+    --build-arg LDAP2PG_VERSION \
+    --tag "$IMAGE_NAME" \
+    .

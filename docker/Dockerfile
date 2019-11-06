@@ -1,5 +1,7 @@
 FROM debian:buster-slim
 
+ARG LDAP2PG_VERSION
+
 RUN set -ex; \
     apt-get update -y; \
     apt-get install -y --no-install-recommends \
@@ -15,7 +17,7 @@ RUN set -ex; \
     :
 
 RUN set -ex; \
-    pip3 --no-cache-dir install --no-deps ldap2pg; \
+    pip3 --no-cache-dir install --no-deps ldap2pg${LDAP2PG_VERSION:+==${LDAP2PG_VERSION}}; \
     ldap2pg --version; \
     :
 
