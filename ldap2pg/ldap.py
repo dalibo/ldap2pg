@@ -77,30 +77,17 @@ def expand_attributes(entry, formats):
             yield f
         return
 
-    attributes = dict()
+    # Gather all values as they are referenced in format token.
+    values = dict()
     for k in iter_format_fields(formats):
-        v = list(get_attribute(entry, k))
-        if '.' in k:  # Implement dot access for deep attributes.
-            k, _, attr = k.partition('.')
-            v = [
-                Settable(_string=entry[0], **dict({attr: v1}))
-                for v1 in v]
-            # Store container with '.' suffix to not overlap with regular
-            # attribute access. This way, {member} and {member.cn} are both
-            # valids.
-            k = k + '.'
-        attributes[k] = v
+        values[k] = list(get_attribute(entry, k))
 
     for format_ in formats:
-        fields = [
-            # Get container values if sub-attributes are requested.
-            f[0] + ('.' if len(f) > 1 else '')
-            for f in iter_format_fields([format_], split=True)
-        ]
-        values = [attributes[k] for k in fields]
-        for items in product(*values):
-            format_vars = [f.rstrip('.') for f in fields]
-            yield format_.format(**dict(zip(format_vars, items)))
+        # Expand all combination of values, with only values of this format
+        # string.
+        vars_ = make_format_vars(entry[0], values, format_)
+        for items in product(*vars_.values()):
+            yield format_.format(**dict(zip(vars_.keys(), items)))
 
 
 class RDNError(NameError):
@@ -163,6 +150,25 @@ def lower_attributes(entry):
         (k.lower(), v)
         for k, v in attributes.items()
     ])
+
+
+def make_format_vars(dn, values, format_):
+    # Build variables to inject into format, implementing deep access of
+    # compound values like DN and joins. values is a dictionnary with full
+    # format token as key and the list of all values available in entries as
+    # values. e.g. {'dn.cn': ['toto'], 'dn': ['cn=toto']}.
+    vars_ = dict()
+    fields = list(iter_format_fields([format_]))
+    for f in fields:
+        if '.' in f:
+            parent, _, child = f.partition('.')
+            vars_[parent] = [
+                Settable(_string=dn, **dict({child: v}))
+                for v in values[f]
+            ]
+        else:
+            vars_[f] = values[f]
+    return vars_
 
 
 class EncodedParamsCallable(object):  # pragma: nocover_py3

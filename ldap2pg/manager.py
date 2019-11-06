@@ -44,12 +44,16 @@ class SyncManager(object):
 
         logger.debug('Got %d entries from LDAP.', len(raw_entries))
         entries = []
+        wanted_attribute_names = attributes
         for dn, attributes in raw_entries:
             if not dn:
                 logger.debug("Discarding ref: %.40s.", attributes)
                 continue
 
             attributes['dn'] = [dn]
+            for n in wanted_attribute_names:
+                attributes.setdefault(n, [])
+
             try:
                 entry = decode_value((dn, attributes))
             except UnicodeDecodeError as e:
@@ -100,7 +104,13 @@ class SyncManager(object):
         ]
         comment = kw.get('comment', None)
         if comment:
-            comment = next(expand_attributes(entry, [comment]))
+            try:
+                comment = next(expand_attributes(entry, [comment]))
+            except StopIteration:
+                logger.warning(
+                    "Can't generate comment for %s... Missing attribute?",
+                    entry[0][:24])
+                comment = None
 
         for name in expand_attributes(entry, names):
             log_source = " from " + ("YAML" if name in names else entry[0])

@@ -244,6 +244,7 @@ changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: app
+# Missing description: comment will fallback to default.
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -255,6 +256,7 @@ changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: app2
+description: Desc of app2, should end in a comment.
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
