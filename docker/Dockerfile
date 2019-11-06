@@ -12,7 +12,6 @@ RUN set -ex; \
         python3-setuptools \
         python3-yaml \
     ; \
-    apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
     :
 
