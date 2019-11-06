@@ -20,6 +20,11 @@ setup(
     version='5.0',
     description='Manage PostgreSQL roles and privileges from YAML or LDAP',
     url='https://labs.dalibo.com/ldap2pg',
+    project_urls={
+        "Documentation": "https://ldap2pg.rtfd.io/",
+        "Tracker": "https://github.com/dalibo/ldap2pg/issues",
+        "Sources": "https://github.com/dalibo/ldap2pg",
+    },
     author='Dalibo',
     author_email='contact@dalibo.com',
     license='PostgreSQL',
