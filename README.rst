@@ -25,34 +25,29 @@ Here is a sample configuration and execution:
 
 ::
 
-    $ cat docs/ldap2pg.minimal.yml
+    $ cat ldap2pg.yml
     - role:
         name: ldap_roles
         options: NOLOGIN
     - ldap:
         base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
-        filter: "(objectClass=organizationalRole)"
+        filter: "(objectClass=organizationalPerson)"
       role:
         name: '{cn}'
         options: LOGIN
         parent: ldap_roles
-    $ ldap2pg --config docs/ldap2pg.minimal.yml --real
-    Starting ldap2pg 4.9.
-    Using .../docs/ldap2pg.minimal.yml.
+    $ ldap2pg --real
+    Starting ldap2pg 5.0.
+    Using .../ldap2pg.yml.
     Running in real mode.
     Inspecting roles in Postgres cluster...
     Querying LDAP ou=people,dc=ldap,dc=lda... (objectClass...
-    Create albert.
-    Create alter.
-    Create didier.
-    Create dorothée.
-    Create ldap_roles.
-    Update options of alan.
-    Update options of alice.
+    Create domitille.
+    Update options of albert.
     Add missing ldap_roles members.
     Delete spurious ldap_roles members.
-    Reassign oscar objects and purge ACL on appdb.
-    Reassign oscar objects and purge ACL on olddb.
+    Reassign oscar objects and purge ACL on postgres.
+    Reassign oscar objects and purge ACL on template1.
     Drop oscar.
     Synchronization complete.
     $
