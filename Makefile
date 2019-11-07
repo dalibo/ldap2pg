@@ -20,7 +20,7 @@ readme-sample:
 	@echo '$$ cat ldap2pg.yml'
 	@cat docs/readme/ldap2pg.yml
 	@echo '$$ ldap2pg --real'
-	@ldap2pg --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
+	@ldap2pg --color --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
 	@echo '$$ '
 	@echo -e '\n\n\n\n'
 
