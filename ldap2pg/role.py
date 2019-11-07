@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class Role(object):
     __slots__ = (
         'comment',
+        'lname',
         'members',
         'name',
         'options',
@@ -22,6 +23,7 @@ class Role(object):
     def __init__(self, name, options=None, members=None, parents=None,
                  comment=None):
         self.name = name
+        self.lname = name.lower()
         self.members = members or []
         self.options = RoleOptions(options or {})
         self.parents = parents or []
@@ -132,6 +134,23 @@ class Role(object):
         self.members += other.members
         self.parents += other.parents
         return self
+
+    def rename(self):
+        yield Query(
+            'Rename %s to %s.' % (self.lname, self.name),
+            None,
+            """ALTER ROLE "%(old)s" RENAME TO "%(new)s" ;""" % dict(
+                old=self.lname, new=self.name,
+            ),
+        )
+
+    def rename_members(self, renamed):
+        # Replace old names in members by matching new one.
+        renamed_members = [
+            renamed[m] for m in self.members if m in renamed]
+        for m in renamed_members:
+            self.members.remove(m.lname)
+            self.members.append(m.name)
 
 
 class RoleOptions(dict):
@@ -279,8 +298,19 @@ class RoleSet(set):
         available = available or RoleSet()
         other = other or RoleSet()
 
-        # First create missing roles
+        # First create/rename missing roles
         missing = RoleSet(other - available)
+        renamed = dict()
+        for role in missing.flatten():
+            # Detect renames from lowercase.
+            if role.lname in self and role.lname not in other:
+                logger.debug(
+                    "Detected rename from %s to %s.", role.lname, role.name)
+                for qry in role.rename():
+                    yield qry
+                missing.remove(role)
+                renamed[role.lname] = role
+
         for role in missing.flatten():
             for qry in role.create():
                 yield qry
@@ -291,6 +321,7 @@ class RoleSet(set):
         other_roles_index = other.reindex()
         for role in existing:
             mine = my_roles_index[role.name]
+            mine.rename_members(renamed)
             its = other_roles_index[role.name]
             if role not in self:
                 logger.warning(
@@ -299,7 +330,7 @@ class RoleSet(set):
                 yield qry
 
         # Don't forget to trash all spurious managed roles!
-        spurious = RoleSet(self - other - set(['public']))
+        spurious = RoleSet(self - other - set(renamed) - set(['public']))
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry
