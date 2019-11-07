@@ -15,10 +15,14 @@ docs: docs/wellknown.md
 	mkdocs build --clean --strict
 
 readme-sample:
-	@echo -n '$$ '
-	cat docs/ldap2pg.minimal.yml
-	@echo '$$ ldap2pg --config docs/ldap2pg.minimal.yml --real'
-	@ldap2pg --config docs/ldap2pg.minimal.yml --real 2>&1 | sed s,${PWD},...,g
+	@ldap2pg --config docs/readme/ldap2pg.yml --real
+	@psql -f docs/readme/reset.sql
+	@echo '$$ cat ldap2pg.yml'
+	@cat docs/readme/ldap2pg.yml
+	@echo '$$ ldap2pg --real'
+	@ldap2pg --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
+	@echo '$$ '
+	@echo -e '\n\n\n\n'
 
 changelog:
 	python setup.py egg_info
