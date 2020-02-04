@@ -268,6 +268,7 @@ def test_roles(mocker):
         psql=mocker.MagicMock(name='psql'),
         databases=['postgres'],
         all_roles=['precreated', 'spurious'],
+        roles_blacklist_query=['postgres'],
         managed_roles=None,
     )
 
@@ -283,3 +284,6 @@ def test_roles(mocker):
     _, _, pgmanagedroles = inspector.fetch_roles()
 
     assert 'spurious' not in pgmanagedroles
+
+    blacklist = inspector.fetch_roles_blacklist()
+    assert ['postgres'] == blacklist

@@ -193,8 +193,14 @@ class SyncManager(object):
             else:
                 entries = [None]
                 log_source = 'from YAML'
-
             for role in self.apply_role_rules(mapping['roles'], entries):
+                pattern = match(role.name, self.roles_blacklist)
+                if pattern:
+                    logger.debug(
+                        "Ignoring role %s %s. Matches %s.",
+                        role, log_source, pattern)
+                    continue
+
                 if role in ldaproles:
                     try:
                         role.merge(ldaproles[role])
@@ -207,6 +213,12 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             grants = self.apply_grant_rules(grant, entries)
             for grant in grants:
+                pattern = match(grant.role, self.roles_blacklist)
+                if pattern:
+                    logger.debug(
+                        "Ignoring grant on role %s %s. Matches %s.",
+                        grant.role, log_source, pattern)
+                    continue
                 logger.debug("Found GRANT %s %s.", grant, log_source)
                 ldapacl.add(grant)
 
