@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 
 from fnmatch import filter as fnfilter
@@ -17,6 +19,7 @@ def test_privilege_object():
 
 def test_grant_object():
     from ldap2pg.privilege import Privilege, Grant
+    from ldap2pg.role import Role
 
     priv = Privilege(name='connect', grant='GRANT {database} TO {role};')
     item = Grant(priv.name, dbname='backend', schema=None, role='daniel')
@@ -26,6 +29,11 @@ def test_grant_object():
     assert 'daniel' in qry.args[0]
 
     assert 'db' in repr(Grant('p', ['db'], ['schema']))
+
+    # Test hash with Role object.
+    str_h = hash(Grant('priv', ['db'], ['schema'], role=Role(u'rôle')))
+    obj_h = hash(Grant('priv', ['db'], ['schema'], role=u'rôle'))
+    assert str_h == obj_h
 
 
 def test_grant_set():

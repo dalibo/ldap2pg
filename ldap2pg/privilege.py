@@ -1,4 +1,3 @@
-from itertools import chain
 from itertools import groupby
 import logging
 
@@ -194,7 +193,7 @@ class Grant(object):
         return '<%s %s>' % (self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash(''.join(chain(*filter(None, self.as_tuple()))))
+        return hash(tuple([unicode(x) for x in self.as_tuple()]))
 
     def __eq__(self, other):
         return self.as_tuple() == other.as_tuple()
