@@ -69,6 +69,17 @@ cn: alter
 sn: alter
 mail: alter@ldap2pg.docker
 
+# For blacklist.
+dn: cn=postgres,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: postgres
+sn: postgres
+mail: postgres@ldap2pg.docker
+
 # Our developers: d*
 dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
@@ -220,6 +231,7 @@ cn: dba
 member: cn=Alan,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=albert,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=postgres,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
 dn: cn=bi,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add

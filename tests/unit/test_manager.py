@@ -406,12 +406,17 @@ def test_inspect_ldap_grants(mocker):
     from ldap2pg.utils import make_group_map
 
     privileges = dict(ro=NspAcl(name='ro'))
-    la.return_value = [Grant('ro', 'postgres', None, 'alice')]
+    la.return_value = [
+        Grant('ro', 'postgres', None, 'alice'),
+        Grant('ro', 'postgres', None, 'blacklisted'),
+    ]
 
     manager = SyncManager(
         psql=mocker.Mock(), ldapconn=mocker.Mock(), privileges=privileges,
-        privilege_aliases=make_group_map(privileges)
+        privilege_aliases=make_group_map(privileges),
+        inspector=mocker.Mock(name='inspector'),
     )
+    manager.inspector.roles_blacklist = ['blacklisted']
     syncmap = [dict(roles=[], grant=dict(privilege='ro'))]
 
     _, grants = manager.inspect_ldap(syncmap=syncmap)
@@ -481,27 +486,30 @@ def test_inspect_ldap_roles(mocker):
     from ldap2pg.manager import SyncManager, Role
 
     ql.return_value = [mocker.Mock(name='entry')]
-    r.side_effect = [
+    r.side_effect = rolesets = [
         {Role(name='alice', options=dict(SUPERUSER=True))},
         {Role(name='bob')},
+        {Role(name='blacklisted')},
     ]
 
     manager = SyncManager(
         ldapconn=mocker.Mock(),
+        inspector=mocker.Mock(name='inspector'),
     )
+    manager.inspector.roles_blacklist = ['blacklisted']
 
     # Minimal effective syncmap
     syncmap = [
         dict(roles=[]),
         dict(
             ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
-            roles=[dict(), dict()],
+            roles=[dict()] * len(rolesets),
         ),
     ]
 
     ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
 
-    assert 2 == r.call_count, "sync did not iterate over each rules."
+    assert 3 == r.call_count, "sync did not iterate over each rules."
 
     assert 'alice' in ldaproles
     assert 'bob' in ldaproles
@@ -567,7 +575,7 @@ def test_sync(mocker):
     manager = SyncManager(psql=psql, inspector=inspector)
 
     inspector.fetch_me.return_value = ('postgres', False)
-    inspector.roles_blacklist = ['pg_*']
+    inspector.fetch_roles_blacklist.return_value = ['pg_*']
     inspector.fetch_roles.return_value = (['postgres'], set(), set())
     pgroles = mocker.Mock(name='pgroles')
     # Simple diff with one query

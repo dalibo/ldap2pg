@@ -22,14 +22,20 @@ logger = logging.getLogger(__name__)
 class SyncManager(object):
     def __init__(
             self, ldapconn=None, psql=None, inspector=None,
-            privileges=None, privilege_aliases=None, blacklist=None,
+            privileges=None, privilege_aliases=None,
     ):
         self.ldapconn = ldapconn
         self.psql = psql
         self.inspector = inspector
         self.privileges = privileges or {}
         self.privilege_aliases = privilege_aliases or {}
-        self._blacklist = blacklist
+
+    @property
+    def roles_blacklist(self):
+        try:
+            return self.inspector.roles_blacklist
+        except AttributeError:
+            return []
 
     def _query_ldap(self, base, filter, attributes, scope):
         # Query directory returning a list of entries. An entry is a triplet
@@ -187,8 +193,14 @@ class SyncManager(object):
             else:
                 entries = [None]
                 log_source = 'from YAML'
-
             for role in self.apply_role_rules(mapping['roles'], entries):
+                pattern = match(role.name, self.roles_blacklist)
+                if pattern:
+                    logger.debug(
+                        "Ignoring role %s %s. Matches %s.",
+                        role, log_source, pattern)
+                    continue
+
                 if role in ldaproles:
                     try:
                         role.merge(ldaproles[role])
@@ -201,6 +213,12 @@ class SyncManager(object):
             grant = mapping.get('grant', [])
             grants = self.apply_grant_rules(grant, entries)
             for grant in grants:
+                pattern = match(grant.role, self.roles_blacklist)
+                if pattern:
+                    logger.debug(
+                        "Ignoring grant on role %s %s. Matches %s.",
+                        grant.role, log_source, pattern)
+                    continue
                 logger.debug("Found GRANT %s %s.", grant, log_source)
                 ldapacl.add(grant)
 
@@ -230,8 +248,9 @@ class SyncManager(object):
 
     def sync(self, syncmap):
         logger.info("Inspecting roles in Postgres cluster...")
+        self.inspector.roles_blacklist = self.inspector.fetch_roles_blacklist()
         me, issuper = self.inspector.fetch_me()
-        if not match(me, self.inspector.roles_blacklist):
+        if not match(me, self.roles_blacklist):
             self.inspector.roles_blacklist.append(me)
 
         if not issuper:

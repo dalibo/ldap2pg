@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 
 class PostgresInspector(object):
     def __init__(
-            self, psql=None, privileges=None, roles_blacklist=None,
+            self, psql=None, privileges=None,
             shared_queries=None, **queries):
         self.psql = psql
         self.privileges = privileges or {}
         self.shared_queries = shared_queries or {}
+        self.roles_blacklist = []
         self.queries = queries
         self.query_cache = {}
-        self.roles_blacklist = roles_blacklist or []
         self.timer = Timer()
 
     def format_roles_query(self, name='all_roles'):
@@ -218,6 +218,9 @@ class PostgresInspector(object):
                 pgmanagedroles = set(self.fetch(
                     psql, 'managed_roles', self.row1))
         return databases, pgallroles, pgmanagedroles
+
+    def fetch_roles_blacklist(self):
+        return self.fetch(self.psql, 'roles_blacklist_query', self.row1)
 
     def fetch_schemas(self, databases, managedroles=None):
         # Fetch schemas and owners. This is required to trigger ACL inspection.
