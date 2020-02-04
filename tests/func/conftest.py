@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from functools import partial
@@ -123,6 +124,8 @@ def lazy_write(attr, data):
 
 @pytest.fixture(scope='session', autouse=True)
 def sh_errout():
+    logging.getLogger('sh').setLevel(logging.ERROR)
+
     # Duplicate tested command stdio to pytest capsys.
     sh._SelfWrapper__self_module.Command._call_args.update(dict(
         err=partial(lazy_write, 'stderr'),
