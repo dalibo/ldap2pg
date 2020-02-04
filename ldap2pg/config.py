@@ -345,7 +345,6 @@ class Configuration(dict):
         },
         'postgres': {
             'dsn': '',
-            'blacklist': ['pg_*', 'postgres', 'rds_*', 'rds*admin'],
             'databases_query': dedent("""\
             SELECT datname FROM pg_catalog.pg_database
             WHERE datallowconn IS TRUE ORDER BY 1;
@@ -371,6 +370,7 @@ class Configuration(dict):
             ORDER BY 1;
             """),
             'managed_roles_query': None,
+            'roles_blacklist_query': ['pg_*', 'postgres', 'rds_*', 'rds*admin'],
             'schemas_query': dedent("""\
             SELECT nspname FROM pg_catalog.pg_namespace
             ORDER BY 1;
@@ -401,11 +401,11 @@ class Configuration(dict):
             'postgres:dsn', env='PGDSN',
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
-        Mapping('postgres:blacklist', env=None),
         Mapping('postgres:databases_query', env=None),
         Mapping('postgres:owners_query', env=None),
         Mapping('postgres:roles_query', env=None),
         Mapping('postgres:managed_roles_query', env=None),
+        Mapping('postgres:roles_blacklist_query', env=None),
         Mapping('postgres:schemas_query', env=None),
         Mapping(
             'postgres:shared_queries', processor=V.shared_queries, env=None),
@@ -527,6 +527,11 @@ class Configuration(dict):
                 except OSError as e:
                     msg = "Failed to read configuration: %s" % (e,)
                     raise UserError(msg)
+
+            V.alias(
+                file_config.get('postgres', {}),
+                'roles_blacklist_query', 'blacklist',
+            )
 
         # Now close stdin. To make SASL non-interactive.
         if not self.get('debug'):

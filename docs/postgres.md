@@ -59,16 +59,16 @@ The `public` role does not exists in the system catalog. Thus if you want
 the set of managed roles. This is the default. Of course, even if `public` is
 managed, `ldap2pg` won't drop or alter it if it's not in the directory.
 
-
-A safety net to completely ignore some roles is available : `blacklist`.
-`blacklist` is a list of `glob` patterns. Every roles matching one of
-`blacklist` patterns will be totally ignored from roles and privileges
-synchronisation.
+A safety net to completely ignore some roles is available :
+`roles_blacklist_query`. Like other `*_query` options, `roles_blacklist_query`
+is either an SQL query or a YAML list. The final value is a list of `glob`
+patterns. Every roles matching one of `roles_blacklist_query` patterns will be
+totally ignored from roles and privileges synchronisation.
 
 ``` yaml
 postgres:
   # This is the default.
-  blacklist: [postgres, pg_*]
+  roles_blacklist_query: [postgres, pg_*]
 ```
 
 

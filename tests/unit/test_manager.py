@@ -488,7 +488,9 @@ def test_inspect_ldap_roles(mocker):
 
     manager = SyncManager(
         ldapconn=mocker.Mock(),
+        inspector=mocker.Mock(name='inspector'),
     )
+    manager.inspector.roles_blacklist = []
 
     # Minimal effective syncmap
     syncmap = [

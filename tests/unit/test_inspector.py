@@ -44,9 +44,8 @@ def test_format_roles_inspect_sql(mocker):
 def test_filter_roles():
     from ldap2pg.inspector import PostgresInspector, Role
 
-    inspector = PostgresInspector(
-        roles_blacklist=['pg_*', 'postgres'],
-    )
+    inspector = PostgresInspector()
+    inspector.roles_blacklist = ['pg_*', 'postgres']
 
     allroles = [
         Role('postgres'),
@@ -124,10 +123,10 @@ def test_schemas_global_owners(mocker):
     psql.itersessions.return_value = [('db', psql)]
     inspector = PostgresInspector(
         psql=psql,
-        roles_blacklist=['postgres'],
         schemas=['public'],
-        owners=['owner', 'postgres']
+        owners=['owner', 'postgres'],
     )
+    inspector.roles_blacklist = ['postgres']
 
     schemas = inspector.fetch_schemas(databases=['db'])
 

@@ -22,14 +22,20 @@ logger = logging.getLogger(__name__)
 class SyncManager(object):
     def __init__(
             self, ldapconn=None, psql=None, inspector=None,
-            privileges=None, privilege_aliases=None, blacklist=None,
+            privileges=None, privilege_aliases=None,
     ):
         self.ldapconn = ldapconn
         self.psql = psql
         self.inspector = inspector
         self.privileges = privileges or {}
         self.privilege_aliases = privilege_aliases or {}
-        self._blacklist = blacklist
+
+    @property
+    def roles_blacklist(self):
+        try:
+            return self.inspector.roles_blacklist
+        except AttributeError:
+            return []
 
     def _query_ldap(self, base, filter, attributes, scope):
         # Query directory returning a list of entries. An entry is a triplet
@@ -230,8 +236,9 @@ class SyncManager(object):
 
     def sync(self, syncmap):
         logger.info("Inspecting roles in Postgres cluster...")
+        self.inspector.roles_blacklist = self.inspector.fetch_roles_blacklist()
         me, issuper = self.inspector.fetch_me()
-        if not match(me, self.inspector.roles_blacklist):
+        if not match(me, self.roles_blacklist):
             self.inspector.roles_blacklist.append(me)
 
         if not issuper:
