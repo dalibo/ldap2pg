@@ -165,7 +165,7 @@ def test_parse_rc():
 
 
 def test_lower_attrs():
-    from ldap2pg.manager import lower_attributes
+    from ldap2pg.ldap import lower_attributes
 
     entry = lower_attributes(('dn', {'sAMAccountName': 'alice'}))
 
