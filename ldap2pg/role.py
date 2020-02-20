@@ -4,7 +4,7 @@ from collections import OrderedDict
 import logging
 
 from .psql import Query
-from .utils import dedent, unicode
+from .utils import collect_fields, dedent, unicode, FormatList
 
 
 logger = logging.getLogger(__name__)
@@ -334,3 +334,49 @@ class RoleSet(set):
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry
+
+
+class RoleRule(object):
+    def __init__(self, names, parents=None, members=None, options=None,
+                 comment=None):
+        self.comment = FormatList.factory([comment] if comment else [])
+        self.members = FormatList.factory(members or [])
+        self.names = FormatList.factory(names or [])
+        self.options = options or {}
+        self.parents = FormatList.factory(parents or [])
+        self.all_fields = collect_fields(
+            self.comment, self.members, self.names, self.parents,
+        )
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.names)
+
+    def generate(self, vars_):
+        members = list(self.members.expand(vars_))
+        parents = list(self.parents.expand(vars_))
+        comment = None
+        if self.comment:
+            try:
+                comment = next(self.comment.expand(vars_))
+            except StopIteration:
+                logger.warning(
+                    "Can't generate comment for %s... Missing attribute?",
+                    vars_['dn'][0][:24])
+
+        for name in self.names.expand(vars_):
+            yield Role(
+                name=name,
+                members=members[:],
+                options=self.options,
+                parents=parents[:],
+                comment=comment,
+            )
+
+    def as_dict(self):
+        dict_ = {
+            'comment': self.comment.formats[0] if self.comment else None,
+            'options': self.options,
+        }
+        for k in "names", "members", "parents":
+            dict_[k] = getattr(self, k).formats
+        return dict_

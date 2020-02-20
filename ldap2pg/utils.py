@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import itertools
 import sys
 from datetime import timedelta, datetime
 from fnmatch import fnmatch
@@ -173,8 +174,74 @@ def uniq(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
+class FormatList(list):
+    @classmethod
+    def factory(cls, format_list):
+        self = cls()
+        for format_ in format_list:
+            fields = [
+                ('.'.join(f), f[0])
+                for f in iter_format_fields([format_], split=True)
+            ]
+            self.append((format_, fields))
+        return self
+
+    def __repr__(self):
+        return '[%s]' % (', '.join(self.formats),)
+
+    def expand(self, vars_):
+        for format_, fields in self:
+            # Expand all combination of values, with only values of this format
+            # string.
+            vars_subset = dict([
+                (v, vars_[v])
+                for f, v in fields
+            ])
+            for items in itertools.product(*vars_subset.values()):
+                yield format_.format(**dict(zip(vars_subset.keys(), items)))
+
+    @property
+    def formats(self):
+        """List plain formats as fed in factory."""
+        return [f for f, _ in self]
+
+    @property
+    def fields(self):
+        """Gather all reference fields in all formats."""
+        return [
+            field
+            for _, fields in self
+            for field, _ in fields
+        ]
+
+
+def collect_fields(*field_lists):
+    return set(itertools.chain(*[
+        l.fields for l in field_lists
+    ]))
+
+
+def make_format_vars(fields, dn, values):
+    # Build variables to inject into format, implementing deep access of
+    # compound values like DN and joins. values is a dictionnary with full
+    # format token as key and the list of all values available in entries as
+    # values. e.g. {'dn.cn': ['toto'], 'dn': ['cn=toto']}.
+    vars_ = dict(dn=[dn])
+    for f in fields:
+        if '.' in f:
+            parent, _, child = f.partition('.')
+            vars_[parent] = [
+                Settable(_str=dn, **dict({child: v}))
+                for v in values[f]
+            ]
+        else:
+            vars_[f] = values[f]
+    return vars_
+
+
 class Settable(object):
     def __init__(self, **kw):
+        self._str = "**unset**"
         self.__dict__.update(kw)
 
     def __repr__(self):
@@ -182,6 +249,9 @@ class Settable(object):
             self.__class__.__name__,
             ' '.join(['%s=%s' % i for i in self.__dict__.items()])
         )
+
+    def __str__(self):
+        return self._str
 
 
 class Timer(object):
