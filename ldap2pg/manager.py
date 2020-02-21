@@ -135,19 +135,10 @@ class SyncManager(object):
 
     def apply_role_rules(self, rules, entries):
         for rule in rules:
-            on_unexpected_dn = rule.get('on_unexpected_dn', 'fail')
             for entry in entries:
                 try:
                     for role in self.process_ldap_entry(entry=entry, **rule):
                         yield role
-                except RDNError as e:
-                    msg = "Unexpected DN: %s" % e.dn
-                    if 'ignore' == on_unexpected_dn:
-                        continue
-                    elif 'warn' == on_unexpected_dn:
-                        logger.warning(msg)
-                    else:
-                        raise UserError(msg)
                 except ValueError as e:
                     msg = "Failed to process %.48s: %s" % (entry[0], e,)
                     raise UserError(msg)
@@ -188,27 +179,40 @@ class SyncManager(object):
         ldapacl = Acl()
         for mapping in syncmap:
             if 'ldap' in mapping:
+                on_unexpected_dn = mapping['ldap'].pop(
+                    'on_unexpected_dn', 'fail')
                 entries = self.query_ldap(**mapping['ldap'])
                 log_source = 'in LDAP'
             else:
                 entries = [None]
                 log_source = 'from YAML'
-            for role in self.apply_role_rules(mapping['roles'], entries):
-                pattern = match(role.name, self.roles_blacklist)
-                if pattern:
-                    logger.debug(
-                        "Ignoring role %s %s. Matches %s.",
-                        role, log_source, pattern)
-                    continue
+                on_unexpected_dn = 'fail'
 
-                if role in ldaproles:
-                    try:
-                        role.merge(ldaproles[role])
-                    except ValueError:
-                        msg = "Role %s redefined with different options." % (
-                            role,)
-                        raise UserError(msg)
-                ldaproles[role] = role
+            try:
+                for role in self.apply_role_rules(mapping['roles'], entries):
+                    pattern = match(role.name, self.roles_blacklist)
+                    if pattern:
+                        logger.debug(
+                            "Ignoring role %s %s. Matches %s.",
+                            role, log_source, pattern)
+                        continue
+
+                    if role in ldaproles:
+                        try:
+                            role.merge(ldaproles[role])
+                        except ValueError:
+                            msg = "Role %s redefined with different options." % (
+                                role,)
+                            raise UserError(msg)
+                    ldaproles[role] = role
+            except RDNError as e:
+                msg = "Unexpected DN: %s" % e.dn
+                if 'ignore' == on_unexpected_dn:
+                    continue
+                elif 'warn' == on_unexpected_dn:
+                    logger.warning(msg)
+                else:
+                    raise UserError(msg)
 
             grant = mapping.get('grant', [])
             grants = self.apply_grant_rules(grant, entries)

@@ -241,6 +241,18 @@ def mapping(value, **kw):
     if not isinstance(value['roles'], list):
         value['roles'] = [value['roles']]
 
+    on_unexpected_dn = set([
+        r['on_unexpected_dn']
+        for r in value['roles']
+        if 'on_unexpected_dn' in r
+    ])
+    if len(on_unexpected_dn) > 1:
+        raise ValueError("Mixed on_unexpected_dn not supported.")
+    try:
+        on_unexpected_dn = next(iter(on_unexpected_dn))
+    except StopIteration:
+        on_unexpected_dn = 'fail'
+
     value['roles'] = [rolerule(r) for r in value['roles']]
 
     if 'grant' in value:
@@ -255,6 +267,7 @@ def mapping(value, **kw):
     if 'ldap' in value:
         strings = iter_mapping_strings(value)
         format_fields = iter_format_fields(strings, split=True)
+        value['ldap'].setdefault('on_unexpected_dn', on_unexpected_dn)
         value['ldap'] = ldapquery(value['ldap'], format_fields)
 
     return value

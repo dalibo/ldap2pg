@@ -70,13 +70,13 @@ sync_map:
     joins:
       member:
         filter: "(mail=*)"
+    on_unexpected_dn: warn
   role:
     name: '{member.mail}'
     options: LOGIN
     parent:
     - ldap_roles
     - writers
-    on_unexpected_dn: warn
 - ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: |

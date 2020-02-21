@@ -269,30 +269,32 @@ def test_apply_role_rule_ko(mocker):
         list(items)
 
 
-def test_apply_role_rule_unexpected_dn(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
+def test_inspect_ldap_unexpected_dn(mocker):
+    arr = mocker.patch('ldap2pg.manager.SyncManager.apply_role_rules')
+    ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
     from ldap2pg.manager import SyncManager, RDNError, UserError
 
     manager = SyncManager()
 
-    gla.side_effect = RDNError
+    arr.side_effect = RDNError
+    ql.return_value = [('dn0',), ('dn1',)]
 
-    list(manager.apply_role_rules(
-        entries=[('dn0',), ('dn1',)],
-        rules=[dict(names=['{cn}'], on_unexpected_dn='warn')],
-    ))
+    list(manager.inspect_ldap([dict(
+        ldap=dict(on_unexpected_dn='warn'),
+        roles=[dict(names=['{cn}'])],
+    )]))
 
-    list(manager.apply_role_rules(
-        entries=[('dn0',), ('dn1',)],
-        rules=[dict(names=['{cn}'], on_unexpected_dn='ignore')],
-    ))
+    list(manager.inspect_ldap([dict(
+        ldap=dict(on_unexpected_dn='ignore'),
+        roles=[dict(names=['{cn}'])]
+    )]))
 
     with pytest.raises(UserError):
-        list(manager.apply_role_rules(
-            entries=[('dn0',), ('dn1',)],
-            rules=[dict(names=['{cn}'])],
-        ))
+        list(manager.inspect_ldap([dict(
+            ldap=dict(),
+            roles=[dict(names=['{cn}'])],
+        )]))
 
 
 def test_apply_grant_rule_ok(mocker):
