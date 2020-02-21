@@ -6,7 +6,7 @@ import pytest
 
 
 def test_role():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto')
 
@@ -20,7 +20,7 @@ def test_role():
 
 
 def test_create():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto', members=['titi'], comment='Mycom')
 
@@ -32,7 +32,7 @@ def test_create():
 
 
 def test_alter():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     a = Role(name='toto', members=['titi'], options=dict(LOGIN=True))
     b = Role(name='toto', members=['tata'], options=dict(LOGIN=False))
@@ -48,7 +48,7 @@ def test_alter():
 
 
 def test_drop():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto', members=['titi'])
 
