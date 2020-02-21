@@ -96,21 +96,21 @@ recurse. Each entry is a regular dict with `scope` and `filter` paramater.
         (objectClass=User)
         (memberOf=cn=dba,ou=groups,ou=site,dc=ldap,dc=local)
       )
+    on_unexpected_dn: fail
   roles:
   - names:
     - dba_{member.cn}
     options: LOGIN
-    on_unexpected_dn: fail
 - ldap:
     base: ou=apps,ou=people,dc=ldap,dc=ldap2pg,dc=docker
     scope: sub
     joins:
       member:
         filter: "(objectClass=User)"
+    on_unexpected_dn: fail
   roles:
   - names:
     - app_{member.sAMAccountName}
     options: LOGIN
-    on_unexpected_dn: fail
     comment: "App account from LDAP User {member.cn}."
 ```

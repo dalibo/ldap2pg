@@ -126,7 +126,7 @@ def test_process_mapping_grant():
     mapping(dict(grant=dict(privilege='ro', role='alice')))
 
 
-def test_process_mapping_ldap():
+def test_process_mapping_ldap_join():
     from ldap2pg.validators import mapping
 
     v = mapping(dict(
@@ -140,6 +140,31 @@ def test_process_mapping_ldap():
     assert 'cn' in v['ldap']['attributes']
 
 
+def test_process_mapping_ldap_compat_unexpected_dn():
+    from ldap2pg.validators import mapping
+
+    v = mapping(dict(
+        ldap=dict(),
+        role=dict(
+            name='{cn}',
+            on_unexpected_dn='ignore',
+        )),
+    )
+
+    assert 'ignore' == v['ldap']['on_unexpected_dn']
+    assert 'on_unexpected_dn' not in v['roles']
+
+    # Refuse mixed on_unexpected_dn.
+    with pytest.raises(ValueError):
+        mapping(dict(
+            ldap=dict(),
+            roles=[
+                dict(name='{cn}', on_unexpected_dn='ignore'),
+                dict(name='{member}', on_unexpected_dn='fail'),
+            ],
+        ))
+
+
 def test_process_ldapquery_attributes():
     from ldap2pg.validators import ldapquery, parse_scope
 
@@ -149,13 +174,19 @@ def test_process_ldapquery_attributes():
     with pytest.raises(ValueError):
         ldapquery(dict(base='dc=lol'), format_fields=[])
 
-    raw = dict(base='dc=unit', scope=parse_scope('sub'), attribute='cn')
+    raw = dict(
+        base='dc=unit',
+        scope=parse_scope('sub'),
+        attribute='cn',
+        on_unexpected_dn='ignore',
+    )
 
     v = ldapquery(raw, format_fields=[])
 
     assert 'filter' in v
     assert ['cn'] == v['attributes']
     assert 'attribute' not in v
+    assert 'ignore' == v['on_unexpected_dn']
 
     with pytest.raises(ValueError):
         ldapquery(dict(raw, scope='unkqdsfq'))
