@@ -1,8 +1,12 @@
 from itertools import groupby
 import logging
+from fnmatch import fnmatch
 
 from .psql import Query
-from .utils import AllDatabases, UserError, unicode, make_group_map
+from .utils import (
+    AllDatabases, FormatList, UserError,
+    collect_fields, unicode, make_group_map,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -217,6 +221,62 @@ class Grant(object):
         return self.__class__(**dict(self.as_dict(), **kw))
 
 
+class GrantRule(object):
+    def __init__(self, privilege, databases, schemas, roles, role_match=None):
+        self.privilege = FormatList.factory([privilege])
+        self.databases = FormatList.factory(databases or [])
+        self.schemas = FormatList.factory(schemas or [])
+        self.roles = FormatList.factory(roles)
+        self.role_match = role_match
+        self.all_fields = collect_fields(
+            self.privilege, self.databases, self.schemas, self.roles,
+        )
+
+    def __repr__(self):
+        return '<%s %s on [%s].[%s] to [%s]>' % (
+            self.__class__.__name__,
+            self.privilege,
+            self.databases,
+            self.schemas,
+            self.roles,
+        )
+
+    def generate(self, vars_):
+        privilege = next(self.privilege.expand(vars_))
+        databases = list(self.databases.expand(vars_))
+        if ['__all__'] == databases:
+            databases = Grant.ALL_DATABASES
+
+        schemas = list(self.schemas.expand(vars_))
+        if not len(schemas):
+            schemas = [None]
+        if 1 == len(schemas) and schemas[0] in (None, '__all__', '__any__'):
+            schemas = None
+
+        try:
+            roles = list(self.roles.expand(vars_))
+        except ValueError as e:
+            msg = "Failed to process %.32s: %s" % (vars_['dn'][0], e,)
+            raise UserError(msg)
+
+        for role in roles:
+            role = role.lower()
+            if self.role_match and not fnmatch(role, self.role_match):
+                logger.debug(
+                    "Don't grant %s to %s not matching %s.",
+                    privilege, role, self.role_match,
+                )
+                continue
+            yield Grant(privilege, databases, schemas, role)
+
+    def as_dict(self):
+        dict_ = {}
+        dict_['privilege'] = self.privilege.formats[0]
+        for k in "databases", "schemas", "roles":
+            dict_[k] = getattr(self, k).formats
+        return dict_
+
+   
 class Acl(set):
     def expandgrants(self, aliases, privileges, databases):
         for grant in self:
