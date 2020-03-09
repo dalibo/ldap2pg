@@ -11,7 +11,7 @@ def test_process_grant():
         database='postgres',
         schema='public',
         role='{cn}',
-    ))
+    )).as_dict()
 
     assert 'schemas' in rule
     assert 'databases' in rule
@@ -24,7 +24,7 @@ def test_process_grant():
         database='postgres',
         schema='public',
         role_attribute='cn',
-    ))
+    )).as_dict()
 
     assert 'role_attribute' not in rule
     assert '{cn}' in rule['roles']
@@ -78,9 +78,9 @@ def test_process_syncmap():
         assert isinstance(v, list)
         assert 1 == len(v)
         assert 'grant' in v[0]
-        m = v[0]['grant'][0]
-        assert '__all__' == m['databases']
-        assert '__all__' == m['schemas']
+        m = v[0]['grant'][0].as_dict()
+        assert ['__all__'] == m['databases']
+        assert ['__all__'] == m['schemas']
 
 
 def test_process_syncmap_legacy():
@@ -99,7 +99,7 @@ def test_process_syncmap_legacy():
         assert isinstance(v, list)
         assert 1 == len(v)
         assert 'grant' in v[0]
-        m = v[0]['grant'][0]
+        m = v[0]['grant'][0].as_dict()
         assert ['db'] == m['databases']
         assert ['schema'] == m['schemas']
 
@@ -237,25 +237,25 @@ def test_process_rolerule():
     with pytest.raises(ValueError):
         rolerule(None)
 
-    rule = rolerule('aline')
+    rule = rolerule('aline').as_dict()
     assert 'aline' == rule['names'][0]
 
-    rule = rolerule(dict(name='rolname', parent='parent'))
+    rule = rolerule(dict(name='rolname', parent='parent')).as_dict()
     assert ['rolname'] == rule['names']
     assert ['parent'] == rule['parents']
 
     with pytest.raises(ValueError):
         rolerule(dict(missing_name='noname'))
 
-    rule = rolerule(dict(name='r', options='LOGIN SUPERUSER'))
+    rule = rolerule(dict(name='r', options='LOGIN SUPERUSER')).as_dict()
     assert rule['options']['LOGIN'] is True
     assert rule['options']['SUPERUSER'] is True
 
-    rule = rolerule(dict(name='r', options=['LOGIN', 'SUPERUSER']))
+    rule = rolerule(dict(name='r', options=['LOGIN', 'SUPERUSER'])).as_dict()
     assert rule['options']['LOGIN'] is True
     assert rule['options']['SUPERUSER'] is True
 
-    rule = rolerule(dict(name='r', options=['NOLOGIN', 'SUPERUSER']))
+    rule = rolerule(dict(name='r', options=['NOLOGIN', 'SUPERUSER'])).as_dict()
     assert rule['options']['LOGIN'] is False
     assert rule['options']['SUPERUSER'] is True
 
@@ -263,7 +263,7 @@ def test_process_rolerule():
         rolerule(dict(name='r', options='OLOLOL'))
     assert 'OLOLOL' in str(ei.value)
 
-    rule = rolerule(dict(name_attribute='cn'))
+    rule = rolerule(dict(name_attribute='cn')).as_dict()
     assert 'name_attribute' not in rule
     assert '{cn}' in rule['names']
 

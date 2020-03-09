@@ -1,18 +1,15 @@
 from __future__ import unicode_literals
 
-from fnmatch import fnmatch
+import itertools
 import logging
 
-from .ldap import LDAPError, RDNError, expand_attributes, lower_attributes
-
-from .privilege import Grant
+from .ldap import LDAPError, RDNError, get_attribute, lower_attributes
 from .privilege import Acl
 from .role import (
-    Role,
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value, match
+from .utils import UserError, decode_value, make_format_vars, match
 from .psql import expandqueries
 
 
@@ -99,132 +96,39 @@ class SyncManager(object):
 
         return entries
 
-    def process_ldap_entry(self, entry, names, **kw):
-        members = list(expand_attributes(entry, kw.get('members', [])))
-        parents = list(expand_attributes(entry, kw.get('parents', [])))
-        comment = kw.get('comment', None)
-        if comment:
-            try:
-                comment = next(expand_attributes(entry, [comment]))
-            except StopIteration:
-                logger.warning(
-                    "Can't generate comment for %s... Missing attribute?",
-                    entry[0][:24])
-                comment = None
-
-        for name in expand_attributes(entry, names):
-            log_source = " from " + ("YAML" if name in names else entry[0])
-
-            logger.debug("Found role %s%s.", name, log_source)
-            if members:
-                logger.debug(
-                    "Role %s must have members %s.", name, ', '.join(members),
-                )
-            if parents:
-                logger.debug(
-                    "Role %s is member of %s.", name, ', '.join(parents))
-            role = Role(
-                name=name,
-                members=members[:],
-                options=kw.get('options', {}),
-                parents=parents[:],
-                comment=comment,
-            )
-
-            yield role
-
-    def apply_role_rules(self, rules, entries):
-        for rule in rules:
-            for entry in entries:
-                try:
-                    for role in self.process_ldap_entry(entry=entry, **rule):
-                        yield role
-                except ValueError as e:
-                    msg = "Failed to process %.48s: %s" % (entry[0], e,)
-                    raise UserError(msg)
-
-    def apply_grant_rules(self, grant, entries=[]):
-        for rule in grant:
-            privilege = rule.get('privilege')
-
-            databases = rule.get('databases', '__all__')
-            if databases == '__all__':
-                databases = Grant.ALL_DATABASES
-
-            schemas = rule.get('schemas', '__all__')
-            if schemas in (None, '__all__', '__any__'):
-                schemas = None
-
-            pattern = rule.get('role_match')
-
-            for entry in entries:
-                try:
-                    roles = list(expand_attributes(entry, rule['roles']))
-                except ValueError as e:
-                    msg = "Failed to process %.32s: %s" % (entry, e,)
-                    raise UserError(msg)
-
-                for role in roles:
-                    role = role.lower()
-                    if pattern and not fnmatch(role, pattern):
-                        logger.debug(
-                            "Don't grant %s to %s not matching %s.",
-                            privilege, role, pattern,
-                        )
-                        continue
-                    yield Grant(privilege, databases, schemas, role)
-
     def inspect_ldap(self, syncmap):
         ldaproles = {}
         ldapacl = Acl()
         for mapping in syncmap:
+            role_rules = mapping.get('roles', [])
+            grant_rules = mapping.get('grant', [])
             if 'ldap' in mapping:
                 on_unexpected_dn = mapping['ldap'].pop(
                     'on_unexpected_dn', 'fail')
                 entries = self.query_ldap(**mapping['ldap'])
+                fields = set(itertools.chain(*[
+                    rule.all_fields
+                    for rule in
+                    role_rules + grant_rules
+                ]))
                 log_source = 'in LDAP'
             else:
-                entries = [None]
+                entries = [('YAML', {}, {})]
+                fields = []
                 log_source = 'from YAML'
                 on_unexpected_dn = 'fail'
 
-            try:
-                for role in self.apply_role_rules(mapping['roles'], entries):
-                    pattern = match(role.name, self.roles_blacklist)
-                    if pattern:
-                        logger.debug(
-                            "Ignoring role %s %s. Matches %s.",
-                            role, log_source, pattern)
-                        continue
+            for entry in entries:
+                vars_ = self.build_format_vars(
+                    entry,
+                    fields,
+                    on_unexpected_dn=on_unexpected_dn,
+                )
 
-                    if role in ldaproles:
-                        try:
-                            role.merge(ldaproles[role])
-                        except ValueError:
-                            msg = "Role %s redefined with different options." % (
-                                role,)
-                            raise UserError(msg)
-                    ldaproles[role] = role
-            except RDNError as e:
-                msg = "Unexpected DN: %s" % e.dn
-                if 'ignore' == on_unexpected_dn:
-                    continue
-                elif 'warn' == on_unexpected_dn:
-                    logger.warning(msg)
-                else:
-                    raise UserError(msg)
-
-            grant = mapping.get('grant', [])
-            grants = self.apply_grant_rules(grant, entries)
-            for grant in grants:
-                pattern = match(grant.role, self.roles_blacklist)
-                if pattern:
-                    logger.debug(
-                        "Ignoring grant on role %s %s. Matches %s.",
-                        grant.role, log_source, pattern)
-                    continue
-                logger.debug("Found GRANT %s %s.", grant, log_source)
-                ldapacl.add(grant)
+                for rule in role_rules:
+                    self.apply_role_rule(rule, ldaproles, vars_, log_source)
+                for rule in grant_rules:
+                    self.apply_grant_rule(rule, ldapacl, vars_, log_source)
 
         # Lazy apply of role options defaults
         roleset = RoleSet()
@@ -233,6 +137,52 @@ class SyncManager(object):
             roleset.add(role)
 
         return roleset, ldapacl
+
+    def build_format_vars(self, entry, fields, on_unexpected_dn):
+        values = {}
+        for field in fields:
+            values.setdefault(field, [])
+            for value in get_attribute(entry, field):
+                if isinstance(value, RDNError):
+                    msg = "Unexpected DN: %s" % value.dn
+                    if 'ignore' == on_unexpected_dn:
+                        continue
+                    elif 'warn' == on_unexpected_dn:
+                        logger.warning(msg)
+                    else:
+                        raise UserError(msg)
+                else:
+                    values[field].append(value)
+        return make_format_vars(fields, entry[0], values)
+
+    def apply_role_rule(self, rule, ldaproles, vars_, log_source):
+        for role in rule.generate(vars_):
+            pattern = match(role.name, self.roles_blacklist)
+            if pattern:
+                logger.debug(
+                    "Ignoring role %s %s. Matches %s.",
+                    role, log_source, pattern)
+                continue
+
+            if role in ldaproles:
+                try:
+                    role.merge(ldaproles[role])
+                except ValueError:
+                    msg = "Role %s redefined with different options." % (
+                        role,)
+                    raise UserError(msg)
+            ldaproles[role] = role
+
+    def apply_grant_rule(self, rule, ldapacl, vars_, log_source):
+        for grant in rule.generate(vars_):
+            pattern = match(grant.role, self.roles_blacklist)
+            if pattern:
+                logger.debug(
+                    "Ignoring grant on role %s %s. Matches %s.",
+                    grant.role, log_source, pattern)
+                continue
+            logger.debug("Found GRANT %s %s.", grant, log_source)
+            ldapacl.add(grant)
 
     def postprocess_acl(self, acl, schemas):
         expanded_grants = acl.expandgrants(

@@ -1,6 +1,7 @@
 from .ldap import parse_scope
 from .ldap import DN_COMPONENTS
-from .role import RoleOptions
+from .role import RoleOptions, RoleRule
+from .privilege import GrantRule
 from .utils import string_types
 from .utils import iter_format_fields
 
@@ -145,8 +146,7 @@ def rolerule(value):
         )
 
     rule['options'] = RoleOptions(**options)
-    rule.setdefault('on_unexpected_dn', 'fail')
-    return rule
+    return RoleRule(**rule)
 
 
 def alias(dict_, key, alias):
@@ -154,17 +154,17 @@ def alias(dict_, key, alias):
         dict_.setdefault(key, dict_.pop(alias))
 
 
-def strorlist(dict_, key, exceptions=[]):
+def strorlist(dict_, key):
     if key in dict_:
         v = dict_[key]
-        if v not in exceptions and isinstance(v, string_types):
+        if isinstance(v, string_types):
             dict_[key] = [v]
         return dict_[key]
 
 
-def strlist_alias(dict_, key, alias_, exceptions=[]):
+def strlist_alias(dict_, key, alias_):
     alias(dict_, key, alias_)
-    return strorlist(dict_, key, exceptions)
+    return strorlist(dict_, key)
 
 
 def compat_ldap_attribute(rule, name):
@@ -184,10 +184,10 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     strlist_alias(value, 'roles', 'role')
 
     value.setdefault('database', defaultdb)
-    strlist_alias(value, 'databases', 'database', ['__all__'])
+    strlist_alias(value, 'databases', 'database')
 
     value.setdefault('schema', defaultschema)
-    strlist_alias(value, 'schemas', 'schema', [None, '__any__', '__all__'])
+    strlist_alias(value, 'schemas', 'schema')
 
     if 'privilege' not in value:
         raise ValueError('Missing privilege to grant rule.')
@@ -207,7 +207,7 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     if 'roles' not in value:
         raise ValueError('Missing role in grant rule.')
 
-    return value
+    return GrantRule(**value)
 
 
 def ismapping(value):
@@ -218,8 +218,8 @@ def ismapping(value):
 
 
 def iter_mapping_strings(mapping):
-    for role in mapping.get('roles', []) + mapping.get('grant', []):
-        for k, v in role.items():
+    for rule in mapping.get('roles', []) + mapping.get('grant', []):
+        for k, v in rule.as_dict().items():
             if not isinstance(v, list):
                 v = [v]
             for v1 in v:
@@ -242,7 +242,7 @@ def mapping(value, **kw):
         value['roles'] = [value['roles']]
 
     on_unexpected_dn = set([
-        r['on_unexpected_dn']
+        r.pop('on_unexpected_dn')
         for r in value['roles']
         if 'on_unexpected_dn' in r
     ])

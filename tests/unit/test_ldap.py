@@ -165,45 +165,11 @@ def test_parse_rc():
 
 
 def test_lower_attrs():
-    from ldap2pg.manager import lower_attributes
+    from ldap2pg.ldap import lower_attributes
 
     entry = lower_attributes(('dn', {'sAMAccountName': 'alice'}))
 
     assert 'samaccountname' in entry[1]
-
-
-def test_expand_attributes():
-    from ldap2pg.ldap import expand_attributes
-
-    entry = (
-        'dn',
-        {  # Attributes
-            'cn': ['cn=pouet,ou=POU ET,dc=org'],
-            'member': ['cn=member0,cn=pouet,ou=POU ET,dc=org'],
-            'uid': ['toto', 'titi'],
-            'memberof': [],
-        },
-        {  # Joins
-            'member': [(
-                'cn=member0,cn=pouet,ou=POU ET,dc=org',
-                {'samaccountname': ['alice'], 'memberof': []}, {},
-            )],
-        },
-    )
-
-    # import pdb; pdb.set_trace()
-    values = list(expand_attributes(entry, [
-        'static', '{uid}', '{cn.dc}', '{member}', '{member.sAMAccountName}',
-        'inexistant_{memberOf}', 'inexistant_{member.memberOf}',
-    ]))
-
-    assert 'alice' in values
-    assert 'org' in values
-    assert 'static' in values
-    assert 'titi' in values
-    assert 'toto' in values
-    assert 'cn=member0,cn=pouet,ou=POU ET,dc=org' in values
-    assert 'inexistant_' not in ''.join(values)
 
 
 def test_get_attribute():
@@ -212,11 +178,10 @@ def test_get_attribute():
     with pytest.raises(ValueError):
         list(get_attribute(entry=('dn', {}, {}), attribute='pouet'))
 
-    with pytest.raises(RDNError):
-        list(get_attribute(
-            entry=('dn', {'member': ['cn=pouet']}, {}),
-            attribute='member.ou',
-        ))
+    assert RDNError in [type(v) for v in get_attribute(
+        entry=('dn', {'member': ['cn=pouet']}, {}),
+        attribute='member.ou',
+    )]
 
     with pytest.raises(ValueError):
         list(get_attribute(

@@ -4,7 +4,6 @@ from codecs import open
 from collections import namedtuple
 import logging
 import os
-from itertools import product
 
 import ldap
 
@@ -18,7 +17,6 @@ from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
 from .utils import decode_value, encode_value, PY2, uniq, iter_format_fields
-from .utils import Settable
 from .utils import Timer
 from .utils import UserError
 
@@ -69,27 +67,6 @@ def str2dn(value):
     ]
 
 
-def expand_attributes(entry, formats):
-    # Apply every combination of attibutes as referenced in formats.
-
-    if entry is None:  # Don't format static rules.
-        for f in formats:
-            yield f
-        return
-
-    # Gather all values as they are referenced in format token.
-    values = dict()
-    for k in iter_format_fields(formats):
-        values[k] = list(get_attribute(entry, k))
-
-    for format_ in formats:
-        # Expand all combination of values, with only values of this format
-        # string.
-        vars_ = make_format_vars(entry[0], values, format_)
-        for items in product(*vars_.values()):
-            yield format_.format(**dict(zip(vars_.keys(), items)))
-
-
 class RDNError(NameError):
     # Raised when an unexpected DN is reached.
     def __init__(self, message=None, dn=None):
@@ -127,12 +104,9 @@ def get_attribute(entry, attribute):
             for (type_, name, _), in dn:
                 value.setdefault(type_.lower(), name)
             try:
-                value = value[path[0]]
+                yield value[path[0]]
             except KeyError:
-                raise RDNError("Unknown RDN %s" % (path[0],), raw_dn)
-
-            yield value
-
+                yield RDNError("Unknown RDN %s" % (path[0],), raw_dn)
         else:
             try:
                 joined_entries = joins[attribute]
@@ -150,25 +124,6 @@ def lower_attributes(entry):
         (k.lower(), v)
         for k, v in attributes.items()
     ])
-
-
-def make_format_vars(dn, values, format_):
-    # Build variables to inject into format, implementing deep access of
-    # compound values like DN and joins. values is a dictionnary with full
-    # format token as key and the list of all values available in entries as
-    # values. e.g. {'dn.cn': ['toto'], 'dn': ['cn=toto']}.
-    vars_ = dict()
-    fields = list(iter_format_fields([format_]))
-    for f in fields:
-        if '.' in f:
-            parent, _, child = f.partition('.')
-            vars_[parent] = [
-                Settable(_string=dn, **dict({child: v}))
-                for v in values[f]
-            ]
-        else:
-            vars_[f] = values[f]
-    return vars_
 
 
 class EncodedParamsCallable(object):  # pragma: nocover_py3

@@ -144,282 +144,61 @@ def test_query_ldap_bad_filter(mocker):
     assert manager.ldapconn.search_s.called is True
 
 
-def test_process_entry_static():
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    roles = manager.process_ldap_entry(
-        entry=('dn',), names=['ALICE'], parents=['postgres'],
-        options=dict(LOGIN=True), comment='Custom.',
-    )
-    roles = list(roles)
-
-    assert 1 == len(roles)
-    assert 'ALICE' in roles
-    assert 'postgres' in roles[0].parents
-    assert 'Custom.' == roles[0].comment
-
-
-def test_process_entry_missing_attribute():
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-    entry = ('dn', {'cn': ['david'], 'desc': []}, {})
-    roles = list(manager.process_ldap_entry(
-        entry, names=['{cn}'], comment='{desc}',
-    ))
-
-    assert 1 == len(roles)
-    assert roles[0].comment is None
-
-
-def test_process_entry_user():
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    entry = ('dn', {'cn': ['alice', 'bob']}, {})
-
-    roles = manager.process_ldap_entry(
-        entry, names=['{cn}'],
-        options=dict(LOGIN=True),
-    )
-    roles = list(roles)
-
-    assert 2 == len(roles)
-    assert 'alice' in roles
-    assert 'bob' in roles
-    assert roles[0].options['LOGIN'] is True
-
-
-def test_process_entry_dn():
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    entry = ('dn', {
-        'member': ['cn=alice,dc=unit', 'cn=bob,dc=unit'],
-    }, {})
-
-    roles = manager.process_ldap_entry(entry, names=['{member.cn}'])
-    roles = list(roles)
-    names = {r.name for r in roles}
-
-    assert 2 == len(roles)
-    assert 'alice' in names
-    assert 'bob' in names
-
-
-def test_process_entry_membership(mocker):
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    entries = [
-        ('cn=group0', {
-            'cn': ['group0'],
-            'member': ['cn=alice,dc=unit', 'cn=alain,dc=unit'],
-        }, {}),
-        ('cn=group1', {
-            'cn': ['group1'],
-            'member': ['cn=bob,dc=unit', 'cn=benoit,dc=unit'],
-        }, {}),
-    ]
-
-    roles = []
-    rule = dict(
-        members=['{member.cn}'],
-        parents=['{cn}'],
-    )
-    for i, entry in enumerate(entries):
-        name = 'role%d' % i
-        roles += list(manager.process_ldap_entry(
-            entry, names=[name], **rule))
-
-    assert 2 == len(roles)
-    assert 'alice' in roles[0].members
-    assert 'alain' in roles[0].members
-    assert 'bob' not in roles[0].members
-    assert 'benoit' not in roles[0].members
-    assert 'group0' in roles[0].parents
-    assert 'group1' not in roles[0].parents
-
-    assert 'alice' not in roles[1].members
-    assert 'alain' not in roles[1].members
-    assert 'bob' in roles[1].members
-    assert 'benoit' in roles[1].members
-    assert 'group0' not in roles[1].parents
-    assert 'group1' in roles[1].parents
-
-
-def test_apply_role_rule_ko(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
-
-    from ldap2pg.manager import SyncManager, UserError
-
-    manager = SyncManager()
-
-    gla.side_effect = ValueError
-    items = manager.apply_role_rules(
-        entries=[('dn0',), ('dn1',)],
-        rules=[dict(names=['{cn}'])],
-    )
-    with pytest.raises(UserError):
-        list(items)
-
-
 def test_inspect_ldap_unexpected_dn(mocker):
-    arr = mocker.patch('ldap2pg.manager.SyncManager.apply_role_rules')
+    ga = mocker.patch('ldap2pg.manager.get_attribute')
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
     from ldap2pg.manager import SyncManager, RDNError, UserError
+    from ldap2pg.role import RoleRule
 
     manager = SyncManager()
 
-    arr.side_effect = RDNError
-    ql.return_value = [('dn0',), ('dn1',)]
+    ga.side_effect = values = [
+        ['member0_cn', RDNError(), 'member1_cn'],
+    ]
+    ql.return_value = [('dn0', {}, {})]
 
     list(manager.inspect_ldap([dict(
         ldap=dict(on_unexpected_dn='warn'),
-        roles=[dict(names=['{cn}'])],
+        roles=[RoleRule(names=['{member.cn}'])],
     )]))
+
+    ga.reset_mock()
+    ga.side_effect = values
 
     list(manager.inspect_ldap([dict(
         ldap=dict(on_unexpected_dn='ignore'),
-        roles=[dict(names=['{cn}'])]
+        roles=[RoleRule(names=['{member.cn}'])]
     )]))
+
+    ga.reset_mock()
+    ga.side_effect = values
 
     with pytest.raises(UserError):
         list(manager.inspect_ldap([dict(
             ldap=dict(),
-            roles=[dict(names=['{cn}'])],
+            roles=[RoleRule(names=['{member.cn}'])],
         )]))
 
 
-def test_apply_grant_rule_ok(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
-
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    gla.side_effect = [['alice'], ['bob']]
-    items = manager.apply_grant_rules(
-        grant=[dict(
-            privilege='connect',
-            databases=['postgres'],
-            schemas='__any__',
-            roles=['{cn}'],
-        )],
-        entries=[None, None],
-    )
-    items = list(items)
-    assert 2 == len(items)
-    assert 'alice' == items[0].role
-    assert 'postgres' == items[0].dbname[0]
-    # Ensure __any__ schema is mapped to None
-    assert items[0].schema is None
-    assert 'bob' == items[1].role
-
-
-def test_apply_grant_rule_wrong_attr(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes')
-
-    from ldap2pg.manager import SyncManager, UserError
-
-    gla.side_effect = ValueError('POUET')
-    items = SyncManager().apply_grant_rules(
-        grant=[dict(roles=['{cn}'])],
-        entries=[None, None],
-    )
-    with pytest.raises(UserError):
-        list(items)
-
-
-def test_apply_grant_rule_all_schema(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
-
-    from ldap2pg.manager import SyncManager
-
-    manager = SyncManager()
-
-    gla.side_effect = [['alice']]
-    items = manager.apply_grant_rules(
-        grant=[dict(
-            privilege='connect',
-            databases=['postgres'],
-            schema='__all__',
-            roles=['{cn}'],
-        )],
-        entries=[None],
-    )
-    items = list(items)
-    assert 1 == len(items)
-    assert 'alice' == items[0].role
-    assert 'postgres' == items[0].dbname[0]
-    # Ensure __all__ schema is mapped to object
-    assert items[0].schema != '__all__'
-
-
-def test_apply_grant_rule_filter(mocker):
-    from ldap2pg.manager import SyncManager
-
-    items = SyncManager().apply_grant_rules(
-        grant=[dict(
-            privilege='connect',
-            database='postgres',
-            schema='__any__',
-            role_match='*_r',
-            roles=['alice_r', 'bob_rw'],
-        )],
-        entries=[None],
-    )
-    items = list(items)
-    assert 1 == len(items)
-    assert 'alice_r' == items[0].role
-
-
-def test_apply_grant_rule_nodb(mocker):
-    gla = mocker.patch('ldap2pg.manager.expand_attributes', autospec=True)
-
-    from ldap2pg.manager import Grant, SyncManager
-
-    manager = SyncManager()
-
-    gla.return_value = ['alice']
-    items = list(manager.apply_grant_rules(
-        grant=[dict(
-            privilege='connect',
-            database='__all__', schema='__any__',
-            roles=['{cn}'],
-        )],
-        entries=[None],
-    ))
-    assert items[0].dbname is Grant.ALL_DATABASES
-
-
 def test_inspect_ldap_grants(mocker):
-    la = mocker.patch(
-        'ldap2pg.manager.SyncManager.apply_grant_rules', autospec=True)
-
-    from ldap2pg.manager import SyncManager, Grant
-    from ldap2pg.privilege import NspAcl
+    from ldap2pg.manager import SyncManager
+    from ldap2pg.privilege import Grant, NspAcl
     from ldap2pg.utils import make_group_map
 
     privileges = dict(ro=NspAcl(name='ro'))
-    la.return_value = [
-        Grant('ro', 'postgres', None, 'alice'),
-        Grant('ro', 'postgres', None, 'blacklisted'),
-    ]
-
     manager = SyncManager(
         psql=mocker.Mock(), ldapconn=mocker.Mock(), privileges=privileges,
         privilege_aliases=make_group_map(privileges),
         inspector=mocker.Mock(name='inspector'),
     )
     manager.inspector.roles_blacklist = ['blacklisted']
-    syncmap = [dict(roles=[], grant=dict(privilege='ro'))]
+    rule = mocker.Mock(name='grant')
+    rule.generate.return_value = [
+        Grant('ro', 'postgres', None, 'alice'),
+        Grant('ro', 'postgres', None, 'blacklisted'),
+    ]
+    syncmap = [dict(roles=[], grant=[rule])]
 
     _, grants = manager.inspect_ldap(syncmap=syncmap)
 
@@ -427,8 +206,8 @@ def test_inspect_ldap_grants(mocker):
 
 
 def test_postprocess_grants():
-    from ldap2pg.manager import SyncManager, Grant, Acl
-    from ldap2pg.privilege import DefAcl
+    from ldap2pg.manager import SyncManager
+    from ldap2pg.privilege import DefAcl, Grant, Acl
 
     manager = SyncManager(
         privileges=dict(ro=DefAcl(name='ro')),
@@ -452,8 +231,8 @@ def test_postprocess_grants():
 
 
 def test_postprocess_acl_bad_database():
-    from ldap2pg.manager import SyncManager, Grant, Acl, UserError
-    from ldap2pg.privilege import NspAcl
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.privilege import NspAcl, Grant, Acl
     from ldap2pg.utils import make_group_map
 
     privileges = dict(ro=NspAcl(name='ro', inspect='SQL'))
@@ -470,7 +249,8 @@ def test_postprocess_acl_bad_database():
 
 
 def test_postprocess_acl_inexistant_privilege():
-    from ldap2pg.manager import SyncManager, Acl, Grant, UserError
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.privilege import Acl, Grant
 
     manager = SyncManager()
 
@@ -483,16 +263,11 @@ def test_postprocess_acl_inexistant_privilege():
 
 def test_inspect_ldap_roles(mocker):
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
-    r = mocker.patch('ldap2pg.manager.SyncManager.process_ldap_entry')
 
-    from ldap2pg.manager import SyncManager, Role
+    from ldap2pg.manager import SyncManager
+    from ldap2pg.role import Role
 
-    ql.return_value = [mocker.Mock(name='entry')]
-    r.side_effect = rolesets = [
-        {Role(name='alice', options=dict(SUPERUSER=True))},
-        {Role(name='bob')},
-        {Role(name='blacklisted')},
-    ]
+    ql.return_value = [('dn', {}, {})]
 
     manager = SyncManager(
         ldapconn=mocker.Mock(),
@@ -500,18 +275,23 @@ def test_inspect_ldap_roles(mocker):
     )
     manager.inspector.roles_blacklist = ['blacklisted']
 
+    rule0 = mocker.Mock(name='rule0', all_fields=[])
+    rule0.generate.return_value = [Role('alice', options=dict(LOGIN=True))]
+    rule1 = mocker.Mock(name='rule1', all_fields=[])
+    rule1.generate.return_value = [Role('bob')]
+    rule2 = mocker.Mock(name='rule2', all_fields=[])
+    rule2.generate.return_value = [Role('blacklisted')]
+
     # Minimal effective syncmap
     syncmap = [
         dict(roles=[]),
         dict(
             ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
-            roles=[dict()] * len(rolesets),
+            roles=[rule0, rule1, rule2],
         ),
     ]
 
     ldaproles, _ = manager.inspect_ldap(syncmap=syncmap)
-
-    assert 3 == r.call_count, "sync did not iterate over each rules."
 
     assert 'alice' in ldaproles
     assert 'bob' in ldaproles
@@ -519,15 +299,16 @@ def test_inspect_ldap_roles(mocker):
 
 def test_inspect_roles_merge_duplicates(mocker):
     from ldap2pg.manager import SyncManager
+    from ldap2pg.role import RoleRule
 
     manager = SyncManager()
 
     syncmap = [
         dict(roles=[
-            dict(names=['group0']),
-            dict(names=['group1']),
-            dict(names=['bob'], parents=['group0']),
-            dict(names=['bob'], parents=['group1']),
+            RoleRule(names=['group0']),
+            RoleRule(names=['group1']),
+            RoleRule(names=['bob'], parents=['group0']),
+            RoleRule(names=['bob'], parents=['group1']),
         ]),
     ]
 
@@ -543,14 +324,15 @@ def test_inspect_roles_merge_duplicates(mocker):
 
 def test_inspect_roles_duplicate_differents_options(mocker):
     from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.role import RoleRule
 
     manager = SyncManager()
 
     syncmap = [dict(roles=[
-        dict(names=['group0']),
-        dict(names=['group1']),
-        dict(names=['bob'], options=dict(LOGIN=True)),
-        dict(names=['bob'], options=dict(LOGIN=False)),
+        RoleRule(names=['group0']),
+        RoleRule(names=['group1']),
+        RoleRule(names=['bob'], options=dict(LOGIN=True)),
+        RoleRule(names=['bob'], options=dict(LOGIN=False)),
     ])]
 
     with pytest.raises(UserError):

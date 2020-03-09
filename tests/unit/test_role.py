@@ -6,7 +6,7 @@ import pytest
 
 
 def test_role():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto')
 
@@ -20,7 +20,7 @@ def test_role():
 
 
 def test_create():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto', members=['titi'], comment='Mycom')
 
@@ -32,7 +32,7 @@ def test_create():
 
 
 def test_alter():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     a = Role(name='toto', members=['titi'], options=dict(LOGIN=True))
     b = Role(name='toto', members=['tata'], options=dict(LOGIN=False))
@@ -48,7 +48,7 @@ def test_alter():
 
 
 def test_drop():
-    from ldap2pg.manager import Role
+    from ldap2pg.role import Role
 
     role = Role(name='toto', members=['titi'])
 
@@ -210,3 +210,39 @@ def test_diff():
     assert not fnfilter(queries, '*nothing*')
     assert not fnfilter(queries, '*dont-touch-me*')
     assert not fnfilter(queries, '*public*')
+
+
+def test_role_rule():
+    from ldap2pg.role import RoleRule
+    from ldap2pg.utils import Settable
+
+    r = RoleRule(
+        names=['static', 'prefix_{cn}', '{uid}_{member}'],
+        parents=['{uid}', '{member.cn}'],
+        members=[],
+        comment='From {dn}',
+        options={'SUPERUSER': True},
+    )
+
+    assert 5 == len(r.all_fields)
+    assert repr(r)
+
+    d = r.as_dict()
+    assert 'SUPERUSER' in d['options']
+    assert ['static', 'prefix_{cn}', '{uid}_{member}'] == d['names']
+    assert [] == d['members']
+    assert ['{uid}', '{member.cn}'] == d['parents']
+    assert 'From {dn}' == d['comment']
+
+    vars_ = dict(
+        dn=['cn=group,ou=groups'],
+        cn=['cn'],
+        uid=['uid'],
+        member=[
+            Settable(_str='cn=m0', cn=['m0']),
+            Settable(_str='cn=m1', cn=['m1']),
+        ],
+    )
+
+    roles = list(r.generate(vars_))
+    assert 4 == len(roles)

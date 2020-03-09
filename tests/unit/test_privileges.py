@@ -225,3 +225,64 @@ def test_make_privilege_shared():
                 inspect=dict(shared_query='badacl', keys=['toto']),
             ),
         ))
+
+
+def test_grant_rule():
+    from ldap2pg.privilege import GrantRule
+
+    r = GrantRule(
+        privilege='{extensionAttribute0}',
+        databases=['{extensionAttribute1}'],
+        schemas=['{cn}'],
+        roles=['{cn}'],
+    )
+
+    assert 3 == len(r.all_fields)
+    assert repr(r)
+
+    d = r.as_dict()
+    assert '{extensionAttribute0}' == d['privilege']
+    assert ['{extensionAttribute1}'] == d['databases']
+    assert ['{cn}'] == d['schemas']
+    assert ['{cn}'] == d['roles']
+
+    vars_ = dict(
+        cn=['rol0', 'rol1'],
+        extensionAttribute0=['ro'],
+        extensionAttribute1=['appdb'],
+    )
+    grants = list(r.generate(vars_))
+    assert 2 == len(grants)
+
+
+def test_grant_rule_match():
+    from ldap2pg.privilege import GrantRule
+
+    r = GrantRule(
+        privilege='ro',
+        databases=['mydb'],
+        schemas=None,
+        roles=['{cn}'],
+        role_match='prefix_*',
+    )
+
+    vars_ = dict(
+        cn=['prefix_rol0', 'ignored', 'prefix_rol1'],
+    )
+    grants = list(r.generate(vars_))
+    assert 2 == len(grants)
+
+
+def test_grant_rule_all_databases():
+    from ldap2pg.privilege import GrantRule, Grant
+
+    r = GrantRule(
+        privilege='ro',
+        databases=['__all__'],
+        schemas=None,
+        roles=['role'],
+    )
+
+    vars_ = dict(dn=['dn'])
+    grant, = r.generate(vars_)
+    assert grant.dbname is Grant.ALL_DATABASES
