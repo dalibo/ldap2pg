@@ -265,6 +265,10 @@ def mapping(value, **kw):
         raise ValueError("Missing role or grant rule.")
 
     if 'ldap' in value:
+        if any([r.names.has_static for r in value.get('roles', [])]):
+            raise ValueError("Mixing static role with LDAP query may hide it.")
+        if any([r.roles.has_static for r in value.get('grant', [])]):
+            raise ValueError("Mixing static role with LDAP query may hide it.")
         strings = iter_mapping_strings(value)
         format_fields = iter_format_fields(strings, split=True)
         value['ldap'].setdefault('on_unexpected_dn', on_unexpected_dn)

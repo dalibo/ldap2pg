@@ -120,6 +120,32 @@ def test_process_syncmap_bad():
             syncmap(raw)
 
 
+def test_mapping_refuse_static_rules_when_ldap():
+    from ldap2pg.validators import mapping
+
+    raw = dict(
+        ldap=dict(base="toto"),
+        roles=["{cn}"],
+    )
+
+    assert mapping(raw.copy())
+
+    raw['roles'].append('static')
+    with pytest.raises(ValueError):
+        mapping(raw)
+
+    raw = dict(
+        ldap=dict(base="toto"),
+        grant=dict(roles=["{cn}"], privilege="ro"),
+    )
+
+    assert mapping(raw.copy())
+
+    raw['grant']['roles'].append('static')
+    with pytest.raises(ValueError):
+        mapping(raw)
+
+
 def test_process_mapping_grant():
     from ldap2pg.validators import mapping
 
