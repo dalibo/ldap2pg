@@ -351,17 +351,33 @@ class RoleRule(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.names)
 
+    def build_comment(self, vars_):
+        if not self.comment:
+            return
+
+        comments = self.comment.expand(vars_)
+        try:
+            comment = next(comments)
+        except StopIteration:
+            logger.warning(
+                "Can't generate comment for %s... Missing attribute?",
+                vars_['dn'][0][:24])
+            return
+
+        try:
+            next(comments)
+            logger.warning(
+                "Multiple comments are generated for %s.",
+                vars_['dn'][0][:24],
+            )
+        except StopIteration:
+            pass
+        return comment
+
     def generate(self, vars_):
         members = list(self.members.expand(vars_))
         parents = list(self.parents.expand(vars_))
-        comment = None
-        if self.comment:
-            try:
-                comment = next(self.comment.expand(vars_))
-            except StopIteration:
-                logger.warning(
-                    "Can't generate comment for %s... Missing attribute?",
-                    vars_['dn'][0][:24])
+        comment = self.build_comment(vars_)
 
         for name in self.names.expand(vars_):
             yield Role(

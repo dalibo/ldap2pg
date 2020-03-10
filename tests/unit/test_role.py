@@ -246,3 +246,38 @@ def test_role_rule():
 
     roles = list(r.generate(vars_))
     assert 4 == len(roles)
+
+
+def test_role_rule_multiple_comment():
+    from ldap2pg.role import RoleRule
+
+    r = RoleRule(
+        names=['{member}'],
+        comment='From {member}',
+    )
+
+    vars_ = dict(
+        dn=['cn=group,ou=groups'],
+        member=['m0', 'm1'],
+    )
+
+    roles = list(r.generate(vars_))
+    assert 2 == len(roles)
+
+
+def test_role_rule_no_comment():
+    from ldap2pg.role import RoleRule
+
+    r = RoleRule(
+        names=['{member}'],
+        comment='From {desc}',
+    )
+
+    vars_ = dict(
+        dn=['cn=group,ou=groups'],
+        desc=[],
+        member=['m0', 'm1'],
+    )
+
+    roles = list(r.generate(vars_))
+    assert 2 == len(roles)
