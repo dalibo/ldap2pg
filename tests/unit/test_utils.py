@@ -147,6 +147,7 @@ def test_format_list_factory():
 
     formats = ["static", "prefix {deep.attr}", "{a} {b}"]
     list_ = FormatList.factory(formats)
+    assert list_.has_static
     assert repr(list_)
     assert 3 == len(list_)
     assert ("static", []) == list_[0]
