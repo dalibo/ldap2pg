@@ -11,6 +11,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix ignored LDAP entries after unexpected DN.
 - Fix traceback when inspecting grants.
+- Refuse to mix static rules and ldap query.
 - Accepts an SQL query to list ignored roles. `postgres:blacklist` is renamed
   `postgres:roles_blacklist_query`. ldap2pg ensure backward compatibility.
 - Apply roles blacklist to LDAP results.

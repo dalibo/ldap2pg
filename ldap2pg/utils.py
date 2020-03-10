@@ -214,6 +214,10 @@ class FormatList(list):
             for field, _ in fields
         ]
 
+    @property
+    def has_static(self):
+        return bool([x for x in self if not x[1]])
+
 
 def collect_fields(*field_lists):
     return set(itertools.chain(*[
