@@ -3,7 +3,7 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
-roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname != 'postgres'"))
+roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
 # This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
 roles=$(IFS=',' ; echo "${roles[*]+${roles[*]}}")
 # Quote rolname for case sensitivity.
