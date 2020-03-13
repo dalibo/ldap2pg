@@ -9,8 +9,10 @@ roles=$(IFS=',' ; echo "${roles[*]+${roles[*]}}")
 # Quote rolname for case sensitivity.
 roles="${roles//,/'", "'}"
 
+psql="psql -v ON_ERROR_STOP=1 --echo-all"
+
 for d in template1 postgres ; do
-    psql -v ON_ERROR_STOP=1 $d <<EOSQL
+    $psql $d <<EOSQL
 UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
 GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
@@ -22,7 +24,7 @@ END\$\$;
 EOSQL
 done
 
-psql -v ON_ERROR_STOP=1 <<EOSQL
+$psql <<EOSQL
 -- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
@@ -35,7 +37,7 @@ END\$\$;
 UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 EOSQL
 
-psql -v ON_ERROR_STOP=1 <<'EOSQL'
+$psql <<'EOSQL'
 -- For non-superuser case
 CREATE ROLE "nonsuper" LOGIN CREATEROLE;
 CREATE DATABASE nonsuperdb WITH OWNER nonsuper;
@@ -76,13 +78,13 @@ EOSQL
 
 # Create a legacy table owned by a legacy user. For reassign before drop
 # cascade.
-PGDATABASE=olddb psql <<EOSQL
+PGDATABASE=olddb $psql <<EOSQL
 CREATE TABLE keepme (id serial PRIMARY KEY);
 ALTER TABLE keepme OWNER TO "oscar";
 EOSQL
 
 # grant some privileges to daniel, to be revoked.
-PGDATABASE=olddb psql <<EOSQL
+PGDATABASE=olddb $psql <<EOSQL
 CREATE SCHEMA oldns;
 CREATE TABLE oldns.table1 (id SERIAL);
 GRANT SELECT ON ALL TABLES IN SCHEMA oldns TO "daniel";
@@ -93,7 +95,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA oldns GRANT SELECT ON TABLES TO "daniel";
 EOSQL
 
 # Ensure daniel has no privileges on appdb, for grant.
-PGDATABASE=appdb psql <<'EOSQL'
+PGDATABASE=appdb $psql <<'EOSQL'
 CREATE TABLE public.table1 (id SERIAL);
 CREATE VIEW public.view1 AS SELECT 'row0';
 
@@ -120,7 +122,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA appns TO "david";
 EOSQL
 
 # Setup non-super fixture, independant from usual case.
-PGDATABASE=nonsuperdb psql <<'EOSQL'
+PGDATABASE=nonsuperdb $psql <<'EOSQL'
 REVOKE ALL ON SCHEMA public FROM public;
 ALTER SCHEMA public OWNER TO "nonsuper";
 ALTER SCHEMA pg_catalog OWNER TO "nonsuper";
@@ -134,6 +136,6 @@ CREATE TABLE table1 (id SERIAL);
 ALTER TABLE table1 OWNER TO "nonsuper";
 EOSQL
 
-PGDATABASE=nonsuperdb PGUSER=nonsuper psql <<'EOSQL'
+PGDATABASE=nonsuperdb PGUSER=nonsuper $psql <<'EOSQL'
 GRANT SELECT ON table1 TO "kevin";
 EOSQL
