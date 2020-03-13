@@ -19,7 +19,6 @@ DO \$\$BEGIN
     DROP OWNED BY "${roles:-pouet}";
   END IF;
 END\$\$;
-DELETE FROM pg_default_acl;
 EOSQL
 done
 
