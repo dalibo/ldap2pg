@@ -19,6 +19,10 @@ services:
 
   postgres:
     image: postgres:${PGVERSION-12}-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_POSTGRES: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
     - ./fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
     labels:
