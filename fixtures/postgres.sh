@@ -99,8 +99,12 @@ CREATE SCHEMA appns;
 CREATE TABLE appns.table1 (id SERIAL);
 CREATE TABLE appns.table2 (id SERIAL);
 
-CREATE FUNCTION appns.func1() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
-CREATE FUNCTION appns.func2() RETURNS text AS $$ SELECT 'Coucou!'; $$ LANGUAGE SQL;
+CREATE FUNCTION appns.func1() RETURNS text AS $$
+	BEGIN RETURN 'Coucou!'; END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION appns.func2() RETURNS text AS $$
+	BEGIN RETURN 'Coucou!'; END;
+$$ LANGUAGE plpgsql;
 
 CREATE SCHEMA empty;
 
