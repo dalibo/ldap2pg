@@ -3,26 +3,14 @@
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
+psql="psql -v ON_ERROR_STOP=1 --echo-all"
+
 roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
 # This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
 roles=$(IFS=',' ; echo "${roles[*]+${roles[*]}}")
 # Quote rolname for case sensitivity.
 roles="${roles//,/'", "'}"
 
-psql="psql -v ON_ERROR_STOP=1 --echo-all"
-
-for d in template1 postgres ; do
-    $psql $d <<EOSQL
-UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
-GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
-GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
-DO \$\$BEGIN
-  IF '${roles}' <> '' THEN
-    DROP OWNED BY "${roles:-pouet}";
-  END IF;
-END\$\$;
-EOSQL
-done
 
 $psql <<EOSQL
 -- Purge everything.
@@ -36,6 +24,14 @@ DO \$\$BEGIN
 END\$\$;
 UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 EOSQL
+
+for d in template1 postgres ; do
+    $psql $d <<EOSQL
+UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
+GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+EOSQL
+done
 
 $psql <<'EOSQL'
 -- For non-superuser case
