@@ -54,6 +54,11 @@ class UserError(Exception):
         super(UserError, self).__init__(message)
         self.exit_code = exit_code
 
+    @classmethod
+    def wrap(cls, message, exit_code=1):
+        message = "\n".join(textwrap.wrap(dedent(message)))
+        return cls(message, exit_code)
+
 
 def deepget(mapping, path):
     """Access deep dict entry."""
