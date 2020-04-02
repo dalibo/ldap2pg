@@ -249,7 +249,7 @@ def test_role_rule():
 
 
 def test_role_rule_multiple_comment():
-    from ldap2pg.role import RoleRule
+    from ldap2pg.role import RoleRule, CommentError
 
     r = RoleRule(
         names=['{member}'],
@@ -261,12 +261,12 @@ def test_role_rule_multiple_comment():
         member=['m0', 'm1'],
     )
 
-    roles = list(r.generate(vars_))
-    assert 2 == len(roles)
+    with pytest.raises(CommentError):
+        list(r.generate(vars_))
 
 
 def test_role_rule_no_comment():
-    from ldap2pg.role import RoleRule
+    from ldap2pg.role import RoleRule, CommentError
 
     r = RoleRule(
         names=['{member}'],
@@ -279,5 +279,23 @@ def test_role_rule_no_comment():
         member=['m0', 'm1'],
     )
 
-    roles = list(r.generate(vars_))
-    assert 2 == len(roles)
+    with pytest.raises(CommentError):
+        list(r.generate(vars_))
+
+
+def test_role_rule_not_enough_comment():
+    from ldap2pg.role import RoleRule, CommentError
+
+    r = RoleRule(
+        names=['{member}'],
+        comment='From {less}',
+    )
+
+    vars_ = dict(
+        dn=['cn=group,ou=groups'],
+        member=['m0', 'm1', 'm2'],
+        less=['l0', 'l1']
+    )
+
+    with pytest.raises(CommentError):
+        list(r.generate(vars_))
