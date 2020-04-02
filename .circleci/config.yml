@@ -135,6 +135,6 @@ workflows:
     - 0-rpm-centos6
     - 0-rpm-centos7
     - 1-func-centos6:
-        requires: [0-unit-py27, 0-rpm-centos6]
+        requires: [0-rpm-centos6]
     - 1-func-centos7:
-        requires: [0-unit-py27, 0-rpm-centos7]
+        requires: [0-rpm-centos7]

@@ -202,3 +202,28 @@ def test_format_list_collect():
 
     all_fields = collect_fields(l0, l1)
     assert 4 == len(all_fields)
+
+
+def test_user_error_wrap():
+    from ldap2pg.utils import UserError
+
+    e = UserError.wrap("""\
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tortor odio, volutpat non volutpat vitae, mollis at felis. Sed placerat tincidunt
+    auctor. Proin ipsum leo, dapibus ut suscipit sit amet, suscipit id massa. Fusce porta, nibh in ultricies mattis, sem magna ullamcorper sapien, quis
+    efficitur velit erat vel nisl. Vestibulum facilisis eget augue sed tempor. Aenean porttitor rutrum odio in aliquet. Class aptent taciti sociosqu ad
+    litora torquent per conubia nostra, per inceptos himenaeos. Etiam non massa quis ante blandit mattis. Morbi ut metus maximus, dignissim augue at,
+    vestibulum leo. In at lectus vel arcu blandit vehicula sit amet et orci. Integer mollis in mi vel mattis.
+    """)  # noqa
+
+    lines = str(e).splitlines()
+    assert 7 < len(lines)
+
+    e = UserError.wrap("""\
+    Lorem ipsum
+    dolorsit amet,
+    consectetur
+    adipiscing elit.
+    """)  # noqa
+
+    lines = str(e).splitlines()
+    assert 1 == len(lines)

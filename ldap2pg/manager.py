@@ -138,7 +138,8 @@ class SyncManager(object):
 
         return roleset, ldapacl
 
-    def build_format_vars(self, entry, fields, on_unexpected_dn):
+    @staticmethod
+    def build_format_vars(entry, fields, on_unexpected_dn):
         values = {}
         for field in fields:
             values.setdefault(field, [])
