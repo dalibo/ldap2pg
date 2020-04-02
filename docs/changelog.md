@@ -9,6 +9,10 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
+**Attention!** This release has some behaviour changes. Some silented errors
+are now raised when encountered. Please test on staging environment before
+deploying on production.
+
 - Fix ignored LDAP entries after unexpected DN.
 - Fix traceback when inspecting grants.
 - Refuse to mix static rules and ldap query.
