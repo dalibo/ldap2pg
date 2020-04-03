@@ -543,9 +543,6 @@ class Configuration(dict):
 
         logger.debug("Configuration loaded.")
 
-        if not self['sync_map']:
-            logger.warning("Empty synchronization map!")
-
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
             value = mapping.process(

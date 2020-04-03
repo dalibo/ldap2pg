@@ -213,6 +213,10 @@ class SyncManager(object):
         return acl
 
     def sync(self, syncmap):
+        if not syncmap:
+            logger.warning(
+                "Empty synchronization map. All roles will be dropped!")
+
         logger.info("Inspecting roles in Postgres cluster...")
         self.inspector.roles_blacklist = self.inspector.fetch_roles_blacklist()
         me, issuper = self.inspector.fetch_me()
