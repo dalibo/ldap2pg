@@ -25,11 +25,11 @@ in their name!** These roles will be renamed from lowercase to original case.
 Run `ldap2pg --dry` before and check for renames.
 
 - ldap2pg now respect case for role names. Thanks to [Sergejs
-  Zuromskis](@zurikus) for the report.
+  Zuromskis](https://github.com/zurikus) for the report.
 - Postgres 12 support validated.
 - Fix void attributes raising *Missing attribute error*.
 - Docker image now ensure ldap2pg is pinned to the desired version.
-- Moved to new homepage : https://labs.dalibo.com/ldap2pg .
+- Moved to new homepage : [labs.dalibo.com/ldap2pg](https://labs.dalibo.com/ldap2pg).
 
 
 # ldap2pg 5.0
