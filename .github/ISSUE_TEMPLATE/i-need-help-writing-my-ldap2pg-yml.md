@@ -23,6 +23,8 @@ French accepted.
 
 ## ldap2pg.yml
 
+<details><summary>ldap2pg.yml</summary>
 ``` yml
 ...
 ```
+</details>

@@ -22,14 +22,16 @@ French accepted.
 
 <!-- Ensure there is no password ! -->
 
+<details><summary>ldap2pg.yml</summary>
 ``` yaml
-# ldap2pg.yml
 postgres:
   ...
 
 sync_map:
   ...
 ```
+</details>
+
 
 ## Expectations
 
@@ -39,9 +41,11 @@ sync_map:
 
 ## Verbose output of ldap2pg execution
 
+<details><summary>Verbose output</summary>
 ``` console
-$ ldap2pg --verbose -N
+$ ldap2pg --verbose --real
 [ldap2pg.config        INFO] Starting ldap2pg ...
 ...
 $
 ```
+</details>
