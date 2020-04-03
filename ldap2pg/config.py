@@ -295,10 +295,6 @@ class ConfigurationError(UserError):
         )
 
 
-class NoConfigurationError(Exception):
-    pass
-
-
 def construct_yaml_str(self, node):
     # See https://stackoverflow.com/a/2967461/2613806
     return self.construct_scalar(node)
@@ -458,7 +454,7 @@ class Configuration(dict):
             message = "Can't access configuration file %s." % (custom,)
             raise UserError(message, exit_code=os.EX_NOINPUT)
         else:
-            raise NoConfigurationError("No configuration file found")
+            raise ConfigurationError("No configuration file found")
 
     EPILOG = dedent("""\
 
@@ -512,28 +508,23 @@ class Configuration(dict):
         logger.info("Starting ldap2pg %s.", __version__)
 
         # File loading.
-        try:
-            filename, mode = self.find_filename(os.environ, args)
-        except NoConfigurationError:
-            logger.debug("No configuration file found.")
-            file_config = {}
+        filename, mode = self.find_filename(os.environ, args)
+        if filename == '-':
+            logger.info("Reading configuration from stdin.")
+            file_config = self.read(sys.stdin, 'stdin', mode)
         else:
-            if filename == '-':
-                logger.info("Reading configuration from stdin.")
-                file_config = self.read(sys.stdin, 'stdin', mode)
-            else:
-                logger.info("Using %s.", filename)
-                try:
-                    with open(filename, encoding='utf-8') as fo:
-                        file_config = self.read(fo, filename, mode)
-                except OSError as e:
-                    msg = "Failed to read configuration: %s" % (e,)
-                    raise UserError(msg)
+            logger.info("Using %s.", filename)
+            try:
+                with open(filename, encoding='utf-8') as fo:
+                    file_config = self.read(fo, filename, mode)
+            except OSError as e:
+                msg = "Failed to read configuration: %s" % (e,)
+                raise UserError(msg)
 
-            V.alias(
-                file_config.get('postgres', {}),
-                'roles_blacklist_query', 'blacklist',
-            )
+        V.alias(
+            file_config.get('postgres', {}),
+            'roles_blacklist_query', 'blacklist',
+        )
 
         # Now close stdin. To make SASL non-interactive.
         if not self.get('debug'):

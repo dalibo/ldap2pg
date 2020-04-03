@@ -170,7 +170,7 @@ def test_processor():
 def test_find_filename_default(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
-    from ldap2pg.config import Configuration, NoConfigurationError
+    from ldap2pg.config import Configuration, ConfigurationError
 
     config = Configuration()
 
@@ -191,7 +191,7 @@ def test_find_filename_default(mocker):
 
     # No files at all
     stat.side_effect = OSError()
-    with pytest.raises(NoConfigurationError):
+    with pytest.raises(ConfigurationError):
         config.find_filename(environ=dict())
 
 
@@ -329,17 +329,11 @@ def test_load_badfiles(mocker):
     from ldap2pg.config import (
         Configuration,
         ConfigurationError,
-        NoConfigurationError,
         UserError,
     )
 
     config = Configuration()
 
-    # No file specified
-    ff.side_effect = NoConfigurationError()
-    config.load(argv=['--color'])
-
-    ff.side_effect = None
     # Invalid file
     ff.return_value = ['filename.yml', 0o0]
     merge.side_effect = ValueError()
