@@ -11,8 +11,9 @@ assignees: ''
 
 Hi ! Thanks for reporting to us !
 
-If you encounter a bug in ldap2pg, would you mind to paste the following
-informations in issue description:
+If you encounter a bug in ldap2pg, would you mind to paste the following informations in issue description:
+
+French accepted.
 
 -->
 

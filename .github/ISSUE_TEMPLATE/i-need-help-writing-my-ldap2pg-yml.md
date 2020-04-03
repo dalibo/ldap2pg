@@ -13,6 +13,8 @@ Hi, thanks for reaching us!
 
 If you struggle with ldap2pg configuration, explain your goal and what you have done so far. There may be something to improve in configurability or documentation of ldap2pg
 
+French accepted.
+
 --->
 
 ## What do you want?

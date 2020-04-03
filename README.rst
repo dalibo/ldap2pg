@@ -76,8 +76,8 @@ Support
 
 If you need support and you didn't found it in documentation_, just drop a
 question in a `GitHub issue <https://github.com/dalibo/ldap2pg/issues/new>`_!
-Don't miss the `cookbook <https://ldap2pg.readthedocs.io/en/latest/cookbook/>`_.
-You're welcome!
+French accepted. Don't miss the `cookbook
+<https://ldap2pg.readthedocs.io/en/latest/cookbook/>`_. You're welcome!
 
 
 .. |Codecov| image:: https://codecov.io/gh/dalibo/ldap2pg/branch/master/graph/badge.svg
