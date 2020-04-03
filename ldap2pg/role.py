@@ -47,7 +47,12 @@ class Role(object):
     @classmethod
     def from_row(cls, name, members=None, *row):
         self = Role(name=name, members=list(filter(None, members or [])))
-        self.options.update_from_row(row)
+        options_num = len(RoleOptions.SUPPORTED_COLUMNS)
+        options_values = row[:options_num]
+        self.options.update_from_row(options_values)
+        comment = row[options_num:]
+        if comment:
+            self.comment = comment[0]
         self.options.fill_with_defaults()
         return self
 
@@ -60,7 +65,7 @@ class Role(object):
             COMMENT ON ROLE "{role}" IS '{comment}';
             """).format(
                 role=self.name, options=self.options,
-                comment=self.comment or 'Managed by ldap2pg.')
+                comment=self.comment or '')
         )
         if self.members:
             yield Query(
@@ -79,10 +84,8 @@ class Role(object):
             yield Query(
                 'Update options of %s.' % (self.name,),
                 None,
-                dedent("""\
-                ALTER ROLE "{role}" WITH {options};
-                COMMENT ON ROLE "{role}" IS 'Managed by ldap2pg.';
-                """).format(role=self.name, options=other.options)
+                """ALTER ROLE "{role}" WITH {options};""".format(
+                    role=self.name, options=other.options)
             )
 
         if self.members != other.members:
@@ -110,6 +113,16 @@ class Role(object):
                         role=self.name,
                     ),
                 )
+
+        if self.comment != other.comment:
+            yield Query(
+                'Update comment on %s.' % (self.name,),
+                None,
+                """COMMENT ON ROLE "{role}" IS '{comment}';""".format(
+                    role=self.name,
+                    comment=other.comment or '',
+                )
+            )
 
     _drop_objects_sql = dedent("""
     DO $$BEGIN EXECUTE 'GRANT "%(role)s" TO '||SESSION_USER; END$$;

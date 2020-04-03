@@ -355,12 +355,14 @@ class Configuration(dict):
             # https://www.postgresql.org/docs/current/static/catalog-pg-auth-members.html
             'roles_query': dedent("""\
             SELECT
-              role.rolname, array_agg(members.rolname) AS members, {options}
+              role.rolname, array_agg(members.rolname) AS members,
+              {options},
+              pg_catalog.shobj_description(role.oid, 'pg_authid') as comment
             FROM
               pg_catalog.pg_roles AS role
             LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
             LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-            GROUP BY role.rolname, {options}
+            GROUP BY role.rolname, {options}, comment
             ORDER BY 1;
             """),
             'owners_query': dedent("""\

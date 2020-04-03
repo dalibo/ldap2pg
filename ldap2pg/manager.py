@@ -134,6 +134,8 @@ class SyncManager(object):
         roleset = RoleSet()
         for role in ldaproles.values():
             role.options.fill_with_defaults()
+            if role.comment is None:
+                role.comment = 'Managed by ldap2pg.'
             roleset.add(role)
 
         return roleset, ldapacl
