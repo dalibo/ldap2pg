@@ -79,10 +79,8 @@ class Role(object):
             yield Query(
                 'Update options of %s.' % (self.name,),
                 None,
-                dedent("""\
-                ALTER ROLE "{role}" WITH {options};
-                COMMENT ON ROLE "{role}" IS 'Managed by ldap2pg.';
-                """).format(role=self.name, options=other.options)
+                """ALTER ROLE "{role}" WITH {options};""".format(
+                    role=self.name, options=other.options)
             )
 
         if self.members != other.members:
@@ -110,6 +108,16 @@ class Role(object):
                         role=self.name,
                     ),
                 )
+
+        if self.comment != other.comment:
+            yield Query(
+                'Update comment on %s.' % (self.name,),
+                None,
+                """COMMENT ON ROLE "{role}" IS '{comment}';""".format(
+                    role=self.name,
+                    comment=other.comment or '',
+                )
+            )
 
     _drop_objects_sql = dedent("""
     DO $$BEGIN EXECUTE 'GRANT "%(role)s" TO '||SESSION_USER; END$$;
