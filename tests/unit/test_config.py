@@ -306,10 +306,10 @@ def test_read_yml():
     assert 'entry' in payload
     assert payload['world_readable'] is True
 
-    # Accept empty file (e.g. /dev/null)
-    fo = StringIO("")
-    payload = config.read(fo, 'memory', mode=0o600)
-    assert payload['world_readable'] is False
+    # Refuse empty file (e.g. /dev/null)
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("")
+        config.read(fo, 'memory', mode=0o600)
 
     with pytest.raises(ConfigurationError):
         fo = StringIO("bad_value")
@@ -325,6 +325,7 @@ def test_load_badfiles(mocker):
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
     merge = mocker.patch('ldap2pg.config.Configuration.merge')
+    read = mocker.patch('ldap2pg.config.Configuration.read')
 
     from ldap2pg.config import (
         Configuration,
@@ -338,6 +339,7 @@ def test_load_badfiles(mocker):
     ff.return_value = ['filename.yml', 0o0]
     merge.side_effect = ValueError()
     o = mocker.patch('ldap2pg.config.open', mocker.mock_open(), create=True)
+    read.return_value = {}
     with pytest.raises(ConfigurationError):
         config.load(argv=[])
 

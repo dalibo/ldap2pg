@@ -561,11 +561,13 @@ class Configuration(dict):
 
     def read(self, fo, name, mode):
         try:
-            payload = yaml.safe_load(fo) or {}
+            payload = yaml.safe_load(fo)
         except yaml.error.YAMLError as e:
             msg = "YAML error with %s: %s" % (name, e)
             raise ConfigurationError(msg)
 
+        if payload is None:
+            raise ConfigurationError("Configuration is empty.")
         if isinstance(payload, list):
             payload = dict(sync_map=payload)
         if not isinstance(payload, dict):
