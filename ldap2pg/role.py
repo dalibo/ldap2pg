@@ -47,7 +47,12 @@ class Role(object):
     @classmethod
     def from_row(cls, name, members=None, *row):
         self = Role(name=name, members=list(filter(None, members or [])))
-        self.options.update_from_row(row)
+        options_num = len(RoleOptions.SUPPORTED_COLUMNS)
+        options_values = row[:options_num]
+        self.options.update_from_row(options_values)
+        comment = row[options_num:]
+        if comment:
+            self.comment = comment[0]
         self.options.fill_with_defaults()
         return self
 

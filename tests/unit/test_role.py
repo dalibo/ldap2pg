@@ -6,7 +6,7 @@ import pytest
 
 
 def test_role():
-    from ldap2pg.role import Role
+    from ldap2pg.role import Role, RoleOptions
 
     role = Role(name='toto')
 
@@ -17,6 +17,13 @@ def test_role():
     roles = sorted([Role('b'), Role('a')])
 
     assert ['a', 'b'] == roles
+
+    row = ['name', ('member0',)]
+    row += [True] * len(RoleOptions.SUPPORTED_COLUMNS)
+    row += ['Managed by ldap2pg.']
+    role = Role.from_row(*row)
+
+    assert 'Managed by ldap2pg.' == role.comment
 
 
 def test_create():
