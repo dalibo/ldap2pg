@@ -423,7 +423,7 @@ class Configuration(dict):
 
     _file_candidates = [
         './ldap2pg.yml',
-        '~/.config/lda2pg.yml',
+        '~/.config/ldap2pg.yml',
         '/etc/ldap2pg.yml',
     ]
 
