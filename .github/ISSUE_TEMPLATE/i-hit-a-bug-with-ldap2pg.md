@@ -11,8 +11,9 @@ assignees: ''
 
 Hi ! Thanks for reporting to us !
 
-If you encounter a bug in ldap2pg, would you mind to paste the following
-informations in issue description:
+If you encounter a bug in ldap2pg, would you mind to paste the following informations in issue description:
+
+French accepted.
 
 -->
 
@@ -21,14 +22,16 @@ informations in issue description:
 
 <!-- Ensure there is no password ! -->
 
+<details><summary>ldap2pg.yml</summary>
 ``` yaml
-# ldap2pg.yml
 postgres:
   ...
 
 sync_map:
   ...
 ```
+</details>
+
 
 ## Expectations
 
@@ -38,9 +41,11 @@ sync_map:
 
 ## Verbose output of ldap2pg execution
 
+<details><summary>Verbose output</summary>
 ``` console
-$ ldap2pg --verbose -N
+$ ldap2pg --verbose --real
 [ldap2pg.config        INFO] Starting ldap2pg ...
 ...
 $
 ```
+</details>
