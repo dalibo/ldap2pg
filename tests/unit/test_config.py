@@ -346,7 +346,7 @@ def test_load_badfiles(mocker):
     # Not readable.
     o.side_effect = OSError("failed to open")
     with pytest.raises(UserError):
-        config.load(argv=[])
+        config.load(argv=["--color"])
 
 
 def test_load_stdin(mocker):
