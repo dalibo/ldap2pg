@@ -60,7 +60,7 @@ class Role(object):
             COMMENT ON ROLE "{role}" IS '{comment}';
             """).format(
                 role=self.name, options=self.options,
-                comment=self.comment or 'Managed by ldap2pg.')
+                comment=self.comment or '')
         )
         if self.members:
             yield Query(
