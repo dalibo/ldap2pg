@@ -301,9 +301,9 @@ def test_read_yml():
     payload = config.read(fo, 'memory', mode=0o0)
     assert 'sync_map' in payload
 
-    fo = StringIO("entry: value")
+    fo = StringIO("sync_map: []")
     payload = config.read(fo, 'memory', mode=0o644)
-    assert 'entry' in payload
+    assert 'sync_map' in payload
     assert payload['world_readable'] is True
 
     # Refuse empty file (e.g. /dev/null)
@@ -317,6 +317,11 @@ def test_read_yml():
 
     with pytest.raises(ConfigurationError):
         fo = StringIO("bad: { yaml ] *&")
+        payload = config.read(fo, 'memory', mode=0o600)
+
+    # No sync_map.
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("postgres: {}")
         payload = config.read(fo, 'memory', mode=0o600)
 
 

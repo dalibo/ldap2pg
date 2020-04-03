@@ -569,6 +569,9 @@ class Configuration(dict):
             payload = dict(sync_map=payload)
         if not isinstance(payload, dict):
             raise ConfigurationError("Configuration file must be a mapping.")
+        if 'sync_map' not in payload:
+            raise ConfigurationError("sync_map configuration is required.")
+
         payload['world_readable'] = bool(mode & 0o077)
         return payload
 
