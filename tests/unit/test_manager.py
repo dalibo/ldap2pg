@@ -339,6 +339,28 @@ def test_inspect_roles_duplicate_differents_options(mocker):
         manager.inspect_ldap(syncmap=syncmap)
 
 
+def test_inspect_ldap_roles_comment_error(mocker):
+    ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
+
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.role import CommentError
+
+    ql.return_value = [('dn', {}, {})]
+
+    rule = mocker.Mock(name='rule', all_fields=[])
+    rule.generate.side_effect = CommentError("message")
+    rule.comment.formats = ['From {desc}']
+
+    mapping = dict(
+        ldap=dict(base='ou=users,dc=tld', filter='*', attributes=['cn']),
+        roles=[rule],
+    )
+
+    manager = SyncManager()
+    with pytest.raises(UserError):
+        manager.inspect_ldap(syncmap=[mapping])
+
+
 def test_sync(mocker):
     from ldap2pg.manager import RoleOptions
 

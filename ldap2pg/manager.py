@@ -6,6 +6,7 @@ import logging
 from .ldap import LDAPError, RDNError, get_attribute, lower_attributes
 from .privilege import Acl
 from .role import (
+    CommentError,
     RoleOptions,
     RoleSet,
 )
@@ -126,7 +127,15 @@ class SyncManager(object):
                 )
 
                 for rule in role_rules:
-                    self.apply_role_rule(rule, ldaproles, vars_, log_source)
+                    try:
+                        self.apply_role_rule(
+                            rule, ldaproles, vars_, log_source)
+                    except CommentError as e:
+                        raise UserError.wrap("""\
+                        An error occured while generating comment on role from
+                        LDAP: %s Ensure the comment format ("%s") is consistent
+                        with role name format.
+                        """ % (e, rule.comment.formats[0]))
                 for rule in grant_rules:
                     self.apply_grant_rule(rule, ldapacl, vars_, log_source)
 

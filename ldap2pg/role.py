@@ -352,7 +352,9 @@ class RoleSet(set):
 class RoleRule(object):
     def __init__(self, names, parents=None, members=None, options=None,
                  comment=None):
-        self.comment = FormatList.factory([comment] if comment else [])
+        self.comment = FormatList.factory([
+            comment if comment else 'Managed by ldap2pg',
+        ])
         self.members = FormatList.factory(members or [])
         self.names = FormatList.factory(names or [])
         self.options = options or {}
@@ -364,35 +366,14 @@ class RoleRule(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.names)
 
-    def build_comment(self, vars_):
-        if not self.comment:
-            return
-
-        comments = self.comment.expand(vars_)
-        try:
-            comment = next(comments)
-        except StopIteration:
-            logger.warning(
-                "Can't generate comment for %s... Missing attribute?",
-                vars_['dn'][0][:24])
-            return
-
-        try:
-            next(comments)
-            logger.warning(
-                "Multiple comments are generated for %s.",
-                vars_['dn'][0][:24],
-            )
-        except StopIteration:
-            pass
-        return comment
-
     def generate(self, vars_):
         members = list(self.members.expand(vars_))
         parents = list(self.parents.expand(vars_))
-        comment = self.build_comment(vars_)
+        names = self.names.expand(vars_)
+        comments = comment_repeater(self.comment.expand(vars_))
 
-        for name in self.names.expand(vars_):
+        i = None
+        for (i, name), (comment, repeated) in zip(enumerate(names), comments):
             yield Role(
                 name=name,
                 members=members[:],
@@ -400,6 +381,8 @@ class RoleRule(object):
                 parents=parents[:],
                 comment=comment,
             )
+        if i is not None and not repeated:
+            raise CommentError("We have more comments than names!")
 
     def as_dict(self):
         dict_ = {
@@ -409,3 +392,47 @@ class RoleRule(object):
         for k in "names", "members", "parents":
             dict_[k] = getattr(self, k).formats
         return dict_
+
+
+class CommentError(Exception):
+    pass
+
+
+def comment_repeater(comments):
+    # This generator handle the policy on comment.
+    #
+    # There is two cases where comment format yields a single value : static
+    # comment and comment from a single LDAP value (e.g. cn). To handle this,
+    # the generator repeats a single value forever.
+    #
+    # There is two cases that leads to inconsistent role generation: no comment
+    # at all, or comment exhausted. This generator raises NoMoreComment
+    # exception for this.
+    #
+    # A third case exists: there is more comments than role names. To handle
+    # this, the generator yields two values: new comment and a boolean whether
+    # comment is repeated.
+
+    repeated = True
+
+    try:
+        value = next(comments)
+    except StopIteration:
+        raise CommentError("Can't generate a comment.")
+    next_value = None
+
+    while True:
+        try:
+            next_value = next(comments)
+            repeated = False
+        except StopIteration:
+            if repeated:
+                next_value = value
+            else:
+                break
+        yield value, repeated
+        value = next_value
+
+    yield value, repeated
+
+    raise CommentError("Can't generate more comment.")

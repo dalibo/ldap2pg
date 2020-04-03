@@ -9,6 +9,10 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
+**Attention!** This release has some behaviour changes. Some silented errors
+are now raised when encountered. Please test on staging environment before
+deploying on production.
+
 - Fix ignored LDAP entries after unexpected DN.
 - Fix traceback when inspecting grants.
 - Fix role comment overriden on alter role.
@@ -17,6 +21,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Accepts an SQL query to list ignored roles. `postgres:blacklist` is renamed
   `postgres:roles_blacklist_query`. ldap2pg ensure backward compatibility.
 - Apply roles blacklist to LDAP results.
+- Generate unique comment per role instead of shared comment per rule.
 - Move `on_unexpected_dn` to `ldap` query.
 
 
