@@ -308,6 +308,22 @@ touch `local_readers` privileges or direct members, but managed roles can
 inherit from it.
 
 
+# Removing all roles
+
+If ever you want to clean all roles in a PostgreSQL cluster, ldap2pg could be
+helpful. You must explicitly define an empty `sync_map`.
+
+``` console
+$ echo 'sync_map: []' | ldap2pg --config - --real
+...
+Empty synchronization map. All roles will be dropped!
+...
+```
+
+In this example, default blacklist applies. ldap2pg never drop its connect
+role.
+
+
 # ldap2pg as Docker container
 
 Already familiar with Docker and willing to save the setup time you're at the right place.

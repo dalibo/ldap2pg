@@ -170,7 +170,7 @@ def test_processor():
 def test_find_filename_default(mocker):
     stat = mocker.patch('ldap2pg.config.stat')
 
-    from ldap2pg.config import Configuration, NoConfigurationError
+    from ldap2pg.config import Configuration, ConfigurationError
 
     config = Configuration()
 
@@ -191,7 +191,7 @@ def test_find_filename_default(mocker):
 
     # No files at all
     stat.side_effect = OSError()
-    with pytest.raises(NoConfigurationError):
+    with pytest.raises(ConfigurationError):
         config.find_filename(environ=dict())
 
 
@@ -301,15 +301,15 @@ def test_read_yml():
     payload = config.read(fo, 'memory', mode=0o0)
     assert 'sync_map' in payload
 
-    fo = StringIO("entry: value")
+    fo = StringIO("sync_map: []")
     payload = config.read(fo, 'memory', mode=0o644)
-    assert 'entry' in payload
+    assert 'sync_map' in payload
     assert payload['world_readable'] is True
 
-    # Accept empty file (e.g. /dev/null)
-    fo = StringIO("")
-    payload = config.read(fo, 'memory', mode=0o600)
-    assert payload['world_readable'] is False
+    # Refuse empty file (e.g. /dev/null)
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("")
+        config.read(fo, 'memory', mode=0o600)
 
     with pytest.raises(ConfigurationError):
         fo = StringIO("bad_value")
@@ -319,38 +319,39 @@ def test_read_yml():
         fo = StringIO("bad: { yaml ] *&")
         payload = config.read(fo, 'memory', mode=0o600)
 
+    # No sync_map.
+    with pytest.raises(ConfigurationError):
+        fo = StringIO("postgres: {}")
+        payload = config.read(fo, 'memory', mode=0o600)
+
 
 def test_load_badfiles(mocker):
     environ = dict()
     mocker.patch('ldap2pg.config.os.environ', environ)
     ff = mocker.patch('ldap2pg.config.Configuration.find_filename')
     merge = mocker.patch('ldap2pg.config.Configuration.merge')
+    read = mocker.patch('ldap2pg.config.Configuration.read')
 
     from ldap2pg.config import (
         Configuration,
         ConfigurationError,
-        NoConfigurationError,
         UserError,
     )
 
     config = Configuration()
 
-    # No file specified
-    ff.side_effect = NoConfigurationError()
-    config.load(argv=['--color'])
-
-    ff.side_effect = None
     # Invalid file
     ff.return_value = ['filename.yml', 0o0]
     merge.side_effect = ValueError()
     o = mocker.patch('ldap2pg.config.open', mocker.mock_open(), create=True)
+    read.return_value = {}
     with pytest.raises(ConfigurationError):
         config.load(argv=[])
 
     # Not readable.
     o.side_effect = OSError("failed to open")
     with pytest.raises(UserError):
-        config.load(argv=[])
+        config.load(argv=["--color"])
 
 
 def test_load_stdin(mocker):

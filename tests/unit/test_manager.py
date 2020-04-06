@@ -361,6 +361,22 @@ def test_inspect_ldap_roles_comment_error(mocker):
         manager.inspect_ldap(syncmap=[mapping])
 
 
+def test_empty_sync_map(mocker):
+    from ldap2pg.manager import SyncManager, RoleSet
+
+    manager = SyncManager(
+        inspector=mocker.Mock(name='inspector'),
+        psql=mocker.Mock(name='psql'),
+    )
+    manager.inspector.fetch_me.return_value = 'me', True
+    manager.inspector.fetch_roles_blacklist.return_value = []
+    manager.inspector.fetch_roles.return_value = [], RoleSet(), RoleSet()
+    manager.inspector.filter_roles.return_value = RoleSet(), RoleSet()
+    manager.psql.run_queries.return_value = 0
+
+    manager.sync([])
+
+
 def test_sync(mocker):
     from ldap2pg.manager import RoleOptions
 
