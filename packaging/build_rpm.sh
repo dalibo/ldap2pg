@@ -42,7 +42,11 @@ case $(rpm --eval '%dist') in
 esac
 
 # Build it
-python setup.py sdist bdist_rpm \
+if ! [ -f dist/$(python setup.py --fulname).tar.gz ] ; then
+	python setup.py sdist
+fi
+
+python setup.py bdist_rpm \
        --release ${CIRCLE_BUILD_NUM-1}%{dist} \
        --requires "${requires}" \
        --spec-only
