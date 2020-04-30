@@ -1,11 +1,11 @@
 #!/bin/bash -eux
 
 teardown() {
-    exit_code=$?
-    # If not on CI, wait for user interrupt on exit
-    if [ -z "${CI-}" -a $exit_code -gt 0 -a $$ = 1 ] ; then
-        tail -f /dev/null
-    fi
+	exit_code=$?
+	# If not on CI, wait for user interrupt on exit
+	if [ -z "${CI-}" -a $exit_code -gt 0 -a $$ = 1 ] ; then
+		tail -f /dev/null
+	fi
 }
 
 trap teardown EXIT TERM
@@ -34,11 +34,11 @@ rm -rf build/bdist*/rpm
 rpmdist=$(rpm --eval '%dist')
 requires="python-psycopg2 python-ldap PyYAML"
 case $(rpm --eval '%dist') in
-    .el6*)
-        requires="${requires} python-logutils python-argparse"
-        ;;
-    *)
-        ;;
+	.el6*)
+		requires="${requires} python-logutils python-argparse"
+		;;
+	*)
+		;;
 esac
 
 # Build it
@@ -48,9 +48,9 @@ python setup.py sdist bdist_rpm \
        --spec-only
 
 rpmbuild -ba \
-         --define "_topdir ${top_srcdir}/dist" \
-         --define "_sourcedir ${top_srcdir}/dist" \
-         dist/ldap2pg.spec
+	--define "_topdir ${top_srcdir}/dist" \
+	--define "_sourcedir ${top_srcdir}/dist" \
+	dist/ldap2pg.spec
 
 # Test it
 sudo yum install -y dist/noarch/ldap2pg*${rpmdist}.noarch.rpm
