@@ -60,7 +60,7 @@ rpmbuild -ba \
 
 # Test it
 sudo yum install -y dist/noarch/ldap2pg*${rpmdist}.noarch.rpm
-
+cd /
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
 ldap2pg --version
