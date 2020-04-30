@@ -63,4 +63,4 @@ sudo yum install -y dist/noarch/ldap2pg*${rpmdist}.noarch.rpm
 
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
-ldap2pg --help
+ldap2pg --version
