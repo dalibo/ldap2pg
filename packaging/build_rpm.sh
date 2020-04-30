@@ -32,6 +32,7 @@ fi
 rm -rf build/bdist*/rpm
 
 rpmdist=$(rpm --eval '%dist')
+release="${CIRCLE_BUILD_NUM-1}"
 requires="python-psycopg2 python-ldap PyYAML"
 case $(rpm --eval '%dist') in
 	.el6*)
@@ -44,10 +45,11 @@ esac
 # Build it
 if ! [ -f dist/$(python setup.py --fulname).tar.gz ] ; then
 	python setup.py sdist
+	release+="snapshot"
 fi
 
 python setup.py bdist_rpm \
-       --release ${CIRCLE_BUILD_NUM-1}%{dist} \
+       --release "${release}%{dist}" \
        --requires "${requires}" \
        --spec-only
 
