@@ -254,20 +254,9 @@ documentation](http://www.mkdocs.org/user-guide/writing-your-docs/) for further
 information.
 
 
-# Packaging
+# Releasing
 
-We provide a recipe to build RPM package for `ldap2pg` in `packaging/`. You only
-need Docker and Docker Compose.
-
-``` console
-$ make rpm
-...
-rpm_1  | + chown --changes --recursive 1000:1000 dist/ build/
-rpm_1  | changed ownership of 'dist/ldap2pg-0.1-1.src.rpm' from root:root to 1000:1000
-rpm_1  | changed ownership of 'dist/ldap2pg-0.1-1.noarch.rpm' from root:root to 1000:1000
-...
-$
-```
-
-You will find `.rpm` package in `dist/`. There is no repository yet, nor debian
-package. Feel free to contribute !
+- Review `docs/changelog.md`. `# Unreleased` title will be edited.
+- Increment version in `setup.py`.
+- Generate release commit, tag and changelog with `make release`.
+- Upload source tarball and RPM with `make upload`.

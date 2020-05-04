@@ -38,6 +38,7 @@ release: changelog
 upload:
 	git describe --exact-match --tags
 	python3 setup.py sdist bdist_wheel upload -r pypi
+	$(MAKE) -C packaging rpm push
 
 reset-%:
 	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
