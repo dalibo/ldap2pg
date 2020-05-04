@@ -3,6 +3,9 @@ YUM_LABS?=$(wildcard $(TOPSRC_DIR)/../yum-labs)
 
 default:
 
+sdist:
+	pip download --no-deps --no-binary :all: --dest $(TOPSRC_DIR)/dist ldap2pg==$(shell cd ..; python setup.py --version)
+
 distclean:
 	rm -rf ../dist/
 
