@@ -32,6 +32,7 @@ fi
 rm -rf build/bdist*/rpm
 
 rpmdist=$(rpm --eval '%dist')
+fullname=$(python setup.py --fullname)
 release="${CIRCLE_BUILD_NUM-1}"
 requires="python-psycopg2 python-ldap PyYAML"
 case $(rpm --eval '%dist') in
@@ -43,7 +44,7 @@ case $(rpm --eval '%dist') in
 esac
 
 # Build it
-if ! [ -f dist/$(python setup.py --fulname).tar.gz ] ; then
+if ! [ -f "dist/${fullname}.tar.gz" ] ; then
 	python setup.py sdist
 	release+="snapshot"
 fi
@@ -58,8 +59,9 @@ rpmbuild -ba \
 	--define "_sourcedir ${top_srcdir}/dist" \
 	dist/ldap2pg.spec
 
+rpm="dist/noarch/${fullname}-${release}${rpmdist}.noarch.rpm"
 # Test it
-sudo yum install -y dist/noarch/ldap2pg*${rpmdist}.noarch.rpm
+sudo yum install -y "$rpm"
 cd /
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
