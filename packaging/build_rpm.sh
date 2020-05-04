@@ -1,11 +1,11 @@
 #!/bin/bash -eux
 
 teardown() {
-    exit_code=$?
-    # If not on CI, wait for user interrupt on exit
-    if [ -z "${CI-}" -a $exit_code -gt 0 -a $$ = 1 ] ; then
-        tail -f /dev/null
-    fi
+	exit_code=$?
+	# If not on CI, wait for user interrupt on exit
+	if [ -z "${CI-}" -a $exit_code -gt 0 -a $$ = 1 ] ; then
+		tail -f /dev/null
+	fi
 }
 
 trap teardown EXIT TERM
@@ -32,29 +32,39 @@ fi
 rm -rf build/bdist*/rpm
 
 rpmdist=$(rpm --eval '%dist')
+fullname=$(python setup.py --fullname)
+release="${CIRCLE_BUILD_NUM-1}"
 requires="python-psycopg2 python-ldap PyYAML"
 case $(rpm --eval '%dist') in
-    .el6*)
-        requires="${requires} python-logutils python-argparse"
-        ;;
-    *)
-        ;;
+	.el6*)
+		requires="${requires} python-logutils python-argparse"
+		;;
+	*)
+		;;
 esac
 
 # Build it
-python setup.py sdist bdist_rpm \
-       --release ${CIRCLE_BUILD_NUM-1}%{dist} \
+if ! [ -f "dist/${fullname}.tar.gz" ] ; then
+	python setup.py sdist
+	release+="snapshot"
+fi
+
+python setup.py bdist_rpm \
+       --release "${release}%{dist}" \
        --requires "${requires}" \
        --spec-only
 
 rpmbuild -ba \
-         --define "_topdir ${top_srcdir}/dist" \
-         --define "_sourcedir ${top_srcdir}/dist" \
-         dist/ldap2pg.spec
+	--define "_topdir ${top_srcdir}/dist" \
+	--define "_sourcedir ${top_srcdir}/dist" \
+	dist/ldap2pg.spec
+
+rpm="dist/noarch/${fullname}-${release}${rpmdist}.noarch.rpm"
+ln -fs "noarch/$(basename $rpm)" dist/ldap2pg-last.rpm
 
 # Test it
-sudo yum install -y dist/noarch/ldap2pg*${rpmdist}.noarch.rpm
-
+sudo yum install -y "$rpm"
+cd /
 test -x /usr/bin/ldap2pg
 python -c 'import ldap2pg'
-ldap2pg --help
+ldap2pg --version
