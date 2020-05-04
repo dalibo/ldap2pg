@@ -13,10 +13,34 @@ You can fetch all dependencies with PIP. Choose either `pip3` or `pip2`.
 # pip3 install ldap2pg psycopg2-binary
 ```
 
-# On CentOS 7
+# On CentOS 7 from RPM
 
-On CentOS 7, you should run `ldap2pg` with Python2.7 to use packaged
-dependencies.
+On CentOS 7, either [PGPG YUM repository](https://yum.postgresql.org/) and
+[Dalibo Labs YUM repository](https://yum.dalibo.org/labs/) offer RPM package
+for ldap2pg. The repositories does not provide the same packaging. Dalibo Labs
+is upstream, packages are more up to date. PGDG is more common and often always
+available on your host.
+
+For using Dalibo Labs packaging:
+
+- [Enable Dalibo Labs YUM repository](https://yum.dalibo.org/labs/).
+- Install `ldap2pg` package with yum:
+
+``` console
+# yum install ldap2pg
+...
+# ldap2pg --version
+```
+
+For using PGDG YUM packaging:
+
+- [Enable PGDG YUM repository](https://yum.postgresql.org/).
+- Install either `python-ldap2pg` or `python3-ldap2pg`.
+
+
+# On CentOS 7 from source
+
+You should run `ldap2pg` with Python2.7 to use packaged dependencies.
 
 ``` console
 # yum install -y epel-release
@@ -28,8 +52,10 @@ dependencies.
 
 # On CentOS 6
 
-On CentOS 6, you have to run `ldap2pg` with Python2.6 and some forward
-compatibility dependencies.
+PGDG repository provides RPM packages for CentOS6.
+
+To install from source, you have to run `ldap2pg` with Python2.6 and some
+forward compatibility dependencies.
 
 ``` console
 # yum install -y epel-release

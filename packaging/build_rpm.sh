@@ -60,6 +60,8 @@ rpmbuild -ba \
 	dist/ldap2pg.spec
 
 rpm="dist/noarch/${fullname}-${release}${rpmdist}.noarch.rpm"
+ln -fs "noarch/$(basename $rpm)" dist/ldap2pg-last.rpm
+
 # Test it
 sudo yum install -y "$rpm"
 cd /
