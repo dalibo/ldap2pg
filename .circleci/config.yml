@@ -88,7 +88,7 @@ version: 2
         python setup.py --long-description | rst2html.py --strict >/dev/null
         make docs
         git diff --exit-code docs/
-        flake8 . tests/*/
+        flake8
         pytest tests/unit/
         codecov
 
