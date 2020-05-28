@@ -80,12 +80,21 @@ class Role(object):
     def alter(self, other):
         # Yields SQL queries to reach other state.
 
+        if self.name != other.name:
+            yield Query(
+                'Rename %s to %s.' % (self.name, other.name),
+                None,
+                """ALTER ROLE "%(old)s" RENAME TO "%(new)s" ;""" % dict(
+                    old=self.name, new=other.name,
+                ),
+            )
+
         if self.options != other.options:
             yield Query(
-                'Update options of %s.' % (self.name,),
+                'Update options of %s.' % (other.name,),
                 None,
                 """ALTER ROLE "{role}" WITH {options};""".format(
-                    role=self.name, options=other.options)
+                    role=other.name, options=other.options)
             )
 
         if self.members != other.members:
@@ -93,33 +102,33 @@ class Role(object):
             if missing:
                 logger.debug(
                     "Role %s miss members %s.",
-                    self.name, ', '.join(missing)
+                    other.name, ', '.join(missing)
                 )
                 yield Query(
-                    'Add missing %s members.' % (self.name,),
+                    'Add missing %s members.' % (other.name,),
                     None,
                     "GRANT \"%(role)s\" TO %(members)s;" % dict(
                         members=", ".join(map(lambda x: '"%s"' % x, missing)),
-                        role=self.name,
+                        role=other.name,
                     ),
                 )
             spurious = set(self.members) - set(other.members)
             if spurious:
                 yield Query(
-                    'Delete spurious %s members.' % (self.name,),
+                    'Delete spurious %s members.' % (other.name,),
                     None,
                     "REVOKE \"%(role)s\" FROM %(members)s;" % dict(
                         members=", ".join(map(lambda x: '"%s"' % x, spurious)),
-                        role=self.name,
+                        role=other.name,
                     ),
                 )
 
         if self.comment != other.comment:
             yield Query(
-                'Update comment on %s.' % (self.name,),
+                'Update comment on %s.' % (other.name,),
                 None,
                 """COMMENT ON ROLE "{role}" IS '{comment}';""".format(
-                    role=self.name,
+                    role=other.name,
                     comment=other.comment or '',
                 )
             )
@@ -147,15 +156,6 @@ class Role(object):
         self.members += other.members
         self.parents += other.parents
         return self
-
-    def rename(self):
-        yield Query(
-            'Rename %s to %s.' % (self.lname, self.name),
-            None,
-            """ALTER ROLE "%(old)s" RENAME TO "%(new)s" ;""" % dict(
-                old=self.lname, new=self.name,
-            ),
-        )
 
     def rename_members(self, renamed):
         # Replace old names in members by matching new one.
@@ -309,6 +309,7 @@ class RoleSet(set):
         # since we reuse `available` roles instead of recreating roles.
 
         available = available or RoleSet()
+        index = self.reindex()
         other = other or RoleSet()
 
         # First create/rename missing roles
@@ -317,9 +318,10 @@ class RoleSet(set):
         for role in missing.flatten():
             # Detect renames from lowercase.
             if role.lname in self and role.lname not in other:
+                old_role = index[role.lname]
                 logger.debug(
-                    "Detected rename from %s to %s.", role.lname, role.name)
-                for qry in role.rename():
+                    "Detected rename from %s to %s.", old_role.name, role.name)
+                for qry in old_role.alter(role):
                     yield qry
                 missing.remove(role)
                 renamed[role.lname] = role

@@ -82,11 +82,12 @@ def test_merge():
 def test_rename():
     from ldap2pg.role import Role
 
-    a = Role(name='Alan')
-    queries = [q.args[0] for q in a.rename()]
-    alter = queries[0]
+    a = Role(name='alan')
+    b = Role(name='Alan', comment='New comment')
+    queries = [q.args[0] for q in a.alter(b)]
 
-    assert 'RENAME TO' in alter
+    assert '"alan" RENAME TO "Alan"' in queries[0]
+    assert 'COMMENT ON ROLE "Alan"' in queries[1]
 
 
 def test_merge_options():
