@@ -16,6 +16,7 @@ version: 2
   run:
     name: Install requirements
     command: |
+      sudo apt-get update -y
       sudo apt-get install -y libldap2-dev libsasl2-dev
       sudo pip install wheel virtualenv
       virtualenv .venv/
