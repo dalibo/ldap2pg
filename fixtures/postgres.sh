@@ -13,7 +13,17 @@ DROP DATABASE IF EXISTS appdb;
 DROP DATABASE IF EXISTS nonsuperdb;
 EOSQL
 
+roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
+printf -v quoted_roles '"%s", ' "${roles[@]+${roles[@]}}"
+quoted_roles="${quoted_roles%, }"
+
 for d in template1 postgres ; do
+	for role in "${roles[@]+${roles[@]}}" ; do
+		$psql "$d" <<-EOF
+		DROP OWNED BY "${role}" CASCADE;
+		EOF
+	done
+
 	$psql "$d" <<-EOSQL
 	GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
 	GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
@@ -42,15 +52,9 @@ for d in template1 postgres ; do
 	EOF
 done
 
-roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
-if [ -n "${roles[*]}" ] ; then
-	# This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
-	quoted_roles=$(IFS=',' ; echo "${roles[*]+${roles[*]}}")
-	# Quote rolname for case sensitivity.
-	quoted_roles="${quoted_roles//,/'", "'}"
-
+if [ -n "${roles[*]-}" ] ; then
 	$psql <<-EOSQL
-	DROP ROLE "${quoted_roles}";
+	DROP ROLE IF EXISTS ${quoted_roles};
 	EOSQL
 fi
 
