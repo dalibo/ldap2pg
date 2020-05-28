@@ -19,8 +19,8 @@ class PSQL(object):
     def select1(self, select, *a, **kw):
         # Execute a SELECT and yield each line as a single value.
         return filter(None, (
-            l.strip()
-            for l in self('-tc', select, *a, _iter=True, **kw)
+            line.strip()
+            for line in self('-tc', select, *a, _iter=True, **kw)
         ))
 
     def members(self, role):

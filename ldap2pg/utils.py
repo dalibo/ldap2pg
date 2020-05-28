@@ -226,7 +226,7 @@ class FormatList(list):
 
 def collect_fields(*field_lists):
     return set(itertools.chain(*[
-        l.fields for l in field_lists
+        list_.fields for list_ in field_lists
     ]))
 
 

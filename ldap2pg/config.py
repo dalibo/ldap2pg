@@ -368,7 +368,9 @@ class Configuration(dict):
             ORDER BY 1;
             """),
             'managed_roles_query': None,
-            'roles_blacklist_query': ['pg_*', 'postgres', 'rds_*', 'rds*admin'],
+            'roles_blacklist_query': [
+                'pg_*', 'postgres', 'rds_*', 'rds*admin',
+            ],
             'schemas_query': dedent("""\
             SELECT nspname FROM pg_catalog.pg_namespace
             ORDER BY 1;
