@@ -82,11 +82,12 @@ def test_merge():
 def test_rename():
     from ldap2pg.role import Role
 
-    a = Role(name='Alan')
-    queries = [q.args[0] for q in a.rename()]
-    alter = queries[0]
+    a = Role(name='alan')
+    b = Role(name='Alan', comment='New comment')
+    queries = [q.args[0] for q in a.alter(b)]
 
-    assert 'RENAME TO' in alter
+    assert '"alan" RENAME TO "Alan"' in queries[0]
+    assert 'COMMENT ON ROLE "Alan"' in queries[1]
 
 
 def test_merge_options():
@@ -255,8 +256,8 @@ def test_role_rule():
     assert 4 == len(roles)
 
 
-def test_role_rule_multiple_comment():
-    from ldap2pg.role import RoleRule, CommentError
+def test_role_rule_dynamic_comments():
+    from ldap2pg.role import RoleRule
 
     r = RoleRule(
         names=['{member}'],
@@ -266,6 +267,27 @@ def test_role_rule_multiple_comment():
     vars_ = dict(
         dn=['cn=group,ou=groups'],
         member=['m0', 'm1'],
+    )
+
+    roles = list(r.generate(vars_))
+
+    assert 2 == len(roles)
+    for role in roles:
+        assert role.name in role.comment
+
+
+def test_role_rule_too_many_comments():
+    from ldap2pg.role import RoleRule, CommentError
+
+    r = RoleRule(
+        names=['{member}'],
+        comment='From {more}',
+    )
+
+    vars_ = dict(
+        dn=['cn=group,ou=groups'],
+        member=['m0', 'm1'],
+        more=['0', '1', '2'],
     )
 
     with pytest.raises(CommentError):
