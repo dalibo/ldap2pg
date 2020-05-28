@@ -10,7 +10,7 @@ def test_help():
     ldap2pg('--help')
 
 
-def test_various_arguments(dev):
+def test_various_arguments():
     from sh import ldap2pg
 
     ldap2pg('-vn', '--color', '--config', 'ldap2pg.yml')

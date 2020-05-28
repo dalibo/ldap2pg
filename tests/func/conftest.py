@@ -16,6 +16,9 @@ class PSQL(object):
     def __call__(self, *a, **kw):
         return self.psql(*a, **kw)
 
+    def scalar(self, select, *a, **kw):
+        return next(self.select1(select, *a, **kw))
+
     def select1(self, select, *a, **kw):
         # Execute a SELECT and yield each line as a single value.
         return filter(None, (
@@ -96,24 +99,11 @@ def ldap():
     return LDAP()
 
 
-@pytest.fixture(scope='module')
-def dev():
+@pytest.fixture(scope='module', autouse=True)
+def resetpostgres():
     from sh import Command
 
     Command('fixtures/postgres.sh')()
-
-
-@pytest.fixture(scope='module', autouse=True)
-def flushall(psql):
-    # Flush PostgreSQL and OpenLDAP from any data.
-    psql('-tc', "DROP DATABASE IF EXISTS app0;")
-    psql('-tc', "DROP DATABASE IF EXISTS app1;")
-    psql('-tc', "DELETE FROM pg_catalog.pg_auth_members;")
-    psql(
-        '-tc',
-        "DELETE FROM pg_catalog.pg_authid "
-        "WHERE rolname != 'postgres' AND rolname NOT LIKE 'pg_%';",
-    )
 
 
 def lazy_write(attr, data):

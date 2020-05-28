@@ -27,6 +27,7 @@ for d in template1 postgres ; do
 	$psql "$d" <<-EOSQL
 	GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
 	GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+	GRANT USAGE ON LANGUAGE plpgsql TO PUBLIC;
 	EOSQL
 
 	# Reset default privileges.
