@@ -276,7 +276,7 @@ class GrantRule(object):
             dict_[k] = getattr(self, k).formats
         return dict_
 
-   
+
 class Acl(set):
     def expandgrants(self, aliases, privileges, databases):
         for grant in self:

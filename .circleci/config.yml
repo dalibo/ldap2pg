@@ -16,6 +16,7 @@ version: 2
   run:
     name: Install requirements
     command: |
+      sudo apt-get update -y
       sudo apt-get install -y libldap2-dev libsasl2-dev
       sudo pip install wheel virtualenv
       virtualenv .venv/
@@ -87,7 +88,7 @@ version: 2
         python setup.py --long-description | rst2html.py --strict >/dev/null
         make docs
         git diff --exit-code docs/
-        flake8 . tests/*/
+        flake8
         pytest tests/unit/
         codecov
 

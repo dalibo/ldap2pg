@@ -16,7 +16,7 @@ except ImportError:  # pragma: nocover
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
-from .utils import decode_value, encode_value, PY2, uniq, iter_format_fields
+from .utils import decode_value, encode_value, PY2, uniq
 from .utils import Timer
 from .utils import UserError
 
