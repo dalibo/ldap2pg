@@ -87,12 +87,11 @@ def get_attribute(entry, attribute):
 
     attribute = path[0]
     path = path[1:]
-    for value in values:
-        if not path:
+    if not path:
+        for value in values:
             yield value
-            continue
-
-        if path[0] in DN_COMPONENTS:
+    elif path[0] in DN_COMPONENTS:
+        for value in values:
             raw_dn = value
             try:
                 dn = str2dn(value)
@@ -107,15 +106,16 @@ def get_attribute(entry, attribute):
                 yield value[path[0]]
             except KeyError:
                 yield RDNError("Unknown RDN %s" % (path[0],), raw_dn)
-        else:
-            try:
-                joined_entries = joins[attribute]
-            except KeyError:
-                msg = "Missing join result for %s" % (attribute,)
-                raise ValueError(msg)
-            for joined_entry in joined_entries:
-                for value in get_attribute(joined_entry, '.'.join(path)):
-                    yield value
+    else:
+        try:
+            joined_entries = joins[attribute]
+        except KeyError:
+            msg = "Missing join result for %s" % (attribute,)
+            raise ValueError(msg)
+
+        for joined_entry in joined_entries:
+            for value in get_attribute(joined_entry, '.'.join(path)):
+                yield value
 
 
 def lower_attributes(entry):

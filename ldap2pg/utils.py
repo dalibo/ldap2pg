@@ -236,22 +236,24 @@ def make_format_vars(fields, dn, values):
     # format token as key and the list of all values available in entries as
     # values. e.g. {'dn.cn': ['toto'], 'dn': ['cn=toto']}.
     vars_ = dict(dn=[dn])
-    for f in fields:
-        if '.' in f:
-            parent, _, child = f.partition('.')
-            vars_[parent] = [
-                Settable(_str=dn, **dict({child: v}))
-                for v in values[f]
-            ]
+    for field in fields:
+        if '.' in field:
+            parent, _, child = field.partition('.')
+            objects = vars_.setdefault(parent, [
+                Settable(_str=dn)
+                for v in values[field]
+            ])
+            for obj, value in zip(objects, values[field]):
+                obj.update({child: value})
         else:
-            vars_[f] = values[f]
+            vars_[field] = values[field]
     return vars_
 
 
 class Settable(object):
     def __init__(self, **kw):
         self._str = "**unset**"
-        self.__dict__.update(kw)
+        self.update(kw)
 
     def __repr__(self):
         return '<%s %s>' % (
@@ -261,6 +263,9 @@ class Settable(object):
 
     def __str__(self):
         return self._str
+
+    def update(self, kw):
+        self.__dict__.update(kw)
 
 
 class Timer(object):

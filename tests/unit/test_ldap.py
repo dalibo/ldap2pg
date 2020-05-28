@@ -197,10 +197,13 @@ def test_get_attribute():
 
     entry = (
         'dn',
-        {'member': ['cn=member0']},
-        {'member': [('cn=member0', {'attr0': ['val0']}, {})]})
-    assert ['val0'] == list(get_attribute(entry, 'member.attr0'))
-    assert ['member0'] == list(get_attribute(entry, 'member.cn'))
+        {'member': ['cn=member0', 'cn=member1']},
+        {'member': [
+            ('cn=member0', {'attr0': ['val0']}, {}),
+            ('cn=member1', {'attr0': ['val1']}, {}),
+        ]})
+    assert ['val0', 'val1'] == list(get_attribute(entry, 'member.attr0'))
+    assert ['member0', 'member1'] == list(get_attribute(entry, 'member.cn'))
 
 
 def test_logger(mocker):
