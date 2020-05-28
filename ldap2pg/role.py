@@ -381,7 +381,16 @@ class RoleRule(object):
                 parents=parents[:],
                 comment=comment,
             )
-        if i is not None and not repeated:
+
+        # Check comment inconsistency, for generated comments.
+        if i is None or repeated:
+            return
+
+        try:
+            next(comments)
+        except CommentError:  # All comments consumed.
+            pass
+        else:
             raise CommentError("We have more comments than names!")
 
     def as_dict(self):
