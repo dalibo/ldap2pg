@@ -37,7 +37,8 @@ release: changelog
 
 upload:
 	git describe --exact-match --tags
-	python3 setup.py sdist bdist_wheel upload -r pypi
+	python3 setup.py sdist bdist_wheel
+	twine upload dist/$$(python setup.py --fullname)*.*
 	$(MAKE) -C packaging rpm push
 
 reset-%:
