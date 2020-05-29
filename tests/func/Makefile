@@ -5,7 +5,7 @@ rpm:
 
 tests:
 	touch bash_history
-	docker-compose up --abort-on-container-exit runner
+	docker-compose up --remove-orphans --abort-on-container-exit runner
 
 clean:
 	make -C ../../packaging clean

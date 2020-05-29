@@ -114,7 +114,7 @@ class PostgresInspector(object):
         return True
 
     def is_role_managed(self, role, roles):
-        return (
+        return role not in self.roles_blacklist and (
             self.queries.get('all_roles', False) is None
             or role in roles
         )

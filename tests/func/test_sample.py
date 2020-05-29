@@ -2,35 +2,8 @@
 
 from __future__ import unicode_literals
 
-import os
 
-
-def test_non_superuser(dev, psql):
-    from sh import ldap2pg
-    c = 'tests/func/ldap2pg.nonsuper.yml'
-    db = 'nonsuperdb'
-    env = dict(
-        os.environ,
-        PGUSER='nonsuper',
-        PGDATABASE=db,
-    )
-    env.pop('PGDSN', None)
-    myldap2pg = ldap2pg.bake(c=c, _env=env)
-
-    # Create a table owned by manager
-
-    # Ensure db is not sync
-    myldap2pg('-C', _ok_code=1, _env=env)
-
-    myldap2pg('-N', _env=env)
-    roles = list(psql.roles())
-    assert 'manuel' in roles
-    assert 'kevin' not in roles
-
-    myldap2pg('-C', _env=env)
-
-
-def test_dry_run(dev, psql):
+def test_dry_run(psql):
     from sh import ldap2pg
 
     ldap2pg('--verbose', config='ldap2pg.yml')
@@ -41,13 +14,13 @@ def test_dry_run(dev, psql):
     assert 'ALICE' in superusers
 
 
-def test_check_mode(dev, psql):
+def test_check_mode(psql):
     from sh import ldap2pg
 
     ldap2pg('--check', config='ldap2pg.yml', _ok_code=1)
 
 
-def test_real_mode(dev, psql):
+def test_real_mode(psql):
     from sh import ldap2pg
 
     assert 'keepme' in psql.tables(dbname='olddb')
@@ -75,16 +48,7 @@ def test_real_mode(dev, psql):
     assert 'keepme' in roles
 
 
-def test_nothing_to_do(capsys, dev):
-    from sh import ldap2pg
-
-    ldap2pg('--real', config='ldap2pg.yml')
-
-    _, err = capsys.readouterr()
-    assert 'Nothing to do' in err
-
-
-def test_re_grant(dev, psql):
+def test_re_grant(psql):
     from sh import ldap2pg
 
     # Ensure db is sync
@@ -98,7 +62,7 @@ def test_re_grant(dev, psql):
     ldap2pg('-C', c='ldap2pg.yml')
 
 
-def test_re_revoke(dev, psql):
+def test_re_revoke(psql):
     from sh import ldap2pg
     c = 'ldap2pg.yml'
 
@@ -113,20 +77,10 @@ def test_re_revoke(dev, psql):
     ldap2pg('-C', c=c)
 
 
-def test_joins_in_real_mode(dev, psql):
+def test_nothing_to_do(capsys):
     from sh import ldap2pg
 
-    ldap2pg('-N', c='tests/func/ldap2pg.joins.yml')
+    ldap2pg('--real', config='ldap2pg.yml')
 
-    roles = list(psql.roles())
-    writers = list(psql.members('writers'))
-
-    assert 'alan@ldap2pg.docker' in roles
-    assert 'oscar@ldap2pg.docker' not in roles
-
-    assert 'alice@ldap2pg.docker' in psql.superusers()
-
-    assert 'daniel@ldap2pg.docker' in writers
-    assert 'david@ldap2pg.docker' not in writers
-    assert 'didier@ldap2pg.docker' in writers
-    assert 'alice@ldap2pg.docker' in psql.members('ldap_roles')
+    _, err = capsys.readouterr()
+    assert 'Nothing to do' in err

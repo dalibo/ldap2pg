@@ -242,20 +242,20 @@ member: cn=eve,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=eloi,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=eloise,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
-# Our apps, with their developers.
+# Our team, with their developers.
 
-# An old app
+# An old team
 # dn: cn=old,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 # changetype: add
 # objectClass: groupOfNames
 # objectClass: top
 # cn: old
 
-dn: cn=app,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=team0,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectClass: groupOfNames
 objectClass: top
-cn: app
+cn: team0
 # Missing description: comment will fallback to default.
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -263,12 +263,12 @@ member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=didier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member:: Y249ZG9yb3Row6llLG91PXBlb3BsZSxkYz1sZGFwLGRjPWxkYXAycGcsZGM9ZG9ja2Vy
 
-dn: cn=app2,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+dn: cn=team1,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
 objectClass: groupOfNames
 objectClass: top
-cn: app2
-description: Desc of app2, should end in a comment.
+cn: team1
+description: Desc of team1, should end in a comment.
 member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker

@@ -5,33 +5,62 @@
 
 psql="psql -v ON_ERROR_STOP=1 --echo-all"
 
-roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
-# This is tricky: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
-roles=$(IFS=',' ; echo "${roles[*]+${roles[*]}}")
-# Quote rolname for case sensitivity.
-roles="${roles//,/'", "'}"
-
+# RESET DATA AND PRIVILEGES
 
 $psql <<EOSQL
--- Purge everything.
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
 DROP DATABASE IF EXISTS nonsuperdb;
-DO \$\$BEGIN
-  IF '${roles}' <> '' THEN
-    DROP ROLE "${roles:-pouet}";
-  END IF;
-END\$\$;
-UPDATE pg_database SET datacl = NULL WHERE datallowconn IS TRUE;
 EOSQL
 
+roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
+printf -v quoted_roles '"%s", ' "${roles[@]+${roles[@]}}"
+quoted_roles="${quoted_roles%, }"
+
 for d in template1 postgres ; do
-    $psql $d <<EOSQL
-UPDATE pg_namespace SET nspacl = NULL WHERE nspname NOT LIKE 'pg_%';
-GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
-GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
-EOSQL
+	for role in "${roles[@]+${roles[@]}}" ; do
+		$psql "$d" <<-EOF
+		DROP OWNED BY "${role}" CASCADE;
+		EOF
+	done
+
+	$psql "$d" <<-EOSQL
+	GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
+	GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+	GRANT USAGE ON LANGUAGE plpgsql TO PUBLIC;
+	EOSQL
+
+	# Reset default privileges.
+	$psql -At "$d" <<-EOF | $psql "$d"
+	WITH type_map (typechar, typename) AS (
+		VALUES
+		('T', 'TYPES'),
+		('r', 'TABLES'),
+		('f', 'FUNCTIONS'),
+		('S', 'SEQUENCES')
+	)
+	SELECT
+		'ALTER DEFAULT PRIVILEGES'
+		|| ' FOR ROLE "' ||  pg_get_userbyid(defaclrole) || '"'
+		|| ' IN SCHEMA "' || nspname || '"'
+		|| ' REVOKE ' || (aclexplode(defaclacl)).privilege_type || ''
+		|| ' ON ' || COALESCE(typename, defaclobjtype)
+		|| ' FROM "' || pg_get_userbyid((aclexplode(defaclacl)).grantee) || '"'
+		|| ';' AS "sql"
+	FROM pg_catalog.pg_default_acl
+	JOIN pg_namespace AS nsp ON nsp.oid = defaclnamespace
+	LEFT OUTER JOIN type_map ON typechar = defaclobjtype;
+	EOF
 done
+
+if [ -n "${roles[*]-}" ] ; then
+	$psql <<-EOSQL
+	DROP ROLE IF EXISTS ${quoted_roles};
+	EOSQL
+fi
+
+
+# CREATE OBJECTS
 
 $psql <<'EOSQL'
 -- For non-superuser case

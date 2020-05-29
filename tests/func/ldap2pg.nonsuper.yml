@@ -5,7 +5,7 @@ postgres:
   owners_query: [nonsuper]
   managed_roles_query: [kevin, manuel]
 
-acls:
+privileges:
   ro:
   - __connect__
   - __usage_on_schemas__
