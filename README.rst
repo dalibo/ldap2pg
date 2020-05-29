@@ -37,20 +37,21 @@ Here is a sample configuration and execution:
         options: LOGIN
         parent: ldap_roles
     $ ldap2pg --real
-    Starting ldap2pg 5.0.
+    Starting ldap2pg 5.3.
     Using .../ldap2pg.yml.
     Running in real mode.
     Inspecting roles in Postgres cluster...
     Querying LDAP ou=people,dc=ldap,dc=lda... (objectClass...
     Create domitille.
-    Update options of albert.
     Add missing ldap_roles members.
     Delete spurious ldap_roles members.
+    Update options of albert.
     Reassign oscar objects and purge ACL on postgres.
     Reassign oscar objects and purge ACL on template1.
     Drop oscar.
     Synchronization complete.
     $
+
 
 See versionned `ldap2pg.yml
 <https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml>`_ and documentation_
