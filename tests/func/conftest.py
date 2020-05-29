@@ -17,7 +17,7 @@ class PSQL(object):
         return self.psql(*a, **kw)
 
     def scalar(self, select, *a, **kw):
-        return next(self.select1(select, *a, **kw))
+        return next(iter(self.select1(select, *a, **kw)))
 
     def select1(self, select, *a, **kw):
         # Execute a SELECT and yield each line as a single value.
