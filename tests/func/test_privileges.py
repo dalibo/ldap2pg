@@ -2,8 +2,12 @@
 
 from __future__ import unicode_literals
 
+from conftest import PSQL
+
 
 def test_only_privileges(psql):
+    # type: (PSQL) -> None
+
     from sh import ldap2pg
     c = 'tests/func/ldap2pg.only_privileges.yml'
 

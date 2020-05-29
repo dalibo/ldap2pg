@@ -1,9 +1,12 @@
 # Test order matters.
 
 from __future__ import unicode_literals
+from conftest import PSQL
 
 
 def test_run(psql):
+    # type: (PSQL) -> None
+
     from sh import ldap2pg
     c = 'tests/func/ldap2pg.full.yml'
 
