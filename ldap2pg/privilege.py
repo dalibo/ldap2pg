@@ -260,7 +260,6 @@ class GrantRule(object):
             raise UserError(msg)
 
         for role in roles:
-            role = role.lower()
             if self.role_match and not fnmatch(role, self.role_match):
                 logger.debug(
                     "Don't grant %s to %s not matching %s.",
