@@ -1,17 +1,17 @@
-version: 2
+version: 2.1
 
 workflows:
   version: 2
   pipeline:
     jobs:
-    - 0-unit-py27
-    - 0-unit-py36
-    - 0-rpm-centos6
-    - 0-rpm-centos7
-    - 1-func-centos6:
-        requires: [0-rpm-centos6]
-    - 1-func-centos7:
-        requires: [0-rpm-centos7]
+    - stage0-unit-py27
+    - stage0-unit-py36
+    - stage0-rpm-centos6
+    - stage0-rpm-centos7
+    - stage1-func-centos6:
+        requires: [stage0-rpm-centos6]
+    - stage1-func-centos7:
+        requires: [stage0-rpm-centos7]
 
 
 .openldap_container: &openldap_container
@@ -107,23 +107,23 @@ workflows:
         codecov
 
 jobs:
-  0-unit-py27:
+  stage0-unit-py27:
     <<: *unit_tpl
     docker: [{image: "circleci/python:2.7"}]
 
-  0-unit-py36:
+  stage0-unit-py36:
     <<: *unit_tpl
     docker: [{image: "circleci/python:3.6"}]
 
-  0-rpm-centos6:
+  stage0-rpm-centos6:
     <<: *rpm_tpl
     docker: [{image: "rpmbuild/centos6"}]
 
-  0-rpm-centos7:
+  stage0-rpm-centos7:
     <<: *rpm_tpl
     docker: [{image: "rpmbuild/centos7"}]
 
-  1-func-centos6:
+  stage1-func-centos6:
     working_directory: /tmp/ldap2pg
     docker:
       - image: centos:6
@@ -132,7 +132,7 @@ jobs:
         <<: *postgres_env
     steps: *func_steps
 
-  1-func-centos7:
+  stage1-func-centos7:
     working_directory: /tmp/ldap2pg
     docker:
       - image: centos:7
