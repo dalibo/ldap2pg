@@ -1,5 +1,19 @@
 version: 2
 
+workflows:
+  version: 2
+  pipeline:
+    jobs:
+    - 0-unit-py27
+    - 0-unit-py36
+    - 0-rpm-centos6
+    - 0-rpm-centos7
+    - 1-func-centos6:
+        requires: [0-rpm-centos6]
+    - 1-func-centos7:
+        requires: [0-rpm-centos7]
+
+
 .openldap_container: &openldap_container
   image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
   environment:
@@ -126,16 +140,3 @@ jobs:
       - image: postgres:12-alpine
         <<: *postgres_env
     steps: *func_steps
-
-workflows:
-  version: 2
-  pipeline:
-    jobs:
-    - 0-unit-py27
-    - 0-unit-py36
-    - 0-rpm-centos6
-    - 0-rpm-centos7
-    - 1-func-centos6:
-        requires: [0-rpm-centos6]
-    - 1-func-centos7:
-        requires: [0-rpm-centos7]
