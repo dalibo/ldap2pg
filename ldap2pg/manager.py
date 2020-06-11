@@ -101,6 +101,9 @@ class SyncManager(object):
         ldaproles = {}
         ldapacl = Acl()
         for mapping in syncmap:
+            if mapping.get('description'):
+                logger.info("%s", mapping['description'])
+
             role_rules = mapping.get('roles', [])
             grant_rules = mapping.get('grant', [])
             if 'ldap' in mapping:
@@ -183,6 +186,8 @@ class SyncManager(object):
                     msg = "Role %s redefined with different options." % (
                         role,)
                     raise UserError(msg)
+            else:
+                logger.debug("Want role %s %s.", role, log_source)
             ldaproles[role] = role
 
     def apply_grant_rule(self, rule, ldapacl, vars_, log_source):
@@ -193,7 +198,7 @@ class SyncManager(object):
                     "Ignoring grant on role %s %s. Matches %s.",
                     grant.role, log_source, pattern)
                 continue
-            logger.debug("Found GRANT %s %s.", grant, log_source)
+            logger.debug("Want GRANT %s %s.", grant, log_source)
             ldapacl.add(grant)
 
     def postprocess_acl(self, acl, schemas):

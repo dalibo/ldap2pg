@@ -210,11 +210,20 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
     return GrantRule(**value)
 
 
+KNOWN_MAPPING_KEYS = set([
+    'description',
+    'grant',
+    'ldap',
+    'role',
+    'roles',
+])
+
+
 def ismapping(value):
     # Check whether a YAML value is supposed to be a single mapping.
     if not isinstance(value, dict):
         return False
-    return bool(set(['grant', 'ldap', 'role', 'roles']) >= set(value.keys()))
+    return KNOWN_MAPPING_KEYS >= set(value.keys())
 
 
 def iter_mapping_strings(mapping):

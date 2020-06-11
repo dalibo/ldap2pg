@@ -32,7 +32,7 @@ privileges:
 
   ddl:
   - rw
-  - __all_on_schema__
+  - __all_on_schemas__
   - __all_on_tables__
 
 sync_map:

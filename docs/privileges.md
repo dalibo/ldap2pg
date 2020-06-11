@@ -12,25 +12,25 @@ and grant them with `grant` rules in the `sync_map`:
 
 ```yaml
 privileges:
-  mypriv:
-    type: nspacl
-    grant: 'GRANT ALL ON LARGE OBJECTS IN SCHEMA {schema}'
-
   mygroup:
   - __all_on_tables__
   - __all_on_sequences__
 
+  mycustom:
+    type: nspacl
+    grant: 'GRANT ALL ON LARGE OBJECTS IN SCHEMA {schema}'
+
 sync_map:
 - grant:
-    privilege: mypriv
+    privilege: mygroup
     role: admin
 ```
 
-A privileges defined as a YAML list is a *group of privileges*. A group can
+A privilege defined as a YAML list is a *group of privileges*. A group can
 include other groups.
 
-`ldap2pg` ships an extensive set of [well-known privileges](wellknown.md), see
-dedicated documentation page for them.
+`ldap2pg` ships an extensive set of [well-known privileges](wellknown.md),
+named with double underscores like `__insert_on_tables__`. See dedicated documentation page for them.
 
 
 ## Enabling Privilege
@@ -121,7 +121,7 @@ explicitly granted with `grant` rule.
 For `ldap2pg`, a privilege is a set of query: one to inspect the cluster, one to
 grant the privilege and one to revoke it.
 
-`ldap2pg` recognize different kinds of privileges:
+`ldap2pg` recognizes different kinds of privileges:
 
 - `datacl` are for `GRANT ON DATABASE`.
 - `globaldefacl` are `ALTER DEFAULT PRIVILEGES` on a database. They are bound to
