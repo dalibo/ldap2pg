@@ -101,6 +101,9 @@ class SyncManager(object):
         ldaproles = {}
         ldapacl = Acl()
         for mapping in syncmap:
+            if mapping.get('description'):
+                logger.info("%s", mapping['description'])
+
             role_rules = mapping.get('roles', [])
             grant_rules = mapping.get('grant', [])
             if 'ldap' in mapping:

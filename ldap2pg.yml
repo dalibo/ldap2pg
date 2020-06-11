@@ -106,8 +106,8 @@ privileges:
 #
 
 sync_map:
-# First, setup static roles and grants
-- roles:
+- description: "Setup static roles dans grants."
+  roles:
   - names:
     - ldap_roles
     - readers
@@ -121,8 +121,7 @@ sync_map:
     parent: writers
     options: NOLOGIN
 
-# Now grant privileges to each groups
-- grant:
+  grant:
   - privilege: ro
     role: readers
     schemas: __all__
@@ -133,8 +132,8 @@ sync_map:
     role: owners
     schema: __all__
 
-# Query LDAP to create superusers.
-- ldap:
+- description: "Query LDAP to create superusers."
+  ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=dba)"
   role:
@@ -147,8 +146,9 @@ sync_map:
     - owners
     comment: "From LDAP group {dn}"
 
-# Query LDAP to create writers.
-- ldap:
+
+- description: "Query LDAP to create writers."
+  ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=team*)"
     on_unexpected_dn: warn
@@ -160,8 +160,8 @@ sync_map:
     - writers
     comment: 'From LDAP groupe {dn}'
 
-# Query LDAP to create readers.
-- ldap:
+- description: "Query LDAP to create readers."
+  ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: |
       (&
