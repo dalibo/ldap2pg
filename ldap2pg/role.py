@@ -98,7 +98,12 @@ class Role(object):
             )
 
         if self.members != other.members:
-            missing = set(other.members) - set(self.members)
+            renamed = set([
+                name for name in other.members
+                if name.lower() in self.members
+            ])
+            renamed_lower = set([name.lower() for name in renamed])
+            missing = set(other.members) - renamed - set(self.members)
             if missing:
                 logger.debug(
                     "Role %s miss members %s.",
@@ -112,7 +117,7 @@ class Role(object):
                         role=other.name,
                     ),
                 )
-            spurious = set(self.members) - set(other.members)
+            spurious = set(self.members) - renamed_lower - set(other.members)
             if spurious:
                 yield Query(
                     'Delete spurious %s members.' % (other.name,),
@@ -309,7 +314,7 @@ class RoleSet(set):
         # since we reuse `available` roles instead of recreating roles.
 
         available = available or RoleSet()
-        index = self.reindex()
+        index = available.reindex()
         other = other or RoleSet()
 
         # First create/rename missing roles
@@ -317,25 +322,30 @@ class RoleSet(set):
         renamed = dict()
         for role in missing.flatten():
             # Detect renames from lowercase.
-            if role.lname in self and role.lname not in other:
-                old_role = index[role.lname]
-                logger.debug(
-                    "Detected rename from %s to %s.", old_role.name, role.name)
-                for qry in old_role.alter(role):
-                    yield qry
-                missing.remove(role)
+            if role.lname in available and role.lname not in other:
                 renamed[role.lname] = role
+                continue
 
-        for role in missing.flatten():
+            # Now, use old lower member name if existing, they will be renamed
+            # after creation.
+            for i, member in enumerate(role.members):
+                lmember = member.lower()
+                if lmember in available and lmember not in other:
+                    role.members[i] = lmember
+
             for qry in role.create():
+                yield qry
+
+        for role in renamed.values():
+            old_role = index[role.lname]
+            for qry in old_role.alter(role):
                 yield qry
 
         # Now update existing roles options and memberships
         existing = available & other
-        my_roles_index = available.reindex()
         other_roles_index = other.reindex()
         for role in existing:
-            mine = my_roles_index[role.name]
+            mine = index[role.name]
             mine.rename_members(renamed)
             its = other_roles_index[role.name]
             if role not in self:

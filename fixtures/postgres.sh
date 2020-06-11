@@ -69,11 +69,13 @@ CREATE DATABASE nonsuperdb WITH OWNER nonsuper;
 
 -- Create role as it should be. for NOOP
 CREATE ROLE "ldap_roles" WITH NOLOGIN;
+CREATE ROLE "dba" WITH NOLOGIN;
 CREATE ROLE "app" WITH NOLOGIN;
 CREATE ROLE "daniel" WITH LOGIN;
 CREATE ROLE "david" WITH LOGIN;
 CREATE ROLE "denis" WITH LOGIN;
-CREATE ROLE "alan" WITH SUPERUSER LOGIN IN ROLE ldap_roles;
+-- alan will be renamed to Alan
+CREATE ROLE "alan" WITH SUPERUSER LOGIN IN ROLE ldap_roles, dba;
 -- Create alice superuser without login, for ALTER.
 CREATE ROLE "ALICE" WITH SUPERUSER NOLOGIN IN ROLE app;
 
