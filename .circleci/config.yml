@@ -4,8 +4,11 @@ workflows:
   version: 2
   pipeline:
     jobs:
-    - stage0-unit-py27
-    - stage0-unit-py36
+    - unit:
+        name: "stage0-unit-py<< matrix.python >>"
+        matrix:
+          parameters:
+            python: ["3.6", "2.7"]
     - stage0-rpm-centos6
     - stage0-rpm-centos7
     - stage1-func-centos6:
@@ -25,18 +28,6 @@ workflows:
   environment:
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: communication
-
-.install_reqs: &install_reqs
-  run:
-    name: Install requirements
-    command: |
-      sudo apt-get update -y
-      sudo apt-get install -y libldap2-dev libsasl2-dev
-      sudo pip install wheel virtualenv
-      virtualenv .venv/
-      . .venv/bin/activate
-      pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
-      pip check
 
 .func_steps: &func_steps
 - checkout
@@ -80,40 +71,47 @@ workflows:
       - "~/.cache/pip/"
       - ".venv"
 
-.unit_tpl: &unit_tpl
-  working_directory: ~/ldap2pg
-  steps:
-  - checkout
-  - restore_cache:
-      keys: [ldap2pg-unit3]
-  - <<: *install_reqs
-  - save_cache:
-      key: ldap2pg-unit3-{{ epoch }}
-      paths:
-      - /root/.cache/pip
-      - "~/.cache/pip/"
-      - ".venv"
-  - run:
-      name: Python tests
-      command: |
-        . .venv/bin/activate
-        set -x
-        sort --check .gitignore
-        python setup.py --long-description | rst2html.py --strict >/dev/null
-        make docs
-        git diff --exit-code docs/
-        flake8
-        pytest tests/unit/
-        codecov
 
 jobs:
-  stage0-unit-py27:
-    <<: *unit_tpl
-    docker: [{image: "circleci/python:2.7"}]
-
-  stage0-unit-py36:
-    <<: *unit_tpl
-    docker: [{image: "circleci/python:3.6"}]
+  unit:
+    parameters:
+      python:
+        description: "Python version"
+        type: string
+    docker: [{image: "circleci/python:<< parameters.python >>"}]
+    working_directory: ~/ldap2pg
+    steps:
+    - checkout
+    - restore_cache:
+        keys: [ldap2pg-unit3]
+    - run:
+        name: Install requirements
+        command: |
+          sudo apt-get update -y
+          sudo apt-get install -y libldap2-dev libsasl2-dev
+          sudo pip install wheel virtualenv
+          virtualenv .venv/
+          . .venv/bin/activate
+          pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
+          pip check
+    - save_cache:
+        key: ldap2pg-unit3-{{ epoch }}
+        paths:
+        - /root/.cache/pip
+        - "~/.cache/pip/"
+        - ".venv"
+    - run:
+        name: Python tests
+        command: |
+          . .venv/bin/activate
+          set -x
+          sort --check .gitignore
+          python setup.py --long-description | rst2html.py --strict >/dev/null
+          make docs
+          git diff --exit-code docs/
+          flake8
+          pytest tests/unit/
+          codecov
 
   stage0-rpm-centos6:
     <<: *rpm_tpl
