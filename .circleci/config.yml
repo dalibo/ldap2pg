@@ -9,12 +9,15 @@ workflows:
         matrix:
           parameters:
             python: ["3.6", "2.7"]
-    - stage0-rpm-centos6
-    - stage0-rpm-centos7
+    - rpm:
+        name: "stage0-pkg-<< matrix.dist >>"
+        matrix:
+          parameters:
+            dist: [centos7, centos6]
     - stage1-func-centos6:
-        requires: [stage0-rpm-centos6]
+        requires: [stage0-pkg-centos6]
     - stage1-func-centos7:
-        requires: [stage0-rpm-centos7]
+        requires: [stage0-pkg-centos7]
 
 
 .openldap_container: &openldap_container
@@ -47,32 +50,38 @@ workflows:
     paths:
     - /root/.cache/pip
 
-.rpm_tpl: &rpm_tpl
-  working_directory: /tmp/ldap2pg
-  steps:
-  - run:
-      name: Disable old git
-      command: |
-        git=/usr/bin/git
-        if ${git} --version | grep -q 1.7; then
-            sudo mv ${git} ${git}.disabled
-        fi
-  - checkout
-  - run: ./packaging/build_rpm.sh
-  - persist_to_workspace:
-      root: /tmp/ldap2pg
-      paths: ["dist/"]
-  - store_artifacts:
-      path: /tmp/ldap2pg/dist/
-  - save_cache:
-      key: ldap2pg-{{ epoch }}
-      paths:
-      - /root/.cache/pip
-      - "~/.cache/pip/"
-      - ".venv"
 
 
 jobs:
+  rpm:
+    parameters:
+      dist:
+        description: "rpmbuild distribution."
+        type: string
+    docker: [{image: "rpmbuild/<< parameters.dist >>"}]
+    working_directory: /tmp/ldap2pg
+    steps:
+    - run:
+        name: Disable old git
+        command: |
+          git=/usr/bin/git
+          if ${git} --version | grep -q 1.7; then
+              sudo mv ${git} ${git}.disabled
+          fi
+    - checkout
+    - run: ./packaging/build_rpm.sh
+    - persist_to_workspace:
+        root: /tmp/ldap2pg
+        paths: ["dist/"]
+    - store_artifacts:
+        path: /tmp/ldap2pg/dist/
+    - save_cache:
+        key: ldap2pg-{{ epoch }}
+        paths:
+        - /root/.cache/pip
+        - "~/.cache/pip/"
+        - ".venv"
+
   unit:
     parameters:
       python:
@@ -112,14 +121,6 @@ jobs:
           flake8
           pytest tests/unit/
           codecov
-
-  stage0-rpm-centos6:
-    <<: *rpm_tpl
-    docker: [{image: "rpmbuild/centos6"}]
-
-  stage0-rpm-centos7:
-    <<: *rpm_tpl
-    docker: [{image: "rpmbuild/centos7"}]
 
   stage1-func-centos6:
     working_directory: /tmp/ldap2pg
