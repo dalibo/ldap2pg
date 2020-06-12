@@ -92,7 +92,7 @@ class SyncManager(object):
                             join_cache[join_key] = False
                             continue
                     if join_entries:
-                        join_entries += entry_joins.get(attr, [])
+                        join_entries = entry_joins.get(attr, []) + join_entries
                         entry_joins[attr] = join_entries
 
         return entries
