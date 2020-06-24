@@ -6,3 +6,4 @@ services:
     volumes:
     - ../:/workspace
     entrypoint: /workspace/packaging/build_rpm.sh
+    working_dir: /workspace
