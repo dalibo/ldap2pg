@@ -17,27 +17,27 @@ workflows:
     - func:
         name: "stage1-func-centos7-pg12"
         requires: [stage0-pkg-centos7]
-        centosrelease: "7"
+        dist: centos7
         pgversion: "12"
     - func:
         name: "stage1-func-centos6-pg9.3"
         requires: [stage0-pkg-centos6]
-        centosrelease: "6"
+        dist: centos6
         pgversion: "9.3"
 
 
 jobs:
   func:
     parameters:
-      centosrelease:
-        description: "Version number of CentOS."
+      dist:
+        description: "Distribution."
         type: string
       pgversion:
         description: "Major dotted version of PostgreSQL."
         type: string
     working_directory: /tmp/ldap2pg
     docker:
-      - image: centos:<< parameters.centosrelease >>
+      - image: dalibo/labs-sdk:<< parameters.dist >>
       - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
         environment:
           LDAP_DOMAIN: ldap.ldap2pg.docker
