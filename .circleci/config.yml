@@ -68,18 +68,11 @@ jobs:
   rpm:
     parameters:
       dist:
-        description: "rpmbuild distribution."
+        description: "Distribution."
         type: string
-    docker: [{image: "rpmbuild/<< parameters.dist >>"}]
+    docker: [{image: "dalibo/labs-sdk:<< parameters.dist >>"}]
     working_directory: /tmp/ldap2pg
     steps:
-    - run:
-        name: Disable old git
-        command: |
-          git=/usr/bin/git
-          if ${git} --version | grep -q 1.7; then
-              sudo mv ${git} ${git}.disabled
-          fi
     - checkout
     - run: ./packaging/build_rpm.sh
     - persist_to_workspace:
