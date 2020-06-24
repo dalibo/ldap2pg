@@ -22,26 +22,37 @@ fi
 rm -rf build/bdist*/rpm
 
 rpmdist=$(rpm --eval '%dist')
-fullname=$(python setup.py --fullname)
 release="${CIRCLE_BUILD_NUM-1}"
-requires="python-psycopg2 python-ldap PyYAML"
-case $(rpm --eval '%dist') in
+python=python3
+case "$rpmdist" in
+	.el8*)
+		requires="python3-psycopg2 python3-ldap python3-yaml"
+		;;
+	.el7*)
+		python=python2
+		requires="python-psycopg2 python-ldap PyYAML"
+		;;
 	.el6*)
-		requires="${requires} python-logutils python-argparse"
+		python=python2
+		requires="python-psycopg2 python-ldap PyYAML python-logutils python-argparse"
 		;;
 	*)
+		: "Unknown dist $rpmdist"
+		exit 1
 		;;
 esac
+fullname=$($python setup.py --fullname)
 
 # Build it
 if ! [ -f "dist/${fullname}.tar.gz" ] ; then
-	python setup.py sdist
+	$python setup.py sdist
 	release+="snapshot"
 fi
 
-python setup.py bdist_rpm \
+$python setup.py bdist_rpm \
        --release "${release}%{dist}" \
        --requires "${requires}" \
+       --python "$(type -p $python)" \
        --spec-only
 
 chown -R "$(id -u):$(id -g)" "$top_srcdir/dist"
@@ -62,5 +73,5 @@ ln -fs "noarch/$(basename $rpm)" dist/ldap2pg-last.rpm
 yum install -y "$rpm"
 cd /
 test -x /usr/bin/ldap2pg
-python -c 'import ldap2pg'
+$python -c 'import ldap2pg'
 ldap2pg --version
