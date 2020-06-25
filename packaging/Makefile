@@ -10,11 +10,15 @@ distclean:
 	rm -rf ../dist/
 
 rpm:
-	docker-compose run --rm rpm
-	cp -fl $$(readlink -e $(TOPSRC_DIR)/dist/ldap2pg-last.rpm) $(YUM_LABS)/rpms/CentOS7-x86_64/
+	$(MAKE) -C $(YUM_LABS) clean
+	$(MAKE) rpm-centos8 rpm-centos7
 # building rpm update egg_info for python2.7. We need to regenerate it for
 # development.
 	cd ../ && python setup.py egg_info
+
+rpm-centos%:
+	DIST=centos$* docker-compose run --rm rpm
+	cp -fl $$(readlink -e $(TOPSRC_DIR)/dist/ldap2pg-last.rpm) $(YUM_LABS)/rpms/CentOS$*-x86_64/
 
 clean:
 	docker-compose down -v

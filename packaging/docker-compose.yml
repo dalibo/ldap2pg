@@ -2,7 +2,8 @@ version: "3"
 
 services:
   rpm:
-    image: rpmbuild/${DIST-centos7}
+    image: dalibo/labs-sdk:${DIST-centos7}
     volumes:
     - ../:/workspace
-    entrypoint: /workspace/packaging/build_rpm.sh
+    working_dir: /workspace
+    command: [/workspace/packaging/build_rpm.sh]
