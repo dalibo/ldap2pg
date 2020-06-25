@@ -6,12 +6,12 @@ or LDAP.
 
 ## Features
 
-- Creates, alters and drops PostgreSQL roles from LDAP queries.
+- Creates, alters and drops PostgreSQL roles from LDAP searches.
 - Creates static roles from YAML to complete LDAP entries.
 - Manages role members (alias *groups*).
 - Grants or revokes privileges statically or from LDAP entries.
 - Dry run.
-- Logs LDAP queries as `ldapsearch` commands.
+- Logs LDAP searches as `ldapsearch` commands.
 - Logs **every** SQL query.
 - Reads settings from an expressive YAML config file.
 

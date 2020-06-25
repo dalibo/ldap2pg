@@ -20,6 +20,14 @@ def main(args=sys.argv[1:]):
     privileges, groups, aliases = process_privileges(
         make_well_known_privileges())
 
+    # maps privilege -> aliases
+    reverse_aliases = dict()
+    for k, v in groups.copy().items():
+        if 1 == len(v):
+            reverse_aliases.setdefault(v[0], []).append(k)
+            # Remove alias from group list
+            del groups[k]
+
     env = Environment(
         loader=FileSystemLoader(os.getcwd()),
         undefined=StrictUndefined,
@@ -32,6 +40,7 @@ def main(args=sys.argv[1:]):
         privileges=privileges,
         aliases=aliases,
         groups=groups,
+        reverse_aliases=reverse_aliases,
         version=__version__,
     )
     print(template.render(**values))

@@ -5,16 +5,16 @@ hide:
 
 <h1>Hacking</h1>
 
-You are welcome to contribute to `ldap2pg` with patch to code, documentation or
+You are welcome to contribute to ldap2pg with patch to code, documentation or
 configuration sample ! Here is an extended documentation on how to setup *a*
 development environment. Feel free to adapt to your cumfort. Automatic tests on
 CircleCI will take care of validating regressions.
 
 
-# Docker Development Environment
+## Docker Development Environment
 
-A `docker-compose.yml` file is provided to launch an OpenLDAP and a PostgreSQL
-instances.
+Project repository ships a `docker-compose.yml` file to launch an OpenLDAP and
+a PostgreSQL instances.
 
 ``` console
 $ docker-compose pull
@@ -60,7 +60,7 @@ $ psql -c 'SELECT version()';
 ```
 
 Do the same to setup `libldap2` with `LDAP*` envvars. A `ldaprc` is provided
-setting up `BINDDN` and `BASE`. `ldap2pg` supports `LDAPPASSWORD` to set
+setting up `BINDDN` and `BASE`. ldap2pg supports `LDAPPASSWORD` to set
 password from env. Check it with `ldapsearch`:
 
 ``` console
@@ -90,12 +90,12 @@ result: 0 Success
 $
 ```
 
-Now you can install `ldap2pg` from source and test your changes!
+Now you can install ldap2pg from source and test your changes!
 
 ``` console
 $ pip install -e .
 $ ldap2pg
-Starting ldap2pg 3.4.
+Starting ldap2pg 5.7.
 Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
 Running in dry mode. Postgres will be untouched.
 Inspecting Postgres...
@@ -107,26 +107,25 @@ Comparison complete.
 $
 ```
 
-# Development Fixtures
+## Development Fixtures
 
-OpenLDAP starts with `fixture/openldap-data.ldif` loaded.
-`fixture/openldap-data.ldif` is well commented.
+OpenLDAP starts with `fixtures/openldap-data.ldif` loaded.
+`fixtures/openldap-data.ldif` is well commented.
 
 Some users, database and privileges are provided for testing purpose in
-`./fixtures/postgres.sh`. Postgres instance is initialized with this
+`fixtures/postgres.sh`. Postgres instance is initialized with this
 automatically. This script also resets modifications to Postgres instance by
-`ldap2pg`. You can run `fixtures/postgres.sh` every time you need to reset the
+ldap2pg. You can run `fixtures/postgres.sh` every time you need to reset the
 Postgres instance.
 
 
-# Debugging
+## Debugging
 
-`ldap2pg` has a debug mode. Debug mode enables full logs and, if stdout is a
+ldap2pg has a debug mode. Debug mode enables full logs and, if stdout is a
 TTY, drops in a PDB on unhandled exception. You can enable debug mode by
 exporting `DEBUG` envvar to either `1`, `y` or `Y`.
 
 ``` console
-$ DEBUG=1 ldap2pg
 $ DEBUG=1 ldap2pg
 [ldap2pg.script      DEBUG] Debug mode enabled.
 [ldap2pg.config      DEBUG] Processing CLI arguments.
@@ -153,7 +152,7 @@ $ DEBUG=1 ldap2pg
 ```
 
 
-# Unit tests
+## Unit tests
 
 Unit tests strictly have **no I/O**. We use pytest to execute them. Since we
 also have a functionnal test battery orchestrated with pytest, you must scope
@@ -177,13 +176,13 @@ TOTAL                   870      0   100%
 $
 ```
 
-Unit tests must cover all code in `ldap2pg`. We use
+Unit tests must cover all code in ldap2pg. We use
 [CodeCov](https://codecov.io/) to enforce this.
 
 
-# Functionnal tests
+## Functionnal tests
 
-Functionnal tests tend to validate `ldap2pg` in real world : **no mocks**. We
+Functionnal tests tend to validate ldap2pg in real world : **no mocks**. We
 put func tests in `tests/func/`. You can run func tests right from you
 development environment:
 
@@ -201,10 +200,10 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in CentOS 6 and CentOS 7, with ldap2pg and its
-dependencies installed from rpm. You can reproduce this setup with
-`docker-compose.yml` and some `make` calls. Run `make -C tests/func/ clean rpm
-tests` to recreate rpm and test env.
+On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8, with ldap2pg
+and its dependencies installed from rpm. You can reproduce this setup with
+`tests/func/docker-compose.yml` and some `make` calls. Run `make -C tests/func/
+clean rpm tests` to recreate rpm and test env.
 
 
 ``` console
@@ -256,26 +255,25 @@ loosing context and CPU cycle.
 
 Two main fixtures are very useful when testing: `psql` and `ldap`. These little
 helpers provide fastpath to frequent inspection of Postgres database on LDAP
-base with `sh.py`-style API. Also `dev` fixture resets Postgres database and
-LDAP base and loads the dev fixtures exposed above.
+base with `sh.py`-style API.
 
 There is no code coverage in func tests, and you can't enter a debugger inside
-`ldap2pg` like you do with unit tests. This is on purpose to run `ldap2pg` in
-real situation. When you need to debug `ldap2pg` itself, just run it outside
-pytest! **Never import `ldap2pg` in func tests**. Call it like a subprocess.
+ldap2pg like you do with unit tests. This is on purpose to run ldap2pg in
+real situation. When you need to debug ldap2pg itself, just run it outside
+pytest! **Never import ldap2pg in func tests**. Call it like a subprocess.
 Logs should be enough to diagnose errors.
 
 
-# Documenting
+## Documenting
 
 [mkdocs](http://www.mkdocs.org) is in charge of building the documentation. To
-edit the doc, just type `mkdocs serve` at the toplevel directory and start
-editing `mkdocs.yml` and `docs/`. See [mkdocs
+edit the doc, install `docs/requirements.txt` and run `mkdocs serve` at the
+toplevel directory. See [mkdocs
 documentation](http://www.mkdocs.org/user-guide/writing-your-docs/) for further
 information.
 
 
-# Releasing
+## Releasing
 
 - Review `docs/changelog.md`. `# Unreleased` title will be edited.
 - Increment version in `setup.py`.

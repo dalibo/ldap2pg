@@ -5,108 +5,140 @@ hide:
 
 <h1>Installation</h1>
 
-`ldap2pg` main packaging format is a regular Python package, available at PyPI.
-`ldap2pg` tries to reduce dependencies and to be compatible with versions
-available from official distributions repositories.
+ldap2pg main packaging format is a regular Python package, available at PyPI as
+source and binary wheel. ldap2pg tries to reduce dependencies and to be
+compatible with versions available from official distributions repositories.
 
-# Pure python
 
-You can fetch all dependencies with PIP. Choose either `pip3` or `pip2`.
+## Requirements
 
-``` console
-# apt install -y libldap2-dev libsasl2-dev python3-pip
-# pip3 install ldap2pg psycopg2-binary
-```
+ldap2pg requires Python 2.6+ or Python 3.4+, pyyaml, python-ldap and
+python-psycopg2. ldap2pg is well tested on Linux.
 
-# On RHEL 8 from RPM
+ldap2pg recommends to use your distribution packages for dependencies and for
+ldap2pg if available.
 
-On CentOS 8, either [PGPG YUM repository](https://yum.postgresql.org/) and
-[Dalibo Labs YUM repository](https://yum.dalibo.org/labs/) offer RPM package
-for ldap2pg. The repositories does not provide the same packaging. Dalibo Labs
-is upstream, packages are more up to date. PGDG is more common and often always
+On runtime, ldap2pg requires a superuser access or a role with `CREATEROLE`
+option. ldap2pg does not require to run on the same host as the PostgreSQL
+cluster synchronized.
+
+
+## On RHEL 8/7/6 from RPM
+
+On RHEL and compatible clone, either [PGPG YUM
+repository](https://yum.postgresql.org/) and [Dalibo Labs YUM
+repository](https://yum.dalibo.org/labs/) offer RPM package for ldap2pg. Each
+repository does not provide the same packaging. Dalibo Labs is upstream,
+packages are more up to date. PGDG is more common and has more chances to be
 available on your host.
 
 For using Dalibo Labs packaging:
 
 - [Enable Dalibo Labs YUM repository](https://yum.dalibo.org/labs/).
 - Install `ldap2pg` package with yum:
-
-``` console
-# yum install ldap2pg
-...
-# ldap2pg --version
-```
+  ```
+  yum install ldap2pg
+  ```
 
 For using PGDG YUM packaging:
 
 - [Enable PGDG YUM repository](https://yum.postgresql.org/).
 - Install `python3-ldap2pg`.
+  ```
+  yum install python3-ldap2pg
+  ```
 
 
-# On RHEL 7 from RPM
+## On RHEL 7 from pip
 
-On CentOS 7, choose either Dalibo Labs repository or PGDG like for CentOS 8.
-Note that Dalibo package uses Python 2.7 while PGDG ships only Python 3
-package.
+You should run `ldap2pg` with Python3.6 to use RHEL packaged dependencies.
 
-For using Dalibo Labs packaging:
+- Install EPEL:
+  ```
+  yum install -y epel-release
+  ```
+- Install dependencies:
+  ```
+  yum install -y python36-pip python36-ldap python36-psycopg2 python36-wheel python36-PyYAML
+  ```
+- Now install ldap2pg with pip:
+  ```
+  pip3 install --no-deps --upgrade ldap2pg
+  ```
+- Check installation with:
+  ```
+  ldap2pg --version
+  ```
 
-- [Enable Dalibo Labs YUM repository](https://yum.dalibo.org/labs/).
-- Install `ldap2pg` package with yum:
 
-``` console
-# yum install ldap2pg
-...
-# ldap2pg --version
+## On RHEL 6 from pip
+
+On RHEL 6, pip-2.6 can't access PyPI anymore. PyPI uses CloudFlare which
+requires the SNI TLS extension not available in Python 2.6 SSL. You must
+download each dependencies manually and install them locally using pip. You'd
+better use RPM.
+
+
+## On Debian 11 (bookworm) / 10 (buster)
+
+On Debian buster and bookworm, you can use regular Python3 and wheels.
+
+- Install dependencies from Debian repositories:
+  ```
+  apt install -y --no-install-recommends python3-pip python3-ldap python3-pkg-resources python3-psycopg2 python3-yaml
+  ```
+- Install ldap2pg from PyPI:
+  ```
+  pip3 install --no-deps ldap2pg
+  ```
+- Check installation:
+  ```
+  ldap2pg --version
+  ```
+
+
+## On Debian 9 (stretch)
+
+On Debian stretch, you can use regular Python3 and wheels.
+
+- Install dependencies from Debian repositories:
+  ```
+  apt install -y --no-install-recommends build-essential libldap2-dev libsasl2-dev python3-dev python3-pip python3-psycopg2 python3-pyasn1-modules python3-setuptools python3-wheel python3-yaml
+  ```
+- Install ldap2pg and python-ldap for Python 3.5.
+  ```
+  pip3 install --no-deps ldap2pg "python-ldap<3.4"
+  ```
+- Check installation:
+  ```
+  ldap2pg --version
+  ```
+
+
+## On Debian 8 (jessie)
+
+On Debian jessie, you can use regular Python3 and wheels.
+
+- Install dependencies from Debian repositories:
+  ```
+  apt install -y --no-install-recommends libldap2-dev libsasl2-dev python3-dev python3-pip build-essential python3-psycopg2 python3-yaml python3-pyasn1-modules
+  ```
+- Install ldap2pg and python-ldap for Python 3.4.
+  ```
+  pip3 install --no-deps ldap2pg "python-ldap<3.4"
+  ```
+- Check installation:
+  ```
+  ldap2pg --version
+  ```
+
+
+## Using pip
+
+You can fetch all dependencies with pip. You must select which psycopg2 package
+you want. To build python-ldap you need python, libldap2 and libsasl2
+development files and a compiler.
+
 ```
-
-For using PGDG YUM packaging:
-
-- [Enable PGDG YUM repository](https://yum.postgresql.org/).
-- Install `python3-ldap2pg`.
-
-
-# On RHEL 7 from source
-
-You should run `ldap2pg` with Python2.7 to use packaged dependencies.
-
-``` console
-# yum install -y epel-release
-# yum install -y python2-pip python-ldap python-psycopg2 python-wheel PyYAML
-# pip2 install --no-deps --upgrade ldap2pg
-# ldap2pg --version
-```
-
-
-# On RHEL 6
-
-PGDG repository provides RPM packages for CentOS6.
-
-To install from source, you have to run `ldap2pg` with Python2.6 and some
-forward compatibility dependencies.
-
-``` console
-# yum install -y epel-release
-# yum install -y pyton-argparse python-pip python-ldap python-logutils python-psycopg2 PyYAML
-# pip install --no-deps --upgrade ldap2pg
-# ldap2pg --version
-```
-
-
-# On Debian 9 (jessie)
-
-On Debian jessie or later, you can use regular Python3 and wheels.
-
-``` console
-# apt install -y python3-pip python3-psycopg2 python3-yaml
-# pip3 install --no-deps ldap2pg python-ldap
-```
-
-# On Debian 7 (wheezy)
-
-On Debian wheezy, you have to use Python2.7.
-
-``` console
-# apt install -y python-pip python-psycopg2 python-yaml python-ldap
-# pip install --no-deps ldap2pg
+pip3 install ldap2pg psycopg2-binary
 ```

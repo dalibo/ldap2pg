@@ -41,8 +41,8 @@ nav:
   - CLI: cli.md
   - ldap2pg.yml: config.md
   - Inspecting Cluster: postgres.md
-  - Querying Directory: ldap.md
   - Managing Roles: roles.md
+  - Searching Directory: ldap.md
   - Managing Privileges: privileges.md
   - Well-known Privileges: wellknown.md
 - Cookbook: cookbook.md

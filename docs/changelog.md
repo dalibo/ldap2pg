@@ -72,7 +72,7 @@ Released 2021-06-21.
 
 - Fix grant to capitalized role.
 - Fix rename of members.
-- Log role after their originated LDAP query.
+- Log role after their originated LDAP search.
 - Add `description:` to mapping for logging.
 
 
@@ -195,7 +195,7 @@ Run `ldap2pg --dry` before and check for renames.
 
 - Use PyYAML safe loading.
 - Don't log `-D` switch for anonymous `ldapsearch`.
-- Refuse useless LDAP queries without attributes.
+- Refuse useless LDAP searches without attributes.
 - Manage binary decoding error.
 - Fix gathering of LDAP attributes on Python 2.
 
@@ -276,7 +276,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 
 # ldap2pg 4.3
 
-- Fix case sensitivity in LDAP query. Thanks @dirks for report and tests.
+- Fix case sensitivity in LDAP search. Thanks @dirks for report and tests.
 - Allow to customize owners for `ALTER DEFAULT PRIVILEGES` with
   `postgres:owners_query`.
 - Don't execlude `pg_catalog` from `__all__` schema group.
@@ -389,7 +389,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Read configuration from CLI arguments, env vars and YAML.
 - Manage Postgres roles, role options and role members.
 - Creates roles from LDAP entries or from static values in YAML.
-- Verbose mode with Postgres and LDAP queries logged.
+- Verbose mode with Postgres and LDAP searches logged.
 
 <!-- Local Variables: -->
 <!-- ispell-dictionary: "american" -->
