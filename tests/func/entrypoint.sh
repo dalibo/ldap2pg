@@ -38,7 +38,7 @@ if rpm --query --queryformat= ldap2pg ; then
 fi
 
 yum -q -y install "$rpm"
-rpm --query --queryformat= ldap2pg
+ldap2pg --version
 
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
