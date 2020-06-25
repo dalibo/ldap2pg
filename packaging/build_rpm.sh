@@ -47,11 +47,12 @@ python setup.py bdist_rpm \
 chown -R "$(id -u):$(id -g)" "$top_srcdir/dist"
 rpmbuild -bb \
 	--define "_builddir %{_topdir}" \
-	--define "_rpmdir %{_topdir}" \
+	--define "_buildrootdir %{_topdir}" \
+	--define "_rpmdir %{_sourcedir}" \
 	--define "_srcrpmdir %{_topdir}" \
-	--define "_sourcedir %{_topdir}" \
+	--define "_sourcedir $top_srcdir/dist" \
 	--define "_specdir %{_topdir}" \
-	--define "_topdir ${top_srcdir}/dist" \
+	--define "_topdir /tmp/rpmbuild" \
 	dist/ldap2pg.spec
 
 rpm="dist/noarch/${fullname}-${release}${rpmdist}.noarch.rpm"
