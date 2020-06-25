@@ -135,3 +135,6 @@ dry: yes
 If `LDAP2PG_CONFIG` or `--config` is set, `ldap2pg` skip searching the standard
 file locations. You can specify `-` to read configuration from standard input.
 This is helpful to feed `ldap2pg` with dynamic configuration.
+<!-- Local Variables: -->
+<!-- ispell-dictionary: "american" -->
+<!-- End: -->
