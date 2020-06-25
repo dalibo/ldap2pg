@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD033 MD041 MD046 -->
 
 <h1><tt>ldap2pg.yml</tt></h1>
 
