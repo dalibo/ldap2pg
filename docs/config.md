@@ -1,4 +1,3 @@
-<!--*- markdown -*-->
 
 <h1><tt>ldap2pg.yml</tt></h1>
 
