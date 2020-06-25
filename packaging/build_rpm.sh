@@ -45,7 +45,7 @@ python setup.py bdist_rpm \
        --spec-only
 
 chown -R "$(id -u):$(id -g)" "$top_srcdir/dist"
-rpmbuild -ba \
+rpmbuild -bb \
 	--define "_builddir %{_topdir}" \
 	--define "_rpmdir %{_topdir}" \
 	--define "_srcrpmdir %{_topdir}" \
