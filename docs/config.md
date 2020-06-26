@@ -217,31 +217,121 @@ well like any other libldap tool. If not, please open an issue.
 ldap2pg accepts an extra `LDAPPASSWORD` environment variable.
 
 
+## `privileges` section
+
+This top level section is a directory defining high-level privilege, referenced
+in Synchronisation map `grant` directive.
+
+An entry in `privileges` is either a list of other privileges or a definition
+of a custom privilege. A privilege whose name starts with `_` is inactive but
+available for inclusion in a privilege group. This allows ldap2pg to ships
+[well-known privileges](wellknown.md) waiting to be included in your high-level
+privilege.
+
+``` yaml
+privileges:
+  privgroup:
+  - __select_on_tables__
+  - __connect__
+  - custompriv
+
+  custompriv:
+    type: datacl
+    inspect: SELECT ...
+    grant: GRANT ...
+    revoke: REVOKE ...
+```
+
+Writing a custom privilege is hard. Before writing one, ensure that it's not
+already builtin ldap2pg [well-known privileges](wellknown.md). Please open an
+issue if you need a builtin privilege, and share your work. This will increase
+the quality of privilege handling in ldap2pg.
+
+
+### `type`
+
+Privilege can be of different kind. The type of privilege influence whether
+ldap2pg should loops on databases, schemas or owners roles. This influences
+also the parameters required to define a grant.
+
+``` yaml
+privileges:
+  custom:
+    type: datacl
+```
+
+See [Privilege documentation](privileges.md) for details.
+
+
+### `inspect`
+
+The SQL query to inspect grants of this privilege in the cluster. This
+signature of tuples returned by this query varies after privilege type. This
+query may be executed once for global objects or per database, depending on
+privilege type.
+
+``` yaml
+privileges:
+  custom:
+    inspect: |
+      SELECT grantee FROM ...
+```
+
+This is the trickiest query to write when synchronizing privileges. See
+[Privilege documentation](privileges.md) for details.
+
+
+### `grant`
+
+SQL query to grant a privilege to a role. Some parameters are injected in this
+query using mustache substitution like `{role}`. Parameters depends on
+privilege type. For example, a defacl privileges must accepts an `{owner}`
+parameter.
+
+This option must not be confused with `grant` directive in synchronisation map.
+
+``` yaml
+privileges:
+  custom:
+    grant: GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role};
+```
+
+See [Privilege documentation](privileges.md) for details.
+
+
+### `revoke`
+
+Just like `grant` ; the SQL query to revoke a privilege from a role. Parameters
+are substituted with mustache syntax like `{role}` and depends on privilege
+type. You must reuse the same parameters as in `grant` query.
+
+``` yaml
+privileges:
+  custom:
+    revoke: REVOKE SELECT ON ALL TABLES IN SCHEMA {schema} FROM {role};
+```
+
+See [Privilege documentation](privileges.md) for details.
+
+
 ## `sync_map`
 
-The synchronization map is a YAML list. We call each item a *mapping*. Three
-sections compose a mapping:
+The synchronization map is a YAML list. We call each item a *mapping*. A
+mapping is a YAML dict with a `description` field and any of `ldap`, `role` and
+`grant` subsection.
 
-- A `description` entry with a string logged before this mapping is processed.
-- A `ldap` section describing a LDAP query.
-- A `role` or `roles` section describing on or more rules to create [Postgres
-  role](https://www.postgresql.org/docs/current/static/user-manag.html) from
-  LDAP entries.
-- A `grant` section describing on or more grant from LDAP entries.
+``` yaml
+sync_map:
+- description: "Define DBA roles"
+  ldap:
+    base: ...
+  roles:
+  - name: "{cn}"
+    options: LOGIN SUPERUSER
+```
 
-`ldap` entry is optional, however either one of `roles` or `grant` is required.
-
-!!! tip
-
-    Defining the right sync map can be tedious. Start with is simple
-    sync map to setup Postgres and LDAP connexion first and then define detailed
-    synchronisation steps. Here is the simplest sync map:
-
-    <pre class="highlight"><code class="language-yaml">sync_map:
-    - role: toto
-    </code></pre>
-
-    It just means you want a role named `toto` in the cluster.
+The `ldap` subsection is optional. You can define roles and grants without
+querying a directory.
 
 
 ## Shortcuts
