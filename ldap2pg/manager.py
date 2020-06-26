@@ -35,7 +35,9 @@ class SyncManager(object):
         except AttributeError:
             return []
 
-    def _query_ldap(self, base, filter, attributes, scope):
+    def _query_ldap(
+            self, base, filter, attributes, scope, allow_missing_attributes=[],
+    ):
         # Query directory returning a list of entries. An entry is a triplet
         # containing Distinguished name, attributes and joins.
         try:
@@ -55,6 +57,16 @@ class SyncManager(object):
 
             attributes['dn'] = [dn]
 
+            for attr in allow_missing_attributes:
+                if attr in attributes:
+                    continue
+
+                logger.warning(
+                    "Missing %r from %s. Considering it as an empty list.",
+                    attr, dn,
+                )
+                attributes[attr] = []
+
             try:
                 entry = decode_value((dn, attributes))
             except UnicodeDecodeError as e:
@@ -65,11 +77,15 @@ class SyncManager(object):
 
         return entries
 
-    def query_ldap(self, base, filter, attributes, joins, scope):
+    def query_ldap(
+            self, base, filter, attributes,
+            joins, scope, allow_missing_attributes=[],
+    ):
         logger.info(
             "Querying LDAP %.24s... %.12s...",
             base, filter.replace('\n', ''))
-        entries = self._query_ldap(base, filter, attributes, scope)
+        entries = self._query_ldap(
+            base, filter, attributes, scope, allow_missing_attributes)
 
         join_cache = {}
         for attr, join in joins.items():
