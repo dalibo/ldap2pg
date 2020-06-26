@@ -334,6 +334,107 @@ The `ldap` subsection is optional. You can define roles and grants without
 querying a directory.
 
 
+### `ldap` directive
+
+This directive defines LDAP search parameters. Not to be confused with
+top-level `ldap` section defining LDAP connexion parameters.
+
+
+### `base`, `scope` and `filter`
+
+These parameters have the same meaning, definition and default as ldapsearch
+searchbase, scope and filter arguments.
+
+``` yaml
+sync_map:
+- ldap:
+    base: ou=people,dc=company,dc=tld
+    scope: sub
+    filter: >
+      (&
+         (member=*)
+         (cn=group_*)
+      )
+```
+
+ldap2pg infers attributes from role and grant directives. You don't have to
+define them in `ldap` search directive.
+
+
+### `joins`
+
+Customize sub-query. In some case, ldap2pg needs to issue a sub-query to
+further access attributes of an LDAP entry referenced in a top-level entry.
+Usually, `member` attribute is a reference and if you need `sAMAccountName` on
+each member, inject it with `{member.sAMAccountName}` and ldap2pg will
+automatically trigger a sub-query.
+
+ldap2pg supports only one sub-query per attribute. The `joins` section is a
+dictionary with attribute name as key and LDAP search parameters as value.
+
+``` yaml
+sync_map:
+- ldap:
+    joins:
+      member:
+        filter: ...
+        scope: ...
+```
+
+The search base of sub-query is the value of the referencing attribute, e.g.
+each value of `member`. Again, ldap2pg infers attributes of sub-queries.
+
+See [Querying LDAP](ldap.md) for details.
+
+
+### `on_unexpected_dn`
+
+Sometimes, an attribute references another entry in LDAP rather than specifying
+a value. This mixed types attributes are hard to handle and must be avoided.
+
+The `on_unexpected_dn` parameter allows you to tell ldap2pg how to behave it
+this case. The default is to fail. You can choose to either `warn` or silently
+`ignore` these values.
+
+``` yaml
+sync_map:
+- ldap:
+    on_unexpected_dn: warn  # fail | warn | ignore
+```
+
+
+### `role` rule
+
+Define one or more roles wanted in the cluster. This includes name, options,
+comment and members. `roles` is an alias for this key. The value can be either
+a single role rule or a list of role rules.
+
+``` yaml
+sync_map:
+- role:
+    name: dba
+    options: SUPERUSER LOGIN
+- roles:
+  - name: rw
+    options: NOLOGIN
+  - name: ro
+    options: NOLOGIN
+```
+
+
+### `name`
+
+One or more role name wanted in the cluster. `names` is an alias for this
+parameter. The value can be either a single string or a list of strings. You
+can inject LDAP attributes in name using curly braces.
+
+``` yaml
+sync_map:
+- roles:
+  - name: "{cn}"
+```
+
+
 ## Shortcuts
 
 If the file is a YAML list, `ldap2pg` puts the list as `sync_map`. The two
