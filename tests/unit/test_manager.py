@@ -181,6 +181,26 @@ def test_inspect_ldap_unexpected_dn(mocker):
         )]))
 
 
+def test_inspect_ldap_missing_attribute(mocker):
+    ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
+
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.role import RoleRule
+
+    manager = SyncManager()
+
+    # Don't return member attribute.
+    ql.return_value = [('dn0', {}, {})]
+
+    with pytest.raises(UserError) as ei:
+        list(manager.inspect_ldap([dict(
+            ldap=dict(base='...'),
+            # Request member attribute.
+            roles=[RoleRule(names=['{member.cn}'])],
+        )]))
+    assert 'Missing attribute member' in str(ei.value)
+
+
 def test_inspect_ldap_grants(mocker):
     from ldap2pg.manager import SyncManager
     from ldap2pg.privilege import Grant, NspAcl

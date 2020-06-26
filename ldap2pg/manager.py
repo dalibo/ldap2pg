@@ -154,7 +154,11 @@ class SyncManager(object):
         values = {}
         for field in fields:
             values.setdefault(field, [])
-            for value in get_attribute(entry, field):
+            try:
+                raw_values = list(get_attribute(entry, field))
+            except ValueError as e:
+                raise UserError(str(e))
+            for value in raw_values:
                 if isinstance(value, RDNError):
                     msg = "Unexpected DN: %s" % value.dn
                     if 'ignore' == on_unexpected_dn:

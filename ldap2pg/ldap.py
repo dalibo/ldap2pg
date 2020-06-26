@@ -83,7 +83,7 @@ def get_attribute(entry, attribute):
     try:
         values = attributes[path[0]]
     except KeyError:
-        raise ValueError("Unknown attribute %r." % (path[0],))
+        raise ValueError("Missing attribute %s." % (path[0],))
 
     attribute = path[0]
     path = path[1:]
