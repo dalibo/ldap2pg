@@ -113,8 +113,9 @@ def get_attribute(entry, attribute):
             msg = "Missing join result for %s." % (attribute,)
             raise ValueError(msg)
 
+        path = '.'.join(path)
         for joined_entry in joined_entries:
-            for value in get_attribute(joined_entry, '.'.join(path)):
+            for value in get_attribute(joined_entry, path):
                 yield value
 
 
