@@ -74,6 +74,11 @@ class SyncManager(object):
         join_cache = {}
         for attr, join in joins.items():
             for dn, attrs, entry_joins in entries:
+                if attr not in attrs:
+                    raise UserError(
+                        "Missing attribute %s from %s. Can't subquery." %
+                        (attr, dn)
+                    )
                 for value in attrs[attr]:
                     # That would be nice to group all joins of one entry.
                     join_key = '%s/%s' % (attr, value)
