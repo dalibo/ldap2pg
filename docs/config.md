@@ -57,7 +57,17 @@ for some example.
 
 ## Postgres Parameters
 
-The `postgres` section defines connection parameters and queries for Postgres.
+The `postgres` section defines connection parameters and SQL queries for
+Postgres inspection.
+
+The `postgres` section contains several `*_query` parameters. These parameters
+can be either a string containing an SQL query or a YAML list to return a
+static list of values.
+
+
+### `dsn`
+
+Specifies a PostgreSQL connexion URI.
 
 ``` yaml
 postgres:
@@ -68,6 +78,120 @@ postgres:
 
     `ldap2pg` refuses to read a password from a group readable or world
     readable `ldap2pg.yml`.
+
+
+### `databases_query`
+
+The SQL query to list databases in the cluster. This defaults to all databases
+connectable, thus including `template1`. You can override this with a YAML
+list like other queries.
+
+``` yaml
+postgres:
+  databases_query: "SELECT datname FROM pg_catalog.pg_databases;"
+  # OR
+  databases_query: [mydb]
+```
+
+
+### `managed_roles_query`
+
+The SQL query to list the name of managed roles. ldap2pg restricts role
+deletion and privilege edition to managed roles. Usualy, this query returns
+children of a dedicated group like `ldap_roles`. By default, all roles found
+are managed.
+
+`public` is a special builtin role in Postgres. If `managed_roles_query`
+returns `public` role in the list, ldap2pg will manage privileges on `public`.
+
+``` yaml
+postgres:
+  managed_roles_query: |
+    SELECT 'public'
+    UNION
+    SELECT DISTINCT role.rolname
+    FROM pg_roles AS role
+    LEFT OUTER JOIN pg_auth_members AS ms ON ms.member = role.oid
+    LEFT OUTER JOIN pg_roles AS ldap_roles
+      ON ldap_roles.rolname = 'ldap_roles' AND ldap_roles.oid = ms.roleid
+    WHERE role.rolname = 'ldap_roles' OR ldap_roles.oid IS NOT NULL
+    ORDER BY 1;
+```
+
+
+### `owners_query`
+
+The SQL query to global list the names of object owners. ldap2pg execute this
+query *once*, after all roles are created, before granting and revoking
+privileges. You need this query only if you manage default privileges with
+ldap2pg.
+
+``` yaml
+postgres:
+  owners_query: |
+    SELECT role.rolname
+    FROM pg_catalog.pg_roles AS role
+    WHERE role.rolsuper IS TRUE;
+```
+
+You can declare per-schema owners with `schemas_query`. However, unlike
+`owners_query`, `schemas_query` is executed *before* creating users.
+
+
+### `roles_blacklist_query`
+
+The SQL query returning name and glob pattern to blacklist role from
+management. ldap2pg won't touch anything on these roles.
+
+``` yaml
+postgres:
+  roles_blacklist_query:
+  - postgres
+  - pg_*
+  - rds_*
+  - "rds*admin"
+```
+
+Beware that `*suffix` is a YAML reference. You must quote pattern beginning
+with `*`.
+
+
+### `roles_query`
+
+The SQL query returning all roles, their options and their members. It's not
+very useful to customize this. Prefer configure `roles_blacklist_query` and
+`managed_roles_query` to reduce synchronization to a subset of roles.
+
+Role's options varies from one PostgreSQL version to another. ldap2pg handle
+this by injecting options columns in `{options}` substitution.
+
+``` yaml
+postgres:
+  roles_query: |
+    SELECT
+        role.rolname, array_agg(members.rolname) AS members,
+        {options},
+        pg_catalog.shobj_description(role.oid, 'pg_authid') as comment
+    FROM
+        pg_catalog.pg_roles AS role
+    LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
+    LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
+    GROUP BY role.rolname, {options}, comment
+    ORDER BY 1;
+```
+
+
+### `schemas_query`
+
+The SQL query returning the name of schemas in a database. ldap2pg execute this
+query on each databases returned by `databases_query`. ldap2pg loops on objects
+in theses schemas when inspecting GRANTs in the cluster.
+
+``` yaml
+postgres:
+  schemas_query: |
+    SELECT nspname FROM pg_catalog.pg_namespace
+```
 
 
 ## LDAP Parameters
