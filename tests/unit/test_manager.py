@@ -21,7 +21,7 @@ def test_query_ldap(mocker):
     )
 
     assert 2 == len(entries)
-    assert [] == entries[0][1]['member']
+    assert [] == entries[0].attributes['member']
 
     manager.ldapconn.search_s.return_value = [('dn=a', {'a': b'\xbb'})]
     with pytest.raises(UserError):
@@ -32,7 +32,7 @@ def test_query_ldap(mocker):
 
 
 def test_query_ldap_joins_ok(mocker):
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, LDAPEntry
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
@@ -65,37 +65,37 @@ def test_query_ldap_joins_ok(mocker):
     assert 2 == manager.ldapconn.search_s.call_count
 
     expected_entries = [
-        ('cn=A,ou=people,dc=global',
-         {
-            'cn': ['A'],
-            'dn': ['cn=A,ou=people,dc=global'],
-            'member': ['cn=P,ou=people,dc=global'],
-         },
-         {
-             'member': [('cn=P,ou=people,dc=global', {
-                 'dn': ['cn=P,ou=people,dc=global'],
-                 'samaccountname': ['P'],
-             }, {})],
-         }),
-        ('cn=B,ou=people,dc=global',
-         {
-             'cn': ['B'],
-             'dn': ['cn=B,ou=people,dc=global'],
-             'member': ['cn=P,ou=people,dc=global'],
-         },
-         {
-             'member': [('cn=P,ou=people,dc=global', {
-                 'dn': ['cn=P,ou=people,dc=global'],
-                 'samaccountname': ['P'],
-             }, {})],
-         }),
+        LDAPEntry(
+            'cn=A,ou=people,dc=global',
+            {
+                'cn': ['A'],
+                'member': ['cn=P,ou=people,dc=global'],
+            },
+            {
+                'member': [LDAPEntry('cn=P,ou=people,dc=global', {
+                    'samaccountname': ['P'],
+                })],
+            },
+        ),
+        LDAPEntry(
+            'cn=B,ou=people,dc=global',
+            {
+                'cn': ['B'],
+                'member': ['cn=P,ou=people,dc=global'],
+            },
+            {
+                'member': [LDAPEntry('cn=P,ou=people,dc=global', {
+                    'samaccountname': ['P'],
+                })],
+            },
+        ),
     ]
 
     assert expected_entries == entries
 
 
 def test_query_ldap_joins_filtered_allowed(mocker):
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, LDAPEntry
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
@@ -127,22 +127,23 @@ def test_query_ldap_joins_filtered_allowed(mocker):
     assert 2 == manager.ldapconn.search_s.call_count
 
     expected_entries = [
-        ('cn=A,ou=people,dc=global',
-         {
-            'cn': ['A'],
-            'dn': ['cn=A,ou=people,dc=global'],
-            'member': ['cn=P,ou=people,dc=global'],
-         },
-         {
-            'member': [],
-         }),
+        LDAPEntry(
+            'cn=A,ou=people,dc=global',
+            {
+                'cn': ['A'],
+                'member': ['cn=P,ou=people,dc=global'],
+            },
+            {
+                'member': [],
+            },
+        ),
     ]
 
     assert expected_entries == entries
 
 
 def test_query_ldap_joins_filtered_not_allowed(mocker):
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import SyncManager, LDAPEntry
 
     search_result = [
         ('cn=A,ou=people,dc=global', {
@@ -173,14 +174,13 @@ def test_query_ldap_joins_filtered_not_allowed(mocker):
     assert 2 == manager.ldapconn.search_s.call_count
 
     expected_entries = [
-        ('cn=A,ou=people,dc=global',
-         {
-            'cn': ['A'],
-            'dn': ['cn=A,ou=people,dc=global'],
-            'member': ['cn=P,ou=people,dc=global'],
-         },
-         {
-         }),
+        LDAPEntry(
+            'cn=A,ou=people,dc=global',
+            {
+                'cn': ['A'],
+                'member': ['cn=P,ou=people,dc=global'],
+            },
+        ),
     ]
 
     assert expected_entries == entries
@@ -226,18 +226,17 @@ def test_query_ldap_bad_filter(mocker):
 
 
 def test_inspect_ldap_unexpected_dn(mocker):
-    ga = mocker.patch('ldap2pg.manager.get_attribute')
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
-    from ldap2pg.manager import SyncManager, RDNError, UserError
+    from ldap2pg.manager import SyncManager, UserError, LDAPEntry
     from ldap2pg.role import RoleRule
 
     manager = SyncManager()
 
-    ga.side_effect = values = [
-        ['member0_cn', RDNError(), 'member1_cn'],
-    ]
-    ql.return_value = [('dn0', {}, {})]
+    ql.return_value = [
+        LDAPEntry('dn0', {
+            'member': ['cn=member0', 'baddn=o0', 'cn=member1'],
+        })]
 
     list(manager.inspect_ldap([dict(
         description="Test query desc",
@@ -245,16 +244,10 @@ def test_inspect_ldap_unexpected_dn(mocker):
         roles=[RoleRule(names=['{member.cn}'])],
     )]))
 
-    ga.reset_mock()
-    ga.side_effect = values
-
     list(manager.inspect_ldap([dict(
         ldap=dict(on_unexpected_dn='ignore'),
         roles=[RoleRule(names=['{member.cn}'])]
     )]))
-
-    ga.reset_mock()
-    ga.side_effect = values
 
     with pytest.raises(UserError):
         list(manager.inspect_ldap([dict(
@@ -266,13 +259,13 @@ def test_inspect_ldap_unexpected_dn(mocker):
 def test_inspect_ldap_missing_attribute(mocker):
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
-    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.manager import SyncManager, UserError, LDAPEntry
     from ldap2pg.role import RoleRule
 
     manager = SyncManager()
 
     # Don't return member attribute.
-    ql.return_value = [('dn0', {}, {})]
+    ql.return_value = [LDAPEntry('dn0')]
 
     with pytest.raises(UserError) as ei:
         list(manager.inspect_ldap([dict(
@@ -280,7 +273,7 @@ def test_inspect_ldap_missing_attribute(mocker):
             # Request member attribute.
             roles=[RoleRule(names=['{member.cn}'])],
         )]))
-    assert 'Missing attribute member' in str(ei.value)
+    assert 'Missing attribute: member' in str(ei.value)
 
 
 def test_inspect_ldap_grants(mocker):
@@ -295,7 +288,7 @@ def test_inspect_ldap_grants(mocker):
         inspector=mocker.Mock(name='inspector'),
     )
     manager.inspector.roles_blacklist = ['blacklisted']
-    rule = mocker.Mock(name='grant')
+    rule = mocker.Mock(name='grant', attributes_map={})
     rule.generate.return_value = [
         Grant('ro', 'postgres', None, 'alice'),
         Grant('ro', 'postgres', None, 'blacklisted'),
@@ -366,10 +359,10 @@ def test_postprocess_acl_inexistant_privilege():
 def test_inspect_ldap_roles(mocker):
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
-    from ldap2pg.manager import SyncManager
+    from ldap2pg.manager import LDAPEntry, SyncManager
     from ldap2pg.role import Role
 
-    ql.return_value = [('dn', {}, {})]
+    ql.return_value = [LDAPEntry('dn')]
 
     manager = SyncManager(
         ldapconn=mocker.Mock(),
@@ -377,11 +370,11 @@ def test_inspect_ldap_roles(mocker):
     )
     manager.inspector.roles_blacklist = ['blacklisted']
 
-    rule0 = mocker.Mock(name='rule0', all_fields=[])
+    rule0 = mocker.Mock(name='rule0', attributes_map={})
     rule0.generate.return_value = [Role('alice', options=dict(LOGIN=True))]
-    rule1 = mocker.Mock(name='rule1', all_fields=[])
+    rule1 = mocker.Mock(name='rule1', attributes_map={})
     rule1.generate.return_value = [Role('bob')]
-    rule2 = mocker.Mock(name='rule2', all_fields=[])
+    rule2 = mocker.Mock(name='rule2', attributes_map={})
     rule2.generate.return_value = [Role('blacklisted')]
 
     # Minimal effective syncmap
@@ -444,12 +437,12 @@ def test_inspect_roles_duplicate_differents_options(mocker):
 def test_inspect_ldap_roles_comment_error(mocker):
     ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
 
-    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.manager import LDAPEntry, SyncManager, UserError
     from ldap2pg.role import CommentError
 
-    ql.return_value = [('dn', {}, {})]
+    ql.return_value = [LDAPEntry('dn')]
 
-    rule = mocker.Mock(name='rule', all_fields=[])
+    rule = mocker.Mock(name='rule', attributes_map={})
     rule.generate.side_effect = CommentError("message")
     rule.comment.formats = ['From {desc}']
 
@@ -477,6 +470,83 @@ def test_empty_sync_map(mocker):
     manager.psql.run_queries.return_value = 0
 
     manager.sync([])
+
+
+def test_entry_build_vars():
+    from ldap2pg.ldap import LDAPEntry
+    from ldap2pg.manager import SyncManager
+
+    entry = LDAPEntry(
+        dn='cn=my0,uo=gr0,dc=acme,dc=tld',
+        attributes=dict(
+            cn=['my0'],
+            member=[
+                'cn=m0,uo=gr0',
+                'cn=m1,uo=gr0',
+            ],
+            simple=[
+                'cn=s0,uo=gr1',
+                'cn=s1,uo=gr1',
+                'cn=s2,uo=gr1',
+            ],
+        ),
+        children=dict(member=[
+            LDAPEntry(
+                'cn=m0,uo=gr0',
+                dict(mail=['m0@acme.tld', 'm00@acme.tld']),
+            ),
+            LDAPEntry(
+                'cn=m1,uo=gr0',
+                dict(mail=['m1@acme.tld']),
+            ),
+        ]),
+    )
+
+    map_ = dict(
+        __self__=['dn', 'cn', 'dn.cn'],
+        member=['cn', 'dn', 'mail', 'dn.cn'],
+        simple=['cn'],
+    )
+
+    manager = SyncManager()
+    vars_ = manager.build_format_vars(entry, map_, on_unexpected_dn='fail')
+    wanted = dict(
+        __self__=[dict(
+            dn=[dict(
+                dn="cn=my0,uo=gr0,dc=acme,dc=tld",
+                cn="my0",
+            )],
+            cn=["my0"],
+        )],
+        member=[
+            dict(
+                dn=[dict(dn="cn=m0,uo=gr0", cn="m0")],
+                cn=["m0"],
+                mail=["m0@acme.tld", "m00@acme.tld"],
+            ),
+            dict(
+                dn=[dict(dn="cn=m1,uo=gr0", cn="m1")],
+                cn=["m1"],
+                mail=["m1@acme.tld"],
+            ),
+        ],
+        simple=[
+            dict(
+                dn=["cn=s0,uo=gr1"],
+                cn=["s0"],
+            ),
+            dict(
+                dn=["cn=s1,uo=gr1"],
+                cn=["s1"],
+            ),
+            dict(
+                dn=["cn=s2,uo=gr1"],
+                cn=["s2"],
+            ),
+        ],
+    )
+
+    assert wanted == vars_
 
 
 def test_sync(mocker):

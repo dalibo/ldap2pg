@@ -15,6 +15,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fail when attribute is misspelled. You must explicitly list attributes that
   may be missing in the result. By default, ldap2pg accepts missing `member`
   and considers it an empty list rather than a misspelled attribute.
+- Rewrite string generation from LDAP attribute to fix corner cases and
+  inconsistency.
 - Fail when sub-querying on bad DN.
 - CentOS 8 support.
 - PostgreSQL 13 support.

@@ -3,8 +3,9 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import logging
 
+from .format import collect_fields, AttributesMap, FormatList
 from .psql import Query
-from .utils import collect_fields, dedent, unicode, FormatList
+from .utils import dedent, unicode
 
 
 logger = logging.getLogger(__name__)
@@ -378,11 +379,18 @@ class RoleRule(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.names)
 
+    @property
+    def attributes_map(self):
+        map_ = AttributesMap()
+        for lst in self.comment, self.members, self.names, self.parents:
+            map_.update(lst.attributes_map)
+        return map_
+
     def generate(self, vars_):
-        members = list(self.members.expand(vars_))
-        parents = list(self.parents.expand(vars_))
         names = self.names.expand(vars_)
         comments = comment_repeater(self.comment.expand(vars_))
+        members = list(self.members.expand(vars_))
+        parents = list(self.parents.expand(vars_))
 
         i = None
         for (i, name), (comment, repeated) in zip(enumerate(names), comments):

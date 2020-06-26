@@ -2,10 +2,11 @@ from itertools import groupby
 import logging
 from fnmatch import fnmatch
 
+from .format import AttributesMap, FormatList, collect_fields
 from .psql import Query
 from .utils import (
-    AllDatabases, FormatList, UserError,
-    collect_fields, unicode, make_group_map,
+    AllDatabases, UserError,
+    unicode, make_group_map,
 )
 
 
@@ -229,8 +230,15 @@ class GrantRule(object):
         self.roles = FormatList.factory(roles)
         self.role_match = role_match
         self.all_fields = collect_fields(
-            self.privilege, self.databases, self.schemas, self.roles,
+            self.databases, self.privilege, self.roles, self.schemas,
         )
+
+    @property
+    def attributes_map(self):
+        map_ = AttributesMap()
+        for lst in self.databases, self.schemas, self.roles, self.privilege:
+            map_.update(lst.attributes_map)
+        return map_
 
     def __repr__(self):
         return '<%s %s on [%s].[%s] to [%s]>' % (

@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
-import itertools
 import logging
 
-from .ldap import LDAPError, RDNError, get_attribute, lower_attributes
+from .ldap import LDAPEntry, LDAPError, RDNError
+from .format import AttributesMap
 from .privilege import Acl
 from .role import (
     CommentError,
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value, make_format_vars, match
+from .utils import UserError, decode_value, lower_keys, match
 from .psql import expandqueries
 
 
@@ -55,8 +55,6 @@ class SyncManager(object):
                 logger.debug("Discarding ref: %.40s.", attributes)
                 continue
 
-            attributes['dn'] = [dn]
-
             for attr in allow_missing_attributes:
                 if attr in attributes:
                     continue
@@ -68,12 +66,12 @@ class SyncManager(object):
                 attributes[attr] = []
 
             try:
-                entry = decode_value((dn, attributes))
+                dn, attributes = decode_value((dn, attributes))
             except UnicodeDecodeError as e:
                 message = "Failed to decode data from %r: %s." % (dn, e,)
                 raise UserError(message)
 
-            entries.append(lower_attributes(entry) + ({},))
+            entries.append(LDAPEntry(dn, lower_keys(attributes)))
 
         return entries
 
@@ -89,13 +87,13 @@ class SyncManager(object):
 
         join_cache = {}
         for attr, join in joins.items():
-            for dn, attrs, entry_joins in entries:
-                if attr not in attrs:
+            for entry in entries:
+                if attr not in entry.attributes:
                     raise UserError(
                         "Missing attribute %s from %s. Can't subquery." %
-                        (attr, dn)
+                        (attr, entry.dn)
                     )
-                for value in attrs[attr]:
+                for value in entry.attributes[attr]:
                     # That would be nice to group all joins of one entry.
                     join_key = '%s/%s' % (attr, value)
                     join_entries = join_cache.get(join_key)
@@ -105,12 +103,43 @@ class SyncManager(object):
                         join_entries = self._query_ldap(**join_query)
                         join_cache[join_key] = join_entries
                     if join_entries or attr in allow_missing_attributes:
-                        join_entries = entry_joins.get(attr, []) + join_entries
-                        entry_joins[attr] = join_entries
+                        entry.children[attr] = (
+                            entry.children.get(attr, [])
+                            + join_entries
+                        )
 
         return entries
 
     def inspect_ldap(self, syncmap):
+        #
+        # This is one of the trickiest part of ldap2pg.
+        #
+        # Generating roles and privileges from LDAP attributes is quite complex
+        # due to:
+        #
+        # - Empty, single or list of value.
+        # - Composite value: Accessing RDN from DN.
+        # - Join.
+        # - Combination of multiple LDAP attributes in a rule field.
+        # - Consistency between fields of a single rule.
+        # - Several rules for a single query.
+        #
+        # The pipeline looks like this:
+        #
+        # - Manager queries LDAP, including sub-queries.
+        #
+        # - Manager loops LDAP entry.
+        #
+        # - For each entry, manager loops roles and grant rules:
+        #
+        # - Manager extracts requested vars from entry for the rule.
+        #
+        # - Rule expands vars into formats and yields objects (either role or
+        #   privilege).
+        #
+        # - Manager gathers objects in a set, taking care of conflicts if an
+        #   object is generated twice.
+        #
         ldaproles = {}
         ldapacl = Acl()
         for mapping in syncmap:
@@ -119,26 +148,25 @@ class SyncManager(object):
 
             role_rules = mapping.get('roles', [])
             grant_rules = mapping.get('grant', [])
+            map_ = AttributesMap.gather(*[
+                r.attributes_map
+                for r in role_rules + grant_rules
+            ])
+
             if 'ldap' in mapping:
                 on_unexpected_dn = mapping['ldap'].pop(
                     'on_unexpected_dn', 'fail')
                 entries = self.query_ldap(**mapping['ldap'])
-                fields = set(itertools.chain(*[
-                    rule.all_fields
-                    for rule in
-                    role_rules + grant_rules
-                ]))
                 log_source = 'in LDAP'
             else:
-                entries = [('YAML', {}, {})]
-                fields = []
+                entries = [LDAPEntry('YAML')]
                 log_source = 'from YAML'
                 on_unexpected_dn = 'fail'
 
             for entry in entries:
                 vars_ = self.build_format_vars(
                     entry,
-                    fields,
+                    map_,
                     on_unexpected_dn=on_unexpected_dn,
                 )
 
@@ -165,16 +193,16 @@ class SyncManager(object):
 
         return roleset, ldapacl
 
-    @staticmethod
-    def build_format_vars(entry, fields, on_unexpected_dn):
-        values = {}
-        for field in fields:
-            values.setdefault(field, [])
+    @classmethod
+    def build_format_vars(cls, entry, map_, on_unexpected_dn):
+        # Prepare a dict with all values for formatting, as described in map_.
+        def value_processor(values):
             try:
-                raw_values = list(get_attribute(entry, field))
-            except ValueError as e:
+                values = list(values)
+            except KeyError as e:
                 raise UserError(str(e))
-            for value in raw_values:
+
+            for value in values:
                 if isinstance(value, RDNError):
                     msg = "Unexpected DN: %s" % value.dn
                     if 'ignore' == on_unexpected_dn:
@@ -184,8 +212,12 @@ class SyncManager(object):
                     else:
                         raise UserError(msg)
                 else:
-                    values[field].append(value)
-        return make_format_vars(fields, entry[0], values)
+                    yield value
+
+        return entry.build_format_vars(
+            map_,
+            value_processor,
+        )
 
     def apply_role_rule(self, rule, ldaproles, vars_, log_source):
         for role in rule.generate(vars_):
