@@ -338,3 +338,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Manage Postgres roles, role options and role members.
 - Creates roles from LDAP entries or from static values in YAML.
 - Verbose mode with Postgres and LDAP queries logged.
+
+<!-- Local Variables: -->
+<!-- ispell-dictionary: "american" -->
+<!-- End: -->
