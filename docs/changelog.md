@@ -1,4 +1,4 @@
-<!--*- markdown -*-->
+<!-- markdownlint-disable MD033 MD041 -->
 
 <h1>Changelog</h1>
 
