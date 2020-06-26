@@ -92,41 +92,28 @@ def test_query_ldap_joins_ok(mocker):
     assert expected_entries == entries
 
 
-def test_query_ldap_joins_ignore_error(mocker):
-    from ldap2pg.manager import SyncManager, LDAPError
+def test_query_ldap_joins_missing(mocker):
+    from ldap2pg.manager import SyncManager, UserError
 
-    search_result = [
-        ('cn=A,ou=people,dc=global', {
+    search_result = [(
+        'cn=A,ou=people,dc=global', {
             'cn': ['A'],
-            'member': ['cn=P,ou=people,dc=global']}),
-    ]
-
-    sub_search_result = LDAPError()
+        }
+    )]
 
     manager = SyncManager(ldapconn=mocker.Mock())
-    manager.ldapconn.search_s.side_effect = [
-            search_result, sub_search_result]
+    manager.ldapconn.search_s.side_effect = [search_result]
 
-    entries = manager.query_ldap(
-        base='ou=people,dc=global', filter='(objectClass=group)',
-        scope=2, joins={'member': dict(
-            base='ou=people,dc=global',
-            scope=2,
-            filter='(objectClass=people)',
-            attributes=['sAMAccountName'],
-        )},
-        attributes=['cn', 'member'],
-    )
-
-    expected_entries = [
-        ('cn=A,ou=people,dc=global', {
-            'cn': ['A'],
-            'dn': ['cn=A,ou=people,dc=global'],
-            'member': ['cn=P,ou=people,dc=global'],
-        }, {}),
-    ]
-
-    assert expected_entries == entries
+    with pytest.raises(UserError) as ei:
+        manager.query_ldap(
+            base='ou=people,dc=global', filter='(objectClass=group)',
+            scope=2, joins={'member': dict(
+                filter='(objectClass=people)',
+                attributes=['sAMAccountName'],
+            )},
+            attributes=['cn', 'member'],
+        )
+    assert "Missing attribute member" in str(ei.value)
 
 
 def test_query_ldap_bad_filter(mocker):

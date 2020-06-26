@@ -85,14 +85,9 @@ class SyncManager(object):
                     join_entries = join_cache.get(join_key)
                     if join_entries is None:
                         join_query = dict(join, base=value)
-                        try:
-                            logger.info("Sub-querying LDAP %.24s...", value)
-                            join_entries = self._query_ldap(**join_query)
-                            join_cache[join_key] = join_entries
-                        except UserError as e:
-                            logger.warning('Ignoring %s: %s', value, e)
-                            join_cache[join_key] = False
-                            continue
+                        logger.info("Sub-querying LDAP %.24s...", value)
+                        join_entries = self._query_ldap(**join_query)
+                        join_cache[join_key] = join_entries
                     if join_entries:
                         join_entries = entry_joins.get(attr, []) + join_entries
                         entry_joins[attr] = join_entries

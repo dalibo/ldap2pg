@@ -257,7 +257,6 @@ objectClass: groupOfNames
 objectClass: top
 cn: team0
 # Missing description: comment will fallback to default.
-member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=david,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=didier,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -269,7 +268,6 @@ objectClass: groupOfNames
 objectClass: top
 cn: team1
 description: Desc of team1, should end in a comment.
-member: cn=carole,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: uid=dimitri,ou=people,dc=ldap,dc=ldap2pg,dc=docker
