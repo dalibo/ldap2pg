@@ -146,6 +146,7 @@ def test_inspect_ldap_unexpected_dn(mocker):
     ql.return_value = [('dn0', {}, {})]
 
     list(manager.inspect_ldap([dict(
+        description="Test query desc",
         ldap=dict(on_unexpected_dn='warn'),
         roles=[RoleRule(names=['{member.cn}'])],
     )]))
