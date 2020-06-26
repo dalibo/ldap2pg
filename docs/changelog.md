@@ -1,4 +1,4 @@
-<!--*- markdown -*-->
+<!-- markdownlint-disable MD033 MD041 -->
 
 <h1>Changelog</h1>
 
@@ -9,7 +9,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
-- Fail when attribute is mispelled.
+- Fail when attribute is misspelled.
 - Fail when sub-querying on bad DN.
 - CentOS 8 support.
 - PostgreSQL 13 support.
@@ -39,13 +39,13 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 5.2
 
-**Attention!** This release has some behaviour changes. Some silented errors
+**Attention!** This release has some behaviour changes. Some silenced errors
 are now raised when encountered. Please test on staging environment before
 deploying on production.
 
 - Fix ignored LDAP entries after unexpected DN.
 - Fix traceback when inspecting grants.
-- Fix role comment overriden on alter role.
+- Fix role comment overridden on alter role.
 - Fix default configuration filename in ~/.config.
 - Refuse to mix static rules and ldap query.
 - Accepts an SQL query to list ignored roles. `postgres:blacklist` is renamed
@@ -261,7 +261,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 # ldap2pg 3.4
 
 - Fix unicode error on logging SQL query.
-- Fix traceback on inexistant database in ACL.
+- Fix traceback on nonexistent database in ACL.
 - Fix various configuration loading errors.
 - Fix Distinguished Name case sensitivity.
 - Provide [well known ACLs](wellknown.md).
@@ -326,15 +326,19 @@ If you use pyldap to run ldap2pg on Python3, please either :
   envvars.
 - Read ldaprc files.
 - SSL/TLS support.
-- SASL authentification support.
+- SASL authentication support.
 - Read configuration from stdin.
 
 
 # ldap2pg 1.0
 
 - Bootstrap project
-- Automatic unit and functionnal tests.
+- Automatic unit and functional tests.
 - Read configuration from CLI arguments, env vars and YAML.
 - Manage Postgres roles, role options and role members.
 - Creates roles from LDAP entries or from static values in YAML.
 - Verbose mode with Postgres and LDAP queries logged.
+
+<!-- Local Variables: -->
+<!-- ispell-dictionary: "american" -->
+<!-- End: -->
