@@ -20,6 +20,8 @@ def ldapquery(value, format_fields=None):
     #   filter:
     #   scope:
     #   attributes:
+    #   on_unexpected_dn:
+    #   allow_missing_attributes:
     #   joins:
     #     member:
     #       base:
@@ -41,6 +43,10 @@ def ldapquery(value, format_fields=None):
     # Accept manual attributes, for legacy. Attribute inference should in all
     # cases. Also, join attributes as predefined this way.
     strlist_alias(query, 'attributes', 'attribute')
+
+    strlist_alias(query, 'allow_missing_attributes', 'allow_missing_attribute')
+    query.setdefault('allow_missing_attributes', ['member'])
+
     alias(query, 'joins', 'join')
     query.setdefault('joins', {})
 
@@ -62,6 +68,8 @@ def ldapquery(value, format_fields=None):
             continue
         join = dict(default_ldap_query, **query['joins'].get(attr, {}))
         join.setdefault('attributes', []).append(subattr[0])
+        join.setdefault(
+            'allow_missing_attributes', query['allow_missing_attributes'])
         query['joins'][attr] = ldapquery(join, [])
 
     if 'dn' in attrs:
