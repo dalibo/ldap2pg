@@ -194,15 +194,27 @@ postgres:
 ```
 
 
-## LDAP Parameters
+## `ldap` section
+
+The LDAP section is fairly simple. Not to be confused with `ldap` query section
+in `sync_map` (See below). The top-level `ldap` section is meant only to gather
+LDAP connexion informations.
 
 ``` yaml
 ldap:
   uri: ldap://ldap2pg.local:389
   binddn: cn=admin,dc=ldap2pg,dc=local
+  # For SASL
   user: saslusername
   password: SECRET
 ```
+
+Actually, it's better to configure ldap connexion through `ldaprc` and regular
+libldap environment variables than in YAML. See ldap.conf(1) for details. The
+best practice is to configure ldapsearch and then ldap2pg must be configured as
+well like any other libldap tool. If not, please open an issue.
+
+ldap2pg accepts an extra `LDAPPASSWORD` environment variable.
 
 
 ## `sync_map`
