@@ -4,8 +4,8 @@
 
 `ldap2pg` accepts a YAML configuration file usually named `ldap2pg.yml` and put
 in working directory. Everything can be configured from the YAML file:
-verbosity, real mode, LDAP and Postgres credentials, LDAP queries, privileges
-and mappings.
+verbosity, LDAP and Postgres credentials, LDAP queries, privileges and
+mappings.
 
 !!! warning
 
@@ -13,33 +13,33 @@ and mappings.
     is described.
 
 
-`ldap2pg.yml` is splitted in several sections, unordered :
+## File Location
 
-- `postgres` : setup Postgres connexion and queries.
+`ldap2pg` searches for files in the following order :
+
+1. `ldap2pg.yml` in current working directory.
+2. `~/.config/ldap2pg.yml`.
+3. `/etc/ldap2pg.yml`.
+
+If `LDAP2PG_CONFIG` or `--config` is set, `ldap2pg` skip searching the standard
+file locations. You can specify `-` to read configuration from standard input.
+This is helpful to feed `ldap2pg` with dynamic configuration.
+
+
+## File Structure & Example
+
+`ldap2pg.yml` is split in several sections :
+
+- `postgres` : setup Postgres connexion and inspection queries.
 - `ldap` : setup LDAP connexion.
 - `privileges` : the definition of privileges.
 - `sync_map` : the list of LDAP queries and associated mapping to roles and
   grants.
 - finally some global parameters (verbosity, etc.).
 
-If the file is a YAML list, `ldap2pg` puts the list as `sync_map`. The two
-following configurations are strictly equivalent:
-
-``` console
-$ ldap2pg -c -
-- role: admin
-$ ldap2pg -c -
-sync_map:
-- roles:
-  - names:
-    - admin
-$
-```
-
-
 We provide a simple well commented
 [ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml), tested
-on CI. If you don't know how to begin, it can be a goot starting point.
+on CI. If you don't know how to begin, it can be a good starting point.
 
 !!! note
 
@@ -49,7 +49,7 @@ on CI. If you don't know how to begin, it can be a goot starting point.
 
 ## About YAML
 
-YAML is a superset of JSON. A JSON document is a valid YAML document. YAML very
+YAML is a super-set of JSON. A JSON document is a valid YAML document. YAML very
 permissive format where indentation is meaningful. See [this YAML
 cheatsheet](https://medium.com/@kenichishibata/yaml-to-json-cheatsheet-c3ac3ef519b8)
 for some example.
@@ -79,6 +79,7 @@ ldap:
   user: saslusername
   password: SECRET
 ```
+
 
 ## `sync_map`
 
@@ -124,17 +125,26 @@ dry: yes
 ```
 
 
-## File Location
+## Shortcuts
 
-`ldap2pg` searches for files in the following order :
+If the file is a YAML list, `ldap2pg` puts the list as `sync_map`. The two
+following configurations are strictly equivalent:
 
-1. `ldap2pg.yml` in current working directory.
-2. `~/.config/ldap2pg.yml`.
-3. `/etc/ldap2pg.yml`.
+``` console
+$ ldap2pg -c -
+- admin
+$ ldap2pg -c -
+sync_map:
+- roles:
+  - names:
+    - admin
+$
+```
 
-If `LDAP2PG_CONFIG` or `--config` is set, `ldap2pg` skip searching the standard
-file locations. You can specify `-` to read configuration from standard input.
-This is helpful to feed `ldap2pg` with dynamic configuration.
+`database`, `schema`, `role`, `name`, `parent` and `member` can be either a
+string or a list of strings. These keys have plural aliases, respectively
+`databases`, `schema`, `roles`, `names`, `parents` and `members`.
+
 <!-- Local Variables: -->
 <!-- ispell-dictionary: "american" -->
 <!-- End: -->
