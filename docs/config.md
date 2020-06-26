@@ -232,23 +232,6 @@ sections compose a mapping:
     It just means you want a role named `toto` in the cluster.
 
 
-## Various Parameters
-
-Finally, `ldap2pg.yml` contains various plain parameters for `ldap2pg`
-behaviour.
-
-``` yaml
-# Colorization. env var: COLOR=<anything>
-color: yes
-
-# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSITY
-verbosity: 5
-
-# Dry mode. env var: DRY=<anything>
-dry: yes
-```
-
-
 ## Shortcuts
 
 If the file is a YAML list, `ldap2pg` puts the list as `sync_map`. The two
