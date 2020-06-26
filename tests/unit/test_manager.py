@@ -92,41 +92,28 @@ def test_query_ldap_joins_ok(mocker):
     assert expected_entries == entries
 
 
-def test_query_ldap_joins_ignore_error(mocker):
-    from ldap2pg.manager import SyncManager, LDAPError
+def test_query_ldap_joins_missing(mocker):
+    from ldap2pg.manager import SyncManager, UserError
 
-    search_result = [
-        ('cn=A,ou=people,dc=global', {
+    search_result = [(
+        'cn=A,ou=people,dc=global', {
             'cn': ['A'],
-            'member': ['cn=P,ou=people,dc=global']}),
-    ]
-
-    sub_search_result = LDAPError()
+        }
+    )]
 
     manager = SyncManager(ldapconn=mocker.Mock())
-    manager.ldapconn.search_s.side_effect = [
-            search_result, sub_search_result]
+    manager.ldapconn.search_s.side_effect = [search_result]
 
-    entries = manager.query_ldap(
-        base='ou=people,dc=global', filter='(objectClass=group)',
-        scope=2, joins={'member': dict(
-            base='ou=people,dc=global',
-            scope=2,
-            filter='(objectClass=people)',
-            attributes=['sAMAccountName'],
-        )},
-        attributes=['cn', 'member'],
-    )
-
-    expected_entries = [
-        ('cn=A,ou=people,dc=global', {
-            'cn': ['A'],
-            'dn': ['cn=A,ou=people,dc=global'],
-            'member': ['cn=P,ou=people,dc=global'],
-        }, {}),
-    ]
-
-    assert expected_entries == entries
+    with pytest.raises(UserError) as ei:
+        manager.query_ldap(
+            base='ou=people,dc=global', filter='(objectClass=group)',
+            scope=2, joins={'member': dict(
+                filter='(objectClass=people)',
+                attributes=['sAMAccountName'],
+            )},
+            attributes=['cn', 'member'],
+        )
+    assert "Missing attribute member" in str(ei.value)
 
 
 def test_query_ldap_bad_filter(mocker):
@@ -159,6 +146,7 @@ def test_inspect_ldap_unexpected_dn(mocker):
     ql.return_value = [('dn0', {}, {})]
 
     list(manager.inspect_ldap([dict(
+        description="Test query desc",
         ldap=dict(on_unexpected_dn='warn'),
         roles=[RoleRule(names=['{member.cn}'])],
     )]))
@@ -179,6 +167,26 @@ def test_inspect_ldap_unexpected_dn(mocker):
             ldap=dict(),
             roles=[RoleRule(names=['{member.cn}'])],
         )]))
+
+
+def test_inspect_ldap_missing_attribute(mocker):
+    ql = mocker.patch('ldap2pg.manager.SyncManager.query_ldap')
+
+    from ldap2pg.manager import SyncManager, UserError
+    from ldap2pg.role import RoleRule
+
+    manager = SyncManager()
+
+    # Don't return member attribute.
+    ql.return_value = [('dn0', {}, {})]
+
+    with pytest.raises(UserError) as ei:
+        list(manager.inspect_ldap([dict(
+            ldap=dict(base='...'),
+            # Request member attribute.
+            roles=[RoleRule(names=['{member.cn}'])],
+        )]))
+    assert 'Missing attribute member' in str(ei.value)
 
 
 def test_inspect_ldap_grants(mocker):

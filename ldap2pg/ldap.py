@@ -83,7 +83,7 @@ def get_attribute(entry, attribute):
     try:
         values = attributes[path[0]]
     except KeyError:
-        raise ValueError("Unknown attribute %r" % (path[0],))
+        raise ValueError("Missing attribute %s." % (path[0],))
 
     attribute = path[0]
     path = path[1:]
@@ -96,7 +96,7 @@ def get_attribute(entry, attribute):
             try:
                 dn = str2dn(value)
             except ValueError:
-                msg = "Can't parse DN from attribute %s=%s" % (
+                msg = "Can't parse DN from attribute %s=%s." % (
                     attribute, value)
                 raise ValueError(msg)
             value = dict()
@@ -105,16 +105,17 @@ def get_attribute(entry, attribute):
             try:
                 yield value[path[0]]
             except KeyError:
-                yield RDNError("Unknown RDN %s" % (path[0],), raw_dn)
+                yield RDNError("Unknown RDN %s." % (path[0],), raw_dn)
     else:
         try:
             joined_entries = joins[attribute]
         except KeyError:
-            msg = "Missing join result for %s" % (attribute,)
+            msg = "Missing join result for %s." % (attribute,)
             raise ValueError(msg)
 
+        path = '.'.join(path)
         for joined_entry in joined_entries:
-            for value in get_attribute(joined_entry, '.'.join(path)):
+            for value in get_attribute(joined_entry, path):
                 yield value
 
 

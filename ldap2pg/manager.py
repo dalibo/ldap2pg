@@ -48,15 +48,12 @@ class SyncManager(object):
 
         logger.debug('Got %d entries from LDAP.', len(raw_entries))
         entries = []
-        wanted_attribute_names = attributes
         for dn, attributes in raw_entries:
             if not dn:
                 logger.debug("Discarding ref: %.40s.", attributes)
                 continue
 
             attributes['dn'] = [dn]
-            for n in wanted_attribute_names:
-                attributes.setdefault(n, [])
 
             try:
                 entry = decode_value((dn, attributes))
@@ -77,20 +74,20 @@ class SyncManager(object):
         join_cache = {}
         for attr, join in joins.items():
             for dn, attrs, entry_joins in entries:
+                if attr not in attrs:
+                    raise UserError(
+                        "Missing attribute %s from %s. Can't subquery." %
+                        (attr, dn)
+                    )
                 for value in attrs[attr]:
                     # That would be nice to group all joins of one entry.
                     join_key = '%s/%s' % (attr, value)
                     join_entries = join_cache.get(join_key)
                     if join_entries is None:
                         join_query = dict(join, base=value)
-                        try:
-                            logger.info("Sub-querying LDAP %.24s...", value)
-                            join_entries = self._query_ldap(**join_query)
-                            join_cache[join_key] = join_entries
-                        except UserError as e:
-                            logger.warning('Ignoring %s: %s', value, e)
-                            join_cache[join_key] = False
-                            continue
+                        logger.info("Sub-querying LDAP %.24s...", value)
+                        join_entries = self._query_ldap(**join_query)
+                        join_cache[join_key] = join_entries
                     if join_entries:
                         join_entries = entry_joins.get(attr, []) + join_entries
                         entry_joins[attr] = join_entries
@@ -157,7 +154,11 @@ class SyncManager(object):
         values = {}
         for field in fields:
             values.setdefault(field, [])
-            for value in get_attribute(entry, field):
+            try:
+                raw_values = list(get_attribute(entry, field))
+            except ValueError as e:
+                raise UserError(str(e))
+            for value in raw_values:
                 if isinstance(value, RDNError):
                     msg = "Unexpected DN: %s" % value.dn
                     if 'ignore' == on_unexpected_dn:
