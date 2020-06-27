@@ -58,6 +58,34 @@ with the `on_unexpected_dn` key. The possible values are `fail` (the default),
 `warn` or `ignore`.
 
 
+## Allowing Missing Attributes
+
+The LDAP protocol is loose when querying attributes. A misnamed attributes is
+just not returned in the result. The LDAP protocols behave the same way when an
+attribute is valid in the schema but undefined in an entry. A *null* attribute
+is ambiguous with a nonexistent attribute.
+
+ldap2pg is strict and considers a missing attribute as a misname attribute. You
+can however tell ldap2pg that one or more attributes may be missing because
+they are optional in LDAP schema. This is the purpose of
+`allow_missing_attributes` key.
+
+`allow_missing_attributes` is a list of attribute names. If the LDAP directory
+does not return one of these attributes, ldap2pg will default to an empty list.
+By default, ldap2pg allows `member` as missing, whatever the returned
+objectClass.
+
+``` yaml
+sync_map:
+- ldap:
+    base: ...
+    allow_missing_attributes: [member, sAMAccountName]
+  roles:
+  - name: "{sAMAccountName}"
+    members: "{member.cn}"
+```
+
+
 ## LDAP Sub-query alias Joins
 
 You may need to issue a sub-query to find more attributes than those available

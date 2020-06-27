@@ -9,7 +9,7 @@ def test_query_ldap(mocker):
     manager = SyncManager(ldapconn=mocker.Mock())
     manager.ldapconn.search_s.return_value = [
         ('dn=a', {}),
-        ('dn=b', {}),
+        ('dn=b', {'member': ['m']}),
         (None, {'ref': True}),
         (None, ['ldap://list_ref']),
     ]
@@ -17,9 +17,11 @@ def test_query_ldap(mocker):
     entries = manager.query_ldap(
         base='ou=people,dc=global', filter='(objectClass=*)',
         scope=2, joins={}, attributes=['cn'],
+        allow_missing_attributes=['member'],
     )
 
     assert 2 == len(entries)
+    assert [] == entries[0][1]['member']
 
     manager.ldapconn.search_s.return_value = [('dn=a', {'a': b'\xbb'})]
     with pytest.raises(UserError):

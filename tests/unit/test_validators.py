@@ -213,6 +213,7 @@ def test_process_ldapquery_attributes():
     assert ['cn'] == v['attributes']
     assert 'attribute' not in v
     assert 'ignore' == v['on_unexpected_dn']
+    assert ['member'] == v['allow_missing_attributes']
 
     with pytest.raises(ValueError):
         ldapquery(dict(raw, scope='unkqdsfq'))

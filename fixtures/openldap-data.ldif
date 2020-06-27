@@ -271,3 +271,10 @@ description: Desc of team1, should end in a comment.
 member: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: cn=denis,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 member: uid=dimitri,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+dn: cn=team2,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectClass: organizationalRole
+objectClass: top
+cn: team2
+description: Team2 is empty

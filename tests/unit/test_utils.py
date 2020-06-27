@@ -207,34 +207,15 @@ def test_format_list_collect():
 def test_formatting():
     from ldap2pg.utils import FormatList, make_format_vars
 
-    entry = (
-        'dn',
-        {
-            'dn': ['dn'],
-            'member': [
-                'cn=m0',
-                'cn=m1',
-            ],
-        },
-        {'member': [
-            ('cn=m0', {
-                'dn': ['cn=m0'],
-                'mail': ['m0@toto'],
-            }, {}),
-            ('cn=m1', {
-                'dn': ['cn=m1'],
-                'mail': ['m1@toto'],
-            }, {}),
-        ]},
-    )
-    formats = FormatList.factory(['{member.cn} <{member.mail}>'])
+    formats = FormatList.factory(['{cn}', '{member.cn} <{member.mail}>'])
     values = {
+        'cn': ['toto'],
         'member.cn': ['m0', 'm1'],
         'member.mail': ['m0@toto', 'm1@toto']
     }
-    vars_ = make_format_vars(formats.fields, entry[0], values)
+    vars_ = make_format_vars(formats.fields, 'dn', values)
     strings = list(formats.expand(vars_))
-    assert ['m0 <m0@toto>', 'm1 <m1@toto>'] == strings
+    assert ['toto', 'm0 <m0@toto>', 'm1 <m1@toto>'] == strings
 
 
 def test_user_error_wrap():
