@@ -104,7 +104,7 @@ class SyncManager(object):
                         logger.info("Sub-querying LDAP %.24s...", value)
                         join_entries = self._query_ldap(**join_query)
                         join_cache[join_key] = join_entries
-                    if join_entries:
+                    if join_entries or attr in allow_missing_attributes:
                         join_entries = entry_joins.get(attr, []) + join_entries
                         entry_joins[attr] = join_entries
 

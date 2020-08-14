@@ -94,6 +94,98 @@ def test_query_ldap_joins_ok(mocker):
     assert expected_entries == entries
 
 
+def test_query_ldap_joins_filtered_allowed(mocker):
+    from ldap2pg.manager import SyncManager
+
+    search_result = [
+        ('cn=A,ou=people,dc=global', {
+            'cn': ['A'], 'member': ['cn=P,ou=people,dc=global']}),
+    ]
+
+    sub_search_result = [
+    ]
+
+    manager = SyncManager(ldapconn=mocker.Mock())
+    manager.ldapconn.search_s.side_effect = [
+            search_result, sub_search_result]
+
+    entries = manager.query_ldap(
+        base='ou=people,dc=global',
+        filter='(objectClass=group)',
+        scope=2,
+        attributes=['cn', 'member'],
+        joins={'member': dict(
+            base='ou=people,dc=global',
+            scope=2,
+            filter='(objectClass=group)',
+            attributes=['cn'],
+            allow_missing_attributes=[],
+        )},
+        allow_missing_attributes=['member'],
+    )
+
+    assert 2 == manager.ldapconn.search_s.call_count
+
+    expected_entries = [
+        ('cn=A,ou=people,dc=global',
+         {
+            'cn': ['A'],
+            'dn': ['cn=A,ou=people,dc=global'],
+            'member': ['cn=P,ou=people,dc=global'],
+         },
+         {
+            'member': [],
+         }),
+    ]
+
+    assert expected_entries == entries
+
+
+def test_query_ldap_joins_filtered_not_allowed(mocker):
+    from ldap2pg.manager import SyncManager
+
+    search_result = [
+        ('cn=A,ou=people,dc=global', {
+            'cn': ['A'], 'member': ['cn=P,ou=people,dc=global']}),
+    ]
+
+    sub_search_result = [
+    ]
+
+    manager = SyncManager(ldapconn=mocker.Mock())
+    manager.ldapconn.search_s.side_effect = [
+            search_result, sub_search_result]
+
+    entries = manager.query_ldap(
+        base='ou=people,dc=global',
+        filter='(objectClass=group)',
+        scope=2,
+        attributes=['cn', 'member'],
+        joins={'member': dict(
+            base='ou=people,dc=global',
+            scope=2,
+            filter='(objectClass=group)',
+            attributes=['cn'],
+        )},
+        allow_missing_attributes=[],
+    )
+
+    assert 2 == manager.ldapconn.search_s.call_count
+
+    expected_entries = [
+        ('cn=A,ou=people,dc=global',
+         {
+            'cn': ['A'],
+            'dn': ['cn=A,ou=people,dc=global'],
+            'member': ['cn=P,ou=people,dc=global'],
+         },
+         {
+         }),
+    ]
+
+    assert expected_entries == entries
+
+
 def test_query_ldap_joins_missing(mocker):
     from ldap2pg.manager import SyncManager, UserError
 
