@@ -111,6 +111,7 @@ jobs:
           sudo pip install wheel virtualenv
           virtualenv .venv/
           . .venv/bin/activate
+          set -x
           pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
           pip check
     - save_cache:
@@ -129,5 +130,5 @@ jobs:
           make docs
           git diff --exit-code docs/
           flake8
-          pytest tests/unit/
+          python -m pytest tests/unit/
           codecov
