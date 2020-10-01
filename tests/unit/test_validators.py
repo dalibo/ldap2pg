@@ -223,7 +223,7 @@ def test_process_ldapquery_attributes():
         [FormatField('sAMAccountName'), FormatField('dn')],
     )
 
-    assert ['sAMAccountName'] == v['attributes']
+    assert ['dn', 'sAMAccountName'] == sorted(v['attributes'])
     assert not v['joins']
 
 

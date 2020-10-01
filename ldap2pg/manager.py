@@ -38,6 +38,9 @@ class SyncManager(object):
     def _query_ldap(
             self, base, filter, attributes, scope, allow_missing_attributes=[],
     ):
+        if 'dn' in attributes:
+            attributes.remove('dn')
+
         # Query directory returning a list of entries. An entry is a triplet
         # containing Distinguished name, attributes and joins.
         try:

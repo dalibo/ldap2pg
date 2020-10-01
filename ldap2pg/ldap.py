@@ -38,7 +38,7 @@ if SCOPE_SUBORDINATE:
 
 SCOPES_STR = dict((v, k) for k, v in SCOPES.items())
 
-DN_COMPONENTS = ('dn', 'cn', 'l', 'st', 'o', 'ou', 'c', 'street', 'dc', 'uid')
+DN_COMPONENTS = ('cn', 'l', 'st', 'o', 'ou', 'c', 'street', 'dc', 'uid')
 
 
 def parse_scope(raw):

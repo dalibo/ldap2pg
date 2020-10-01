@@ -70,14 +70,10 @@ def ldapquery(value, format_fields=None):
         join = dict(default_ldap_query, **query['joins'].get(field.var, {}))
         join_attrs = join.setdefault('attributes', [])
         join_attrs.append(field.attribute)
-        if 'dn' in join_attrs:
-            join_attrs.remove('dn')
         join.setdefault(
             'allow_missing_attributes', query['allow_missing_attributes'])
         query['joins'][field.var] = ldapquery(join, [])
 
-    if 'dn' in attrs:
-        attrs.remove('dn')
     if not attrs:
         fmt = "No attributes are used from LDAP query %(base)s"
         raise ValueError(fmt % value)
