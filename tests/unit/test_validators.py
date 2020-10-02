@@ -192,7 +192,7 @@ def test_process_mapping_ldap_compat_unexpected_dn():
 
 
 def test_process_ldapquery_attributes():
-    from ldap2pg.validators import ldapquery, parse_scope
+    from ldap2pg.validators import ldapquery, parse_scope, FormatField
 
     with pytest.raises(ValueError):
         ldapquery(None, None)
@@ -218,14 +218,17 @@ def test_process_ldapquery_attributes():
     with pytest.raises(ValueError):
         ldapquery(dict(raw, scope='unkqdsfq'))
 
-    v = ldapquery(dict(base='o=acme'), [('sAMAccountName',), ('dn',)])
+    v = ldapquery(
+        dict(base='o=acme'),
+        [FormatField('sAMAccountName'), FormatField('dn')],
+    )
 
-    assert ['sAMAccountName'] == v['attributes']
+    assert ['dn', 'sAMAccountName'] == sorted(v['attributes'])
     assert not v['joins']
 
 
 def test_process_ldapquery_joins():
-    from ldap2pg.validators import ldapquery
+    from ldap2pg.validators import ldapquery, FormatField
 
     v = ldapquery(
         dict(
@@ -233,10 +236,10 @@ def test_process_ldapquery_joins():
             join=dict(
                 member=dict(filter='(objectClass=person)'))),
         format_fields=[
-            ('sAMAccountName',),
-            ('member',),
-            ('member', 'cn'),
-            ('member', 'sAMAccountName'),
+            FormatField('sAMAccountName'),
+            FormatField('member'),
+            FormatField('member', 'cn'),
+            FormatField('member', 'sAMAccountName'),
         ]
     )
 
@@ -248,7 +251,9 @@ def test_process_ldapquery_joins():
 
     v = ldapquery(
         dict(base='o=acme', joins=dict(unused=dict())),
-        format_fields=[('sAMAccountName',), ('member', 'sAMAccountName')],
+        format_fields=[
+            FormatField('sAMAccountName',),
+            FormatField('member', 'sAMAccountName')],
     )
 
     assert 'member' in v['attributes']

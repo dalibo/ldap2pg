@@ -237,7 +237,12 @@ def test_grant_rule():
         roles=['{cn}'],
     )
 
-    assert 3 == len(r.all_fields)
+    map_ = r.attributes_map
+    assert '__self__' in map_
+    assert 'extensionAttribute0' in map_['__self__']
+    assert 'extensionAttribute1' in map_['__self__']
+    assert 'cn' in map_['__self__']
+
     assert repr(r)
 
     d = r.as_dict()
@@ -246,11 +251,11 @@ def test_grant_rule():
     assert ['{cn}'] == d['schemas']
     assert ['{cn}'] == d['roles']
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         cn=['rol0', 'rol1'],
         extensionAttribute0=['ro'],
         extensionAttribute1=['appdb'],
-    )
+    )])
     grants = list(r.generate(vars_))
     assert 2 == len(grants)
 
@@ -266,9 +271,9 @@ def test_grant_rule_match():
         role_match='prefix_*',
     )
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         cn=['prefix_rol0', 'ignored', 'prefix_rol1'],
-    )
+    )])
     grants = list(r.generate(vars_))
     assert 2 == len(grants)
 
@@ -283,6 +288,6 @@ def test_grant_rule_all_databases():
         roles=['role'],
     )
 
-    vars_ = dict(dn=['dn'])
+    vars_ = dict(__self__=[dict(dn=['dn'])])
     grant, = r.generate(vars_)
     assert grant.dbname is Grant.ALL_DATABASES

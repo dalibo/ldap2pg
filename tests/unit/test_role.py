@@ -220,9 +220,8 @@ def test_diff():
     assert not fnfilter(queries, '*public*')
 
 
-def test_role_rule():
+def test_rule():
     from ldap2pg.role import RoleRule
-    from ldap2pg.utils import Settable
 
     r = RoleRule(
         names=['static', 'prefix_{cn}', '{uid}_{member}'],
@@ -231,6 +230,12 @@ def test_role_rule():
         comment='From {dn}',
         options={'SUPERUSER': True},
     )
+
+    map_ = r.attributes_map
+    assert '__self__' in map_
+    assert 'uid' in map_['__self__']
+    assert 'member' not in map_['__self__']
+    assert 'member' in map_
 
     assert 5 == len(r.all_fields)
     assert repr(r)
@@ -243,12 +248,20 @@ def test_role_rule():
     assert 'From {dn}' == d['comment']
 
     vars_ = dict(
-        dn=['cn=group,ou=groups'],
-        cn=['cn'],
-        uid=['uid'],
+        __self__=[dict(
+            dn=['cn=group,ou=groups'],
+            cn=['cn'],
+            uid=['uid'],
+        )],
         member=[
-            Settable(_str='cn=m0', cn=['m0']),
-            Settable(_str='cn=m1', cn=['m1']),
+            dict(
+                dn=['cn=m0'],
+                cn=['m0'],
+            ),
+            dict(
+                dn=['cn=m1'],
+                cn=['m1'],
+            ),
         ],
     )
 
@@ -264,10 +277,10 @@ def test_role_rule_dynamic_comments():
         comment='From {member}',
     )
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         dn=['cn=group,ou=groups'],
         member=['m0', 'm1'],
-    )
+    )])
 
     roles = list(r.generate(vars_))
 
@@ -284,11 +297,11 @@ def test_role_rule_too_many_comments():
         comment='From {more}',
     )
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         dn=['cn=group,ou=groups'],
         member=['m0', 'm1'],
         more=['0', '1', '2'],
-    )
+    )])
 
     with pytest.raises(CommentError):
         list(r.generate(vars_))
@@ -302,11 +315,11 @@ def test_role_rule_no_comment():
         comment='From {desc}',
     )
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         dn=['cn=group,ou=groups'],
         desc=[],
         member=['m0', 'm1'],
-    )
+    )])
 
     with pytest.raises(CommentError):
         list(r.generate(vars_))
@@ -320,11 +333,11 @@ def test_role_rule_not_enough_comment():
         comment='From {less}',
     )
 
-    vars_ = dict(
+    vars_ = dict(__self__=[dict(
         dn=['cn=group,ou=groups'],
         member=['m0', 'm1', 'm2'],
         less=['l0', 'l1']
-    )
+    )])
 
     with pytest.raises(CommentError):
         list(r.generate(vars_))

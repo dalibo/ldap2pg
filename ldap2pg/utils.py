@@ -1,10 +1,8 @@
 from __future__ import unicode_literals
 
-import itertools
 import sys
 from datetime import timedelta, datetime
 from fnmatch import fnmatch
-from string import Formatter
 import textwrap
 
 
@@ -40,6 +38,13 @@ def dedent(s):
 
 def lower1(string):
     return string[0].lower() + string[1:]
+
+
+def lower_keys(dict_):
+    return dict([
+        (k.lower(), v)
+        for k, v in dict_.items()
+    ])
 
 
 def match(string, patterns):
@@ -132,19 +137,6 @@ def iter_deep_keys(dict_):
             yield k
 
 
-def iter_format_fields(strings, split=False):
-    formatter = Formatter()
-    for string in strings:
-        for _, field, _, _ in formatter.parse(string):
-            if field is None:
-                continue
-            field = [
-                f for f in field.split('.')
-                if '(' not in f and ')' not in f
-            ]
-            yield field if split else '.'.join(field)
-
-
 def list_descendant(groups, name):
     # Returns the recursive list of all descendant of name in hierarchy
     # `groups`. `groups` is a flat dict of `groups`
@@ -177,95 +169,6 @@ def uniq(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
-
-
-class FormatList(list):
-    @classmethod
-    def factory(cls, format_list):
-        self = cls()
-        for format_ in format_list:
-            fields = [
-                ('.'.join(f), f[0])
-                for f in iter_format_fields([format_], split=True)
-            ]
-            self.append((format_, fields))
-        return self
-
-    def __repr__(self):
-        return '[%s]' % (', '.join(self.formats),)
-
-    def expand(self, vars_):
-        for format_, fields in self:
-            # Expand all combination of values, with only values of this format
-            # string.
-            vars_subset = dict([
-                (v, vars_[v])
-                for f, v in fields
-            ])
-            for items in itertools.product(*vars_subset.values()):
-                yield format_.format(**dict(zip(vars_subset.keys(), items)))
-
-    @property
-    def formats(self):
-        """List plain formats as fed in factory."""
-        return [f for f, _ in self]
-
-    @property
-    def fields(self):
-        """Gather all reference fields in all formats."""
-        return [
-            field
-            for _, fields in self
-            for field, _ in fields
-        ]
-
-    @property
-    def has_static(self):
-        return bool([x for x in self if not x[1]])
-
-
-def collect_fields(*field_lists):
-    return set(itertools.chain(*[
-        list_.fields for list_ in field_lists
-    ]))
-
-
-def make_format_vars(fields, dn, values):
-    # Build variables to inject into format, implementing deep access of
-    # compound values like DN and joins. values is a dictionnary with full
-    # format token as key and the list of all values available in entries as
-    # values. e.g. {'dn.cn': ['toto'], 'dn': ['cn=toto']}.
-    vars_ = dict(dn=[dn])
-    for field in fields:
-        if '.' in field:
-            parent, _, child = field.partition('.')
-            objects = vars_.setdefault(parent, [
-                Settable(_str=dn)
-                for v in values[field]
-            ])
-            for obj, value in zip(objects, values[field]):
-                obj.update({child: value})
-        else:
-            vars_[field] = values[field]
-    return vars_
-
-
-class Settable(object):
-    def __init__(self, **kw):
-        self._str = "**unset**"
-        self.update(kw)
-
-    def __repr__(self):
-        return '<%s %s>' % (
-            self.__class__.__name__,
-            ' '.join(['%s=%s' % i for i in self.__dict__.items()])
-        )
-
-    def __str__(self):
-        return self._str
-
-    def update(self, kw):
-        self.__dict__.update(kw)
 
 
 class Timer(object):

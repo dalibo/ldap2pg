@@ -50,6 +50,14 @@ def test_ensure_unicode():
     assert wanted == ensure_unicode(e)
 
 
+def test_lower_keys():
+    from ldap2pg.utils import lower_keys
+
+    dict_ = lower_keys({'sAMAccountName': 'alice'})
+
+    assert 'samaccountname' in dict_
+
+
 def test_make_map():
     from ldap2pg.utils import make_group_map
 
@@ -80,40 +88,6 @@ def test_iter_deep_keys():
     assert "key" in keys
 
 
-def test_iter_format_field():
-    from ldap2pg.utils import iter_format_fields
-
-    fields = list(iter_format_fields([
-        'static',
-        '{simple}',
-        '{dot.ted}',
-        'prefix_{filtered.filter()}',
-    ], split=True,))
-
-    assert ['simple'] in fields
-    assert ['dot', 'ted'] in fields
-    assert ['filtered'] in fields
-
-    fields = list(iter_format_fields([
-        'static',
-        '{simple}',
-        '{dot.ted}',
-        'prefix_{filtered.filter()}',
-    ], split=False,))
-
-    assert 'simple' in fields
-    assert 'dot.ted' in fields
-    assert 'filtered' in fields
-
-
-def test_settable():
-    from ldap2pg.utils import Settable
-
-    my = Settable(toto='titi')
-    assert 'titi' == my.toto
-    assert 'toto=titi' in repr(my)
-
-
 def test_timer():
     from ldap2pg.utils import Timer
 
@@ -140,82 +114,6 @@ def test_timer():
     # Time iteration
     for _ in my.time_iter(iter([0, 1])):
         pass
-
-
-def test_format_list_factory():
-    from ldap2pg.utils import FormatList
-
-    formats = ["static", "prefix {deep.attr}", "{a} {b}"]
-    list_ = FormatList.factory(formats)
-    assert list_.has_static
-    assert repr(list_)
-    assert 3 == len(list_)
-    assert ("static", []) == list_[0]
-    assert ("prefix {deep.attr}", [("deep.attr", "deep")]) == list_[1]
-    assert ("{a} {b}", [("a", "a"), ("b", "b")]) == list_[2]
-
-    fields = list_.fields
-    assert len(fields) == 3
-    assert "deep.attr" in fields
-    assert "a" in fields
-    assert "b" in fields
-
-
-def test_format_list_expand():
-    from ldap2pg.utils import FormatList, Settable
-
-    list_ = FormatList.factory([
-        "static",
-        "{member.cn}",
-        "{cn}_{member}",
-    ])
-    vars_ = dict(
-        dn=["cn=toto,ou=groups"],
-        cn=["toto"],
-        member=[
-            Settable(_str="a", cn="a"),
-            Settable(_str="b", cn="b"),
-        ],
-    )
-
-    values = list(list_.expand(vars_))
-
-    assert 5 == len(values)
-    assert "static" in values
-    assert "a" in values
-    assert "b" in values
-    assert "toto_a" in values
-    assert "toto_b" in values
-
-
-def test_format_list_collect():
-    from ldap2pg.utils import FormatList, collect_fields
-
-    l0 = FormatList.factory(["static", "{cn}", "{member}"])
-    l1 = FormatList.factory(["{cn} {dn}", "{member.cn}"])
-
-    fields = l1.fields
-    assert len(fields) == 3
-    assert "cn" in fields
-    assert "dn" in fields
-    assert "member.cn" in fields
-
-    all_fields = collect_fields(l0, l1)
-    assert 4 == len(all_fields)
-
-
-def test_formatting():
-    from ldap2pg.utils import FormatList, make_format_vars
-
-    formats = FormatList.factory(['{cn}', '{member.cn} <{member.mail}>'])
-    values = {
-        'cn': ['toto'],
-        'member.cn': ['m0', 'm1'],
-        'member.mail': ['m0@toto', 'm1@toto']
-    }
-    vars_ = make_format_vars(formats.fields, 'dn', values)
-    strings = list(formats.expand(vars_))
-    assert ['toto', 'm0 <m0@toto>', 'm1 <m1@toto>'] == strings
 
 
 def test_user_error_wrap():

@@ -1,9 +1,11 @@
+from itertools import chain as iterchain
+
+from .format import FormatField
 from .ldap import parse_scope
 from .ldap import DN_COMPONENTS
 from .role import RoleOptions, RoleRule
 from .privilege import GrantRule
 from .utils import string_types
-from .utils import iter_format_fields
 
 default_ldap_query = {
     'base': '',
@@ -55,25 +57,23 @@ def ldapquery(value, format_fields=None):
     legacy_attrs = query.get('attributes', [])
     format_fields = (
         list(format_fields or []) +
-        [a.split('.') for a in legacy_attrs])
+        [FormatField(*a.split('.')) for a in legacy_attrs])
 
     # Now, loop format fields to list every attributes we need to query from
     # LDAP directory, and for .sub.attr, detect whether we need a subquery (aka
     # join).
     attrs = set()
     for field in format_fields:
-        attr, subattr = field[0], field[1:]
-        attrs.add(attr)
-        if not subattr or subattr[0] in DN_COMPONENTS:
+        attrs.add(field.var)
+        if not field.attribute or field.attribute in DN_COMPONENTS:
             continue
-        join = dict(default_ldap_query, **query['joins'].get(attr, {}))
-        join.setdefault('attributes', []).append(subattr[0])
+        join = dict(default_ldap_query, **query['joins'].get(field.var, {}))
+        join_attrs = join.setdefault('attributes', [])
+        join_attrs.append(field.attribute)
         join.setdefault(
             'allow_missing_attributes', query['allow_missing_attributes'])
-        query['joins'][attr] = ldapquery(join, [])
+        query['joins'][field.var] = ldapquery(join, [])
 
-    if 'dn' in attrs:
-        attrs.remove('dn')
     if not attrs:
         fmt = "No attributes are used from LDAP query %(base)s"
         raise ValueError(fmt % value)
@@ -234,16 +234,6 @@ def ismapping(value):
     return KNOWN_MAPPING_KEYS >= set(value.keys())
 
 
-def iter_mapping_strings(mapping):
-    for rule in mapping.get('roles', []) + mapping.get('grant', []):
-        for k, v in rule.as_dict().items():
-            if not isinstance(v, list):
-                v = [v]
-            for v1 in v:
-                if hasattr(v1, 'splitlines'):
-                    yield v1
-
-
 def mapping(value, **kw):
     # A single mapping from a query to a set of role rules. This function
     # translate random YAML to cannonical schema.
@@ -282,12 +272,15 @@ def mapping(value, **kw):
         raise ValueError("Missing role or grant rule.")
 
     if 'ldap' in value:
-        if any([r.names.has_static for r in value.get('roles', [])]):
+        roles = value.get('roles', [])
+        grants = value.get('grant', [])
+        if any([r.names.has_static for r in roles]):
             raise ValueError("Mixing static role with LDAP query may hide it.")
-        if any([r.roles.has_static for r in value.get('grant', [])]):
+        if any([r.roles.has_static for r in grants]):
             raise ValueError("Mixing static role with LDAP query may hide it.")
-        strings = iter_mapping_strings(value)
-        format_fields = iter_format_fields(strings, split=True)
+        format_fields = set(
+            iterchain(*[r.all_fields for r in roles + grants])
+        )
         value['ldap'].setdefault('on_unexpected_dn', on_unexpected_dn)
         value['ldap'] = ldapquery(value['ldap'], format_fields)
 

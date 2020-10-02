@@ -16,6 +16,7 @@ except ImportError:  # pragma: nocover
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
+from .format import FormatVars
 from .utils import decode_value, encode_value, PY2, uniq
 from .utils import Timer
 from .utils import UserError
@@ -37,7 +38,7 @@ if SCOPE_SUBORDINATE:
 
 SCOPES_STR = dict((v, k) for k, v in SCOPES.items())
 
-DN_COMPONENTS = ('dn', 'cn', 'l', 'st', 'o', 'ou', 'c', 'street', 'dc', 'uid')
+DN_COMPONENTS = ('cn', 'l', 'st', 'o', 'ou', 'c', 'street', 'dc', 'uid')
 
 
 def parse_scope(raw):
@@ -74,57 +75,127 @@ class RDNError(NameError):
         self.dn = dn
 
 
-def get_attribute(entry, attribute):
-    # Generate all values from entry for accessor attribute. Attribute can be a
-    # single attribute name, a path to a RDN in a distinguished name, or an
-    # attribute of a join (aka subquery).
-    _, attributes, joins = entry
-    path = attribute.lower().split('.')
-    try:
-        values = attributes[path[0]]
-    except KeyError:
-        raise ValueError("Missing attribute %s." % (path[0],))
+class MissingAttributeError(KeyError):
+    def __str__(self):
+        return "Missing attribute: %s." % (self.args[0])
 
-    attribute = path[0]
-    path = path[1:]
-    if not path:
-        for value in values:
-            yield value
-    elif path[0] in DN_COMPONENTS:
-        for value in values:
-            raw_dn = value
-            try:
-                dn = str2dn(value)
-            except ValueError:
-                msg = "Can't parse DN from attribute %s=%s." % (
-                    attribute, value)
-                raise ValueError(msg)
-            value = dict()
-            for (type_, name, _), in dn:
-                value.setdefault(type_.lower(), name)
-            try:
-                yield value[path[0]]
-            except KeyError:
-                yield RDNError("Unknown RDN %s." % (path[0],), raw_dn)
-    else:
+
+class LDAPEntry(object):
+    __slot__ = (
+        'dn',
+        'attributes',
+        'children',
+        '__dict__',
+    )
+
+    def __init__(self, dn, attributes=None, children=None):
+        self.dn = dn
+        self.attributes = attributes or {}
+        self.children = children or {}
+
+    def __eq__(self, other):
+        return (
+            self.dn == other.dn
+            and self.attributes == other.attributes
+            and self.children == other.children
+        )
+
+    def __repr__(self):
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            self.dn,
+        )
+
+    def __getitem__(self, key):
+        # Generate all values from entry for accessor attribute. Attribute can
+        # be a single attribute name, a path to a RDN in a distinguished name,
+        # or an attribute of a join (aka subquery).
+
+        if "dn" == key:
+            yield self.dn
+            return
+
+        path = key.lower().split('.')
+
+        # First level access.
         try:
-            joined_entries = joins[attribute]
+            values = self.attributes[path[0]]
+            path = path[1:]
         except KeyError:
-            msg = "Missing join result for %s." % (attribute,)
-            raise ValueError(msg)
+            # Fallback DN components in DN, just like having `dn.XX`.
+            if path[0] in DN_COMPONENTS:
+                values = [self.dn]
+            elif "dn" == path[0]:
+                values = [self.dn]
+                path = path[1:]
+            else:
+                raise MissingAttributeError(path[0])
 
-        path = '.'.join(path)
-        for joined_entry in joined_entries:
-            for value in get_attribute(joined_entry, path):
+        if not path:
+            for value in values:
                 yield value
+        elif path[0] in DN_COMPONENTS:
+            for value in values:
+                raw_dn = value
+                try:
+                    dn = str2dn(value)
+                except ValueError:
+                    msg = "Can't parse DN from attribute %s=%s." % (
+                        key, value)
+                    raise ValueError(msg)
+                value = dict()
+                for (type_, name, _), in dn:
+                    value.setdefault(type_.lower(), name)
+                try:
+                    yield value[path[0]]
+                except KeyError:
+                    yield RDNError("Unknown RDN %s." % (path[0],), raw_dn)
+        else:
+            raise MissingAttributeError(path[0])
 
+    def build_format_vars(self, map_, processor=None):
+        # Builds a dicts of values from self corresponding to the request
+        # described in map_.
 
-def lower_attributes(entry):
-    dn, attributes = entry
-    return dn, dict([
-        (k.lower(), v)
-        for k, v in attributes.items()
-    ])
+        if processor is None:
+            def processor(x):
+                return x
+
+        vars_ = FormatVars(map_)
+        for objname, attributes in map_.items():
+            prefix = ''
+            if objname in ("__self__", "dn"):
+                entries = [self]
+            else:
+                try:
+                    entries = self.children[objname]
+                except KeyError:
+                    # Accessing a RDN of a foreign-key like {member.cn}. Fake
+                    # sub-query entries for each DN as returned by
+                    # __self__.member.
+                    entries = [
+                        LDAPEntry(dn) for dn in processor(self[objname])
+                    ]
+
+            vars_[objname] = []
+            for entry in entries:
+                entry_vars = {}
+
+                for attr in attributes:
+                    fullattr = prefix + attr
+                    if attr.startswith("dn."):
+                        dn = entry_vars.get("dn")
+                        if not isinstance(dn, dict):
+                            dn = dict(dn=entry.dn)
+                            entry_vars["dn"] = [dn]
+                        dn[attr[3:]] = next(entry[fullattr])
+                    else:
+                        entry_vars[attr] = list(processor(entry[fullattr]))
+
+                entry_vars.setdefault("dn", [entry.dn])
+                vars_[objname].append(entry_vars)
+
+        return vars_
 
 
 class EncodedParamsCallable(object):  # pragma: nocover_py3

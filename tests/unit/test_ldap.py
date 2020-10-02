@@ -164,46 +164,124 @@ def test_parse_rc():
     assert 3 == items[0].lineno
 
 
-def test_lower_attrs():
-    from ldap2pg.ldap import lower_attributes
+def test_entry_getitem():
+    from ldap2pg.ldap import LDAPEntry
 
-    entry = lower_attributes(('dn', {'sAMAccountName': 'alice'}))
+    entry = LDAPEntry(
+        dn='cn=my0,uo=gr0,dc=acme,dc=tld',
+        attributes=dict(
+            cn=['my0'],
+            member=[
+                'cn=m0,uo=gr0',
+                'cn=m1,uo=gr0',
+            ],
+            simple=[
+                'cn=s0,uo=gr1',
+                'cn=s1,uo=gr1',
+                'cn=s2,uo=gr1',
+            ],
+            notdn=['woot'],
+        ),
+    )
 
-    assert 'samaccountname' in entry[1]
+    assert 'cn=my0,uo=gr0' in repr(entry)
 
+    assert ['my0'] == list(entry['cn'])
+    assert ['my0'] == list(entry['dn.cn'])
+    assert ['cn=m0,uo=gr0', 'cn=m1,uo=gr0'] == list(entry['member'])
+    assert ['m0', 'm1'] == list(entry['member.cn'])
 
-def test_get_attribute():
-    from ldap2pg.ldap import get_attribute, RDNError
+    with pytest.raises(KeyError):
+        list(entry['toto'])
+
+    with pytest.raises(KeyError):
+        list(entry['member.toto'])
 
     with pytest.raises(ValueError):
-        list(get_attribute(entry=('dn', {}, {}), attribute='pouet'))
+        list(entry['notdn.cn'])
 
-    assert RDNError in [type(v) for v in get_attribute(
-        entry=('dn', {'member': ['cn=pouet']}, {}),
-        attribute='member.ou',
-    )]
 
-    with pytest.raises(ValueError):
-        list(get_attribute(
-            entry=('dn', {'attr0': ['not a dn']}, {}),
-            attribute='attr0.ou',
-        ))
+def test_entry_build_format_vars():
+    from ldap2pg.ldap import LDAPEntry
 
-    with pytest.raises(ValueError):
-        list(get_attribute(
-            entry=('dn', {'cn': ['cn=pouet']}, {}),
-            attribute='cn.inexistant',
-        ))
+    expected = {
+        "__self__": [{
+            "dn": [dict(dn="cn=cn0,ou=group", cn="cn0")],
+            "cn": ["cn0"],
+        }],
+        # From sub-query
+        "member": [
+            {
+                "dn": ["cn=m0,ou=member"],
+                "cn": ["m0"],
+                "mail": ["m0@toto", "m00@toto"],
+            },
+            {
+                "dn": ["cn=m1,ou=member"],
+                "cn": ["m1"],
+                "mail": ["m1@toto"],
+            },
+        ],
+        # From DN parsing.
+        "simple": [
+            dict(
+                dn=["cn=s0,ou=simple"],
+                cn=["s0"],
+            ),
+            dict(
+                dn=["cn=s1,ou=simple"],
+                cn=["s1"],
+            ),
+        ],
+    }
 
-    entry = (
-        'dn',
-        {'member': ['cn=member0', 'cn=member1']},
-        {'member': [
-            ('cn=member0', {'attr0': ['val0']}, {}),
-            ('cn=member1', {'attr0': ['val1']}, {}),
-        ]})
-    assert ['val0', 'val1'] == list(get_attribute(entry, 'member.attr0'))
-    assert ['member0', 'member1'] == list(get_attribute(entry, 'member.cn'))
+    entry = LDAPEntry(
+        'cn=cn0,ou=group',
+        dict(
+            cn=["cn0"],
+            member=[
+                "cn=m0,ou=member",
+                "cn=m1,ou=member",
+            ],
+            simple=[
+                "cn=s0,ou=simple",
+                "cn=s1,ou=simple",
+            ],
+            # Not in map_
+            other=[
+                "cn=o0,ou=other",
+            ],
+            otherattr=["otherattr"],
+        ),
+        dict(
+            member=[
+                LDAPEntry(
+                    "cn=m0,ou=member", dict(
+                        cn=["m0"],
+                        mail=["m0@toto", "m00@toto"],
+                    ), {},
+                ),
+                LDAPEntry(
+                    "cn=m1,ou=member", dict(
+                        cn=["m1"],
+                        mail=["m1@toto"]
+                    ), {},
+                ),
+            ],
+            # Not referenced in map_
+            other=[LDAPEntry("cn=o0,ou=other")],
+        )
+    )
+
+    map_ = dict(
+        __self__=["cn", "dn.cn"],
+        member=["cn", "mail"],
+        simple=["cn"],
+    )
+
+    vars_ = entry.build_format_vars(map_)
+
+    assert expected == vars_
 
 
 def test_logger(mocker):
