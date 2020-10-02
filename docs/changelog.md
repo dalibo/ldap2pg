@@ -7,7 +7,7 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
-# Unreleased
+# ldap2pg 5.5
 
 - Permit joins where all the referenced objects are filtered out. The join
   name must be added to the list of attributes that may be missing in the

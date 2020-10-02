@@ -17,7 +17,7 @@ if PY26:
 
 setup(
     name='ldap2pg',
-    version='5.4',
+    version='5.5',
     description='Manage PostgreSQL roles and privileges from YAML or LDAP',
     url='https://labs.dalibo.com/ldap2pg',
     project_urls={
