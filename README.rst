@@ -71,6 +71,12 @@ More details can be found in documentation_.
 ``ldap2pg`` is licensed under PostgreSQL license_. ``ldap2pg`` is available with
 the help of wonderful people, jump to contributors_ list to see them.
 
+``ldap2pg`` is reported to work with `OpenLDAP`_, `FreeIPA`_, Oracle Internet
+Directory and Microsoft Active Directory.
+
+.. _OpenLDAP: https://www.openldap.org/
+.. _FreeIPA: https://www.freeipa.org/
+
 
 Support
 =======
