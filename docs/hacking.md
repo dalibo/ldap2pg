@@ -9,7 +9,7 @@ CircleCI will take care of validating regressions.
 # Docker Development Environment
 
 A `docker-compose.yml` file is provided to launch an OpenLDAP and a PostgreSQL
-instances as well as a phpLDAPAdmin to help you manage OpenLDAP.
+instances.
 
 ``` console
 $ docker-compose pull
@@ -29,6 +29,22 @@ port on your host. Provided `docker-compose.yml` comes with
 `postgres.ldap2pg.docker` and `ldap.ldap2pg.docker`
 [dnsdock](https://github.com/aacebedo/dnsdock) aliases . If you want to test
 SSL, you **must** access OpenLDAP through `ldap.ldap2pg.docker` domain name.
+
+``` yaml
+# contents docker-compose.override.yml
+version: '3'
+
+services:
+  ldap:
+    ports:
+    # HOST:CONTAINER
+    - 389:389
+    - 636:636
+
+  postgres:
+    ports:
+    - 5432:5432
+```
 
 Setup your environment with regular `PG*` envvars so that `psql` can just
 connect to your PostgreSQL instance. Check with a simple `psql` call.
