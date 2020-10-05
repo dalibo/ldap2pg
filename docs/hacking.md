@@ -9,7 +9,7 @@ CircleCI will take care of validating regressions.
 # Docker Development Environment
 
 A `docker-compose.yml` file is provided to launch an OpenLDAP and a PostgreSQL
-instances as well as a phpLDAPAdmin to help you manage OpenLDAP.
+instances.
 
 ``` console
 $ docker-compose pull
