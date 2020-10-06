@@ -106,7 +106,7 @@ privileges:
 #
 
 sync_map:
-- description: "Setup static roles dans grants."
+- description: "Setup static roles and grants."
   roles:
   - names:
     - ldap_roles
