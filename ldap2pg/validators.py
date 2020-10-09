@@ -46,9 +46,6 @@ def ldapquery(value, format_fields=None):
     # cases. Also, join attributes as predefined this way.
     strlist_alias(query, 'attributes', 'attribute')
 
-    strlist_alias(query, 'allow_missing_attributes', 'allow_missing_attribute')
-    query.setdefault('allow_missing_attributes', ['member'])
-
     alias(query, 'joins', 'join')
     query.setdefault('joins', {})
 
@@ -71,13 +68,19 @@ def ldapquery(value, format_fields=None):
         join_attrs = join.setdefault('attributes', [])
         join_attrs.append(field.attribute)
         join.setdefault(
-            'allow_missing_attributes', query['allow_missing_attributes'])
+            'allow_missing_attributes',
+            query.get('allow_missing_attributes', []))
         query['joins'][field.var] = ldapquery(join, [])
 
     if not attrs:
         fmt = "No attributes are used from LDAP query %(base)s"
         raise ValueError(fmt % value)
     query['attributes'] = list(attrs)
+
+    strlist_alias(query, 'allow_missing_attributes', 'allow_missing_attribute')
+    empty_attrs = query.setdefault('allow_missing_attributes', [])
+    if 'member' in attrs:
+        empty_attrs.append('member')
 
     # Post process joins.
     for key, join in query['joins'].copy().items():
