@@ -136,15 +136,15 @@ Here is a full sample of custom privilege:
 privileges:
   execute_myfunc:
     type: nspacl
-    grant: GRANT EXECUTE ON {schema}.myfunc TO {role};
-    revoke:  GRANT EXECUTE ON {schema}.myfunc TO {role};
+    grant: GRANT EXECUTE ON FUNCTION {schema}.myfunc TO {role};
+    revoke: REVOKE EXECUTE ON FUNCTION {schema}.myfunc TO {role};
     inspect: |
       WITH grants AS (
         SELECT
           pronamespace, proname, 
           (aclexplode(proacl)).grantee,
           (aclexplode(proacl)).privilege_type
-        FROM pg_procs
+        FROM pg_proc
       )
       SELECT
         nspname,
