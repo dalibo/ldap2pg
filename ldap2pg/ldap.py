@@ -264,7 +264,7 @@ class LDAPLogger(object):
 def connect(**kw):
     # Sources order, see ldap.conf(3)
     #   variable     $LDAPNOINIT, and if that is not set:
-    #   system file  /etc/ldap/ldap.conf,
+    #   system file  /etc/ldap/ldap.conf, /etc/openldap/ldap.conf
     #   user files   $HOME/ldaprc,  $HOME/.ldaprc,  ./ldaprc,
     #   system file  $LDAPCONF,
     #   user files   $HOME/$LDAPRC, $HOME/.$LDAPRC, ./$LDAPRC,
@@ -336,6 +336,10 @@ class Options(dict):
 
 
 def gather_options(environ=None, **kw):
+    default_conffiles = [
+        '/etc/openldap/ldap.conf',
+        '/etc/ldap/ldap.conf',
+    ]
     options = Options(
         URI='',
         HOST='',
@@ -357,7 +361,7 @@ def gather_options(environ=None, **kw):
     if 'NOINIT' in environ:
         logger.debug("LDAPNOINIT defined. Disabled ldap.conf loading.")
     else:
-        for e in read_files(conf='/etc/ldap/ldap.conf', rc='ldaprc'):
+        for e in read_files(conf=default_conffiles, rc='ldaprc'):
             logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for e in read_files(conf=options.get('CONF'), rc=options.get('RC')):
@@ -387,10 +391,12 @@ def gather_options(environ=None, **kw):
 
 def read_files(conf, rc):
     candidates = []
-    if conf:
+    if isinstance(conf, list):
+        candidates.extend(conf)
+    elif isinstance(conf, str):
         candidates.append(conf)
     if rc:
-        candidates.extend(['~/%s' % rc, '~/.%s' % rc, rc])
+        candidates.extend(['~/%s' % rc, '~/.%s' % rc, './%s' % rc])
     candidates = uniq(map(
         lambda p: os.path.realpath(os.path.expanduser(p)),
         candidates,
