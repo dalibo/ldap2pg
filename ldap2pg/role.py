@@ -140,8 +140,10 @@ class Role(object):
             )
 
     _drop_objects_sql = dedent("""
-    DO $$BEGIN EXECUTE 'GRANT "%(role)s" TO '||SESSION_USER; END$$;
-    DO $$BEGIN EXECUTE 'REASSIGN OWNED BY "%(role)s" TO '||SESSION_USER; END$$;
+    DO $$BEGIN EXECUTE 'GRANT "%(role)s" TO "'||SESSION_USER||'";'; END$$;
+    DO $$BEGIN
+      EXECUTE 'REASSIGN OWNED BY "%(role)s" TO "'||SESSION_USER||'";';
+    END$$;
     DROP OWNED BY "%(role)s";
     """)
 
