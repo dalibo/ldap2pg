@@ -11,7 +11,11 @@ assignees: ''
 
 Hi ! Thanks for reporting to us !
 
-If you encounter a bug in ldap2pg, would you mind to paste the following informations in issue description:
+If you encounter a bug in ldap2pg, would you mind to paste the following
+informations in issue description:
+
+**IMPORTANT**: Please DO NOT publish personal data or confidential information
+in this issue. We are responsible to delete any sensitive data in this project.
 
 French accepted.
 
