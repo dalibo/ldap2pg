@@ -364,7 +364,8 @@ def gather_options(environ=None, **kw):
         for e in read_files(conf=default_conffiles, rc='ldaprc'):
             logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
-        for e in read_files(conf=options.get('CONF'), rc=options.get('RC')):
+        customconf = environ.pop('CONF', options.get('CONF'))
+        for e in read_files(conf=customconf, rc=options.get('RC')):
             logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for option, value in environ.items():
