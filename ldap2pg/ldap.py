@@ -365,7 +365,8 @@ def gather_options(environ=None, **kw):
             logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         customconf = environ.pop('CONF', options.get('CONF'))
-        for e in read_files(conf=customconf, rc=options.get('RC')):
+        customrc = environ.pop('RC', options.get('RC'))
+        for e in read_files(conf=customconf, rc=customrc):
             logger.debug('Read %s from %s.', e.option, e.filename)
             options.set_raw(e.option, e.value)
         for option, value in environ.items():
