@@ -26,6 +26,11 @@
 #
 
 #
+# File format version. Allows ldap2pg to check whether the file is supported.
+#
+version: 5
+
+#
 #       1.   P O S T G R E S   I N S P E C T I O N
 #
 #  See https://ldap2pg.readthedocs.io/en/latest/postgres/

@@ -324,7 +324,13 @@ def check_yaml_gotchas(file_config):
 
 
 class Configuration(dict):
+    minimum_version = 0
+
     DEFAULTS = {
+        # Default version correspond to ldap2pg 5.6, the first version of
+        # ldap2pg to have file version check. The minimum supported version is
+        # define in Configure.minimum_version attribute.
+        'version': 5,
         'check': False,
         'dry': True,
         'verbose': None,
@@ -390,6 +396,7 @@ class Configuration(dict):
         Mapping('dry'),
         Mapping('verbose', env=[]),
         Mapping('verbosity', processor=V.verbosity),
+        Mapping('version', env=[]),
         Mapping('ldap:uri'),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
@@ -522,6 +529,10 @@ class Configuration(dict):
             except OSError as e:
                 msg = "Failed to read configuration: %s" % (e,)
                 raise UserError(msg)
+
+        if file_config.get('version', 5) < self.minimum_version:
+            raise UserError(
+                "File version %(version)s is not supported." % file_config)
 
         V.alias(
             file_config.get('postgres', {}),
