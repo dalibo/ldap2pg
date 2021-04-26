@@ -303,3 +303,23 @@ class FormatEntry(object):
 
     def update(self, kw):
         self.__dict__.update(kw)
+
+
+class FormatValue(object):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return 'FormatValue(%r)' % (self.value)
+
+    def __eq__(self, other):
+        return self.value == str(other)
+
+    def __getattr__(self, name):
+        if name in ['lower()', 'upper()']:
+            return getattr(self.value, name[:-2])()
+        else:
+            raise AttributeError(name)

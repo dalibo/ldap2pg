@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_attribute_map():
     from ldap2pg.format import AttributesMap
 
@@ -138,7 +141,7 @@ def test_combinations_join():
 
 
 def test_format():
-    from ldap2pg.format import FormatList
+    from ldap2pg.format import FormatList, FormatValue
 
     vars_ = {
         "__self__": [{
@@ -151,12 +154,12 @@ def test_format():
         "member": [
             {
                 "dn": [dict(dn="cn=m0,ou=member", cn="m0")],
-                "cn": ["m0"],
+                "cn": [FormatValue("M0")],
                 "mail": ["m0@toto", "m00@toto"],
             },
             {
                 "dn": [dict(dn="cn=m1,ou=member", cn="m1")],
-                "cn": ["m1"],
+                "cn": [FormatValue("M1")],
                 "mail": ["m1@toto"],
             },
         ],
@@ -164,7 +167,7 @@ def test_format():
 
     flist = FormatList.factory([
         '{cn}', '{dn.cn}',
-        '{member}', '{member.cn}: {member.mail}', '{member.dn.cn}',
+        '{member}', '{member.cn.lower()}: {member.mail}', '{member.dn.cn}',
     ])
 
     values = flist.expand(vars_)
@@ -182,3 +185,16 @@ def test_format():
     ]
 
     assert wanted == list(values)
+
+
+def test_lower():
+    from ldap2pg.format import FormatValue
+
+    var = FormatValue("TOTO")
+    assert "TOTO" in repr(var)
+
+    fmt = "{var.lower()}".format(var=var)
+    assert 'toto' == fmt
+
+    with pytest.raises(AttributeError):
+        var.rpartition

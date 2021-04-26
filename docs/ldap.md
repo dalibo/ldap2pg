@@ -50,6 +50,18 @@ You can inject attributes in `role:names`, `role:parents`, `role:members` and
 `grant:role`.
 
 
+## Lowering or Raising Case
+
+When injecting an LDAP attribute with curly braces, you can control the case of
+the value using `.lower()` or `.upper()` methods.
+
+``` yaml
+- ldap: ...
+  role: "{cn.lower()}"
+```
+
+
+
 ## Managing heterogeneous DN
 
 If you rely on accessing a member of a DN like `member.cn` and have different DN
