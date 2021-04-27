@@ -15,6 +15,7 @@ class Role(object):
     __slots__ = (
         'comment',
         'lname',
+        'uname',
         'members',
         'name',
         'options',
@@ -25,6 +26,7 @@ class Role(object):
                  comment=None):
         self.name = name
         self.lname = name.lower()
+        self.uname = name.upper()
         self.members = members or []
         self.options = RoleOptions(options or {})
         self.parents = parents or []
@@ -78,17 +80,18 @@ class Role(object):
                 ),
             )
 
-    def alter(self, other):
-        # Yields SQL queries to reach other state.
-
+    def rename(self, other):
         if self.name != other.name:
             yield Query(
                 'Rename %s to %s.' % (self.name, other.name),
                 None,
-                """ALTER ROLE "%(old)s" RENAME TO "%(new)s" ;""" % dict(
+                """ALTER ROLE "%(old)s" RENAME TO "%(new)s";""" % dict(
                     old=self.name, new=other.name,
                 ),
             )
+
+    def alter(self, other):
+        # Yields SQL queries to reach other state.
 
         if self.options != other.options:
             yield Query(
@@ -166,12 +169,15 @@ class Role(object):
         return self
 
     def rename_members(self, renamed):
-        # Replace old names in members by matching new one.
-        renamed_members = [
-            renamed[m] for m in self.members if m in renamed]
-        for m in renamed_members:
-            self.members.remove(m.lname)
-            self.members.append(m.name)
+        # renamed: oldname -> newrole.
+        # Apply renaming to members.
+        for i, oldname in enumerate(self.members[:]):
+            try:
+                oldname = renamed[oldname].name
+            except KeyError:
+                continue
+            else:
+                self.members[i] = oldname
 
 
 class RoleOptions(dict):
@@ -317,40 +323,101 @@ class RoleSet(set):
         # since we reuse `available` roles instead of recreating roles.
 
         available = available or RoleSet()
+        # Available is a superset of self. Use the same index for self.
         index = available.reindex()
         other = other or RoleSet()
 
         # First create/rename missing roles
         missing = RoleSet(other - available)
-        renamed = dict()
-        for role in missing.flatten():
-            # Detect renames from lowercase.
-            if role.lname in available and role.lname not in other:
-                renamed[role.lname] = role
+        missing_index = missing.reindex()
+
+        # newname -> oldrole
+        renames = dict()
+
+        # Search renames from upper/lower case to mixed case.
+        for newrole in missing:
+            loldrole = index.get(newrole.lname)
+            uoldrole = index.get(newrole.uname)
+            if loldrole and uoldrole:
+                logger.debug(
+                    "Can't choose renaming %s from %s or %s. Creating.",
+                    newrole.name, loldrole.name, uoldrole.name)
+                continue
+            oldrole = loldrole or uoldrole
+            if not oldrole:
                 continue
 
-            # Now, use old lower member name if existing, they will be renamed
-            # after creation.
-            for i, member in enumerate(role.members):
-                lmember = member.lower()
-                if lmember in available and lmember not in other:
-                    role.members[i] = lmember
+            if oldrole in other:
+                logger.debug(
+                    "Wants both existing %s and new %s. Creating",
+                    oldrole.name, newrole.name)
+                continue
+            renames[newrole.name] = oldrole
+
+        # Search renames from mixed case to upper/lower case.
+        for oldrole in available:
+            lnewrole = missing_index.get(oldrole.lname)
+            unewrole = missing_index.get(oldrole.uname)
+            if lnewrole and unewrole:
+                logger.debug(
+                    "Can't choose renaming %s to %s or %s. Dropping.",
+                    oldrole.name, lnewrole.name, unewrole.name)
+                continue
+            newrole = lnewrole or unewrole
+            if not newrole:
+                continue
+            if oldrole in other:
+                logger.debug(
+                    "Wants both existing %s and new %s. Creating.",
+                    oldrole.name, newrole.name)
+                continue
+            renames[newrole.name] = oldrole
+
+        # Index renames by oldname
+        # oldname -> newrole
+        renamed = dict([
+            (oldrole.name, missing_index[newname])
+            for newname, oldrole in renames.items()
+        ])
+
+        # Create missing first, in order.
+        for role in missing.flatten():
+            if role.name in renames:
+                continue
+
+            # Create role using old case member name. Rename will be applied
+            # just after.
+            role.rename_members(renames)
 
             for qry in role.create():
                 yield qry
 
-        for role in renamed.values():
-            old_role = index[role.lname]
-            for qry in old_role.alter(role):
+        # Apply renames.
+        for newname, oldrole in renames.items():
+            newrole = missing_index[newname]
+            for qry in oldrole.rename(newrole):
                 yield qry
+            # Update role inspection result to match rename.
+            available.remove(oldrole)
+            managed = oldrole in self
+            if managed:
+                self.remove(oldrole)
+            oldrole.name = newrole.name
+            available.add(oldrole)
+            if managed:
+                self.add(oldrole)
 
-        # Now update existing roles options and memberships
-        existing = available & other
-        other_roles_index = other.reindex()
-        for role in existing:
+        index = available.reindex()
+
+        # Now update kept roles options and memberships, including renamed.
+        kept = available & other
+        other_index = other.reindex()
+        for role in kept:
             mine = index[role.name]
+            # Rename back member to new role name, keeping objects synchronized
+            # with Postgres instance.
             mine.rename_members(renamed)
-            its = other_roles_index[role.name]
+            its = other_index[role.name]
             if role not in self:
                 logger.warning(
                     "Role %s already exists in cluster. Reusing.", role.name)
@@ -358,7 +425,7 @@ class RoleSet(set):
                 yield qry
 
         # Don't forget to trash all spurious managed roles!
-        spurious = RoleSet(self - other - set(renamed) - set(['public']))
+        spurious = RoleSet(self - other - set(['public']))
         for role in reversed(list(spurious.flatten())):
             for qry in role.drop():
                 yield qry

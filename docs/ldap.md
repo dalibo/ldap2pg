@@ -60,6 +60,14 @@ the value using `.lower()` or `.upper()` methods.
   role: "{cn.lower()}"
 ```
 
+ldap2pg will try to rename a role when case is changing, instead of dropping
+and creating. ldap2pg will rename only if there is no doubt. For example,
+ldap2pg refuses to choose between `ALICE` and `alice` to be renamed to `Alice`.
+On the other way around, if an existing role `Alice` is existing and both
+`alice` and `ALICE` are wanted, `Alice` will be dropped instead of renamed.
+
+ldap2pg still accepts typo squatting. If you want both `Alice` and `ALICE`,
+ldap2pg won't confuse between them.
 
 
 ## Managing heterogeneous DN

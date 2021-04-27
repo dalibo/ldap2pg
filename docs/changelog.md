@@ -10,6 +10,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Accepts `.lower()` and `.upper()` filters.
+- Rename from lower/upper case to mixed case.
+- Rename from mixed case to lower/upper case.
 - Search for `/etc/openldap/ldap.conf` too.
 - Protect role name when reassigning objects.
 - Apply `LDAPCONF` `LDAPRC` from environment.
