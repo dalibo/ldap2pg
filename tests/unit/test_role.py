@@ -79,15 +79,24 @@ def test_merge():
     assert 1 == len(a.members)
 
 
-def test_rename():
+def test_comment():
     from ldap2pg.role import Role
 
     a = Role(name='alan')
-    b = Role(name='Alan', comment='New comment')
+    b = Role(name='alan', comment='New comment')
     queries = [q.args[0] for q in a.alter(b)]
 
+    assert 'COMMENT ON ROLE "alan"' in queries[0]
+
+
+def test_rename_query():
+    from ldap2pg.role import Role
+
+    a = Role(name='alan')
+    b = Role(name='Alan')
+    queries = [q.args[0] for q in a.rename(b)]
+
     assert '"alan" RENAME TO "Alan"' in queries[0]
-    assert 'COMMENT ON ROLE "Alan"' in queries[1]
 
 
 def test_merge_options():
@@ -190,7 +199,7 @@ def test_diff():
 
     pgmanagedroles = RoleSet([
         Role('drop-me'),
-        Role('alter-me', members=['rename-me']),
+        Role('alter-me'),
         Role('nothing'),
         Role('public'),
         Role('rename-me'),
@@ -201,10 +210,9 @@ def test_diff():
     })
     ldaproles = RoleSet([
         Role('reuse-me'),
-        Role('alter-me', options=dict(LOGIN=True), members=['Rename-Me']),
+        Role('alter-me', options=dict(LOGIN=True)),
         Role('nothing'),
         Role('create-me'),
-        Role('Rename-Me'),
     ])
     queries = [
         q.args[0]
@@ -218,6 +226,103 @@ def test_diff():
     assert not fnfilter(queries, '*nothing*')
     assert not fnfilter(queries, '*dont-touch-me*')
     assert not fnfilter(queries, '*public*')
+
+
+def test_diff_rename():
+    from ldap2pg.role import Role, RoleSet
+
+    pgmanagedroles = RoleSet([
+        Role('min2min'),
+        Role('min2mix'),
+        Role('min2maj'),
+    ])
+    pgallroles = pgmanagedroles.union({
+        Role('Mix2Min'),
+        Role('Mix2Mix'),
+        Role('Mix2Maj'),
+        Role('MAJ2MIN'),
+        Role('MAJ2MIX'),
+        Role('MAJ2MAJ'),
+    })
+    ldaproles = RoleSet([
+        Role('min2min'),
+        Role('Min2Mix'),
+        Role('MIN2MAJ'),
+        Role('mix2min'),
+        Role('Mix2Mix'),
+        Role('MIX2MAJ'),
+        Role('maj2min'),
+        Role('Maj2Mix'),
+        Role('MAJ2MAJ'),
+    ])
+    queries = [
+        q.args[0]
+        for q in pgmanagedroles.diff(ldaproles, pgallroles)
+    ]
+
+    assert fnfilter(queries, '*"MAJ2MIX" RENAME TO "Maj2Mix";')
+    assert fnfilter(queries, '*"MAJ2MIN" RENAME TO "maj2min";')
+    assert fnfilter(queries, '*"min2mix" RENAME TO "Min2Mix";')
+    assert fnfilter(queries, '*"min2maj" RENAME TO "MIN2MAJ";')
+    assert fnfilter(queries, '*"Mix2Maj" RENAME TO "MIX2MAJ";')
+    assert fnfilter(queries, '*"Mix2Min" RENAME TO "mix2min";')
+    assert not fnfilter(queries, '*CREATE ROLE*')
+
+
+def test_diff_rename_members():
+    from ldap2pg.role import Role, RoleSet
+
+    pgmanagedroles = RoleSet()
+    pgallroles = pgmanagedroles.union({
+        Role('parent', members=['min2mix', 'min2min']),
+        Role('min2mix'),
+        Role('min2min'),
+
+    })
+    ldaproles = RoleSet([
+        Role('parent', members=['Min2Mix', 'min2min']),
+        Role('Min2Mix'),
+        Role('min2min'),
+    ])
+    queries = [
+        q.args[0]
+        for q in pgmanagedroles.diff(ldaproles, pgallroles)
+    ]
+
+    # Don't modify membership.
+    assert not fnfilter(queries, '*GRANT*')
+    assert not fnfilter(queries, '*REVOKE*')
+
+
+def test_diff_not_rename():
+    from ldap2pg.role import Role, RoleSet
+
+    pgmanagedroles = RoleSet()
+    pgallroles = pgmanagedroles.union({
+        Role('ambigue_from'),
+        Role('AMBIGUE_FROM'),
+        Role('Ambigue_To'),
+        Role('bothmin'),
+        Role('BothMix'),
+    })
+    ldaproles = RoleSet([
+        Role('Ambigue_From'),
+        Role('ambigue_to'),
+        Role('AMBIGUE_TO'),
+        Role('bothmin'),
+        Role('Bothmin'),
+        Role('BothMix'),
+        Role('bothmix'),
+    ])
+    queries = [
+        q.args[0]
+        for q in pgmanagedroles.diff(ldaproles, pgallroles)
+    ]
+
+    assert not fnfilter(queries, '* RENAME TO *')
+    assert fnfilter(queries, '*CREATE ROLE "Ambigue_From"*')
+    assert fnfilter(queries, '*CREATE ROLE "ambigue_to"*')
+    assert fnfilter(queries, '*CREATE ROLE "AMBIGUE_TO"*')
 
 
 def test_rule():

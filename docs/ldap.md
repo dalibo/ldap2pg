@@ -50,6 +50,26 @@ You can inject attributes in `role:names`, `role:parents`, `role:members` and
 `grant:role`.
 
 
+## Lowering or Raising Case
+
+When injecting an LDAP attribute with curly braces, you can control the case of
+the value using `.lower()` or `.upper()` methods.
+
+``` yaml
+- ldap: ...
+  role: "{cn.lower()}"
+```
+
+ldap2pg will try to rename a role when case is changing, instead of dropping
+and creating. ldap2pg will rename only if there is no doubt. For example,
+ldap2pg refuses to choose between `ALICE` and `alice` to be renamed to `Alice`.
+On the other way around, if an existing role `Alice` is existing and both
+`alice` and `ALICE` are wanted, `Alice` will be dropped instead of renamed.
+
+ldap2pg still accepts typo squatting. If you want both `Alice` and `ALICE`,
+ldap2pg won't confuse between them.
+
+
 ## Managing heterogeneous DN
 
 If you rely on accessing a member of a DN like `member.cn` and have different DN

@@ -300,6 +300,7 @@ class SyncManager(object):
         count += self.psql.run_queries(expandqueries(
             pgmanagedroles.diff(other=ldaproles, available=pgallroles),
             databases=databases))
+
         if self.privileges:
             logger.info("Inspecting GRANTs in Postgres cluster...")
             # Inject ldaproles in managed roles to avoid requerying roles.

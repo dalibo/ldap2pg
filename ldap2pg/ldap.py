@@ -16,7 +16,7 @@ except ImportError:  # pragma: nocover
 from ldap.dn import str2dn as native_str2dn
 from ldap import sasl
 
-from .format import FormatVars
+from .format import FormatVars, FormatValue
 from .utils import decode_value, encode_value, PY2, uniq
 from .utils import Timer
 from .utils import UserError
@@ -186,13 +186,15 @@ class LDAPEntry(object):
                     if attr.startswith("dn."):
                         dn = entry_vars.get("dn")
                         if not isinstance(dn, dict):
-                            dn = dict(dn=entry.dn)
+                            dn = dict(dn=FormatValue(entry.dn))
                             entry_vars["dn"] = [dn]
-                        dn[attr[3:]] = next(entry[fullattr])
+                        dn[attr[3:]] = FormatValue(next(entry[fullattr]))
                     else:
-                        entry_vars[attr] = list(processor(entry[fullattr]))
+                        entry_vars[attr] = [
+                            FormatValue(v) for v in processor(entry[fullattr])
+                        ]
 
-                entry_vars.setdefault("dn", [entry.dn])
+                entry_vars.setdefault("dn", [FormatValue(entry.dn)])
                 vars_[objname].append(entry_vars)
 
         return vars_
