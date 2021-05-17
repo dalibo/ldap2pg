@@ -40,7 +40,7 @@ def ldapquery(value, format_fields=None):
     query = dict(default_ldap_query, **value)
     query['scope'] = parse_scope(query['scope'])
     if 'filter' in query:
-        query['filter'] = query['filter'].rstrip('\r\n')
+        query['filter'] = query['filter'].strip(' \r\n')
 
     # Accept manual attributes, for legacy. Attribute inference should in all
     # cases. Also, join attributes as predefined this way.
