@@ -445,8 +445,15 @@ class RoleRule(object):
             self.comment, self.members, self.names, self.parents,
         )
 
+    def __eq__(self, other):
+        return hasattr(other, 'as_dict') and self.as_dict() == other.as_dict()
+
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.names)
+
+    @property
+    def is_dynamic(self):
+        return 0 != len(self.all_fields)
 
     @property
     def attributes_map(self):
@@ -454,6 +461,10 @@ class RoleRule(object):
         for lst in self.comment, self.members, self.names, self.parents:
             map_.update(lst.attributes_map)
         return map_
+
+    def copy(self, **kw):
+        kw = dict(self.as_dict(), **kw)
+        return self.__class__(**kw)
 
     def generate(self, vars_):
         names = self.names.expand(vars_)

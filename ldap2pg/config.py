@@ -550,6 +550,7 @@ class Configuration(dict):
         default_privileges = make_well_known_privileges()
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
+            extract_static_rules(self)
             postprocess_privilege_options(self, default_privileges)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
@@ -632,3 +633,59 @@ class Configuration(dict):
 
             if k not in known_keys:
                 logger.warning("Unknown config entry: %s.", k)
+
+
+def extract_static_rules(config):
+    # This procedure extract static rules from mapping to avoid roles dropped
+    # or not created because an ldap search was empty.
+
+    sync_map = config.get('sync_map', [])
+    for i, mapping in enumerate(sync_map):
+        if "ldap" not in mapping:
+            continue
+
+        rules = mapping.get('roles', [])
+        for rule in reversed(rules[:]):
+            static_names = [fmt.spec for fmt in rule.names if fmt.static]
+            dynamic_names = [fmt for fmt in rule.names if not fmt.static]
+            if not static_names:
+                continue
+
+            static_rule = rule.copy(names=static_names)
+            if static_rule.is_dynamic:
+                # There is still LDAP attribute mapping in e.g. parent or
+                # member. Abort here static rule extracting.
+                continue
+
+            if dynamic_names:
+                # In case of mixed dynamic/static names, just edit in-place.
+                rule.names[:] = dynamic_names
+            else:
+                # Rule was only static, remove it from ldap mapping..
+                rules.remove(rule)
+
+            logger.debug("Extracted static role rule %s.", static_rule)
+            sync_map.insert(i, dict(roles=[static_rule]))
+
+        rules = mapping.get('grants', [])
+        for rule in reversed(rules[:]):
+            static_roles = [fmt.spec for fmt in rule.roles if fmt.static]
+            dynamic_roles = [fmt for fmt in rule.roles if not fmt.static]
+            if not static_roles:
+                continue
+
+            static_rule = rule.copy(roles=static_roles)
+            if static_rule.is_dynamic:
+                # There is still LDAP attribute mapping in e.g. parent or
+                # member. Abort here static rule extracting.
+                continue
+
+            if dynamic_roles:
+                # In case of mixed dynamic/static roles, just edit in-place.
+                rule.roles[:] = dynamic_roles
+            else:
+                # Rule was only static, remove it from ldap mapping..
+                rules.remove(rule)
+
+            logger.debug("Extracted static grant rule %s.", static_rule)
+            sync_map.insert(i, dict(grants=[static_rule]))

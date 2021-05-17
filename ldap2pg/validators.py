@@ -277,10 +277,6 @@ def mapping(value, **kw):
     if 'ldap' in value:
         roles = value.get('roles', [])
         grants = value.get('grant', [])
-        if any([r.names.has_static for r in roles]):
-            raise ValueError("Mixing static role with LDAP query may hide it.")
-        if any([r.roles.has_static for r in grants]):
-            raise ValueError("Mixing static role with LDAP query may hide it.")
         format_fields = set(
             iterchain(*[r.all_fields for r in roles + grants])
         )

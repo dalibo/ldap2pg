@@ -240,6 +240,13 @@ class GrantRule(object):
             map_.update(lst.attributes_map)
         return map_
 
+    @property
+    def is_dynamic(self):
+        return len(self.all_fields) > 0
+
+    def __eq__(self, other):
+        return self.as_dict() == other.as_dict()
+
     def __repr__(self):
         return '<%s %s on [%s].[%s] to [%s]>' % (
             self.__class__.__name__,
@@ -248,6 +255,10 @@ class GrantRule(object):
             self.schemas,
             self.roles,
         )
+
+    def copy(self, **kw):
+        kw = dict(self.as_dict(), **kw)
+        return self.__class__(**kw)
 
     def generate(self, vars_):
         privilege = next(self.privilege.expand(vars_))
