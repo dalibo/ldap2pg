@@ -6,11 +6,15 @@ import os
 import pdb
 import resource
 import sys
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import psycopg2
 
 from . import ldap
-from .config import Configuration, ConfigurationError, dictConfig
+from .config import Configuration, ConfigurationError
 from .inspector import PostgresInspector
 from .manager import SyncManager
 from .psql import PSQL
@@ -21,12 +25,67 @@ from .role import RoleOptions
 logger = logging.getLogger(__name__)
 
 
-def wrapped_main(config=None):
-    config = config or Configuration()
-    config.load()
+def main():
+    config = Configuration()
+    debug = False
 
-    logging_config = config.logging_dict()
-    dictConfig(logging_config)
+    try:
+        debug = config.bootstrap(environ=os.environ)
+        if debug:
+            logger.debug("Debug mode enabled.")
+        config.load()
+        exit(synchronize(config))
+    except pdb.bdb.BdbQuit:
+        logger.info("Graceful exit from debugger.")
+    except UserError as e:
+        logger.critical("%s", e)
+        exit(e.exit_code)
+    except Exception:
+        logger.exception('Unhandled error:')
+        if debug and sys.stdout.isatty():
+            logger.debug("Dropping in debugger.")
+            pdb.post_mortem(sys.exc_info()[2])
+        else:
+            logger.error(
+                "Please file an issue at "
+                "https://github.com/dalibo/ldap2pg/issues with full log.",
+            )
+    exit(os.EX_SOFTWARE)
+
+
+def init_config(config, environ, argv):
+    config_obj = Configuration()
+
+    if isinstance(config, str):
+        fo = StringIO(config)
+        config = config_obj.read(fo, "string")
+    else:
+        config = config_obj.validate_raw_yaml(config, "dict")
+
+    args = config_obj.read_argv(argv)
+    config_obj.merge(config, environ, args)
+    return config_obj
+
+
+def synchronize(config=None, environ=None, argv=None):
+    """Synchronize a Postgres cluster from LDAP directory
+
+    This is the main entrypoint of ldap2pg logic. config is either a raw YAML
+    string or a Python dict describing the ldap2pg configuration as documented
+    in the YAML format.
+
+    environ is a dict of environment variables, defaulting to os.environ. argv
+    is the list of arguments passed to argparse and defaults to sys.argv[1:].
+
+    If config['check'] is True, the return value is the number of queries
+    generated to synchronize the cluster.
+
+    In case of error, this procedure raises ldap2pg.UserError exception.
+
+    """
+
+    if not isinstance(config, Configuration):
+        config = init_config(config, environ, argv)
 
     if config.has_ldap_query():
         logger.debug("Setting up LDAP client.")
@@ -81,33 +140,6 @@ def wrapped_main(config=None):
     logger.debug("Used up to %.1fMiB of memory.", rusage.ru_maxrss / 1024.)
 
     return int(count > 0) if config['check'] else 0
-
-
-def main():
-    config = Configuration()
-    debug = False
-
-    try:
-        debug = config.bootstrap(environ=os.environ)
-        if debug:
-            logger.debug("Debug mode enabled.")
-        exit(wrapped_main(config))
-    except pdb.bdb.BdbQuit:
-        logger.info("Graceful exit from debugger.")
-    except UserError as e:
-        logger.critical("%s", e)
-        exit(e.exit_code)
-    except Exception:
-        logger.exception('Unhandled error:')
-        if debug and sys.stdout.isatty():
-            logger.debug("Dropping in debugger.")
-            pdb.post_mortem(sys.exc_info()[2])
-        else:
-            logger.error(
-                "Please file an issue at "
-                "https://github.com/dalibo/ldap2pg/issues with full log.",
-            )
-    exit(os.EX_SOFTWARE)
 
 
 if '__main__' == __name__:  # pragma: no cover

@@ -20,6 +20,7 @@ nav:
   - Managing Roles: roles.md
   - Managing Privileges: privileges.md
   - Well-known Privileges: wellknown.md
+- API: api.md
 - Cookbook: cookbook.md
 - Hacking: hacking.md
 - Changelog: changelog.md

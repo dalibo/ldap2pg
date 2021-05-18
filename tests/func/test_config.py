@@ -83,3 +83,15 @@ def test_sasl(capsys):
 
     _, err = capsys.readouterr()
     assert 'SASL' in err
+
+
+def test_api():
+    from ldap2pg import synchronize, UserError
+
+    with pytest.raises(UserError):
+        synchronize(None, environ=dict(), argv=[])
+
+    synchronize("""\
+    sync_map:
+    - role: test
+    """, environ=dict(), argv=["--dry"])

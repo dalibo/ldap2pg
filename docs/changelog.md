@@ -16,6 +16,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Protect role name when reassigning objects.
 - Apply `LDAPCONF` `LDAPRC` from environment.
 - Version config file. This will help manage breaking changes in ldap2pg.
+- Expose a Python API.
 - Fix default value for `allow_missing_attributes`.
 - Protect static rules mixed in dynamics rules instead of rejecting config.
 
