@@ -498,16 +498,7 @@ class Configuration(dict):
     def load(self, argv=None):
         # argv processing.
         logger.debug("Processing CLI arguments.")
-        parser = ArgumentParser(
-            add_help=False,
-            # Only store value from argv. Defaults are managed by
-            # Configuration.
-            argument_default=SUPPRESS_ARG,
-            description="PostgreSQL roles and privileges management.",
-            epilog=self.EPILOG,
-        )
-        define_arguments(parser)
-        args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+        args = self.read_argv(argv)
 
         # Setup logging before parsing options. Reset verbosity with env var,
         # and compute verbosity from cumulated args.
@@ -559,6 +550,18 @@ class Configuration(dict):
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 
         logger.debug("Configuration loaded.")
+
+    def read_argv(self, argv=None):
+        parser = ArgumentParser(
+            add_help=False,
+            # Only store value from argv. Defaults are managed by
+            # Configuration.
+            argument_default=SUPPRESS_ARG,
+            description="PostgreSQL roles and privileges management.",
+            epilog=self.EPILOG,
+        )
+        define_arguments(parser)
+        return parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     def merge(self, file_config, environ=os.environ, args=object()):
         for mapping in self.MAPPINGS:
