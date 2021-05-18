@@ -21,8 +21,8 @@ import sys
 import ldap
 import psycopg2
 import yaml
+from pkg_resources import get_distribution
 
-from . import __version__
 from .privilege import Privilege
 from .privilege import process_definitions as process_privileges
 from .utils import (
@@ -36,6 +36,9 @@ from . import validators as V
 from .defaults import make_well_known_privileges
 from .defaults import shared_queries as default_shared_queries
 
+
+__dist__ = get_distribution('ldap2pg')
+__version__ = __dist__.version
 
 logger = logging.getLogger(__name__)
 

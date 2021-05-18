@@ -1,4 +1,6 @@
-from pkg_resources import get_distribution
+from .config import __version__, __dist__
 
-__dist__ = get_distribution('ldap2pg')
-__version__ = __dist__.version
+__all__ = [
+    '__dist__',
+    '__version__',
+]
