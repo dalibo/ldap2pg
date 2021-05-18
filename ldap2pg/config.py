@@ -573,13 +573,16 @@ class Configuration(dict):
         if self['verbose'] is not None:
             self['verbosity'] = 'DEBUG' if self['verbose'] else 'INFO'
 
-    def read(self, fo, name, mode):
+    def read(self, fo, name, mode=0o400):
         try:
             payload = yaml.safe_load(fo)
         except yaml.error.YAMLError as e:
             msg = "YAML error with %s: %s" % (name, e)
             raise ConfigurationError(msg)
 
+        return self.validate_raw_yaml(payload, name, mode)
+
+    def validate_raw_yaml(self, payload, name, mode=0o400):
         if payload is None:
             raise ConfigurationError("Configuration is empty.")
         if isinstance(payload, list):
