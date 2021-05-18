@@ -16,8 +16,19 @@ from .utils import (
 )
 
 
-logger = logging.getLogger(__name__)
+class ChangeLogger(logging.getLoggerClass()):
+    def change(self, msg, *args, **kwargs):
+        if self.isEnabledFor(logging.CHANGE):
+            self._log(logging.CHANGE, msg, args, **kwargs)
 
+
+logging.CHANGE = logging.INFO + 5
+logging.addLevelName(logging.CHANGE, 'CHANGE')
+# Use ChangeLogger class only in this module.
+logging.setLoggerClass(ChangeLogger)
+logger = logging.getLogger(__name__)
+logging.setLoggerClass(logging.Logger)
+logger.change  # Raises AttributeError if logger is not ChangeLogger.
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
