@@ -524,10 +524,6 @@ class Configuration(dict):
                 msg = "Failed to read configuration: %s" % (e,)
                 raise UserError(msg)
 
-        if file_config.get('version', 5) < self.minimum_version:
-            raise UserError(
-                "File version %(version)s is not supported." % file_config)
-
         V.alias(
             file_config.get('postgres', {}),
             'roles_blacklist_query', 'blacklist',
@@ -537,15 +533,9 @@ class Configuration(dict):
         if not self.get('debug'):
             sys.stdin.close()
 
-        check_yaml_gotchas(file_config)
-        self.warn_unknown_config(file_config)
-
         # Now merge all config sources.
-        default_privileges = make_well_known_privileges()
         try:
             self.merge(file_config=file_config, environ=os.environ, args=args)
-            extract_static_rules(self)
-            postprocess_privilege_options(self, default_privileges)
         except ValueError as e:
             raise ConfigurationError("Failed to load configuration: %s" % (e,))
 
@@ -564,6 +554,13 @@ class Configuration(dict):
         return parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     def merge(self, file_config, environ=os.environ, args=object()):
+        if file_config.get('version', 5) < self.minimum_version:
+            raise UserError(
+                "File version %(version)s is not supported." % file_config)
+
+        check_yaml_gotchas(file_config)
+        self.warn_unknown_config(file_config)
+
         for mapping in self.MAPPINGS:
             value = mapping.process(
                 default=deepget(self, mapping.path),
@@ -575,6 +572,10 @@ class Configuration(dict):
 
         if self['verbose'] is not None:
             self['verbosity'] = 'DEBUG' if self['verbose'] else 'INFO'
+
+        extract_static_rules(self)
+        default_privileges = make_well_known_privileges()
+        postprocess_privilege_options(self, default_privileges)
 
     def read(self, fo, name, mode=0o400):
         try:
