@@ -1,17 +1,10 @@
-from pkg_resources import get_distribution
-import logging
+from .config import __version__, __dist__
+from .utils import UserError
+from .script import synchronize
 
-
-class ChangeLogger(logging.Logger):
-    def change(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.CHANGE):
-            self._log(logging.CHANGE, msg, args, **kwargs)
-
-
-logging.CHANGE = logging.INFO + 5
-logging.addLevelName(logging.CHANGE, 'CHANGE')
-logging.setLoggerClass(ChangeLogger)
-
-
-__dist__ = get_distribution('ldap2pg')
-__version__ = __dist__.version
+__all__ = [
+    'UserError',
+    '__dist__',
+    '__version__',
+    'synchronize',
+]

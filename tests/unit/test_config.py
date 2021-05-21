@@ -246,10 +246,12 @@ def test_merge():
     config.merge(file_config={}, environ={})
 
     minimal_config = dict(verbose=True, sync_map=[])
+    config = Configuration()
     config.merge(
         file_config=minimal_config,
         environ=dict(),
     )
+    config = Configuration()
     config.merge(
         file_config=minimal_config,
         environ=dict(LDAPPASSWORD=b'envpass', PGDSN=b'envdsn'),
