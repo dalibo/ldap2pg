@@ -168,11 +168,11 @@ sync_map:
 - description: "Query LDAP to create readers."
   ldap:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: |
+    filter: "
       (&
         (cn=bi)
         (objectClass=*)
-      )
+      )"
   role:
     name: '{member.cn}'
     options: LOGIN

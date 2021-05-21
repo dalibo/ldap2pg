@@ -474,3 +474,92 @@ def test_yaml_gotchas():
     config = dict(postgres=dict(bad_query=''))
     with pytest.raises(ConfigurationError):
         check_yaml_gotchas(config)
+
+
+def test_extract_static_rules_roles():
+    from ldap2pg.config import extract_static_rules
+    from ldap2pg.validators import rolerule
+
+    config = dict(sync_map=[
+        dict(
+            ldap=dict(filter="(filter)"),
+            roles=[
+                rolerule(dict(name="static-orphan")),
+                rolerule(dict(name="static", parent=["static"])),
+                rolerule(dict(name="{dynamic}")),
+                rolerule(dict(names=["mixed", "{dynamic}"])),
+                rolerule(dict(name="dynmember", members=["{dynamic}"])),
+                rolerule(dict(name="dynparent", parent=["{dynamic}"])),
+                rolerule(dict(name="dyncomment", comment="{dynamic}")),
+            ],
+        ),
+    ])
+
+    extract_static_rules(config)
+
+    wanted = dict(sync_map=[
+        dict(roles=[
+                rolerule(dict(name="static-orphan")),
+        ]),
+        dict(roles=[
+                rolerule(dict(name="static", parent=["static"])),
+        ]),
+        dict(roles=[
+                rolerule(dict(name="mixed")),
+        ]),
+        dict(
+            ldap=dict(filter="(filter)"),
+            roles=[
+                rolerule(dict(name="{dynamic}")),
+                rolerule(dict(names=["{dynamic}"])),
+                rolerule(dict(name="dynmember", members=["{dynamic}"])),
+                rolerule(dict(name="dynparent", parent=["{dynamic}"])),
+                rolerule(dict(name="dyncomment", comment="{dynamic}")),
+            ],
+        ),
+    ])
+
+    assert wanted == config
+
+
+def test_extract_static_rules_grants():
+    from ldap2pg.config import extract_static_rules
+    from ldap2pg.validators import grantrule
+
+    kw = dict(privilege='ro')
+    config = dict(sync_map=[
+        dict(
+            ldap=dict(filter="(filter)"),
+            grants=[
+                grantrule(dict(role="static", database=["static"], **kw)),
+                grantrule(dict(role="{dynamic}", **kw)),
+                grantrule(dict(roles=["mixed", "{dynamic}"], **kw)),
+                grantrule(dict(role="dyndatabase", database="{dyn}", **kw)),
+                grantrule(dict(role="dynschema", schema="{dynamic}", **kw)),
+                grantrule(dict(role="dynpriv", privilege="{dynamic}")),
+            ],
+        ),
+    ])
+
+    extract_static_rules(config)
+
+    wanted = dict(sync_map=[
+        dict(grants=[
+                grantrule(dict(role="static", database=["static"], **kw)),
+        ]),
+        dict(grants=[
+                grantrule(dict(role="mixed", **kw)),
+        ]),
+        dict(
+            ldap=dict(filter="(filter)"),
+            grants=[
+                grantrule(dict(role="{dynamic}", **kw)),
+                grantrule(dict(roles=["{dynamic}"], **kw)),
+                grantrule(dict(role="dyndatabase", database="{dyn}", **kw)),
+                grantrule(dict(role="dynschema", schema="{dynamic}", **kw)),
+                grantrule(dict(role="dynpriv", privilege="{dynamic}")),
+            ],
+        ),
+    ])
+
+    assert wanted == config
