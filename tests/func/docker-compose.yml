@@ -19,7 +19,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
 
   runner:
-    image: dalibo/labs-sdk:${DIST-centos7}
+    image: dalibo/buildpack-python:${DIST-centos7}
     links: [ldap, postgres]
     volumes:
     - ../../:/workspace
