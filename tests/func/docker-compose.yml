@@ -23,7 +23,6 @@ services:
     links: [ldap, postgres]
     volumes:
     - ../../:/workspace
-    - ./bash_history:/root/.bash_history
     working_dir: /workspace
     environment:
       PGHOST: postgres
@@ -31,4 +30,5 @@ services:
       PGPASSWORD: fonctionnel
       LDAPURI: ldaps://ldap
       LDAPPASSWORD: fonctionnel
+      HISTFILE: /workspace/test/func/.docker-bash-history
     entrypoint: /workspace/tests/func/entrypoint.sh
