@@ -11,7 +11,7 @@ distclean:
 
 rpm:
 	$(MAKE) -C $(YUM_LABS) clean
-	$(MAKE) rpm-centos8 rpm-centos7
+	$(MAKE) rpm-centos8 rpm-centos7 rpm-centos6
 # building rpm update egg_info for python2.7. We need to regenerate it for
 # development.
 	cd ../ && python setup.py egg_info
