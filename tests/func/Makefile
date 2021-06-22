@@ -4,7 +4,6 @@ rpm:
 	make -C ../../packaging rpm
 
 tests:
-	touch bash_history
 	docker-compose up --remove-orphans --abort-on-container-exit runner
 
 clean:

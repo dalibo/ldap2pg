@@ -2,6 +2,7 @@
 site_name: ldap2pg documentation
 site_description: Synchronise Postgres roles from LDAP directory
 site_author: Dalibo Labs
+site_url: https://ldap2pg.readthedocs.io/
 copyright: © Dalibo 2017-2020
 repo_name: ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg

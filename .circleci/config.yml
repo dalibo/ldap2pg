@@ -42,7 +42,7 @@ jobs:
         type: string
     working_directory: /tmp/ldap2pg
     docker:
-      - image: dalibo/labs-sdk:<< parameters.dist >>
+      - image: dalibo/buildpack-python:<< parameters.dist >>
       - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
         environment:
           LDAP_DOMAIN: ldap.ldap2pg.docker
