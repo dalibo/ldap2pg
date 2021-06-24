@@ -28,7 +28,7 @@ esac
 fullname=$($python setup.py --fullname)
 
 # Search for the proper RPM package.
-rpms=(dist/noarch/${fullname}-*${rpmdist}.noarch.rpm)
+rpms=(dist/${fullname}-*${rpmdist}.noarch.rpm)
 rpm=${rpms[0]}
 test -f "$rpm"
 

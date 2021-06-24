@@ -2,7 +2,7 @@ version: "3"
 
 services:
   rpm:
-    image: dalibo/labs-sdk:${DIST-centos7}
+    image: dalibo/buildpack-pkg:${DIST-centos7}
     volumes:
     - ../:/workspace
     working_dir: /workspace

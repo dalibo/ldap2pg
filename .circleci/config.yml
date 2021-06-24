@@ -75,7 +75,7 @@ jobs:
       dist:
         description: "Distribution."
         type: string
-    docker: [{image: "dalibo/labs-sdk:<< parameters.dist >>"}]
+    docker: [{image: "dalibo/buildpack-pkg:<< parameters.dist >>"}]
     working_directory: ~/ldap2pg
     steps:
     - checkout
