@@ -40,7 +40,7 @@ jobs:
       pgversion:
         description: "Major dotted version of PostgreSQL."
         type: string
-    working_directory: /tmp/ldap2pg
+    working_directory: ~/ldap2pg
     docker:
       - image: dalibo/buildpack-python:<< parameters.dist >>
       - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
@@ -55,7 +55,7 @@ jobs:
     steps:
     - checkout
     - attach_workspace:
-        at: /tmp/ldap2pg/
+        at: ~/ldap2pg
     - restore_cache:
         keys: [ldap2pg-func]
     - run:
@@ -76,15 +76,15 @@ jobs:
         description: "Distribution."
         type: string
     docker: [{image: "dalibo/labs-sdk:<< parameters.dist >>"}]
-    working_directory: /tmp/ldap2pg
+    working_directory: ~/ldap2pg
     steps:
     - checkout
     - run: ./packaging/build_rpm.sh
     - persist_to_workspace:
-        root: /tmp/ldap2pg
+        root: ~/ldap2pg
         paths: ["dist/"]
     - store_artifacts:
-        path: /tmp/ldap2pg/dist/
+        path: ~/ldap2pg/dist/
     - save_cache:
         key: ldap2pg-{{ epoch }}
         paths:
