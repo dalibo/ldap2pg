@@ -12,9 +12,6 @@ distclean:
 rpm:
 	$(MAKE) -C $(YUM_LABS) clean
 	$(MAKE) rpm-centos8 rpm-centos7 rpm-centos6
-# building rpm update egg_info for python2.7. We need to regenerate it for
-# development.
-	cd ../ && python setup.py egg_info
 
 rpm-centos%:
 	DIST=centos$* docker-compose run --rm rpm
@@ -25,3 +22,32 @@ clean:
 
 push:
 	@make -C $(YUM_LABS) push createrepos clean
+
+specs: ldap2pg-el8.spec ldap2pg-el7.spec ldap2pg-el6.spec
+
+ldap2pg-el8.spec: Makefile
+	cd ..; python setup.py bdist_rpm \
+	  --release "1%{dist}" \
+	  --build-requires "python3 python3-setuptools" \
+	  --requires "python3-psycopg2 python3-ldap python3-yaml" \
+	  --python "/usr/bin/python3" \
+	  --spec-only
+	cp -f ../dist/ldap2pg.spec $@
+
+ldap2pg-el7.spec: Makefile
+	cd ..; python setup.py bdist_rpm \
+	  --release "1%{dist}" \
+	  --build-requires "python2 python2-setuptools" \
+	  --requires "python-psycopg2 python-ldap PyYAML" \
+	  --python "/usr/bin/python2" \
+	  --spec-only
+	cp -f ../dist/ldap2pg.spec $@
+
+ldap2pg-el6.spec: Makefile
+	cd ..; python setup.py bdist_rpm \
+	  --release "1%{dist}" \
+	  --build-requires "python2 python2-setuptools" \
+	  --requires "python-psycopg2 python-ldap PyYAML python-logutils python-argparse" \
+	  --python "/usr/bin/python2" \
+	  --spec-only
+	cp -f ../dist/ldap2pg.spec $@
