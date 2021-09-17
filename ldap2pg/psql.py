@@ -41,7 +41,8 @@ def inject_database_in_connstring(connstring, dbname):
     if dbname is None:
         return connstring
 
-    if connstring.startswith('postgres://'):
+    if (connstring.startswith('postgres://') or
+            connstring.startswith('postgresql://')):
         pr = list(urlparse(connstring))
         pr[2] = dbname
         return urlunparse(pr)
