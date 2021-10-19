@@ -20,5 +20,11 @@ RUN set -ex; \
     ldap2pg --version; \
     :
 
-ENTRYPOINT ["ldap2pg"]
+COPY . /
+
+RUN chmod +x /entrypoint.sh && \
+    chmod +x /docker-entrypoint.d/*
+
+ENTRYPOINT ["/entrypoint.sh"]
+# ENTRYPOINT ["ldap2pg"]
 WORKDIR /workspace
