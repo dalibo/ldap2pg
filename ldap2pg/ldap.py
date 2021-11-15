@@ -282,6 +282,7 @@ def connect(**kw):
         conn = UnicodeModeLDAPObject(conn)
 
     conn = LDAPLogger(conn)
+    conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 120)
 
     if options.get('STARTTLS'):
         logger.debug("Sending STARTTLS.")
