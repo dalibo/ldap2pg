@@ -18,7 +18,7 @@ services:
       com.dnsdock.alias: ldap.ldap2pg.docker
 
   postgres:
-    image: postgres:${PGVERSION-12}-alpine
+    image: postgres:${PGVERSION-14}-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust

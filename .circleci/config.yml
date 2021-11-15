@@ -15,10 +15,10 @@ workflows:
           parameters:
             dist: [centos8, centos7, centos6]
     - func:
-        name: "stage1-func-centos8-pg13"
+        name: "stage1-func-centos8-pg14"
         requires: [stage0-pkg-centos8]
         dist: centos8
-        pgversion: "13"
+        pgversion: "14"
     - func:
         name: "stage1-func-centos7-pg12"
         requires: [stage0-pkg-centos7]
