@@ -7,6 +7,11 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
+# Unreleased
+
+- Tested on PostgreSQL 14.
+
+
 # ldap2pg 5.6
 
 Released 2021-06-21.
