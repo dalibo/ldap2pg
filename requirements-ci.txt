@@ -1,6 +1,4 @@
--r docs/requirements.txt
 codecov
-docutils
 flake8
 pytest
 pytest-cov

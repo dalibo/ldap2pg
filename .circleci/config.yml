@@ -4,6 +4,7 @@ workflows:
   version: 2
   default:
     jobs:
+    - docs
     - unit:
         name: "stage0-unit-py<< matrix.python >>"
         matrix:
@@ -32,6 +33,36 @@ workflows:
 
 
 jobs:
+  docs:
+    docker: [{image: "dalibo/buildpack-python:centos7"}]
+    working_directory: ~/ldap2pg
+    steps:
+    - checkout
+    - restore_cache:
+        keys: [ldap2pg-docs]
+    - run:
+        name: Install requirements
+        command: |
+          virtualenv-3 --python=/usr/bin/python3.6 .venv/
+          . .venv/bin/activate
+          set -x
+          pip install --upgrade-strategy=eager -U -r docs/requirements.txt docutils
+          pip check
+    - save_cache:
+        key: ldap2pg-docs3-{{ epoch }}
+        paths:
+        - /root/.cache/pip
+        - "~/.cache/pip/"
+        - ".venv"
+    - run:
+        name: Tests
+        command: |
+          . .venv/bin/activate
+          set -x
+          sort --check .gitignore
+          python3.6 setup.py --long-description | rst2html.py --strict >/dev/null
+          LANG=en_US.utf8 make docs
+
   func:
     parameters:
       dist:
@@ -97,7 +128,7 @@ jobs:
       python:
         description: "Python version"
         type: string
-    docker: [{image: "circleci/python:<< parameters.python >>"}]
+    docker: [{image: "dalibo/buildpack-python:centos7"}]
     working_directory: ~/ldap2pg
     steps:
     - checkout
@@ -106,12 +137,11 @@ jobs:
     - run:
         name: Install requirements
         command: |
-          sudo apt-get update -y
-          sudo apt-get install -y libldap2-dev libsasl2-dev
-          sudo pip install wheel virtualenv
-          virtualenv .venv/
+          virtualenv-3 --python=/usr/bin/python<< parameters.python >> .venv/
           . .venv/bin/activate
           set -x
+          pip --version
+          pip debug
           pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
           pip check
     - save_cache:
@@ -126,8 +156,6 @@ jobs:
           . .venv/bin/activate
           set -x
           sort --check .gitignore
-          python setup.py --long-description | rst2html.py --strict >/dev/null
-          make docs
           git diff --exit-code docs/
           flake8
           python -m pytest tests/unit/
