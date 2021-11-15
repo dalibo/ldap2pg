@@ -72,6 +72,8 @@ postgres:
 
 ## LDAP Parameters
 
+The `ldap` section defines libldap parameters.
+
 ``` yaml
 ldap:
   uri: ldap://ldap2pg.local:389
@@ -79,6 +81,24 @@ ldap:
   user: saslusername
   password: SECRET
 ```
+
+LDAP parameters in YAML are lowercased. You can define values as YAML literal
+or ldap.conf string as well. Only a subset of libldap parameters are supported
+in `ldap2pg.yml`:
+
+- uri
+- host
+- port
+- binddn
+- user
+- password, ldap2pg accepts LDAPPASSWORD env var, not supported by openldap.
+- referrals, which defaults to `false`, unlike openldap default.
+
+ldap2pg supports an extra `starttls` option maps the `-Z` CLI switch of
+ldapsearch. Setting it to `true` triggers a `STARTTLS` command before any other
+operation on the connection to LDAP server. ldap2pg accepts `STARTTLS` option
+in `ldaprc` file.
+
 
 ## `sync_map`
 

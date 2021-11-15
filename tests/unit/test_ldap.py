@@ -42,6 +42,22 @@ def test_connect_from_env(mocker):
     assert li.called is True
 
 
+def test_starttls(mocker):
+    go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
+    li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)
+
+    from ldap2pg.ldap import connect
+
+    go.return_value = dict(
+        URI='ldaps://host', STARTTLS=True,
+        BINDDN='toto', PASSWORD='pw')
+
+    connect()
+
+    ldap = li.return_value
+    assert ldap.start_tls_s.called is True
+
+
 def test_connect_sasl_digest(mocker):
     go = mocker.patch('ldap2pg.ldap.gather_options', autospec=True)
     li = mocker.patch('ldap2pg.ldap.ldap.initialize', autospec=True)

@@ -340,10 +340,12 @@ class Configuration(dict):
         'verbosity': 'INFO',
         'color': False,
         'ldap': {
+            # See ldap2pg.ldap:gather_options function for default values.
             'uri': None,
             'host': None,
             'port': None,
             'binddn': None,
+            'starttls': None,
             'user': None,
             'password': None,
             'referrals': None,
@@ -403,6 +405,7 @@ class Configuration(dict):
         Mapping('ldap:uri'),
         Mapping('ldap:host'),
         Mapping('ldap:port'),
+        Mapping('ldap:starttls'),
         Mapping('ldap:binddn', env=['LDAPBINDDN', 'LDAP_BIND']),
         Mapping('ldap:user'),
         Mapping('ldap:password', secret=True),
