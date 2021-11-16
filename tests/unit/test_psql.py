@@ -32,6 +32,7 @@ def test_psql(mocker):
 
     from ldap2pg.psql import PSQL, UserError, psycopg2
     conn = connect.return_value
+    conn.encoding = 'UTF8'
     cursor = conn.cursor.return_value
 
     psql = PSQL()
