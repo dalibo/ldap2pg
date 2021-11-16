@@ -10,6 +10,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Tested on PostgreSQL 14.
+- Handle bad syntax in ldaprc.
 
 
 # ldap2pg 5.6

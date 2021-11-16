@@ -151,7 +151,7 @@ def test_read_files(mocker):
 
 
 def test_parse_rc():
-    from ldap2pg.ldap import parserc
+    from ldap2pg.ldap import parserc, UserError
 
     fo = StringIO(RC_SAMPLE)
     items = list(parserc(fo))
@@ -162,6 +162,9 @@ def test_parse_rc():
     assert 'ldap://host ldaps://host' == items[0].value
     assert '<stdin>' == items[0].filename
     assert 3 == items[0].lineno
+
+    with pytest.raises(UserError):
+        list(parserc(["BADSYNTAX"]))
 
 
 def test_entry_getitem():
