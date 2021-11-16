@@ -170,7 +170,13 @@ class PSQLSession(object):
     def mogrify(self, qry, *a, **kw):
         qry = qry.encode('utf-8')
         sql = self.cursor.mogrify(qry, *a, **kw)
-        return sql.decode(self.conn.encoding)
+        target_encoding = psycopg2.extensions.encodings[self.conn.encoding]
+        try:
+            return sql.decode(target_encoding)
+        except UnicodeDecodeError:
+            raise UserError(
+                "Can't encode query to database encoding %s."
+                % self.conn.encoding)
 
 
 class Query(object):
