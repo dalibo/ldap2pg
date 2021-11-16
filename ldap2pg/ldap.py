@@ -430,7 +430,12 @@ def parserc(fo):
         if line.startswith('#'):
             continue
 
-        option, value = line.split(None, 1)
+        try:
+            option, value = line.split(None, 1)
+        except ValueError:
+            raise UserError(
+                "Bad syntax in %s at line %s: %s" % (filename, lineno, line))
+
         yield RCEntry(
             filename=filename,
             lineno=lineno+1,
