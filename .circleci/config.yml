@@ -46,7 +46,7 @@ jobs:
           virtualenv-3 --python=/usr/bin/python3.6 .venv/
           . .venv/bin/activate
           set -x
-          pip install --upgrade-strategy=eager -U -r docs/requirements.txt docutils
+          pip install --upgrade-strategy=eager -U -r docs/requirements.txt docutils -e . psycopg2-binary
           pip check
     - save_cache:
         key: ldap2pg-docs3-{{ epoch }}
