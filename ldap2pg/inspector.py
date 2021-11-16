@@ -55,19 +55,19 @@ class PostgresInspector(object):
 
     def row1(self, rows):
         # Just single value row for e.g databases, managed_roles, owners, etc.
-        for row in rows:
+        for row in handle_decoding_error(rows):
             yield row[0]
 
     def process_roles(self, rows):
         # all_roles query signatures: name, [members, [options ...]]
-        for row in rows:
+        for row in handle_decoding_error(rows):
             yield Role.from_row(*row)
 
     def process_grants(self, privilege, dbname, rows):
         # GRANT query signatures: schema, role, [<privilege options> ...]
         sql = str(privilege.grant_sql) + str(privilege.revoke_sql)
         schema_aware = '{schema}' in sql
-        for row in rows:
+        for row in handle_decoding_error(rows):
             if len(row) < 2:
                 fmt = "%s's inspect query doesn't return role as column 2"
                 raise UserError(fmt % (privilege,))
@@ -79,7 +79,7 @@ class PostgresInspector(object):
             yield Grant.from_row(privilege.name, dbname, *row)
 
     def process_schemas(self, rows):
-        for row in rows:
+        for row in handle_decoding_error(rows):
             if not isinstance(row, (list, tuple)):
                 row = [row]
 
@@ -312,3 +312,13 @@ class PostgresInspector(object):
             r[1:] for r in self.query_cache[cache_key]
             if r[0] in keys
         ]
+
+
+def handle_decoding_error(iterator):
+    try:
+        for item in iterator:
+            yield item
+    except UnicodeDecodeError as e:
+        raise UserError(
+            "Encoding error: Can't decode %r from %s."
+            % (e.object, e.encoding))
