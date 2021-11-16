@@ -10,6 +10,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Tested on PostgreSQL 14.
+- Docker image loads secrets file with `_FILE` env var.
+- Docker image executes initialization scripts in /docker-entrypoint.d.
 - Handle bad syntax in ldaprc.
 - Handle bad database encoding.
 - Rename `ldap` to `ldapsearch` in `sync_map`.

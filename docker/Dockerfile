@@ -20,11 +20,10 @@ RUN set -ex; \
     ldap2pg --version; \
     :
 
-COPY . /
-
-RUN chmod +x /entrypoint.sh && \
-    chmod +x /docker-entrypoint.d/*
-
-ENTRYPOINT ["/entrypoint.sh"]
-# ENTRYPOINT ["ldap2pg"]
+# Set LANG for execution order of entrypoint.d run parts.
+ENV LANG en_US.utf8
 WORKDIR /workspace
+
+COPY docker-entrypoint.sh /usr/local/bin
+RUN mkdir /docker-entrypoint.d
+ENTRYPOINT ["docker-entrypoint.sh"]

@@ -1,3 +1,2 @@
-hooks
-Makefile
-README.md
+*
+!docker-entrypoint.sh
