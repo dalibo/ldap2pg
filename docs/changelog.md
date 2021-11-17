@@ -12,6 +12,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Tested on PostgreSQL 14.
 - Handle bad syntax in ldaprc.
 - Handle bad database encoding.
+- Ignore spurious ldapsearch YAML parameter.
 
 
 # ldap2pg 5.6

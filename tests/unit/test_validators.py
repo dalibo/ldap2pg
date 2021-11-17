@@ -179,6 +179,7 @@ def test_process_ldapquery_attributes():
         scope=parse_scope('sub'),
         attribute='cn',
         on_unexpected_dn='ignore',
+        spurious=True,
     )
 
     v = ldapquery(raw, format_fields=[])

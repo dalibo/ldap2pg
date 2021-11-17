@@ -1,3 +1,4 @@
+import logging
 from itertools import chain as iterchain
 
 from .format import FormatField
@@ -7,11 +8,25 @@ from .role import RoleOptions, RoleRule
 from .privilege import GrantRule
 from .utils import string_types
 
+
+logger = logging.getLogger(__name__)
+
+
 default_ldap_query = {
     'base': '',
     'filter': '(objectClass=*)',
     'scope': 'sub',
 }
+
+known_ldapsearch_arguments = [
+    'allow_missing_attributes',
+    'attributes',
+    'base',
+    'filter',
+    'joins',
+    'on_unexpected_dn',
+    'scope',
+]
 
 
 def ldapquery(value, format_fields=None):
@@ -89,6 +104,12 @@ def ldapquery(value, format_fields=None):
             continue
         join.pop('base', None)
         join.pop('joins', None)
+
+    # Trim unknown parameters
+    for key in list(query.keys()):
+        if key not in known_ldapsearch_arguments:
+            logger.warning("Ignoring unknown ldapsearch argument '%s'.", key)
+            query.pop(key)
 
     return query
 
