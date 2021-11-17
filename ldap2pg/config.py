@@ -477,8 +477,8 @@ class Configuration(dict):
     By default, ldap2pg runs in dry mode.
     """)
 
-    def has_ldap_query(self):
-        return [m['ldap'] for m in self['sync_map'] if 'ldap' in m]
+    def has_ldapsearch(self):
+        return any(True for m in self['sync_map'] if 'ldapsearch' in m)
 
     def bootstrap(self, environ=os.environ):
         debug = environ.get('DEBUG', '').lower() in ('1', 'y')

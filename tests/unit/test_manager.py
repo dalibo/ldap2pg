@@ -240,18 +240,18 @@ def test_inspect_ldap_unexpected_dn(mocker):
 
     list(manager.inspect_ldap([dict(
         description="Test query desc",
-        ldap=dict(on_unexpected_dn='warn'),
+        ldapsearch=dict(on_unexpected_dn='warn'),
         roles=[RoleRule(names=['{member.cn}'])],
     )]))
 
     list(manager.inspect_ldap([dict(
-        ldap=dict(on_unexpected_dn='ignore'),
+        ldapsearch=dict(on_unexpected_dn='ignore'),
         roles=[RoleRule(names=['{member.cn}'])]
     )]))
 
     with pytest.raises(UserError):
         list(manager.inspect_ldap([dict(
-            ldap=dict(),
+            ldapsearch=dict(),
             roles=[RoleRule(names=['{member.cn}'])],
         )]))
 

@@ -50,7 +50,7 @@ Here is a sample configuration and execution:
     - role:
         name: ldap_roles
         options: NOLOGIN
-    - ldap:
+    - ldapsearch:
         base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
         filter: "(objectClass=organizationalPerson)"
       role:

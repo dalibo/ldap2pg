@@ -25,7 +25,7 @@ push:
 
 specs: ldap2pg-el8.spec ldap2pg-el7.spec ldap2pg-el6.spec
 
-ldap2pg-el8.spec: Makefile
+ldap2pg-el8.spec: Makefile ../setup.py
 	cd ..; python setup.py bdist_rpm \
 	  --release "1%{dist}" \
 	  --build-requires "python3 python3-setuptools" \
@@ -34,7 +34,7 @@ ldap2pg-el8.spec: Makefile
 	  --spec-only
 	cp -f ../dist/ldap2pg.spec $@
 
-ldap2pg-el7.spec: Makefile
+ldap2pg-el7.spec: Makefile ../setup.py
 	cd ..; python setup.py bdist_rpm \
 	  --release "1%{dist}" \
 	  --build-requires "python2 python2-setuptools" \
@@ -43,7 +43,7 @@ ldap2pg-el7.spec: Makefile
 	  --spec-only
 	cp -f ../dist/ldap2pg.spec $@
 
-ldap2pg-el6.spec: Makefile
+ldap2pg-el6.spec: Makefile ../setup.py
 	cd ..; python setup.py bdist_rpm \
 	  --release "1%{dist}" \
 	  --build-requires "python2 python2-setuptools" \

@@ -86,13 +86,14 @@ The synchronization map is a YAML list. We call each item a *mapping*. Three
 sections compose a mapping:
 
 - A `description` entry with a string logged before this mapping is processed.
-- A `ldap` section describing a LDAP query.
+- A `ldapsearch` section describing a LDAP search.
 - A `role` or `roles` section describing on or more rules to create [Postgres
   role](https://www.postgresql.org/docs/current/static/user-manag.html) from
   LDAP entries.
 - A `grant` section describing on or more grant from LDAP entries.
 
-`ldap` entry is optional, however either one of `roles` or `grant` is required.
+`ldapsearch` entry is optional, however either one of `roles` or `grant` is
+required.
 
 !!! tip
 

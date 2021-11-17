@@ -1,13 +1,14 @@
 <h1>Querying Directory with LDAP</h1>
 
-`ldap2pg` searches for LDAP query in `sync_map` items in the `ldap` entry.
+`ldap2pg` searches for LDAP query in `sync_map` items in the `ldapsearch`
+entry.
 
-A `ldap` entry contains `base`, `scope` and `filter`. The meaning of `base`,
-`scope` and `filter` is strictly the same as in `ldapsearch`. `base` must be
-defined. `filter` defaults to `(objectClass=*)`, just like `ldapsearch(1)`.
-`scope` defaults to `sub`, likewise. To inject an attribute in a property, use
-`{attributename}` format. `ldap2pg` determines which attributes to query
-depending on values in `grant` and `roles` rules.
+A `ldapsearch` entry contains `base`, `scope` and `filter`. The meaning of
+`base`, `scope` and `filter` is strictly the same as in `ldapsearch`. `base`
+must be defined. `filter` defaults to `(objectClass=*)`, just like
+`ldapsearch(1)`. `scope` defaults to `sub`, likewise. To inject an attribute in
+a property, use `{attributename}` format. `ldap2pg` determines which attributes
+to query depending on values in `grant` and `roles` rules.
 
 !!! tip
 
@@ -56,7 +57,7 @@ When injecting an LDAP attribute with curly braces, you can control the case of
 the value using `.lower()` or `.upper()` methods.
 
 ``` yaml
-- ldap: ...
+- ldapsearch: ...
   role: "{cn.lower()}"
 ```
 
@@ -97,7 +98,7 @@ objectClass.
 
 ``` yaml
 sync_map:
-- ldap:
+- ldapsearch:
     base: ...
     allow_missing_attributes: [member, sAMAccountName]
   roles:
@@ -130,13 +131,13 @@ recurse. Each entry is a regular dict with `scope` and `filter` paramater.
 ## Examples
 
 ``` yaml
-- ldap:
+- ldapsearch:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
   role:
     name: '{cn}'
     options: LOGIN
 
-- ldap:
+- ldapsearch:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
     scope: sub
     filter: >
@@ -149,7 +150,7 @@ recurse. Each entry is a regular dict with `scope` and `filter` paramater.
   - names:
     - dba_{member.cn}
     options: LOGIN
-- ldap:
+- ldapsearch:
     base: ou=apps,ou=people,dc=ldap,dc=ldap2pg,dc=docker
     scope: sub
     joins:
