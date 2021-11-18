@@ -256,9 +256,8 @@ def test_merge():
     config = Configuration()
     config.merge(
         file_config=minimal_config,
-        environ=dict(LDAPPASSWORD=b'envpass', PGDSN=b'envdsn'),
+        environ=dict(PGDSN=b'envdsn'),
     )
-    assert 'envpass' == config['ldap']['password']
     assert 'envdsn' == config['postgres']['dsn']
 
 
@@ -399,12 +398,12 @@ def test_load_file(mocker):
         # Should not trigger a warning.
         privileges=dict(ro=['__connect__']),
     )
-    # send one env var for LDAP bind
-    environ.update(dict(LDAPPASSWORD=b'envpass'))
+    # send one env var
+    environ.update(dict(PGDSN=b'envdsn'))
 
     config.load(argv=['--verbose'])
 
-    assert 'envpass' == config['ldap']['password']
+    assert 'envdsn' == config['postgres']['dsn']
     maplist = config['sync_map']
     assert 1 == len(maplist)
     assert 'DEBUG' == config['verbosity']
