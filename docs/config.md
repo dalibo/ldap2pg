@@ -3,9 +3,8 @@
 <h1><tt>ldap2pg.yml</tt></h1>
 
 `ldap2pg` accepts a YAML configuration file usually named `ldap2pg.yml` and put
-in working directory. Everything can be configured from the YAML file:
-verbosity, real mode, LDAP and Postgres credentials, LDAP queries, privileges
-and mappings.
+in working directory. Everything can be configured from the YAML file: LDAP and
+Postgres credentials, LDAP queries, privileges and mappings.
 
 !!! warning
 
@@ -126,23 +125,6 @@ required.
     </code></pre>
 
     It just means you want a role named `toto` in the cluster.
-
-
-## Various Parameters
-
-Finally, `ldap2pg.yml` contains various plain parameters for `ldap2pg`
-behaviour.
-
-``` yaml
-# Colorization. env var: COLOR=<anything>
-color: yes
-
-# Verbose messages. Includes SQL and LDAP queries. env var: VERBOSITY
-verbosity: 5
-
-# Dry mode. env var: DRY=<anything>
-dry: yes
-```
 
 
 ## File Location

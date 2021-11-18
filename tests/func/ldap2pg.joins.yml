@@ -2,8 +2,6 @@
 # instead of CN to test the use of joins between LDAP entries.
 #
 
-verbosity: 5
-
 postgres:
   # Scope the database where to purge objects when dropping roles. This is the
   # scope of grant on `__all__` databases.
