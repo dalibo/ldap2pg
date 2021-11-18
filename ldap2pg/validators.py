@@ -1,3 +1,4 @@
+import logging
 from itertools import chain as iterchain
 
 from .format import FormatField
@@ -7,17 +8,31 @@ from .role import RoleOptions, RoleRule
 from .privilege import GrantRule
 from .utils import string_types
 
+
+logger = logging.getLogger(__name__)
+
+
 default_ldap_query = {
     'base': '',
     'filter': '(objectClass=*)',
     'scope': 'sub',
 }
 
+known_ldapsearch_arguments = [
+    'allow_missing_attributes',
+    'attributes',
+    'base',
+    'filter',
+    'joins',
+    'on_unexpected_dn',
+    'scope',
+]
+
 
 def ldapquery(value, format_fields=None):
     # ldapquery specs is following.
     #
-    # ldap:
+    # ldapsearch:
     #   base:
     #   filter:
     #   scope:
@@ -35,7 +50,7 @@ def ldapquery(value, format_fields=None):
     # attributes.
 
     if not isinstance(value, dict):
-        raise ValueError("ldap: is not a dict")
+        raise ValueError("ldapsearch: is not a dict")
 
     query = dict(default_ldap_query, **value)
     query['scope'] = parse_scope(query['scope'])
@@ -89,6 +104,12 @@ def ldapquery(value, format_fields=None):
             continue
         join.pop('base', None)
         join.pop('joins', None)
+
+    # Trim unknown parameters
+    for key in list(query.keys()):
+        if key not in known_ldapsearch_arguments:
+            logger.warning("Ignoring unknown ldapsearch argument '%s'.", key)
+            query.pop(key)
 
     return query
 
@@ -224,7 +245,8 @@ def grantrule(value, defaultdb='__all__', defaultschema='__all__'):
 KNOWN_MAPPING_KEYS = set([
     'description',
     'grant',
-    'ldap',
+    'ldap',  # Legacy alias.
+    'ldapsearch',
     'role',
     'roles',
 ])
@@ -274,14 +296,15 @@ def mapping(value, **kw):
         # Don't accept unused LDAP queries.
         raise ValueError("Missing role or grant rule.")
 
-    if 'ldap' in value:
+    alias(value, 'ldapsearch', 'ldap')
+    if 'ldapsearch' in value:
         roles = value.get('roles', [])
         grants = value.get('grant', [])
         format_fields = set(
             iterchain(*[r.all_fields for r in roles + grants])
         )
-        value['ldap'].setdefault('on_unexpected_dn', on_unexpected_dn)
-        value['ldap'] = ldapquery(value['ldap'], format_fields)
+        value['ldapsearch'].setdefault('on_unexpected_dn', on_unexpected_dn)
+        value['ldapsearch'] = ldapquery(value['ldapsearch'], format_fields)
 
     return value
 
@@ -308,7 +331,7 @@ def syncmap(value):
     #
     # A sync map has the following canonical schema:
     #
-    #   - ldap: <ldapquery>
+    #   - ldapsearch: <ldapquery>
     #     roles:
     #     - <rolerule>
     #     - ...

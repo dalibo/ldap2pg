@@ -156,10 +156,10 @@ class SyncManager(object):
                 for r in role_rules + grant_rules
             ])
 
-            if 'ldap' in mapping:
-                on_unexpected_dn = mapping['ldap'].pop(
+            if 'ldapsearch' in mapping:
+                on_unexpected_dn = mapping['ldapsearch'].pop(
                     'on_unexpected_dn', 'fail')
-                entries = self.query_ldap(**mapping['ldap'])
+                entries = self.query_ldap(**mapping['ldapsearch'])
                 log_source = 'in LDAP'
             else:
                 entries = [LDAPEntry('YAML')]

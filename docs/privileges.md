@@ -75,7 +75,7 @@ privileges:
   - __usage_on_schema__
 
 sync_map:
-- ldap:
+- ldapsearch:
     base: ...
   grant:
     database: appdb

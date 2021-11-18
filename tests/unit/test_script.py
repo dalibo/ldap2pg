@@ -102,7 +102,7 @@ def test_synchronize(mocker):
 
     # No LDAP
     clc.reset_mock()
-    config.has_ldap_query.return_value = []
+    config.has_ldapsearch.return_value = []
     synchronize(config=config)
 
     assert clc.called is False

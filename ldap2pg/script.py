@@ -87,7 +87,7 @@ def synchronize(config=None, environ=None, argv=None):
     if not isinstance(config, Configuration):
         config = init_config(config, environ, argv)
 
-    if config.has_ldap_query():
+    if config.has_ldapsearch():
         logger.debug("Setting up LDAP client.")
         try:
             ldapconn = ldap.connect(**config['ldap'])

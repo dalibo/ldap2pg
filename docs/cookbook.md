@@ -117,7 +117,7 @@ Now translate the query in `ldap2pg.yml` and associate a role mapping to produce
 roles from each values of each entries returned by the LDAP search:
 
 ``` yaml
-- ldap:
+- ldapsearch:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
   role:
     name: '{member.cn}'
@@ -175,7 +175,7 @@ privileges:
   rw: {}  # here define your privilege
 
 sync_map:
-- ldap:
+- ldapsearch:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=groupOfNames)"
     scope: sub
@@ -242,7 +242,7 @@ using the `sAMAccountName` attribute and link them together:
 
 ``` yaml
 sync_map:
-- ldap:
+- ldapsearch:
     base: …
     filter: "(objectClass=group)"
   roles:
@@ -261,7 +261,7 @@ e.g. to reference only persons that are member of the groups:
 
 ``` yaml
 sync_map:
-- ldap:
+- ldapsearch:
     base: …
     filter: "(objectClass=group)"
     join:

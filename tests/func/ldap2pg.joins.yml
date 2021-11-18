@@ -54,7 +54,7 @@ sync_map:
     options: NOLOGIN
 
 # Now query LDAP to create roles and grant them privileges by parenting.
-- ldap:
+- ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=dba)"
   role:
@@ -64,7 +64,7 @@ sync_map:
     - ldap_roles
     - owners
     comment: "Custom comment from LDAP: {dn}"
-- ldap:
+- ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=app*)"
     joins:
@@ -77,7 +77,7 @@ sync_map:
     parent:
     - ldap_roles
     - writers
-- ldap:
+- ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: |
       (&

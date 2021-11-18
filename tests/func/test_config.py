@@ -22,7 +22,7 @@ ldap:
   password: %(LDAPPASSWORD)s
 
 sync_map:
-- ldap:
+- ldapsearch:
     base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=groupOfNames)"
     attribute: member

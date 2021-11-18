@@ -130,34 +130,34 @@ def test_process_mapping_ldap_join():
     from ldap2pg.validators import mapping
 
     v = mapping(dict(
-        ldap=dict(),
+        ldapsearch=dict(),
         role=dict(
             name_attribute='member.sAMAccountName',
             comment='from {cn.lower()}')),
     )
 
-    assert v['ldap']['joins']
-    assert 'cn' in v['ldap']['attributes']
+    assert v['ldapsearch']['joins']
+    assert 'cn' in v['ldapsearch']['attributes']
 
 
 def test_process_mapping_ldap_compat_unexpected_dn():
     from ldap2pg.validators import mapping
 
     v = mapping(dict(
-        ldap=dict(),
+        ldapsearch=dict(),
         role=dict(
             name='{cn}',
             on_unexpected_dn='ignore',
         )),
     )
 
-    assert 'ignore' == v['ldap']['on_unexpected_dn']
+    assert 'ignore' == v['ldapsearch']['on_unexpected_dn']
     assert 'on_unexpected_dn' not in v['roles']
 
     # Refuse mixed on_unexpected_dn.
     with pytest.raises(ValueError):
         mapping(dict(
-            ldap=dict(),
+            ldapsearch=dict(),
             roles=[
                 dict(name='{cn}', on_unexpected_dn='ignore'),
                 dict(name='{member}', on_unexpected_dn='fail'),
@@ -179,6 +179,7 @@ def test_process_ldapquery_attributes():
         scope=parse_scope('sub'),
         attribute='cn',
         on_unexpected_dn='ignore',
+        spurious=True,
     )
 
     v = ldapquery(raw, format_fields=[])

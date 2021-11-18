@@ -418,16 +418,16 @@ def test_show_versions(mocker):
         config.load(argv=['--version'])
 
 
-def test_has_ldap():
+def test_has_ldapsearch():
     from ldap2pg.config import Configuration
 
     config = Configuration()
 
     config['sync_map'] = [dict(roles=dict())]
-    assert not config.has_ldap_query()
+    assert not config.has_ldapsearch()
 
-    config['sync_map'] = [dict(ldap=dict())]
-    assert config.has_ldap_query()
+    config['sync_map'] = [dict(ldapsearch=dict())]
+    assert config.has_ldapsearch()
 
 
 def test_privilege_options():

@@ -86,7 +86,7 @@ sync_map:
     database: appdb
     schema: appns
 
-- ldap:
+- ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=dba)"
     joins:
@@ -102,7 +102,7 @@ sync_map:
     # Triggers a join.
     comment: "mail: {member.mail}"
 
-- ldap:
+- ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=team*)"
     on_unexpected_dn: warn
