@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import ctypes
 import logging
 import re
 
@@ -213,3 +214,23 @@ def expandqueries(queries, databases):
     for query in queries:
         for single_query in query.expand(databases):
             yield single_query
+
+
+def libpq_version():
+    # Search libpq version bound to this process.
+
+    try:
+        return psycopg2.__libpq_version__
+    except AttributeError:
+        # Search for libpq.so path in loaded libraries.
+        with open('/proc/self/maps') as fo:
+            for line in fo:
+                values = line.split()
+                path = values[-1]
+                if '/libpq' in path:
+                    break
+            else:  # pragma: nocover
+                raise Exception("libpq.so not loaded")
+
+        libpq = ctypes.cdll.LoadLibrary(path)
+        return libpq.PQlibVersion()

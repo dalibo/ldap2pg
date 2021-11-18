@@ -199,6 +199,7 @@ class PostgresInspector(object):
 
     def fetch_me(self):
         with self.psql() as psql:
+            logger.debug("Introspecting session Postgres role.")
             return self.fetch(psql, self.inspect_me)[0]
 
     def fetch_roles(self):
@@ -206,7 +207,9 @@ class PostgresInspector(object):
         # roles. That's the minimum de synchronize roles.
 
         with self.psql() as psql:
+            logger.debug("Inspecting databases.")
             databases = self.fetch(psql, 'databases', self.row1)
+            logger.debug("Inspecting all defined roles in cluster.")
             pgallroles = RoleSet(self.fetch(
                 psql, self.format_roles_query(), self.process_roles))
             if not self.queries.get('managed_roles'):
@@ -245,8 +248,8 @@ class PostgresInspector(object):
                 else:
                     # False owner means schemas_query is not aware of owners.
                     if owners is None:
-                        logger.debug("Globally inspecting owners...")
                         with self.psql() as psql:
+                            logger.debug("Globally inspecting owners...")
                             owners = set(self.fetch(psql, 'owners', self.row1))
                     s_owners = owners
                 # Only filter if managedroles are defined. This allow ACL only
@@ -270,8 +273,10 @@ class PostgresInspector(object):
                     privilege)
                 continue
 
-            logger.debug("Searching GRANTs of privilege %s.", privilege)
             for dbname, psql in self.psql.itersessions(schemas):
+                logger.debug(
+                    "Searching GRANTs of privilege %s in %s.",
+                    privilege, dbname)
                 if isinstance(privilege.inspect, dict):
                     rows = self.fetch_shared_query(
                         name=privilege.inspect['shared_query'],

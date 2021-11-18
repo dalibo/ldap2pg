@@ -4,6 +4,12 @@ from codecs import open
 from collections import namedtuple
 import logging
 import os
+try:
+    from shlex import quote as shquote
+except ImportError:  # pragma: nocover_py3
+    def shquote(x):
+        return "'%s'" % x
+
 
 import ldap
 
@@ -233,9 +239,10 @@ class LDAPLogger(object):
 
     def search_s(self, base, scope, filter, attributes):
         logger.debug(
-            "Doing: ldapsearch%s -b %s -s %s '%s' %s",
+            "Doing: ldapsearch%s -b %s -s %s %s %s",
             self.connect_opts,
-            base, SCOPES_STR[scope], filter, ' '.join(attributes or []),
+            base, SCOPES_STR[scope], shquote(filter),
+            ' '.join(attributes or []),
         )
         with self.timer:
             return self.wrapped.search_s(base, scope, filter, attributes)
@@ -243,7 +250,7 @@ class LDAPLogger(object):
     def simple_bind_s(self, binddn, password):
         self.connect_opts = ' -x'
         if binddn:
-            self.connect_opts += ' -D %s' % (binddn,)
+            self.connect_opts += ' -D %s' % (shquote(binddn),)
         if password:
             self.connect_opts += ' -W'
         self.log_connect()
@@ -253,14 +260,14 @@ class LDAPLogger(object):
         self.connect_opts = ' -Y %s' % (auth.mech.decode('ascii'),)
         if sasl.CB_AUTHNAME in auth.cb_value_dict:
             self.connect_opts += ' -U %s' % (
-                auth.cb_value_dict[sasl.CB_AUTHNAME],)
+                shquote(auth.cb_value_dict[sasl.CB_AUTHNAME]),)
         if sasl.CB_PASS in auth.cb_value_dict:
             self.connect_opts += ' -W'
         self.log_connect()
         return self.wrapped.sasl_interactive_bind_s(who, auth, *a, **kw)
 
     def log_connect(self):
-        logger.debug("Doing: ldapwhoami%s", self.connect_opts)
+        logger.debug("Authenticating: ldapwhoami%s", self.connect_opts)
 
 
 def connect(**kw):

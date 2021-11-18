@@ -122,8 +122,8 @@ You can also configure Postgres and LDAP connection through `ldap2pg.yml`.
 The `--quiet` and `--verbose` switches respectively decrease and increase
 verbosity.
 
-You can select the highest level of verbosity with `VERBOSITY` envvar or
-`verbosity` value in `ldap2pg.yml`. For example:
+You can select the highest level of verbosity with `VERBOSITY` envvar. For
+example:
 
 
 ``` console

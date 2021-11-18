@@ -104,6 +104,7 @@ def synchronize(config=None, environ=None, argv=None):
     psql = PSQL(connstring=config['postgres']['dsn'], dry=config['dry'])
     try:
         with psql() as psql_:
+            logger.debug("Inspecting role attributes.")
             supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
     except psycopg2.OperationalError as e:
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)

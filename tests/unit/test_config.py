@@ -182,11 +182,13 @@ def test_find_filename_default(mocker):
     # Search default path
     stat.side_effect = [
         mk_oserror(),
+        mk_oserror(),
+        mk_oserror(13),
         mk_oserror(13),
         mocker.Mock(st_mode=0o600),
     ]
     filename, mode = config.find_filename(environ=dict())
-    assert config._file_candidates[2] == filename
+    assert config._file_candidates[4] == filename
     assert 0o600 == mode
 
     # No files at all
@@ -254,9 +256,8 @@ def test_merge():
     config = Configuration()
     config.merge(
         file_config=minimal_config,
-        environ=dict(LDAPPASSWORD=b'envpass', PGDSN=b'envdsn'),
+        environ=dict(PGDSN=b'envdsn'),
     )
-    assert 'envpass' == config['ldap']['password']
     assert 'envdsn' == config['postgres']['dsn']
 
 
@@ -397,12 +398,12 @@ def test_load_file(mocker):
         # Should not trigger a warning.
         privileges=dict(ro=['__connect__']),
     )
-    # send one env var for LDAP bind
-    environ.update(dict(LDAPPASSWORD=b'envpass'))
+    # send one env var
+    environ.update(dict(PGDSN=b'envdsn'))
 
     config.load(argv=['--verbose'])
 
-    assert 'envpass' == config['ldap']['password']
+    assert 'envdsn' == config['postgres']['dsn']
     maplist = config['sync_map']
     assert 1 == len(maplist)
     assert 'DEBUG' == config['verbosity']
@@ -565,3 +566,14 @@ def test_extract_static_rules_grants():
     ])
 
     assert wanted == config
+
+
+def test_format_pq_version():
+    from ldap2pg.config import VersionAction
+
+    assert '14.1' == VersionAction.format_pq_version(140001)
+    assert '13.5' == VersionAction.format_pq_version(130005)
+    assert '12.9' == VersionAction.format_pq_version(120009)
+    assert '11.14' == VersionAction.format_pq_version(110014)
+    assert '10.19' == VersionAction.format_pq_version(100019)
+    assert '9.6.24' == VersionAction.format_pq_version(90624)
