@@ -25,6 +25,7 @@ from pkg_resources import get_distribution
 
 from .privilege import Privilege
 from .privilege import process_definitions as process_privileges
+from .psql import libpq_version
 from .utils import (
     deepget,
     deepset,
@@ -82,14 +83,22 @@ class ColoredStreamHandler(logging.StreamHandler):
 
 class VersionAction(_VersionAction):
     def __call__(self, parser, *a):
+        try:
+            libpqv = libpq_version()
+        except Exception:  # pragma: nocover
+            libpqv = 'unknown'
+        else:
+            libpqv = self.format_pq_version(libpqv)
+
         version = (
             "%(package)s %(version)s\n"
-            "psycopg2 %(psycopg2version)s\n"
+            "psycopg2 %(psycopg2version)s libpq %(libpqversion)s\n"
             "python-ldap %(ldapversion)s\n"
             "Python %(pyversion)s\n"
         ) % dict(
             package=__package__,
             version=__version__,
+            libpqversion=libpqv,
             psycopg2version=psycopg2.__version__,
             pyversion=sys.version,
             ldapversion=ldap.__version__,
@@ -97,6 +106,16 @@ class VersionAction(_VersionAction):
         )
         print(version.strip())
         parser.exit()
+
+    @staticmethod
+    def format_pq_version(version):
+        pqnums = [
+            version / 10000,
+            version % 100,
+        ]
+        if version <= 100000:
+            pqnums[1:1] = [(version % 10000) / 100]
+        return '.'.join(str(int(n)) for n in pqnums)
 
 
 def define_arguments(parser):

@@ -175,3 +175,12 @@ def test_run_queries(mocker):
     with pytest.raises(UserError):
         psql.run_queries(queries=queries)
     assert session.called is True
+
+
+def test_libpq_version(mocker):
+    # Remove __libpq_version__ if any.
+    mocker.patch('ldap2pg.psql.psycopg2', object())
+
+    from ldap2pg.psql import libpq_version
+
+    assert libpq_version()

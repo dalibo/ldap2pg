@@ -565,3 +565,14 @@ def test_extract_static_rules_grants():
     ])
 
     assert wanted == config
+
+
+def test_format_pq_version():
+    from ldap2pg.config import VersionAction
+
+    assert '14.1' == VersionAction.format_pq_version(140001)
+    assert '13.5' == VersionAction.format_pq_version(130005)
+    assert '12.9' == VersionAction.format_pq_version(120009)
+    assert '11.14' == VersionAction.format_pq_version(110014)
+    assert '10.19' == VersionAction.format_pq_version(100019)
+    assert '9.6.24' == VersionAction.format_pq_version(90624)
