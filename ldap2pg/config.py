@@ -453,8 +453,11 @@ class Configuration(dict):
 
     _file_candidates = [
         './ldap2pg.yml',
+        './ldap2pg.yaml',
         '~/.config/ldap2pg.yml',
+        '~/.config/ldap2pg.yaml',
         '/etc/ldap2pg.yml',
+        '/etc/ldap2pg.yaml',
     ]
 
     def find_filename(self, environ=os.environ, args=None):

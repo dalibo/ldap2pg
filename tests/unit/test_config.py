@@ -182,11 +182,13 @@ def test_find_filename_default(mocker):
     # Search default path
     stat.side_effect = [
         mk_oserror(),
+        mk_oserror(),
+        mk_oserror(13),
         mk_oserror(13),
         mocker.Mock(st_mode=0o600),
     ]
     filename, mode = config.find_filename(environ=dict())
-    assert config._file_candidates[2] == filename
+    assert config._file_candidates[4] == filename
     assert 0o600 == mode
 
     # No files at all
