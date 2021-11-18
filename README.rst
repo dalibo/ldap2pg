@@ -37,7 +37,7 @@ Here is a sample configuration and execution:
         options: LOGIN
         parent: ldap_roles
     $ ldap2pg --real
-    Starting ldap2pg 5.3.
+    Starting ldap2pg 5.7.
     Using .../ldap2pg.yml.
     Running in real mode.
     Inspecting roles in Postgres cluster...
