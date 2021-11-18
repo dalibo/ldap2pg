@@ -282,6 +282,13 @@ def connect(**kw):
         conn = UnicodeModeLDAPObject(conn)
 
     conn = LDAPLogger(conn)
+    conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 120)
+
+    if options.get('STARTTLS'):
+        logger.debug("Sending STARTTLS.")
+        conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+        conn.start_tls_s()
+
     # Don't follow referrals by default. This is the behaviour of ldapsearch
     # and friends. Following referrals leads to strange errors with Active
     # directory. REFERRALS can still be activated through ldaprc, env var and
@@ -335,9 +342,19 @@ class Options(dict):
     parse_password = _parse_raw
     parse_sasl_mech = _parse_raw
     parse_referrals = _parse_bool
+    parse_starttls = _parse_bool
 
 
 def gather_options(environ=None, **kw):
+    # This is the main point for LDAP configuration marshall. kw is the ldap
+    # stanza in ldap2pg.yml.
+    #
+    # ldap2pg handles a subset of openldap libldap parameters. These parameters
+    # are declared in options variable with their default value as for ldap2pg.
+    # These parameters are used in ldap2pg client-side logic.
+    #
+    # Value for these parameters are searching in ldap.conf files, environment
+    # variables and YAML file.
     default_conffiles = [
         '/etc/openldap/ldap.conf',
         '/etc/ldap/ldap.conf',
@@ -350,6 +367,9 @@ def gather_options(environ=None, **kw):
         USER=None,
         PASSWORD='',
         SASL_MECH=None,
+        # This is an extension to ldap.conf. Equivalent of -Z CLI options of
+        # ldap-utils.
+        STARTTLS=False,
         REFERRALS=False,
     )
 
