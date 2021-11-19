@@ -41,6 +41,8 @@ fi
 topdir=~testuser/rpmbuild
 mkdir -p "$topdir/SOURCES" "$topdir/SPECS"
 cp -vf "$spec" "$topdir/SPECS/ldap2pg.spec"
+sed -i "/^%define.\\+version/s/.\\..\\+/$version/" "$topdir/SPECS/ldap2pg.spec"
+grep -F "version $version" "$_"
 cp -vf "$tarball" "$topdir/SOURCES/"
 # rpmbuild requires files to be owned by running uid
 chown -R testuser "$topdir"
@@ -51,8 +53,6 @@ chown -R testuser "$topdir"
 
 sudo -u testuser rpmbuild \
 	--define "_topdir $topdir" \
-	--define "version $version" \
-	--define "unmangled_version $version" \
 	-bb "$topdir/SPECS/ldap2pg.spec"
 
 rpm="$topdir/RPMS/noarch/ldap2pg-${version}-1${rpmdist}.noarch.rpm"
