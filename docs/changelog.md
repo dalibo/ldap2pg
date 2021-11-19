@@ -7,16 +7,19 @@ follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
 
-# Unreleased
+# ldap2pg 5.7
+
+Released 2021-11-19.
 
 - Tested on PostgreSQL 14.
+- Implement STARTTLS behaviour.
 - Docker image loads secrets file with `_FILE` env var.
 - Docker image executes initialization scripts in /docker-entrypoint.d.
+- Docker image based on Debian bullseye.
 - Handle bad syntax in ldaprc.
 - Handle bad database encoding.
 - Rename `ldap` to `ldapsearch` in `sync_map`.
 - Ignore spurious ldapsearch YAML parameter.
-- Implement STARTTLS behaviour.
 - Search for .yaml file as well as .yml.
 - Drop legacy `LDAP_BIND` env var support. Use `LDAPBINDDN` instead.
 
