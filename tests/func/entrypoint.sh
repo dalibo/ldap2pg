@@ -13,6 +13,8 @@ top_srcdir=$(readlink -m $0/../../..)
 cd $top_srcdir
 test -f setup.py
 
+export LC_ALL=en_US.utf8
+
 # Choose target Python version. Matches packaging/rpm/build_rpm.sh.
 rpmdist=$(rpm --eval '%dist')
 case "$rpmdist" in
@@ -63,4 +65,5 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
+"$python" -c "import sys; print(sys.stdout)"
 "$python" -m pytest -x tests/func/
