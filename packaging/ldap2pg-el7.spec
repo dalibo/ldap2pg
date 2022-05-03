@@ -1,6 +1,6 @@
 %define name ldap2pg
-%define version 5.6
-%define unmangled_version 5.6
+%define version 5.7
+%define unmangled_version 5.7
 %define release 1%{dist}
 
 Summary: Manage PostgreSQL roles and privileges from YAML or LDAP
@@ -14,9 +14,9 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildArch: noarch
 Vendor: Dalibo <contact@dalibo.com>
-Requires: python-psycopg2 python-ldap PyYAML
+Requires: python36-psycopg2 python36-ldap python36-PyYAML
 Url: https://labs.dalibo.com/ldap2pg
-BuildRequires: python2 python2-setuptools
+BuildRequires: python36 python36-setuptools
 
 %description
 |ldap2pg|
@@ -58,7 +58,7 @@ Here is a sample configuration and execution:
         options: LOGIN
         parent: ldap_roles
     $ ldap2pg --real
-    Starting ldap2pg 5.3.
+    Starting ldap2pg 5.7.
     Using .../ldap2pg.yml.
     Running in real mode.
     Inspecting roles in Postgres cluster...
@@ -137,10 +137,10 @@ French accepted. Don't miss the `cookbook
 %setup -n %{name}-%{unmangled_version} -n %{name}-%{unmangled_version}
 
 %build
-/usr/bin/python2 setup.py build
+/usr/bin/python3.6 setup.py build
 
 %install
-/usr/bin/python2 setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+/usr/bin/python3.6 setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
 %clean
 rm -rf $RPM_BUILD_ROOT

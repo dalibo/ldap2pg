@@ -16,13 +16,13 @@ test -f setup.py
 # Choose target Python version. Matches packaging/rpm/build_rpm.sh.
 rpmdist=$(rpm --eval '%dist')
 case "$rpmdist" in
-	*.el6|*.el7)
-		python=python2
-		pip=pip2
-		;;
-	*.el8)
+	*.el7|*.el8)
 		python=python3.6
 		pip=pip3.6
+		;;
+	*.el6)
+		python=python2
+		pip=pip2
 		;;
 esac
 fullname=$($python setup.py --fullname)
