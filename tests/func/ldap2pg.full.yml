@@ -29,6 +29,13 @@ postgres:
       ON owners.rolname = 'owners' AND owners.oid = ms.roleid
     ORDER BY 1;
 
+  roles_blacklist_query: |
+    VALUES
+    ('postgres'),
+    ('pg_*'),
+    ('rds_*')
+    ;
+
 
 privileges:
   ro:

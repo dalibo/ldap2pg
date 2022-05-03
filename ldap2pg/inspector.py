@@ -223,7 +223,8 @@ class PostgresInspector(object):
         return databases, pgallroles, pgmanagedroles
 
     def fetch_roles_blacklist(self):
-        return self.fetch(self.psql, 'roles_blacklist_query', self.row1)
+        with self.psql() as psql:
+            return self.fetch(psql, 'roles_blacklist_query', self.row1)
 
     def fetch_schemas(self, databases, managedroles=None):
         # Fetch schemas and owners. This is required to trigger ACL inspection.
