@@ -13,7 +13,7 @@ You can fetch all dependencies with PIP. Choose either `pip3` or `pip2`.
 # pip3 install ldap2pg psycopg2-binary
 ```
 
-# On CentOS 8 from RPM
+# On RHEL 8 from RPM
 
 On CentOS 8, either [PGPG YUM repository](https://yum.postgresql.org/) and
 [Dalibo Labs YUM repository](https://yum.dalibo.org/labs/) offer RPM package
@@ -38,7 +38,7 @@ For using PGDG YUM packaging:
 - Install `python3-ldap2pg`.
 
 
-# On CentOS 7 from RPM
+# On RHEL 7 from RPM
 
 On CentOS 7, choose either Dalibo Labs repository or PGDG like for CentOS 8.
 Note that Dalibo package uses Python 2.7 while PGDG ships only Python 3
@@ -61,7 +61,7 @@ For using PGDG YUM packaging:
 - Install `python3-ldap2pg`.
 
 
-# On CentOS 7 from source
+# On RHEL 7 from source
 
 You should run `ldap2pg` with Python2.7 to use packaged dependencies.
 
@@ -73,7 +73,7 @@ You should run `ldap2pg` with Python2.7 to use packaged dependencies.
 ```
 
 
-# On CentOS 6
+# On RHEL 6
 
 PGDG repository provides RPM packages for CentOS6.
 

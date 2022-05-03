@@ -21,8 +21,8 @@ case "$rpmdist" in
 		pip=pip2
 		;;
 	*.el8)
-		python=python3
-		pip=pip3
+		python=python3.6
+		pip=pip3.6
 		;;
 esac
 fullname=$($python setup.py --fullname)
@@ -63,4 +63,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-pytest -x tests/func/
+"$python" -m pytest -x tests/func/
