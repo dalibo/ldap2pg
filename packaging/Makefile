@@ -37,9 +37,9 @@ ldap2pg-el8.spec: Makefile ../setup.py
 ldap2pg-el7.spec: Makefile ../setup.py
 	cd ..; python setup.py bdist_rpm \
 	  --release "1%{dist}" \
-	  --build-requires "python2 python2-setuptools" \
-	  --requires "python-psycopg2 python-ldap PyYAML" \
-	  --python "/usr/bin/python2" \
+	  --build-requires "python36 python36-setuptools" \
+	  --requires "python36-psycopg2 python36-ldap python36-PyYAML" \
+	  --python "/usr/bin/python3.6" \
 	  --spec-only
 	cp -f ../dist/ldap2pg.spec $@
 
