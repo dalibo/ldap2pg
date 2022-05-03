@@ -14,11 +14,11 @@ workflows:
         name: "stage0-pkg-<< matrix.dist >>"
         matrix:
           parameters:
-            dist: [centos8, centos7, centos6]
+            dist: [rockylinux8, centos7, centos6]
     - func:
-        name: "stage1-func-centos8-pg14"
-        requires: [stage0-pkg-centos8]
-        dist: centos8
+        name: "stage1-func-rockylinux8-pg14"
+        requires: [stage0-pkg-rockylinux8]
+        dist: rockylinux8
         pgversion: "14"
     - func:
         name: "stage1-func-centos7-pg12"
