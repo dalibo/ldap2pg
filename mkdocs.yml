@@ -8,7 +8,7 @@ repo_name: ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg
 
 theme:
-  name: readthedocs
+  name: material
 
 nav:
 - Home: index.md
