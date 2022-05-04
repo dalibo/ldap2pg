@@ -9,6 +9,8 @@ repo_url: https://github.com/dalibo/ldap2pg
 
 theme:
   name: material
+extra_css:
+- ldap2pg.css
 
 nav:
 - Home: index.md
