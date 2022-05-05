@@ -1,7 +1,11 @@
-<h1><a href="https://labs.dalibo.com/ldap2pg"><code>ldap2pg</code></a></h1>
+---
+hide:
+  - navigation
+---
 
 `ldap2pg` is a simple yet powerful tool to manage Postgres roles and privileges
 statically or from LDAP directories, including OpenLDAP and Active Directory.
+<h1><a href="https://labs.dalibo.com/ldap2pg"><code>ldap2pg</code></a></h1>
 
 Project goals include **stability**, **portability**, high **configurability**,
 state of the art code **quality** and nice **user experience**.

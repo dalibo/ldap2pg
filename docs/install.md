@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 <h1>Installation</h1>
 
 `ldap2pg` main packaging format is a regular Python package, available at PyPI.

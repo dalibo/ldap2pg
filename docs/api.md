@@ -1,4 +1,7 @@
-<!--*- markdown -*-->
+---
+hide:
+  - navigation
+---
 
 <h1>Use ldap2pg as a Python API</h1>
 

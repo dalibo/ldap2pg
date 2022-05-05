@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 <h1>Hacking</h1>
 
 You are welcome to contribute to `ldap2pg` with patch to code, documentation or
