@@ -215,7 +215,7 @@ def postprocess_privilege_options(self, defaults=None):
 
     # Clean unused privilege starting with _ or .
     for k in list_unused_privilege(privileges, self['privilege_aliases']):
-        logger.debug("Drop unused hidden privilege %s", k)
+        logger.debug("Drop unused inactive privilege %s", k)
         del privileges[k]
 
     self['privileges'] = dict([
