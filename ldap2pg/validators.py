@@ -88,7 +88,7 @@ def ldapquery(value, format_fields=None):
         query['joins'][field.var] = ldapquery(join, [])
 
     if not attrs:
-        fmt = "No attributes are used from LDAP query %(base)s"
+        fmt = "No attributes are used from LDAP search %(base)s"
         raise ValueError(fmt % value)
     query['attributes'] = list(attrs)
 
@@ -293,7 +293,7 @@ def mapping(value, **kw):
         value['grant'] = [grantrule(g, **kw) for g in value['grant']]
 
     if not value['roles'] and 'grant' not in value:
-        # Don't accept unused LDAP queries.
+        # Don't accept unused LDAP searches.
         raise ValueError("Missing role or grant rule.")
 
     alias(value, 'ldapsearch', 'ldap')

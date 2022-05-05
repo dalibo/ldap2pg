@@ -496,7 +496,7 @@ class Configuration(dict):
 
     EPILOG = dedent("""\
 
-    ldap2pg requires a configuration file to describe LDAP queries and role
+    ldap2pg requires a configuration file to describe LDAP searches and role
     mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further
     details.
 
