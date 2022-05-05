@@ -8,6 +8,10 @@ from ldap2pg.privilege import process_definitions as process_privileges
 from ldap2pg import __version__
 
 
+def escape_markdown(string):
+    return string.replace('_', r'\_')
+
+
 def slugify_filter(name):
     return name.replace('_', '-').strip('-')
 
@@ -22,6 +26,7 @@ def main(args=sys.argv[1:]):
         trim_blocks=True,
     )
     env.filters['slugify'] = slugify_filter
+    env.filters['escape_markdown'] = escape_markdown
     template = env.get_template(args[0])
     values = dict(
         privileges=privileges,
