@@ -4,7 +4,7 @@
 #
 #
 # This is a starting point configuration file for ldap2pg.yml. Including static
-# roles, groups, privilege and LDAP query.
+# roles, groups, privilege and LDAP search.
 #
 # This configuration assumes the following principles:
 #

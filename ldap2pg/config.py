@@ -215,7 +215,7 @@ def postprocess_privilege_options(self, defaults=None):
 
     # Clean unused privilege starting with _ or .
     for k in list_unused_privilege(privileges, self['privilege_aliases']):
-        logger.debug("Drop unused hidden privilege %s", k)
+        logger.debug("Drop unused inactive privilege %s", k)
         del privileges[k]
 
     self['privileges'] = dict([
@@ -496,7 +496,7 @@ class Configuration(dict):
 
     EPILOG = dedent("""\
 
-    ldap2pg requires a configuration file to describe LDAP queries and role
+    ldap2pg requires a configuration file to describe LDAP searches and role
     mappings. See https://ldap2pg.readthedocs.io/en/latest/ for further
     details.
 

@@ -1,46 +1,52 @@
+---
+hide:
+  - navigation
+---
+
 <h1>Cookbook</h1>
 
 Here in this cookbook, you'll find some recipes for various use case of
-`ldap2pg`.
+ldap2pg.
 
-If you struggle to find a way to setup `ldap2pg` for your needs, please [file an
+If you struggle to find a way to setup ldap2pg for your needs, please [file an
 issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
-*Cookbook* with new recipes ! Your contribution is welcome!
+*Cookbook* with new recipes! Your contribution is welcome!
 
 
-# Configure `pg_hba.conf`with LDAP
+# Configure `pg_hba.conf` with LDAP
 
-`ldap2pg` does **NOT** configure PostgreSQL for you. You should carefully read
-[PostgreSQL
-documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#auth-ldap)
-about LDAP authentication for this point. Having PostgreSQL properly configured
-**before** writing `ldap2pg.yml` is a good start. Here is the steps to setup
-PostgreSQL with LDAP in the right order:
+ldap2pg does **NOT** configure PostgreSQL for you. You should carefully read
+[PostgreSQL LDAP documentation] for this point. Having PostgreSQL properly
+configured **before** writing `ldap2pg.yaml` is a good start. Here is the steps
+to setup PostgreSQL with LDAP in the best order:
 
-- Write the LDAP query and test it with `ldapsearch(1)`. This way, you can also
-  check how you connect to your LDAP directory.
+- Write the LDAP search and test it with `ldapsearch(1)`. This way, you can
+  also check how you connect to your LDAP directory.
 - In PostgreSQL cluster, **manually** create a single role having its password
   in LDAP directory.
-- Edit `pg_hba.conf` following [PostgreSQL
-  documentation](https://www.postgresql.org/docs/current/static/auth-methods.html#AUTH-LDAP)
-  until you can effectively login with the single role and the password from
-  LDAP.
-- Write a simple `ldap2pg.yml` with only one LDAP query just to setup `ldap2pg`
-  connection parameters for PostgreSQL and LDAP connection. `ldap2pg` always run
-  in dry mode by default, so you can safely loop `ldap2pg` execution until you
+- Edit `pg_hba.conf` following [PostgreSQL LDAP documentation] until you can
+  effectively login with the single role and the password from LDAP.
+
+[PostgreSQL LDAP documentation]: https://www.postgresql.org/docs/current/static/auth-methods.html#auth-ldap
+
+Once you have LDAP authentication configured in PostgreSQL cluster, you can
+move to automate role creation from the LDAP directory using ldap2pg:
+
+- Write a simple `ldap2pg.yaml` with only one LDAP search just to setup ldap2pg
+  connection parameters for PostgreSQL and LDAP connection. ldap2pg always run
+  in dry mode by default, so you can safely loop ldap2pg execution until you
   get it right.
-- Then, complete `ldap2pg.yml` to fit your needs following [ldap2pg
-  documentation](config.md). Run `ldap2pg` for real and check that ldap2pg
-  maintain your single test role, and that you can still connect to the cluster
-  with it.
+- Then, complete `ldap2pg.yaml` to fit your needs following [ldap2pg
+  documentation](cli.md). Run ldap2pg for real and check that ldap2pg maintain
+  your single test role, and that you can still connect to the cluster with it.
 - Finally, you must decide when and how you want to trigger synchronization: a
-  regular cron tab ? An ansible task ? Manually ? Other ? Ensure `ldap2pg`
-  execution is frequent, on purpose and notified !
+  regular cron tab ? An ansible task ? Manually ? Other ? Ensure ldap2pg
+  execution is frequent, on purpose and notified.
 
 
 # Configure Postgres Connection
 
-The simplest case is to save the connection settings in `ldap2pg.yml`, section
+The simplest case is to save the connection settings in `ldap2pg.yaml`, section
 `postgres`:
 
 ``` yaml
@@ -48,22 +54,22 @@ postgres:
   dsn: postgres://user:password@host:port/
 ```
 
-`ldap2pg` checks for file mode and refuse to read password in world readable
+ldap2pg checks for file mode and refuse to read password in world readable
 files. Ensure it is not world readable by setting a proper file mode:
 
 ``` console
 $ chmod 0600 ldap2pg.yml
 ```
 
-`ldap2pg` will warn about *Empty synchronization map* and ends with *Comparison
-complete*. `ldap2pg` suggests to drop everything. Go on and write the
-synchronization map to tell `ldap2pg` the required roles for the cluster.
+ldap2pg will warn about *Empty synchronization map* and ends with *Comparison
+complete*. ldap2pg suggests to drop everything. Go on and write the
+synchronization map to tell ldap2pg the required roles for the cluster.
 
 
-# Query LDAP Directory
+# Search LDAP Directory
 
-The first step is to query your LDAP server with `ldapsearch`, the CLI tool from
-OpenLDAP. Like this:
+The first step is to search your LDAP server with ldapsearch(1), the CLI tool
+from OpenLDAP. Like this:
 
 ``` console
 $ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b dc=ldap,dc=ldap2pg,dc=docker
@@ -85,16 +91,16 @@ result: 0 Success
 $
 ```
 
-Now save the settings in `ldap2pg.yml`:
+Now save the settings in `ldaprc`:
 
 ``` yaml
-ldap:
-  uri: ldaps://ldap.ldap2pg.docker
-  user: testsasl
-  password: "*secret*"
+LDAPURI ldaps://ldap.ldap2pg.docker
+LDAPUSER testsasl
 ```
 
-Next, update your `ldapsearch` to properly match role entries in LDAP server:
+And in environment: `LDAPPASSWORD=secret`
+
+Next, update your ldapsearch(1) to properly match role entries in LDAP server:
 
 ``` console
 $ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker '' member
@@ -113,8 +119,8 @@ result: 0 Success
 $
 ```
 
-Now translate the query in `ldap2pg.yml` and associate a role mapping to produce
-roles from each values of each entries returned by the LDAP search:
+Now translate the query in `ldap2pg.yaml` and associate a role mapping to
+produce roles from each values of each entries returned by the LDAP search:
 
 ``` yaml
 - ldapsearch:
@@ -145,44 +151,16 @@ real with `--real`.
 
 # Using LDAP High-Availability
 
-`ldap2pg` supports LDAP HA out of the box just like any openldap client. Use a
+ldap2pg supports LDAP HA out of the box just like any openldap client. Use a
 space separated list of URI to tells all servers.
 
 ``` console
 $ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
 ```
 
-See [`ldap.conf(5)`](https://www.openldap.org/software/man.cgi?query=ldap.conf)
-for further details.
+See [ldap.conf(5)] for further details.
 
-
-# Synchronize only Privileges
-
-You may want to trigger `GRANT` and `REVOKE` without touching roles. e.g. you
-update privileges after a schema upgrade.
-
-To do this, create a distinct configuration file. You must first disable roles
-introspection, so that `ldap2pg` will never try to drop a role. Then you must
-ban any `role` rule from the file. You can still trigger LDAP searches to
-determine to which role you want to grant a privilege.
-
-``` yaml
-postgres:
-  # Disable roles introspection by setting query to null
-  roles_query: null
-
-privileges:
-  rw: {}  # here define your privilege
-
-sync_map:
-- ldapsearch:
-    base: cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: "(objectClass=groupOfNames)"
-    scope: sub
-  grant:
-    role: '{member}'
-    privilege: rw
-```
+[ldapLconf(5)]: https://www.openldap.org/software/man.cgi?query=ldap.conf
 
 
 # Running as non-superuser
@@ -191,7 +169,7 @@ Since Postgres provide a `CREATEROLE` role option, you can manage roles without
 superuser privileges. Security-wise, it's a good idea to manage roles without
 super privileges.
 
-`ldap2pg` support this case. However, you must be careful about the limitations.
+ldap2pg supports this case. However, you must be careful about the limitations.
 Let's call the non-super role creating other roles `creator`.
 
 - You can't manage some roles options like `SUPERUSER`, `BYPASSRLS` and
@@ -205,9 +183,9 @@ Let's call the non-super role creating other roles `creator`.
 
 # Revoking privileges
 
-There is no explict revoke in ldap2pg. ldap2pg inspects SQL grants, ldap2pg.yml
-tells what privileges should be granted. Every unexpected grant is revoked. This
-is called implicit revoke.
+There is no explicit revoke in ldap2pg. ldap2pg inspects SQL grants,
+ldap2pg.yml tells what privileges should be granted. Every unexpected grant is
+revoked. This is called implicit revoke.
 
 ldap2pg don't require any YAML `grant` to trigger inspection of Postgres for SQL
 `GRANT`, and thus revoke. You just declare a privilege with an `inspect` query.
@@ -225,56 +203,13 @@ privileges:
       REVOKE CONNECT ON DATABASE {database} FROM {role};
 ```
 
-The bug here, is that inspect does not truly inspect Postgres and always returns
-the same result. `ldap2pg` will always execute the revoke query, thinking
+The bug here, is that inspect does not truly inspect Postgres and always
+returns the same result. ldap2pg will always execute the revoke query, thinking
 `mypriv` is granted to `public`, whatever the actual state of the cluster. It's
 up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.
 
 
-# Joining LDAP entries
-
-When doing a synchronization with an Active Directory (AD), you can refer to
-the `sAMAccountName` or `userPrincipalName` attributes to name the roles and
-link them to other roles.
-
-For instance, the following YAML will create roles for groups and their members
-using the `sAMAccountName` attribute and link them together:
-
-``` yaml
-sync_map:
-- ldapsearch:
-    base: …
-    filter: "(objectClass=group)"
-  roles:
-  - name: '{sAMAccountName}'
-    member: '{member.sAMAccountName}'
-  - name: '{member.sAMAccountName}'
-```
-
-Behind the scenes, ldap2pg will perform additional LDAP queries to retrieve the
-`sAMAccountName` attribute value of the entries referenced by the `member`
-attribute of the group. To join the entries ldap2pg considers the `member`
-attribute as a DN and uses that as search base of the LDAP query.
-
-It is possible to specify the filter of the LDAP query used to join the entries,
-e.g. to reference only persons that are member of the groups:
-
-``` yaml
-sync_map:
-- ldapsearch:
-    base: …
-    filter: "(objectClass=group)"
-    join:
-      member:
-        filter: "(&(objectClass=person)(sAMAccountName=*))"
-  roles:
-  - name: '{sAMAccountName}'
-    member: '{member.sAMAccountName}'
-  - name: '{member.sAMAccountName}'
-```
-
-
-# Inherit unmanaged role
+# Inherit Unmanaged Role
 
 You may want to have a local role, not managed by ldap2pg to have custom
 privileges and grant this role to managed users. This is tricky because ldap2pg
@@ -308,7 +243,7 @@ touch `local_readers` privileges or direct members, but managed roles can
 inherit from it.
 
 
-# Removing all roles
+# Removing All Roles
 
 If ever you want to clean all roles in a PostgreSQL cluster, ldap2pg could be
 helpful. You must explicitly define an empty `sync_map`.
@@ -326,15 +261,18 @@ role.
 
 # ldap2pg as Docker container
 
-Already familiar with Docker and willing to save the setup time you're at the right place.
+Already familiar with Docker and willing to save the setup time? You're at the
+right place.
 
 To run the container simply use the command:
 ``` console
 $ docker run --rm dalibo/ldap2pg --help
 ```
 
-The Docker image of ldap2pg use the same configuration options as explained in the [cli](cli.md) and [ldap2pg.yml](config.md) sections.
-You can mount the ldap2pg.yml configuration file.
+The Docker image of ldap2pg use the same configuration options as explained in
+the [cli](cli.md) and [ldap2pg.yml](config.md) sections. You can mount the
+ldap2pg.yml configuration file.
+
 ``` console
 $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
 ```
@@ -345,5 +283,7 @@ You can also export some environmnent variables with the **-e** option:
 $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml -e PGDSN=postgres://postgres@localhost:5432/ -e LDAPURI=ldaps://localhost -e LDAPBINDDN=cn=you,dc=entreprise,dc=fr -e LDAPPASSWORD=pasglop dalibo/ldap2pg
 ```
 
-Make sure your container can resolve the hostname your pointing to. If you use some internal name resolution be sure to add the **--dns=** option to your command pointing to your internal DNS server.
-More [info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)
+Make sure your container can resolve the hostname your pointing to. If you use
+some internal name resolution be sure to add the **--dns=** option to your
+command pointing to your internal DNS server. More
+[info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)

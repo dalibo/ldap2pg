@@ -3,7 +3,7 @@
 
 <h1>Well-known Privileges</h1>
 
-`ldap2pg` provides some well-known privileges for recurrent usage. There is **no
+ldap2pg provides some well-known privileges for recurrent usage. There is **no
 warranty** on these privileges. You have to check privileges configuration on
 your databases just like you should do with your own code.
 
@@ -13,7 +13,7 @@ associated and the boilerplate saved for declaring all `GRANT` queries.
 
 ## Using Well-known Privileges
 
-Well-known privilege starts and ends with `__`. `ldap2pg` [disables
+Well-known privilege starts and ends with `__`. ldap2pg [disables
 privileges](privileges.md#enabling-privilege) starting with `_`. Thus you have
 to include well-known privileges in a group to enable them. If two groups
 reference the same privilege, it will be deduplicated, don't worry.
@@ -45,7 +45,7 @@ sync_map:
 
 Well-known privilege name follows the following loose convention:
 
-- `_on_all_tables__` is equivalent to `GRANT ... ON ALL TABLES IN SCHEMA ...`.
+- `..._on_all_tables__` is equivalent to `GRANT ... ON ALL TABLES IN SCHEMA ...`.
 - `__default_...__` is equivalent to `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ...`.
 - `__..._on_tables__` gathers `__..._on_all_tables__` and
   `__default_..._on_tables__`.
@@ -74,15 +74,14 @@ of concrete privileges finally included.
 Here we go.
 
 
-<a name="all-on-schemas"></a>
-### Group `__all_on_schemas__`
+### Group `__all_on_schemas__`  { #all-on-schemas data-toc-label='\_\_all\_on\_schemas\_\_' }
 
 - [`__create_on_schemas__`](#create-on-schemas)
 - [`__usage_on_schemas__`](#usage-on-schemas)
 
 
-<a name="all-on-sequences"></a>
-### Group `__all_on_sequences__`
+
+### Group `__all_on_sequences__`  { #all-on-sequences data-toc-label='\_\_all\_on\_sequences\_\_' }
 
 - [`__default_select_on_sequences__`](#default-select-on-sequences)
 - [`__default_update_on_sequences__`](#default-update-on-sequences)
@@ -92,8 +91,8 @@ Here we go.
 - [`__usage_on_all_sequences__`](#usage-on-all-sequences)
 
 
-<a name="all-on-tables"></a>
-### Group `__all_on_tables__`
+
+### Group `__all_on_tables__`  { #all-on-tables data-toc-label='\_\_all\_on\_tables\_\_' }
 
 - [`__default_delete_on_tables__`](#default-delete-on-tables)
 - [`__default_insert_on_tables__`](#default-insert-on-tables)
@@ -111,131 +110,83 @@ Here we go.
 - [`__update_on_all_tables__`](#update-on-all-tables)
 
 
-<a name="delete"></a>
-### Group `__delete__`
+
+### Group `__delete_on_tables__`  { #delete-on-tables data-toc-label='\_\_delete\_on\_tables\_\_' }
 
 - [`__default_delete_on_tables__`](#default-delete-on-tables)
 - [`__delete_on_all_tables__`](#delete-on-all-tables)
 
+Alias: `__delete__`
 
-<a name="delete-on-tables"></a>
-### Group `__delete_on_tables__`
-
-- [`__default_delete_on_tables__`](#default-delete-on-tables)
-- [`__delete_on_all_tables__`](#delete-on-all-tables)
-
-
-<a name="execute"></a>
-### Group `__execute__`
+### Group `__execute_on_functions__`  { #execute-on-functions data-toc-label='\_\_execute\_on\_functions\_\_' }
 
 - [`__default_execute_on_functions__`](#default-execute-on-functions)
 - [`__execute_on_all_functions__`](#execute-on-all-functions)
 - [`__global_default_execute_on_functions__`](#global-default-execute-on-functions)
 
+Alias: `__execute__`
 
-<a name="execute-on-functions"></a>
-### Group `__execute_on_functions__`
-
-- [`__default_execute_on_functions__`](#default-execute-on-functions)
-- [`__execute_on_all_functions__`](#execute-on-all-functions)
-- [`__global_default_execute_on_functions__`](#global-default-execute-on-functions)
-
-
-<a name="insert"></a>
-### Group `__insert__`
+### Group `__insert_on_tables__`  { #insert-on-tables data-toc-label='\_\_insert\_on\_tables\_\_' }
 
 - [`__default_insert_on_tables__`](#default-insert-on-tables)
 - [`__insert_on_all_tables__`](#insert-on-all-tables)
 
+Alias: `__insert__`
 
-<a name="insert-on-tables"></a>
-### Group `__insert_on_tables__`
-
-- [`__default_insert_on_tables__`](#default-insert-on-tables)
-- [`__insert_on_all_tables__`](#insert-on-all-tables)
-
-
-<a name="references"></a>
-### Group `__references__`
+### Group `__references_on_tables__`  { #references-on-tables data-toc-label='\_\_references\_on\_tables\_\_' }
 
 - [`__default_references_on_tables__`](#default-references-on-tables)
 - [`__references_on_all_tables__`](#references-on-all-tables)
 
+Alias: `__references__`
 
-<a name="references-on-tables"></a>
-### Group `__references_on_tables__`
-
-- [`__default_references_on_tables__`](#default-references-on-tables)
-- [`__references_on_all_tables__`](#references-on-all-tables)
-
-
-<a name="select-on-sequences"></a>
-### Group `__select_on_sequences__`
+### Group `__select_on_sequences__`  { #select-on-sequences data-toc-label='\_\_select\_on\_sequences\_\_' }
 
 - [`__default_select_on_sequences__`](#default-select-on-sequences)
 - [`__select_on_all_sequences__`](#select-on-all-sequences)
 
 
-<a name="select-on-tables"></a>
-### Group `__select_on_tables__`
+
+### Group `__select_on_tables__`  { #select-on-tables data-toc-label='\_\_select\_on\_tables\_\_' }
 
 - [`__default_select_on_tables__`](#default-select-on-tables)
 - [`__select_on_all_tables__`](#select-on-all-tables)
 
 
-<a name="trigger"></a>
-### Group `__trigger__`
+
+### Group `__trigger_on_tables__`  { #trigger-on-tables data-toc-label='\_\_trigger\_on\_tables\_\_' }
 
 - [`__default_trigger_on_tables__`](#default-trigger-on-tables)
 - [`__trigger_on_all_tables__`](#trigger-on-all-tables)
 
+Alias: `__trigger__`
 
-<a name="trigger-on-tables"></a>
-### Group `__trigger_on_tables__`
-
-- [`__default_trigger_on_tables__`](#default-trigger-on-tables)
-- [`__trigger_on_all_tables__`](#trigger-on-all-tables)
-
-
-<a name="truncate"></a>
-### Group `__truncate__`
+### Group `__truncate_on_tables__`  { #truncate-on-tables data-toc-label='\_\_truncate\_on\_tables\_\_' }
 
 - [`__default_truncate_on_tables__`](#default-truncate-on-tables)
 - [`__truncate_on_all_tables__`](#truncate-on-all-tables)
 
+Alias: `__truncate__`
 
-<a name="truncate-on-tables"></a>
-### Group `__truncate_on_tables__`
-
-- [`__default_truncate_on_tables__`](#default-truncate-on-tables)
-- [`__truncate_on_all_tables__`](#truncate-on-all-tables)
-
-
-<a name="update-on-sequences"></a>
-### Group `__update_on_sequences__`
+### Group `__update_on_sequences__`  { #update-on-sequences data-toc-label='\_\_update\_on\_sequences\_\_' }
 
 - [`__default_update_on_sequences__`](#default-update-on-sequences)
 - [`__update_on_all_sequences__`](#update-on-all-sequences)
 
 
-<a name="update-on-tables"></a>
-### Group `__update_on_tables__`
+
+### Group `__update_on_tables__`  { #update-on-tables data-toc-label='\_\_update\_on\_tables\_\_' }
 
 - [`__default_update_on_tables__`](#default-update-on-tables)
 - [`__update_on_all_tables__`](#update-on-all-tables)
 
 
-<a name="usage-on-sequences"></a>
-### Group `__usage_on_sequences__`
+
+### Group `__usage_on_sequences__`  { #usage-on-sequences data-toc-label='\_\_usage\_on\_sequences\_\_' }
 
 - [`__default_usage_on_sequences__`](#default-usage-on-sequences)
 - [`__usage_on_all_sequences__`](#usage-on-all-sequences)
 
-
-<a name="usage-on-types"></a>
-### Group `__usage_on_types__`
-
-- [`__default_usage_on_types__`](#default-usage-on-types)
 
 
 ## Single Privileges
@@ -251,24 +202,23 @@ statement.
 
 
 
-<a name="connect"></a>
-### Privilege `__connect__`
+### Privilege `__connect__`  { #connect data-toc-label='\_\_connect\_\_' }
 
 ``` SQL
 GRANT CONNECT ON DATABASE {database} TO {role};
 ```
 
 
-<a name="create-on-schemas"></a>
-### Privilege `__create_on_schemas__`
+
+### Privilege `__create_on_schemas__`  { #create-on-schemas data-toc-label='\_\_create\_on\_schemas\_\_' }
 
 ``` SQL
 GRANT CREATE ON SCHEMA {schema} TO {role};
 ```
 
 
-<a name="default-delete-on-tables"></a>
-### Privilege `__default_delete_on_tables__`
+
+### Privilege `__default_delete_on_tables__`  { #default-delete-on-tables data-toc-label='\_\_default\_delete\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -276,8 +226,8 @@ GRANT DELETE ON TABLES TO {role};
 ```
 
 
-<a name="default-execute-on-functions"></a>
-### Privilege `__default_execute_on_functions__`
+
+### Privilege `__default_execute_on_functions__`  { #default-execute-on-functions data-toc-label='\_\_default\_execute\_on\_functions\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -285,8 +235,8 @@ GRANT EXECUTE ON FUNCTIONS TO {role};
 ```
 
 
-<a name="default-insert-on-tables"></a>
-### Privilege `__default_insert_on_tables__`
+
+### Privilege `__default_insert_on_tables__`  { #default-insert-on-tables data-toc-label='\_\_default\_insert\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -294,8 +244,8 @@ GRANT INSERT ON TABLES TO {role};
 ```
 
 
-<a name="default-references-on-tables"></a>
-### Privilege `__default_references_on_tables__`
+
+### Privilege `__default_references_on_tables__`  { #default-references-on-tables data-toc-label='\_\_default\_references\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -303,8 +253,8 @@ GRANT REFERENCES ON TABLES TO {role};
 ```
 
 
-<a name="default-select-on-sequences"></a>
-### Privilege `__default_select_on_sequences__`
+
+### Privilege `__default_select_on_sequences__`  { #default-select-on-sequences data-toc-label='\_\_default\_select\_on\_sequences\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -312,8 +262,8 @@ GRANT SELECT ON SEQUENCES TO {role};
 ```
 
 
-<a name="default-select-on-tables"></a>
-### Privilege `__default_select_on_tables__`
+
+### Privilege `__default_select_on_tables__`  { #default-select-on-tables data-toc-label='\_\_default\_select\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -321,8 +271,8 @@ GRANT SELECT ON TABLES TO {role};
 ```
 
 
-<a name="default-trigger-on-tables"></a>
-### Privilege `__default_trigger_on_tables__`
+
+### Privilege `__default_trigger_on_tables__`  { #default-trigger-on-tables data-toc-label='\_\_default\_trigger\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -330,8 +280,8 @@ GRANT TRIGGER ON TABLES TO {role};
 ```
 
 
-<a name="default-truncate-on-tables"></a>
-### Privilege `__default_truncate_on_tables__`
+
+### Privilege `__default_truncate_on_tables__`  { #default-truncate-on-tables data-toc-label='\_\_default\_truncate\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -339,8 +289,8 @@ GRANT TRUNCATE ON TABLES TO {role};
 ```
 
 
-<a name="default-update-on-sequences"></a>
-### Privilege `__default_update_on_sequences__`
+
+### Privilege `__default_update_on_sequences__`  { #default-update-on-sequences data-toc-label='\_\_default\_update\_on\_sequences\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -348,8 +298,8 @@ GRANT UPDATE ON SEQUENCES TO {role};
 ```
 
 
-<a name="default-update-on-tables"></a>
-### Privilege `__default_update_on_tables__`
+
+### Privilege `__default_update_on_tables__`  { #default-update-on-tables data-toc-label='\_\_default\_update\_on\_tables\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -357,8 +307,8 @@ GRANT UPDATE ON TABLES TO {role};
 ```
 
 
-<a name="default-usage-on-sequences"></a>
-### Privilege `__default_usage_on_sequences__`
+
+### Privilege `__default_usage_on_sequences__`  { #default-usage-on-sequences data-toc-label='\_\_default\_usage\_on\_sequences\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
@@ -366,123 +316,124 @@ GRANT USAGE ON SEQUENCES TO {role};
 ```
 
 
-<a name="default-usage-on-types"></a>
-### Privilege `__default_usage_on_types__`
+
+### Privilege `__default_usage_on_types__`  { #default-usage-on-types data-toc-label='\_\_default\_usage\_on\_types\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema}
 GRANT USAGE ON TYPES TO {role};
 ```
 
+Alias: `__usage_on_types__`
 
-<a name="delete-on-all-tables"></a>
-### Privilege `__delete_on_all_tables__`
+### Privilege `__delete_on_all_tables__`  { #delete-on-all-tables data-toc-label='\_\_delete\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT DELETE ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="execute-on-all-functions"></a>
-### Privilege `__execute_on_all_functions__`
+
+### Privilege `__execute_on_all_functions__`  { #execute-on-all-functions data-toc-label='\_\_execute\_on\_all\_functions\_\_' }
 
 ``` SQL
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="global-default-execute-on-functions"></a>
-### Privilege `__global_default_execute_on_functions__`
+
+### Privilege `__global_default_execute_on_functions__`  { #global-default-execute-on-functions data-toc-label='\_\_global\_default\_execute\_on\_functions\_\_' }
 
 ``` SQL
 ALTER DEFAULT PRIVILEGES FOR ROLE {owner} GRANT EXECUTE ON FUNCTIONS TO {role};
 ```
 
 
-<a name="insert-on-all-tables"></a>
-### Privilege `__insert_on_all_tables__`
+
+### Privilege `__insert_on_all_tables__`  { #insert-on-all-tables data-toc-label='\_\_insert\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT INSERT ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="references-on-all-tables"></a>
-### Privilege `__references_on_all_tables__`
+
+### Privilege `__references_on_all_tables__`  { #references-on-all-tables data-toc-label='\_\_references\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT REFERENCES ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="select-on-all-sequences"></a>
-### Privilege `__select_on_all_sequences__`
+
+### Privilege `__select_on_all_sequences__`  { #select-on-all-sequences data-toc-label='\_\_select\_on\_all\_sequences\_\_' }
 
 ``` SQL
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="select-on-all-tables"></a>
-### Privilege `__select_on_all_tables__`
+
+### Privilege `__select_on_all_tables__`  { #select-on-all-tables data-toc-label='\_\_select\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="temporary"></a>
-### Privilege `__temporary__`
+
+### Privilege `__temporary__`  { #temporary data-toc-label='\_\_temporary\_\_' }
 
 ``` SQL
 GRANT TEMPORARY ON DATABASE {database} TO {role};
 ```
 
 
-<a name="trigger-on-all-tables"></a>
-### Privilege `__trigger_on_all_tables__`
+
+### Privilege `__trigger_on_all_tables__`  { #trigger-on-all-tables data-toc-label='\_\_trigger\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT TRIGGER ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="truncate-on-all-tables"></a>
-### Privilege `__truncate_on_all_tables__`
+
+### Privilege `__truncate_on_all_tables__`  { #truncate-on-all-tables data-toc-label='\_\_truncate\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT TRUNCATE ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="update-on-all-sequences"></a>
-### Privilege `__update_on_all_sequences__`
+
+### Privilege `__update_on_all_sequences__`  { #update-on-all-sequences data-toc-label='\_\_update\_on\_all\_sequences\_\_' }
 
 ``` SQL
 GRANT UPDATE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="update-on-all-tables"></a>
-### Privilege `__update_on_all_tables__`
+
+### Privilege `__update_on_all_tables__`  { #update-on-all-tables data-toc-label='\_\_update\_on\_all\_tables\_\_' }
 
 ``` SQL
 GRANT UPDATE ON ALL TABLES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="usage-on-all-sequences"></a>
-### Privilege `__usage_on_all_sequences__`
+
+### Privilege `__usage_on_all_sequences__`  { #usage-on-all-sequences data-toc-label='\_\_usage\_on\_all\_sequences\_\_' }
 
 ``` SQL
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA {schema} TO {role}
 ```
 
 
-<a name="usage-on-schemas"></a>
-### Privilege `__usage_on_schemas__`
+
+### Privilege `__usage_on_schemas__`  { #usage-on-schemas data-toc-label='\_\_usage\_on\_schemas\_\_' }
 
 ``` SQL
 GRANT USAGE ON SCHEMA {schema} TO {role};
 ```
+
 

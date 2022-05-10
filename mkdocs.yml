@@ -3,12 +3,34 @@ site_name: ldap2pg documentation
 site_description: Synchronise Postgres roles from LDAP directory
 site_author: Dalibo Labs
 site_url: https://ldap2pg.readthedocs.io/
-copyright: © Dalibo 2017-2020
-repo_name: ldap2pg
+copyright: © Dalibo 2017-2022
+repo_name: dalibo/ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg
 
 theme:
+  favicon: img/logo-80.png
+  logo: img/logo-white.png
   name: material
+  features:
+  - navigation.instant
+  - navigation.tabs
+  - navigation.tabs.sticky
+  - navigation.top
+  - navigation.tracking
+  - search.suggest
+  - search.highlight
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/dalibo/ldap2pg
+  - icon: fontawesome/brands/docker
+    link: https://hub.docker.com/r/dalibo/ldap2pg
+  - icon: fontawesome/brands/twitter
+    link: https://twitter.com/DaliboLabs
+  - icon: fontawesome/brands/mastodon
+    link: https://mastodon.online/@dalibo
+
 extra_css:
 - ldap2pg.css
 
@@ -19,24 +41,28 @@ nav:
   - CLI: cli.md
   - ldap2pg.yml: config.md
   - Inspecting Cluster: postgres.md
-  - Querying Directory: ldap.md
   - Managing Roles: roles.md
+  - Searching Directory: ldap.md
   - Managing Privileges: privileges.md
   - Well-known Privileges: wellknown.md
-- API: api.md
 - Cookbook: cookbook.md
-- Hacking: hacking.md
 - Changelog: changelog.md
+- API: api.md
+- Hacking: hacking.md
 
 site_dir: build/docs/
 
 # Markdown settings
 markdown_extensions:
 - admonition
-- fenced_code
+- attr_list
 - sane_lists
 - smarty
 - toc:
-    baselevel: 2
     permalink: yes
 - wikilinks
+- pymdownx.highlight:
+    anchor_linenums: true
+- pymdownx.inlinehilite
+- pymdownx.snippets
+- pymdownx.superfences

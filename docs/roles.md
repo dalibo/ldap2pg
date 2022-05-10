@@ -1,70 +1,26 @@
 <h1>Managing roles</h1>
 
-`ldap2pg` synchronizes Postgres roles in three steps:
+ldap2pg synchronizes Postgres roles in three steps:
 
 1. Inspect Postgres for existing roles, their options and their membership.
-2. Loop `sync_map` and generate roles specs from `role` rules
+2. Loop `sync_map` and generate wanted roles list from `role` rules.
 3. Compare the two roles sets and apply to the Postgres cluster using `CREATE`,
    `DROP` and `ALTER`.
 
+Each [role] entry in `sync_map` is a rule to generate zero or more roles with
+the corresponding parameters. A `role` rule is like a template. `role` rules
+allows to deduplicate membership and options by setting a list of names.
 
-## `role` rule
+You can mix static roles and roles generated with LDAP attributes in the same
+file.
 
-A `role` rule is a dict or a list of dict. Here is a full sample:
-
-``` yaml
-sync_map:
-
-# A single static roles
-- role: ldap_users
-
-# Two *group* roles
-- role:
-    names:
-    - rw
-    - ro
-    options: NOLOGIN
-
-# A supersuer, and user roles.
-- roles:
-  - name: tata
-    options: LOGIN SUPERUSER
-  - name: toto
-    parent: rw
-    options: LOGIN
-  - name: titi
-    parent: ro
-    options: LOGIN
-```
-
-
-The `role` rule accepts the following keys:
-
-`name` or `names` contains one or more name of role you want in Postgres. This
-is useful to e.g. define a `ro` group.
-
-`options` statically defines [Postgres role
-options](https://www.postgresql.org/docs/current/static/sql-createrole.html).
-Currently, only boolean options are supported. Namely: `BYPASSRLS`, `LOGIN`,
-`CREATEDB`, `CREATEROLE`, `INHERIT`, `REPLICATION` and `SUPERUSER`. `options`
-can be a SQL snippet like `SUPERUSER NOLOGIN`, a YAML list like `[LOGIN,
-NOCREATEDB]` or a dict like `{LOGIN: yes, SUPERUSER: no}`.
-
-`members` define members of the Postgres role. Note that members roles are
-**not** automatically created in Postres cluster. You must define a `role` rule
-for each member too, with their own options.
-
-`parent`, `parents` define one or more parent role. It's the reverse meaning of
-`members`. `parents` and `members` are combined together.
-
-`comment` define a template string for comment on role. By default, each roles
-is commented with `Managed by ldap2pg.`.
+[role]: config.md#sync-map-role
 
 
 ## Ignoring roles
 
-`ldap2pg` totally ignore roles matching one of the glob pattern defined in
-`postgres:blacklist`:
+ldap2pg totally ignores roles matching one of the glob pattern defined in
+[roles_blacklist_query]:
 
 ``` yaml
 postgres:
@@ -72,15 +28,18 @@ postgres:
   blacklist: [postgres, pg_*]
 ```
 
-The role blacklist is also applied to grants. `ldap2pg` will never apply `GRANT`
+The role blacklist is also applied to grants. ldap2pg will never apply `GRANT`
 or `REVOKE` on a role matching one of the blacklist patterns.
 
+[roles_blacklist_query]: config.md#postgres-roles-blacklist-query
 
-## Disable role management
+ldap2pg never drop its connecting role.
 
-You can tell `ldap2pg` to manage only privileges and never `CREATE` or `DROP` a
-role. Set `postgres:roles_query` to `null` and never define a `role` rule in
-`sync_map`.
+
+## Disabling Role Management
+
+You can tell ldap2pg to manage only privileges and never `CREATE` or `DROP` a
+role. Set [roles_query] to `null` and never define a `role` rule in `sync_map`.
 
 ``` yaml
 postgres:
@@ -95,3 +54,5 @@ sync_map:
     database: mydb
     role: toto
 ```
+
+[roles_query]: config.md#postgres-roles-query
