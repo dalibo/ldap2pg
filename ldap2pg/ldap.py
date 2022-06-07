@@ -308,7 +308,7 @@ def connect(**kw):
         logger.debug("Trying simple bind.")
         conn.simple_bind_s(options['BINDDN'], options['PASSWORD'])
     else:
-        logger.debug("Trying SASL %s auth.", options['SASL_MECH'])
+        logger.debug("Trying SASL with mechanism %s.", options['SASL_MECH'])
         if options.get('BINDDN'):
             logger.debug("BINDDN %s is unused with SASL.", options['BINDDN'])
         mech = options['SASL_MECH']
