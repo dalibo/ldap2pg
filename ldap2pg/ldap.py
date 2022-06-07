@@ -307,6 +307,8 @@ def connect(**kw):
         conn.simple_bind_s(options['BINDDN'], options['PASSWORD'])
     else:
         logger.debug("Trying SASL %s auth.", options['SASL_MECH'])
+        if options.get('BINDDN'):
+            logger.debug("BINDDN %s is unused with SASL.", options['BINDDN'])
         mech = options['SASL_MECH']
         if 'DIGEST-MD5' == mech:
             auth = sasl.sasl({
