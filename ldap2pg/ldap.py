@@ -289,7 +289,9 @@ def connect(**kw):
         conn = UnicodeModeLDAPObject(conn)
 
     conn = LDAPLogger(conn)
-    conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 120)
+    conn.set_option(
+        ldap.OPT_NETWORK_TIMEOUT, options.get('NETWORK_TIMEOUT', 30))
+    conn.set_option(ldap.OPT_TIMEOUT, options.get('TIMEOUT', 30))
 
     if options.get('STARTTLS'):
         logger.debug("Sending STARTTLS.")
@@ -380,6 +382,8 @@ def gather_options(environ=None, **kw):
         # ldap-utils.
         STARTTLS=False,
         REFERRALS=False,
+        NETWORK_TIMEOUT=120,
+        TIMEOUT=120,
     )
 
     environ = environ or os.environ
