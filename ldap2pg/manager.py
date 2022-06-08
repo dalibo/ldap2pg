@@ -299,7 +299,11 @@ class SyncManager(object):
 
         count = 0
         count += self.psql.run_queries(expandqueries(
-            pgmanagedroles.diff(other=ldaproles, available=pgallroles),
+            pgmanagedroles.diff(
+                other=ldaproles, available=pgallroles,
+                # For reassign:
+                databases=databases, fallback_owner=me,
+            ),
             databases=databases))
 
         if self.privileges:

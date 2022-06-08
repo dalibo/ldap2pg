@@ -10,6 +10,7 @@ import psycopg2
 
 from .privilege import Grant
 from .privilege import Acl
+from .psql import Query
 from .role import (
     Role,
     RoleOptions,
@@ -359,6 +360,16 @@ class Database(object):
 
     def __str__(self):
         return self.name
+
+    def reassign(self, new_owner):
+        yield Query(
+            "Reassign database %s from %s to %s." % (
+                self.name, self.owner, new_owner),
+            None,
+            """ALTER DATABASE "%s" OWNER TO "%s";""" % (
+                self.name, new_owner,
+            )
+        )
 
 
 def handle_decoding_error(iterator):

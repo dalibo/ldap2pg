@@ -143,14 +143,12 @@ class Role(object):
             )
 
     _drop_objects_sql = dedent("""
-    DO $$BEGIN EXECUTE 'GRANT "%(role)s" TO "'||SESSION_USER||'";'; END$$;
-    DO $$BEGIN
-      EXECUTE 'REASSIGN OWNED BY "%(role)s" TO "'||SESSION_USER||'";';
-    END$$;
+    GRANT "%(role)s" TO "%(owner)s";
+    REASSIGN OWNED BY "%(role)s" TO "%(owner)s";
     DROP OWNED BY "%(role)s";
     """)
 
-    def drop(self):
+    def drop(self, fallback_owner):
         yield Query(
             'Terminate running session for %s.' % self.name,
             None, dedent("""\
@@ -160,9 +158,11 @@ class Role(object):
             """) % self.name,
         )
         yield Query(
-            'Reassign %s objects and purge ACL on %%(dbname)s.' % (self.name,),
+            "Reassign %s's objects and purge ACL on %%(dbname)s." % self.name,
             Query.ALL_DATABASES,
-            self._drop_objects_sql % dict(role=self.name),
+            self._drop_objects_sql % dict(
+                role=self.name, owner=fallback_owner,
+            ),
         )
         yield Query(
             'Drop %s.' % (self.name,),
@@ -326,7 +326,7 @@ class RoleSet(set):
     def union(self, other):
         return self.__class__(self | other)
 
-    def diff(self, other=None, available=None):
+    def diff(self, other=None, available=None, fallback_owner=None, databases=None):
         # Yield query so that self match other. It's kind of a three-way diff
         # since we reuse `available` roles instead of recreating roles.
 
@@ -434,8 +434,14 @@ class RoleSet(set):
 
         # Don't forget to trash all spurious managed roles!
         spurious = RoleSet(self - other - set(['public']))
+        # reassign databases to fallback_owner
+        for database in databases or []:
+            if database.owner in spurious:
+                for query in database.reassign(fallback_owner):
+                    yield query
+
         for role in reversed(list(spurious.flatten())):
-            for qry in role.drop():
+            for qry in role.drop(fallback_owner=fallback_owner):
                 yield qry
 
 
