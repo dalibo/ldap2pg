@@ -126,6 +126,7 @@ def synchronize(config=None, environ=None, argv=None):
         ldapconn=ldapconn, psql=psql, inspector=inspector,
         privileges=config['privileges'],
         privilege_aliases=config['privilege_aliases'],
+        fallback_owner=config['postgres']['fallback_owner'],
     )
     count = manager.sync(syncmap=config['sync_map'])
 

@@ -21,12 +21,14 @@ class SyncManager(object):
     def __init__(
             self, ldapconn=None, psql=None, inspector=None,
             privileges=None, privilege_aliases=None,
+            fallback_owner=None,
     ):
         self.ldapconn = ldapconn
         self.psql = psql
         self.inspector = inspector
         self.privileges = privileges or {}
         self.privilege_aliases = privilege_aliases or {}
+        self.fallback_owner = fallback_owner
 
     @property
     def roles_blacklist(self):
@@ -284,7 +286,8 @@ class SyncManager(object):
             logger.warning("Running ldap2pg as non superuser.")
             RoleOptions.filter_super_columns()
 
-        databases, pgallroles, pgmanagedroles = self.inspector.fetch_roles()
+        databases = self.inspector.fetch_databases()
+        pgallroles, pgmanagedroles = self.inspector.fetch_roles()
         pgallroles, pgmanagedroles = self.inspector.filter_roles(
             pgallroles, pgmanagedroles)
 
@@ -297,8 +300,13 @@ class SyncManager(object):
             raise UserError(str(e))
 
         count = 0
+        fallback_owner = self.fallback_owner or me
         count += self.psql.run_queries(expandqueries(
-            pgmanagedroles.diff(other=ldaproles, available=pgallroles),
+            pgmanagedroles.diff(
+                other=ldaproles, available=pgallroles,
+                # For reassign:
+                databases=databases, fallback_owner=fallback_owner,
+            ),
             databases=databases))
 
         if self.privileges:

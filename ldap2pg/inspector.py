@@ -10,6 +10,7 @@ import psycopg2
 
 from .privilege import Grant
 from .privilege import Acl
+from .psql import Query
 from .role import (
     Role,
     RoleOptions,
@@ -202,13 +203,30 @@ class PostgresInspector(object):
             logger.debug("Introspecting session Postgres role.")
             return self.fetch(psql, self.inspect_me)[0]
 
-    def fetch_roles(self):
-        # Actually, fetch databases for dropping objects, all roles and managed
-        # roles. That's the minimum de synchronize roles.
+    inspect_databases = dedent("""\
+    SELECT datname, rolname
+    FROM pg_catalog.pg_database
+    JOIN pg_catalog.pg_roles
+      ON pg_catalog.pg_roles.oid = datdba
+    WHERE datallowconn;
+    """)
 
+    def fetch_databases(self):
+        logger.debug("Inspecting databases.")
         with self.psql() as psql:
-            logger.debug("Inspecting databases.")
-            databases = self.fetch(psql, 'databases', self.row1)
+            all_databases = self.fetch(
+                psql, self.inspect_databases, Database.from_rows)
+            managed_databases = self.fetch(psql, 'databases', self.row1)
+
+        # Filter managed databases.
+        all_databases = [
+            db for db in all_databases if db.name in managed_databases
+        ]
+
+        return all_databases
+
+    def fetch_roles(self):
+        with self.psql() as psql:
             logger.debug("Inspecting all defined roles in cluster.")
             pgallroles = RoleSet(self.fetch(
                 psql, self.format_roles_query(), self.process_roles))
@@ -220,7 +238,7 @@ class PostgresInspector(object):
                 logger.debug("Listing managed roles.")
                 pgmanagedroles = set(self.fetch(
                     psql, 'managed_roles', self.row1))
-        return databases, pgallroles, pgmanagedroles
+        return pgallroles, pgmanagedroles
 
     def fetch_roles_blacklist(self):
         with self.psql() as psql:
@@ -318,6 +336,40 @@ class PostgresInspector(object):
             r[1:] for r in self.query_cache[cache_key]
             if r[0] in keys
         ]
+
+
+class Database(object):
+    @classmethod
+    def from_rows(cls, rows):
+        for row in handle_decoding_error(rows):
+            yield cls(*row)
+
+    def __init__(self, name, owner, managed=True):
+        self.name = name
+        self.owner = owner
+        self.managed = managed
+
+    def __eq__(self, other):
+        return self.name == str(other)
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return self.name
+
+    def reassign(self, new_owner):
+        yield Query(
+            "Reassign database %s from %s to %s." % (
+                self.name, self.owner, new_owner),
+            None,
+            """ALTER DATABASE "%s" OWNER TO "%s";""" % (
+                self.name, new_owner,
+            )
+        )
 
 
 def handle_decoding_error(iterator):

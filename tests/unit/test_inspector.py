@@ -248,6 +248,24 @@ def test_fetch_cached_query(mocker):
     assert not psql.called
 
 
+def test_databases(mocker):
+    from ldap2pg.inspector import PostgresInspector
+
+    inspector = PostgresInspector(
+        psql=mocker.MagicMock(name='psql'),
+        databases=['postgres'],
+    )
+
+    pgsession = inspector.psql.return_value.__enter__
+    pgconn = pgsession.return_value
+    pgcur = pgconn
+    pgcur.return_value = [('postgres', 'owner')]
+
+    databases = inspector.fetch_databases()
+
+    assert 'postgres' in databases
+
+
 def test_me(mocker):
     from ldap2pg.inspector import PostgresInspector
 
@@ -266,22 +284,20 @@ def test_roles(mocker):
 
     inspector = PostgresInspector(
         psql=mocker.MagicMock(name='psql'),
-        databases=['postgres'],
         all_roles=['precreated', 'spurious'],
         roles_blacklist_query=['postgres'],
         managed_roles=None,
     )
 
-    databases, pgallroles, pgmanagedroles = inspector.fetch_roles()
+    pgallroles, pgmanagedroles = inspector.fetch_roles()
 
-    assert 'postgres' in databases
     assert 'precreated' in pgallroles
     assert 'spurious' in pgallroles
     assert pgallroles < pgmanagedroles
 
     inspector.queries['managed_roles'] = ['precreated']
 
-    _, _, pgmanagedroles = inspector.fetch_roles()
+    _, pgmanagedroles = inspector.fetch_roles()
 
     assert 'spurious' not in pgmanagedroles
 

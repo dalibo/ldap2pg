@@ -9,6 +9,7 @@ psql="psql -v ON_ERROR_STOP=1 --echo-all"
 
 $psql <<EOSQL
 DROP DATABASE IF EXISTS olddb;
+DROP DATABASE IF EXISTS omar;
 DROP DATABASE IF EXISTS appdb;
 DROP DATABASE IF EXISTS nonsuperdb;
 EOSQL
@@ -82,6 +83,7 @@ CREATE ROLE "ALICE" WITH SUPERUSER NOLOGIN IN ROLE app;
 -- Create spurious roles, for DROP.
 CREATE ROLE "olivia";
 CREATE ROLE "omar" WITH LOGIN;
+CREATE DATABASE "omar" WITH OWNER "omar";
 CREATE ROLE "oscar" WITH LOGIN IN ROLE app;
 CREATE ROLE "œdipe";
 

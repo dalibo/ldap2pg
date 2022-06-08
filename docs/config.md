@@ -104,6 +104,17 @@ postgres:
     for inspection and forces ldap2pg to use a static value.
 
 
+### `fallback_owner`  { #postgres-fallback-owner }
+
+Name of the role accepting ownership of database of dropped role. Defaults to
+role used by ldap2pg to synchronize cluster.
+
+Before dropping a role, ldap2pg reassign objects and purge ACL. ldap2pg starts
+by reassigning database owner by the targetted user. The new owner of the
+database is the *fallback owner*. Other objects are reassigned to each database
+owner.
+
+
 ### `managed_roles_query`  { #postgres-managed-roles-query }
 
 [managed_roles_query]: #postgres-managed-roles-query

@@ -376,6 +376,7 @@ class Configuration(dict):
             SELECT datname FROM pg_catalog.pg_database
             WHERE datallowconn IS TRUE ORDER BY 1;
             """),
+            'fallback_owner': None,  # None is current user.
             # SQL Query to inspect roles in cluster. See
             # https://www.postgresql.org/docs/current/static/view-pg-roles.html
             # and
@@ -437,10 +438,11 @@ class Configuration(dict):
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:databases_query', env=None),
-        Mapping('postgres:owners_query', env=None),
-        Mapping('postgres:roles_query', env=None),
+        Mapping('postgres:fallback_owner', env=None),
         Mapping('postgres:managed_roles_query', env=None),
+        Mapping('postgres:owners_query', env=None),
         Mapping('postgres:roles_blacklist_query', env=None),
+        Mapping('postgres:roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
         Mapping(
             'postgres:shared_queries', processor=V.shared_queries, env=None),

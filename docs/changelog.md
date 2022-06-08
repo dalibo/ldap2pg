@@ -17,6 +17,9 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix custom SQL query for `roles_blacklist_query`.
 - Fix missing SASL modules in docker image.
 - Terminate running session before dropping role.
+- Reassign database before dropping owner.
+- Reassign objects to database owner instead of managing role.
+- Configure fallback owner, default to managing role.
 - Configure SASL_MECH from YAML.
 - Build RHEL 8 package with Rockylinux 8
 - Move RHEL 7 package to Python 3.6.
