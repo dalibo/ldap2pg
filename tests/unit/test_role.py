@@ -55,13 +55,17 @@ def test_alter():
 
 
 def test_drop():
+    from ldap2pg.inspector import Database
     from ldap2pg.role import Role
 
     role = Role(name='toto', members=['titi'])
 
-    queries = [q.args[0] for q in role.drop()]
+    db = Database('postgres', 'postgres')
+    queries = [q.args[0] for q in role.drop(databases=[db])]
 
-    assert fnfilter(queries, '*REASSIGN OWNED*DROP OWNED BY "toto";*')
+    assert fnfilter(queries, '*pg_terminate_backend*')
+    assert fnfilter(queries, '*REASSIGN OWNED*TO "postgres";')
+    assert fnfilter(queries, 'DROP OWNED BY "toto";')
     assert fnfilter(queries, 'DROP ROLE "toto";')
 
 
