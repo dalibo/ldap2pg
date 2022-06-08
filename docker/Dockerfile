@@ -5,6 +5,7 @@ ARG LDAP2PG_VERSION
 RUN set -ex; \
     apt-get update -y; \
     apt-get install -y --no-install-recommends \
+        libsasl2-modules \
         python3 \
         python3-ldap \
         python3-pip \

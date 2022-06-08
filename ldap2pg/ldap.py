@@ -283,13 +283,15 @@ def connect(**kw):
     # Extra variable LDAPPASSWORD is supported.
 
     options = gather_options(**kw)
-    logger.debug("Connecting to LDAP server %s.", options['URI'])
+    logger.info("Connecting to LDAP server %s.", options['URI'])
     conn = ldap.initialize(options['URI'])
     if PY2:  # pragma: nocover_py3
         conn = UnicodeModeLDAPObject(conn)
 
     conn = LDAPLogger(conn)
-    conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 120)
+    conn.set_option(
+        ldap.OPT_NETWORK_TIMEOUT, options.get('NETWORK_TIMEOUT', 30))
+    conn.set_option(ldap.OPT_TIMEOUT, options.get('TIMEOUT', 30))
 
     if options.get('STARTTLS'):
         logger.debug("Sending STARTTLS.")
@@ -303,10 +305,12 @@ def connect(**kw):
     conn.set_option(ldap.OPT_REFERRALS, options.get('REFERRALS', False))
 
     if not options.get('SASL_MECH'):
-        logger.debug("Trying simple bind.")
+        logger.info("Trying simple bind.")
         conn.simple_bind_s(options['BINDDN'], options['PASSWORD'])
     else:
-        logger.debug("Trying SASL %s auth.", options['SASL_MECH'])
+        logger.info("Trying SASL with mechanism %s.", options['SASL_MECH'])
+        if options.get('BINDDN'):
+            logger.debug("BINDDN %s is unused with SASL.", options['BINDDN'])
         mech = options['SASL_MECH']
         if 'DIGEST-MD5' == mech:
             auth = sasl.sasl({
@@ -378,6 +382,8 @@ def gather_options(environ=None, **kw):
         # ldap-utils.
         STARTTLS=False,
         REFERRALS=False,
+        NETWORK_TIMEOUT=120,
+        TIMEOUT=120,
     )
 
     environ = environ or os.environ
