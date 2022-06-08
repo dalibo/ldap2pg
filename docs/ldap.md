@@ -144,3 +144,13 @@ A unique comment is generated for each role using `member` DN.
     options: LOGIN
     comment: "From LDAP entry {member}, member of {dn}."
 ```
+
+
+## Forcing Simple Bind
+
+By default, OpenLDAP utils uses SASL and use must explicitly use `-x` CLI
+switch to force simple bind authentication. ldap2pg has a different behaviour.
+ldap2pg does not have default SASL mechanism. If `SASL_MECH` is empty or
+undefined, ldap2pg uses simple bind.
+
+If you want to force simple bind, ensure `SASL_MECH` is none.
