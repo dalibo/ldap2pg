@@ -152,6 +152,14 @@ class Role(object):
 
     def drop(self):
         yield Query(
+            'Terminate running session for %s.' % self.name,
+            None, dedent("""\
+            SELECT pg_terminate_backend(pid)
+            FROM pg_catalog.pg_stat_activity
+            WHERE usename = '%s';
+            """) % self.name,
+        )
+        yield Query(
             'Reassign %s objects and purge ACL on %%(dbname)s.' % (self.name,),
             Query.ALL_DATABASES,
             self._drop_objects_sql % dict(role=self.name),
