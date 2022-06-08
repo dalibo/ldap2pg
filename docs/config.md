@@ -238,6 +238,7 @@ ldap:
   uri: ldap://ldap2pg.local:389
   binddn: cn=admin,dc=ldap2pg,dc=local
   # For SASL
+  sasl_mech: DIGEST-MD5
   user: saslusername
   password: SECRET
 ```
