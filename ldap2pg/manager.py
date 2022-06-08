@@ -284,7 +284,8 @@ class SyncManager(object):
             logger.warning("Running ldap2pg as non superuser.")
             RoleOptions.filter_super_columns()
 
-        databases, pgallroles, pgmanagedroles = self.inspector.fetch_roles()
+        databases = self.inspector.fetch_databases()
+        pgallroles, pgmanagedroles = self.inspector.fetch_roles()
         pgallroles, pgmanagedroles = self.inspector.filter_roles(
             pgallroles, pgmanagedroles)
 

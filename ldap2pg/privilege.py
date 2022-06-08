@@ -215,7 +215,7 @@ class Grant(object):
 
     def as_tuple(self):
         return (
-            self.dbname or '', self.role, self.privilege, self.schema,
+            str(self.dbname) or '', self.role, self.privilege, self.schema,
             self.owner)
 
     def copy(self, **kw):

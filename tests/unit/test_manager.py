@@ -463,9 +463,10 @@ def test_empty_sync_map(mocker):
         inspector=mocker.Mock(name='inspector'),
         psql=mocker.Mock(name='psql'),
     )
+    manager.inspector.fetch_databases.return_value = []
     manager.inspector.fetch_me.return_value = 'me', True
     manager.inspector.fetch_roles_blacklist.return_value = []
-    manager.inspector.fetch_roles.return_value = [], RoleSet(), RoleSet()
+    manager.inspector.fetch_roles.return_value = RoleSet(), RoleSet()
     manager.inspector.filter_roles.return_value = RoleSet(), RoleSet()
     manager.psql.run_queries.return_value = 0
 
@@ -568,9 +569,10 @@ def test_sync(mocker):
     inspector = mocker.Mock(name='inspector')
     manager = SyncManager(psql=psql, inspector=inspector)
 
+    inspector.fetch_databases.return_value = ['postgres']
     inspector.fetch_me.return_value = ('postgres', False)
     inspector.fetch_roles_blacklist.return_value = ['pg_*']
-    inspector.fetch_roles.return_value = (['postgres'], set(), set())
+    inspector.fetch_roles.return_value = set(), set()
     pgroles = mocker.Mock(name='pgroles')
     # Simple diff with one query
     pgroles.diff.return_value = qry = [
