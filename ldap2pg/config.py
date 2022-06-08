@@ -437,10 +437,10 @@ class Configuration(dict):
             secret=r'(?:password=|:[^/][^/].*@)',
         ),
         Mapping('postgres:databases_query', env=None),
-        Mapping('postgres:owners_query', env=None),
-        Mapping('postgres:roles_query', env=None),
         Mapping('postgres:managed_roles_query', env=None),
+        Mapping('postgres:owners_query', env=None),
         Mapping('postgres:roles_blacklist_query', env=None),
+        Mapping('postgres:roles_query', env=None),
         Mapping('postgres:schemas_query', env=None),
         Mapping(
             'postgres:shared_queries', processor=V.shared_queries, env=None),
