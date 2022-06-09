@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 import ctypes
 import logging
 import re
+from contextlib import closing
 
+from psycopg2 import connect, __version__ as psycopg2_version
 import psycopg2.extensions
 
 from .utils import (
     AllDatabases,
-    Timer,
     UserError,
     ensure_unicode,
     lower1,
@@ -16,6 +17,8 @@ from .utils import (
     urlunparse,
 )
 
+
+# Add a new log level change, between INFO and WARNING.
 
 class ChangeLogger(logging.getLoggerClass()):
     def change(self, msg, *args, **kwargs):
@@ -35,143 +38,103 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 
-_dbname_re = re.compile("dbname *= *'?[^ ]*'?")
+class Pooler(object):
+    def __init__(self, connstring, size=256, dry=False):
+        self.connstring = connstring
+        self.size = size
+        self.connections = {}
 
+    def getconn(self, dbname=None):
+        try:
+            return self.connections[dbname]
+        except KeyError:
+            pass
 
-def inject_database_in_connstring(connstring, dbname):
-    if dbname is None:
-        return connstring
-
-    if (connstring.startswith('postgres://') or
-            connstring.startswith('postgresql://')):
-        pr = list(urlparse(connstring))
-        pr[2] = dbname
-        return urlunparse(pr)
-    else:
-        connstring = _dbname_re.sub('', connstring)
-        return connstring + " dbname=%s" % (dbname,)
-
-
-class PSQL(object):
-    # A simple connexion manager to Postgres
-    #
-    # For now, ldap2pg self limits it's connexion pool to 256 sessions. Later
-    # if we hit the limit, we'll see how to managed this better.
-    def __init__(self, connstring=None, max_pool_size=256, dry=False):
-        self.connstring = connstring or ''
-        self.pool = {}
-        self.max_pool_size = max_pool_size
-        self.dry = dry
-        self.timer = Timer()
-
-    def __call__(self, dbname=None):
-        if dbname in self.pool:
-            session = self.pool[dbname]
-        elif len(self.pool) >= self.max_pool_size:
+        if len(self) >= self.size:
             msg = (
                 "Database limit exceeded.\n"
                 "ldap2pg doesn't support cluster with more than %d databases."
-            ) % (self.max_pool_size)
+            ) % (self.size)
             raise UserError(msg)
-        else:
+
+        logger.debug("Opening connection to %s.", dbname or 'libpq default')
+
+        connstring = self.connstring
+        kw = {}
+        if psycopg2_version > '2.5':
+            # application_name is not available on CentOS 6. Use psycopg2
+            # version because libpq.PQlibVersion is not available with Python
+            # 2.6.
+            kw['application_name'] = 'ldap2pg'
+            kw['dbname'] = dbname
+        elif dbname:
             connstring = inject_database_in_connstring(self.connstring, dbname)
-            self.pool[dbname] = session = PSQLSession(connstring.strip())
 
-        return session
+        self.connections[dbname] = conn = connect(
+            connstring, connection_factory=FactoryConnection, **kw
+        )
+        if psycopg2_version > '2.4':
+            conn.set_session(autocommit=True)
+        return conn
 
-    def itersessions(self, databases):
-        # Generate a session for each database. Handful for iterating queries
-        # in each databases in the cluster.
-        for dbname in databases:
-            with self(dbname) as session:
-                yield dbname, session
-
-    def iter_queries_by_session(self, queries):
-        dbname = None
-        dbqueries = []
-        for query in queries:
-            if dbname != query.dbname:
-                if dbqueries:
-                    with self(dbname) as session:
-                        for q in dbqueries:
-                            yield session, q
-                dbqueries[:] = []
-            dbname = query.dbname
-            dbqueries.append(query)
-
-        if dbqueries:
-            with self(dbname) as session:
-                for q in dbqueries:
-                    yield session, q
-
-    def run_queries(self, queries):
-        count = 0
-        queries = list(queries)
-        for session, query in self.iter_queries_by_session(queries):
-            count += 1
-            if self.dry:
-                logger.change('Would ' + lower1(query.message))
-            else:
-                logger.change(query.message)
-
-            sql = session.mogrify(*query.args)
-            if self.dry:
-                logger.debug("Would execute: %s", sql)
-                continue
-
-            try:
-                with self.timer:
-                    session(sql)
-            except Exception as e:
-                fmt = "Error while executing SQL query:\n%s"
-                raise UserError(fmt % ensure_unicode(e))
-
-        return count
-
-
-class PSQLSession(object):
-    def __init__(self, connstring):
-        self.connstring = connstring
-        self.conn = None
-        self.cursor = None
-
-    def __del__(self):
-        if self.cursor:
-            self.cursor.close()
-            self.cursor = None
-        if self.conn:
+    def putconn(self, dbname=None):
+        conn = self.connections.pop(dbname, None)
+        if conn:
             logger.debug(
-                "Closing Postgres connexion to %s.",
-                self.connstring or 'libpq default')
-            self.conn.close()
-            self.conn = None
+                "Closing connection to %s.", dbname or 'libpq default')
+            conn.close()
 
     def __enter__(self):
-        connmsg = self.connstring or 'libpq default'
-        if self.conn:
-            logger.debug("Using Postgres connection to %s.", connmsg)
-        else:
-            logger.debug("Connecting to Postgres %s.", connmsg)
-            try:
-                self.conn = psycopg2.connect(self.connstring)
-            except psycopg2.OperationalError as e:
-                raise UserError("Failed to connect: %s" % e)
-        if not self.cursor:
-            self.cursor = self.conn.cursor()
         return self
 
     def __exit__(self, *a):
-        self.conn.commit()
+        for name in list(self.connections.keys()):
+            self.putconn(name)
 
-    def __call__(self, query, *args):
-        logger.debug("Doing:\n%s", query.strip())
-        self.cursor.execute(query, *args)
-        return self.cursor
+    def __iter__(self):
+        for dbname, conn in self.pool.items():
+            yield dbname, conn
+
+    def __len__(self):
+        return len(self.connections)
+
+    _dbname_re = re.compile("dbname *= *'?[^ ]*'?")
+
+
+class FactoryConnection(psycopg2.extensions.connection):  # pragma: nocover
+    def cursor(self, *a, **kw):
+        row_factory = kw.pop('row_factory', None)
+        kw['cursor_factory'] = FactoryCursor.make_factory(
+            row_factory=row_factory)
+        return super(FactoryConnection, self).cursor(*a, **kw)
+
+    def execute(self, sql, *args):
+        # Use closing for psycopg 2.0.
+        with closing(self.cursor()) as cur:
+            cur.execute(sql, *args)
+
+        # # Autocommit for psycopg 2.0 on CentOS 6.
+        if not getattr(self, 'autocommit', False):
+            self.commit()
+
+    def query(self, row_factory, sql, *args):
+        with closing(self.cursor(row_factory=row_factory)) as cur:
+            cur.execute(sql, *args)
+            for row in cur.fetchall():
+                yield row
+
+    def queryone(self, row_factory, sql, *args):
+        with closing(self.cursor(row_factory=row_factory)) as cur:
+            cur.execute(sql, *args)
+            return cur.fetchone()
+
+    def scalar(self, sql, *args):
+        return self.queryone(scalar, sql, *args)
 
     def mogrify(self, qry, *a, **kw):
-        qry = qry.encode('utf-8')
-        sql = self.cursor.mogrify(qry, *a, **kw)
-        target_encoding = psycopg2.extensions.encodings[self.conn.encoding]
+        with closing(self.cursor()) as cur:
+            sql = cur.mogrify(qry.encode('utf-8'), *a, **kw)
+        target_encoding = psycopg2.extensions.encodings[self.encoding]
         try:
             return sql.decode(target_encoding)
         except UnicodeDecodeError:
@@ -180,7 +143,50 @@ class PSQLSession(object):
                 % self.conn.encoding)
 
 
+class FactoryCursor(psycopg2.extensions.cursor):  # pragma: nocover
+    # Implement row_factory for psycopg2.
+
+    @classmethod
+    def make_factory(cls, row_factory=None):
+        # Build a cursor_factory for psycopg2 connection.
+        def factory(*a, **kw):
+            kw['row_factory'] = row_factory
+            return cls(*a, **kw)
+        return factory
+
+    def __init__(self, conn, name=None, row_factory=None):
+        super(FactoryCursor, self).__init__(conn)
+        if not row_factory:
+            def row_factory(*a):
+                return a
+        self._row_factory = row_factory
+
+    def execute(self, query, *a, **kw):
+        if a:
+            raise Exception("XXX MOGRIFY")
+        logger.debug("Doing:\n%s", query.strip())
+        return super(FactoryCursor, self).execute(query, *a, **kw)
+
+    def fetchone(self):
+        return self._row_factory(*super(FactoryCursor, self).fetchone())
+
+    def fetchmany(self, size=None):
+        for row in super(FactoryCursor, self).fetchmany(size):
+            yield self._row_factory(*row)
+
+    def fetchall(self):
+        for row in super(FactoryCursor, self).fetchall():
+            yield self._row_factory(*row)
+
+
+def scalar(col0, *_):
+    # Row factory for scalar.
+    return col0
+
+
 class Query(object):
+    # Represent a query with log message and target database.
+
     ALL_DATABASES = AllDatabases()
 
     def __init__(self, message, dbname, *args):
@@ -210,10 +216,35 @@ class Query(object):
             yield self
 
 
-def expandqueries(queries, databases):
+def expand_queries(queries, databases):
     for query in queries:
         for single_query in query.expand(databases):
             yield single_query
+
+
+def execute_queries(pool, queries, timer, dry=False):
+    count = 0
+    for query in queries:
+        conn = pool.getconn(query.dbname)
+        count += 1
+        if dry:
+            logger.change('Would ' + lower1(query.message))
+        else:
+            logger.change(query.message)
+
+        sql = conn.mogrify(*query.args)
+        if dry:
+            logger.debug("Would execute: %s", sql)
+            continue
+
+        try:
+            with timer:
+                conn.execute(sql)
+        except Exception as e:
+            fmt = "Error while executing SQL query:\n%s"
+            raise UserError(fmt % ensure_unicode(e))
+
+    return count
 
 
 def libpq_version():
@@ -234,3 +265,21 @@ def libpq_version():
 
         libpq = ctypes.cdll.LoadLibrary(path)
         return libpq.PQlibVersion()
+
+
+_dbname_re = re.compile("dbname *= *'?[^ ]*'?")
+
+
+def inject_database_in_connstring(connstring, dbname):
+
+    if dbname is None:
+        return connstring
+
+    if (connstring.startswith('postgres://') or
+            connstring.startswith('postgresql://')):
+        pr = list(urlparse(connstring))
+        pr[2] = dbname
+        return urlunparse(pr)
+    else:
+        connstring = _dbname_re.sub('', connstring)
+        return connstring + " dbname=%s" % (dbname,)

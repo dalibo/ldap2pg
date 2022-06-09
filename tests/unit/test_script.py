@@ -78,14 +78,14 @@ def test_pdb(mocker):
 
 def test_synchronize(mocker):
     from ldap2pg.utils import Timer
-    PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
-    PSQL.return_value.timer = Timer()
+    from ldap2pg.script import synchronize, Configuration
+
+    Pooler = mocker.patch('ldap2pg.script.Pooler', autospec=True)
     clc = mocker.patch('ldap2pg.script.ldap.connect')
     SM = mocker.patch('ldap2pg.script.SyncManager', autospec=True)
     manager = SM.return_value
     manager.sync.return_value = 0
-
-    from ldap2pg.script import synchronize, Configuration
+    manager.timer = Timer()
 
     config = mocker.MagicMock(name='config', spec=Configuration)
     # Dry run
@@ -94,7 +94,7 @@ def test_synchronize(mocker):
 
     # Real mode
     config.get.return_value = False
-    PSQL.return_value.return_value = mocker.MagicMock(name='psql')
+    Pooler.getconn.return_value = mocker.MagicMock(name='conn')
     synchronize(config=config)
 
     assert clc.called is True
@@ -108,26 +108,30 @@ def test_synchronize(mocker):
     assert clc.called is False
 
 
-def test_synchronize_conn_errors(mocker):
-    mocker.patch('ldap2pg.script.Configuration', new=mocker.MagicMock)
-    mocker.patch('ldap2pg.script.SyncManager', autospec=True)
-    clc = mocker.patch('ldap2pg.script.ldap.connect')
-    PSQL = mocker.patch('ldap2pg.script.PSQL', autospec=True)
+def test_synchronize_ldapconn_error(mocker):
+    from ldap2pg.script import synchronize, ConfigurationError, ldap
 
-    from ldap2pg.script import (
-        synchronize, ConfigurationError,
-        ldap, psycopg2,
-    )
+    mod = 'ldap2pg.script'
+    mocker.patch(mod + '.Configuration', new=mocker.MagicMock)
+    clc = mocker.patch(mod + '.ldap.connect')
 
     clc.side_effect = ldap.LDAPError("pouet")
     with pytest.raises(ConfigurationError):
         synchronize()
-    clc.side_effect = None
 
-    psql = PSQL.return_value
-    psql.return_value = mocker.MagicMock()
-    psql_ = psql.return_value.__enter__.return_value
-    psql_.side_effect = psycopg2.OperationalError()
+
+def test_synchronize_pgconn_error(mocker):
+    from ldap2pg.script import synchronize, ConfigurationError, psycopg2
+
+    mod = 'ldap2pg.script'
+    mocker.patch(mod + '.Configuration', new=mocker.MagicMock)
+    mocker.patch(mod + '.ldap.connect')
+    Pooler = mocker.patch(mod + '.Pooler', autospec=True)
+
+    pool = Pooler.return_value
+    conn = pool.getconn.return_value
+    conn.scalar.side_effect = psycopg2.OperationalError()
+
     with pytest.raises(ConfigurationError):
         synchronize()
 

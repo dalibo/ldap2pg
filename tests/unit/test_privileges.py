@@ -65,7 +65,18 @@ def test_revoke():
 
 
 def test_expand_defacl():
+    from ldap2pg.inspector import Database, Schema
     from ldap2pg.privilege import DefAcl, Acl, Grant, UserError
+
+    dbmap = {}
+    db = Database('postgres', 'postgres')
+    dbmap[db.name] = db
+    nsp = Schema('information_schema', ['postgres'])
+    db.schemas[nsp.name] = nsp
+    db = Database('template1', 'postgres')
+    dbmap[db.name] = db
+    nsp = Schema('information_schema', ['postgres'])
+    db.schemas[nsp.name] = nsp
 
     priv = DefAcl('select', grant='ALTER FOR GRANT SELECT')
     item0 = Grant('select', Grant.ALL_DATABASES, schema=Grant.ALL_SCHEMAS)
@@ -79,14 +90,7 @@ def test_expand_defacl():
         set_.expandgrants(
             aliases=dict(select=['select']),
             privileges={priv.name: priv},
-            databases=dict(
-                postgres=dict(
-                    information_schema=['postgres'],
-                ),
-                template1=dict(
-                    information_schema=['postgres'],
-                ),
-            ),
+            databases=dbmap,
         ),
         key=lambda x: x.dbname,
     )
@@ -104,13 +108,20 @@ def test_expand_defacl():
 
 
 def test_expand_datacl():
+    from ldap2pg.inspector import Database
     from ldap2pg.privilege import DatAcl, Grant
 
     priv = DatAcl('c', grant='GRANT CONNECT')
     item = Grant('c', dbname=Grant.ALL_DATABASES, schema=None)
 
+    dbmap = {}
+    db = Database('postgres', 'postgres')
+    dbmap[db.name] = db
+    db = Database('template1', 'postgres')
+    dbmap[db.name] = db
+
     items = sorted(priv.expand(
-        item, databases=dict(postgres=0xbad, template1="ignored value"),
+        item, databases=dbmap,
     ),    key=lambda x: x.dbname)
 
     assert 2 == len(items)
@@ -121,14 +132,26 @@ def test_expand_datacl():
 
 
 def test_expand_global_defacl():
+    from ldap2pg.inspector import Database, Schema
     from ldap2pg.privilege import GlobalDefAcl, Grant
 
     priv = GlobalDefAcl('c', grant='GRANT CONNECT')
     item = Grant('c', dbname=Grant.ALL_DATABASES, schema=None)
 
-    items = sorted(priv.expand(
-        item, databases=dict(postgres=dict(public=['postgres', 'admin'])),
-    ), key=lambda x: x.owner)
+    dbmap = {}
+    db = Database('postgres', 'postgres')
+    dbmap[db.name] = db
+    nsp = Schema('public', ['admin'])
+    db.schemas[nsp.name] = nsp
+    db = Database('template1', 'postgres')
+    dbmap[db.name] = db
+    nsp = Schema('public', ['postgres'])
+    db.schemas[nsp.name] = nsp
+
+    items = sorted(
+        priv.expand(item, databases=dbmap),
+        key=lambda x: x.owner,
+    )
 
     assert 2 == len(items)
     item = items[0]
@@ -137,7 +160,7 @@ def test_expand_global_defacl():
     assert 'admin' == item.owner
 
     item = items[1]
-    assert 'postgres' == item.dbname
+    assert 'template1' == item.dbname
     assert item.schema is None
     assert 'postgres' == item.owner
 

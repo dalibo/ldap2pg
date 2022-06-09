@@ -10,8 +10,8 @@ from .role import (
     RoleOptions,
     RoleSet,
 )
-from .utils import UserError, decode_value, lower_keys, match
-from .psql import expandqueries
+from .utils import UserError, decode_value, lower_keys, match, Timer
+from .psql import execute_queries, expand_queries
 
 
 logger = logging.getLogger(__name__)
@@ -19,16 +19,18 @@ logger = logging.getLogger(__name__)
 
 class SyncManager(object):
     def __init__(
-            self, ldapconn=None, psql=None, inspector=None,
+            self, ldapconn=None, pool=None, inspector=None,
             privileges=None, privilege_aliases=None,
-            fallback_owner=None,
+            fallback_owner=None, dry=True,
     ):
+        self.dry = dry
         self.ldapconn = ldapconn
-        self.psql = psql
+        self.pool = pool
         self.inspector = inspector
         self.privileges = privileges or {}
         self.privilege_aliases = privilege_aliases or {}
         self.fallback_owner = fallback_owner
+        self.timer = Timer()
 
     @property
     def roles_blacklist(self):
@@ -255,16 +257,18 @@ class SyncManager(object):
             logger.debug("Want GRANT %s %s.", grant, log_source)
             ldapacl.add(grant)
 
-    def postprocess_acl(self, acl, schemas):
+    def postprocess_acl(self, acl, databases):
+        dbmap = dict([(db.name, db) for db in databases])
         expanded_grants = acl.expandgrants(
             aliases=self.privilege_aliases,
             privileges=self.privileges,
-            databases=schemas,
+            databases=dbmap,
         )
 
         acl = Acl()
         try:
             for grant in expanded_grants:
+                logger.debug("Want GRANT %s.", grant)
                 acl.add(grant)
         except ValueError as e:
             raise UserError(e)
@@ -301,28 +305,37 @@ class SyncManager(object):
 
         count = 0
         fallback_owner = self.fallback_owner or me
-        count += self.psql.run_queries(expandqueries(
-            pgmanagedroles.diff(
-                other=ldaproles, available=pgallroles,
-                # For reassign:
-                databases=databases, fallback_owner=fallback_owner,
-            ),
-            databases=databases))
+        count += execute_queries(
+            self.pool,
+            expand_queries(
+                pgmanagedroles.diff(
+                    other=ldaproles, available=pgallroles,
+                    # For reassign:
+                    databases=databases, fallback_owner=fallback_owner,
+                ),
+                databases=databases),
+            dry=self.dry,
+            timer=self.timer,
+        )
 
         if self.privileges:
             logger.info("Inspecting GRANTs in Postgres cluster...")
             # Inject ldaproles in managed roles to avoid requerying roles.
             pgmanagedroles.update(ldaproles)
-            if self.psql.dry and count:
+            if self.dry and count:
                 logger.warning(
                     "In dry mode, some owners aren't created, "
                     "their default privileges can't be determined.")
             schemas = self.inspector.fetch_schemas(databases, ldaproles)
             pgacl = self.inspector.fetch_grants(schemas, pgmanagedroles)
             ldapacl = self.postprocess_acl(ldapacl, schemas)
-            count += self.psql.run_queries(expandqueries(
-                pgacl.diff(ldapacl, self.privileges),
-                databases=schemas))
+            count += execute_queries(
+                self.pool,
+                expand_queries(
+                    pgacl.diff(ldapacl, self.privileges),
+                    databases=schemas),
+                dry=self.dry, timer=self.timer,
+            )
         else:
             logger.debug("No privileges defined. Skipping GRANT and REVOKE.")
 

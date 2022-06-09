@@ -10,7 +10,7 @@ import psycopg2
 
 from .privilege import Grant
 from .privilege import Acl
-from .psql import Query
+from .psql import Query, scalar
 from .role import (
     Role,
     RoleOptions,
@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 class PostgresInspector(object):
     def __init__(
-            self, psql=None, privileges=None,
+            self, pool=None, privileges=None,
             shared_queries=None, **queries):
-        self.psql = psql
+        self.pool = pool
         self.privileges = privileges or {}
         self.shared_queries = shared_queries or {}
         self.roles_blacklist = []
@@ -52,18 +52,6 @@ class PostgresInspector(object):
         row_cols = ['role.%s' % (r,) for r in row_cols]
         return query.format(options=', '.join(row_cols[1:]))
 
-    # Processors map tuples from psycopg2 to object.
-
-    def row1(self, rows):
-        # Just single value row for e.g databases, managed_roles, owners, etc.
-        for row in handle_decoding_error(rows):
-            yield row[0]
-
-    def process_roles(self, rows):
-        # all_roles query signatures: name, [members, [options ...]]
-        for row in handle_decoding_error(rows):
-            yield Role.from_row(*row)
-
     def process_grants(self, privilege, dbname, rows):
         # GRANT query signatures: schema, role, [<privilege options> ...]
         sql = str(privilege.grant_sql) + str(privilege.revoke_sql)
@@ -79,36 +67,17 @@ class PostgresInspector(object):
 
             yield Grant.from_row(privilege.name, dbname, *row)
 
-    def process_schemas(self, rows):
-        for row in handle_decoding_error(rows):
-            if not isinstance(row, (list, tuple)):
-                row = [row]
-
-            # schemas_query can return tuple with signature (schema,) or
-            # (schema, owners)
-            try:
-                schema, owners = row
-                owners = owners or []
-            except ValueError:
-                schema, = row
-                # Store that schemas_query is not aware of owners. e.g. static
-                # list or old query.
-                owners = False
-
-            yield schema, owners
-
     # is_*_managed check whether an object should be ignored from inspection.
 
-    def is_grant_managed(self, grant, schemas, roles, all_owners):
+    def is_grant_managed(self, grant, db, roles):
         if not self.is_role_managed(grant.role, roles):
             return False
 
-        dbname, schema = grant.dbname, grant.schema
-        if not self.is_schema_managed(schema, schemas[dbname]):
+        if not self.is_schema_managed(grant.schema, db.schemas):
             return False
 
         # Use all owners in database for schema-less privileges
-        owners = all_owners if not schema else schemas[dbname][schema]
+        owners = db.schemas[grant.schema].owners if grant.schema else db.owners
         if not self.is_owner_managed(grant.owner, owners):
             return False
 
@@ -159,7 +128,7 @@ class PostgresInspector(object):
     # with different signature for backward compatibility or simply to adapt
     # various situations.
 
-    def fetch(self, psql, name_or_sql, processor=None):
+    def fetch(self, name_or_sql, row_factory=None, dbname=None):
         # Implement common management of customizable queries.
 
         if isinstance(name_or_sql, unicode):
@@ -177,16 +146,17 @@ class PostgresInspector(object):
                 rows = sql[:]
                 if rows and not isinstance(rows[0], (list, tuple)):
                     rows = [(v,) for v in rows]
+                if row_factory:
+                    rows = [row_factory(*r) for r in rows]
             else:
+                conn = self.pool.getconn(dbname)
                 with self.timer:
-                    rows = psql(sql)
+                    rows = conn.query(row_factory, sql)
 
-            if processor:
-                rows = processor(rows)
             if not isinstance(rows, list):
                 # Track time spent fetching data from Postgres. It's about 5%
                 # on testing env.
-                rows = list(self.timer.time_iter(rows))
+                rows = list(self.timer.time_iter(handle_decoding_error(rows)))
             return rows
         except psycopg2.ProgrammingError as e:
             # Consider the query as user defined
@@ -199,9 +169,8 @@ class PostgresInspector(object):
     """)
 
     def fetch_me(self):
-        with self.psql() as psql:
-            logger.debug("Introspecting session Postgres role.")
-            return self.fetch(psql, self.inspect_me)[0]
+        logger.debug("Introspecting session Postgres role.")
+        return self.pool.getconn().queryone(None, self.inspect_me)
 
     inspect_databases = dedent("""\
     SELECT datname, rolname
@@ -213,10 +182,8 @@ class PostgresInspector(object):
 
     def fetch_databases(self):
         logger.debug("Inspecting databases.")
-        with self.psql() as psql:
-            all_databases = self.fetch(
-                psql, self.inspect_databases, Database.from_rows)
-            managed_databases = self.fetch(psql, 'databases', self.row1)
+        all_databases = self.fetch(self.inspect_databases, Database)
+        managed_databases = self.fetch('databases', scalar)
 
         # Filter managed databases.
         all_databases = [
@@ -226,62 +193,59 @@ class PostgresInspector(object):
         return all_databases
 
     def fetch_roles(self):
-        with self.psql() as psql:
-            logger.debug("Inspecting all defined roles in cluster.")
-            pgallroles = RoleSet(self.fetch(
-                psql, self.format_roles_query(), self.process_roles))
-            if not self.queries.get('managed_roles'):
-                # Legacy ldap2pg manages public, always. We keep this by
-                # default as it is sound to manage public privileges.
-                pgmanagedroles = set(['public'] + [r.name for r in pgallroles])
-            else:
-                logger.debug("Listing managed roles.")
-                pgmanagedroles = set(self.fetch(
-                    psql, 'managed_roles', self.row1))
+        logger.debug("Inspecting all defined roles in cluster.")
+        pgallroles = RoleSet(
+            self.fetch(self.format_roles_query(), Role.from_row))
+        if not self.queries.get('managed_roles'):
+            # Legacy ldap2pg manages public, always. We keep this by
+            # default as it is sound to manage public privileges.
+            pgmanagedroles = set(['public'] + [r.name for r in pgallroles])
+        else:
+            logger.debug("Listing managed roles.")
+            pgmanagedroles = set(self.fetch('managed_roles', scalar))
         return pgallroles, pgmanagedroles
 
     def fetch_roles_blacklist(self):
-        with self.psql() as psql:
-            return self.fetch(psql, 'roles_blacklist_query', self.row1)
+        return self.fetch('roles_blacklist_query', scalar)
 
     def fetch_schemas(self, databases, managedroles=None):
-        # Fetch schemas and owners. This is required to trigger ACL inspection.
-        # Owners are associated with schema, even if globally defined.
+        # Fetch schemas and owners. This is required to trigger privilege
+        # inspection. Owners are associated with schema, even if globally
+        # defined.
 
-        schemas = dict([(k, []) for k in databases])
-        for dbname, psql in self.psql.itersessions(databases):
-            logger.debug("Inspecting schemas in %s", dbname)
-            schemas[dbname] = dict(self.fetch(
-                psql, 'schemas', self.process_schemas))
+        global_owners = None
+        for db in databases:
+            logger.debug("Inspecting schemas in %s", db)
+            db.schemas = dict([
+                (s.name, s) for s in self.fetch('schemas', Schema, db.name)
+            ])
             logger.debug(
                 "Found schemas %s in %s.",
-                ', '.join(schemas[dbname]), dbname)
+                ', '.join(db.schemas.keys()), db)
 
-        # Fallback to postgres:owners_query if schemas_query does not return
-        # owners.
-        owners = None
-        for dbname in schemas:
-            for schema in schemas[dbname]:
-                if schemas[dbname][schema] is not False:
-                    s_owners = set(schemas[dbname][schema])
+            for schema in db.schemas.values():
+                if schema.owners is False:
+                    # Lazy inspect global owners from postgres:owners_query if
+                    # schemas_query does not return owners. False owner means
+                    # schemas_query is not aware of owners.
+                    if global_owners is None:
+                        logger.debug("Globally inspecting owners...")
+                        global_owners = set(self.fetch('owners', scalar))
+                    s_owners = global_owners
                 else:
-                    # False owner means schemas_query is not aware of owners.
-                    if owners is None:
-                        with self.psql() as psql:
-                            logger.debug("Globally inspecting owners...")
-                            owners = set(self.fetch(psql, 'owners', self.row1))
-                    s_owners = owners
-                # Only filter if managedroles are defined. This allow ACL only
-                # mode.
+                    s_owners = set(schema.owners)
+
+                # Only filter if managedroles are defined. This allow privilege
+                # only mode.
                 if managedroles:
                     s_owners = s_owners & managedroles
                 else:
                     s_owners = s_owners - set(self.roles_blacklist)
-                schemas[dbname][schema] = s_owners
+                schema.owners = s_owners
 
-        return schemas
+        return databases
 
-    def fetch_grants(self, schemas, roles):
+    def fetch_grants(self, databases, roles):
         # Loop all defined privileges to inspect grants.
 
         pgacl = Acl()
@@ -292,27 +256,26 @@ class PostgresInspector(object):
                     privilege)
                 continue
 
-            for dbname, psql in self.psql.itersessions(schemas):
+            for db in databases:
+                conn = self.pool.getconn(db.name)
                 logger.debug(
-                    "Searching GRANTs of privilege %s in %s.",
-                    privilege, dbname)
+                    "Searching GRANTs of privilege %s in %s.", privilege, db)
                 if isinstance(privilege.inspect, dict):
                     rows = self.fetch_shared_query(
+                        conn=conn,
                         name=privilege.inspect['shared_query'],
                         keys=privilege.inspect['keys'],
-                        dbname=dbname,
-                        psql=psql,
+                        dbname=db.name,
                     )
                 else:
                     with self.timer:
-                        rows = list(psql(privilege.inspect))
+                        rows = list(conn.query(None, privilege.inspect))
                     logger.debug("Took %s.", self.timer.last_delta)
 
                 # Gather all owners in database for global ACL
-                owners = set(chain(*schemas[dbname].values()))
-                grants = self.process_grants(privilege, dbname, rows)
+                grants = self.process_grants(privilege, db.name, rows)
                 for grant in self.timer.time_iter(iter(grants)):
-                    if self.is_grant_managed(grant, schemas, roles, owners):
+                    if self.is_grant_managed(grant, db, roles):
                         logger.debug("Found GRANT %s.", grant)
                         pgacl.add(grant)
 
@@ -320,11 +283,11 @@ class PostgresInspector(object):
 
         return pgacl
 
-    def fetch_shared_query(self, name, keys, dbname, psql):
+    def fetch_shared_query(self, name, keys, dbname, conn):
         cache_key = '%s_%s' % (name, dbname)
         if cache_key not in self.query_cache:
             with self.timer:
-                rows = list(psql(self.shared_queries[name]))
+                rows = list(conn.query(None, self.shared_queries[name]))
             logger.debug("Took %s.", self.timer.last_delta)
             # Fill the row cache.
             self.query_cache[cache_key] = rows
@@ -339,15 +302,11 @@ class PostgresInspector(object):
 
 
 class Database(object):
-    @classmethod
-    def from_rows(cls, rows):
-        for row in handle_decoding_error(rows):
-            yield cls(*row)
-
     def __init__(self, name, owner, managed=True):
         self.name = name
         self.owner = owner
         self.managed = managed
+        self.schemas = {}
 
     def __eq__(self, other):
         return self.name == str(other)
@@ -361,6 +320,11 @@ class Database(object):
     def __str__(self):
         return self.name
 
+    @property
+    def owners(self):
+        # Object owners, while self.owner is Database owner.
+        return set(chain(*[s.owners for s in self.schemas.values()]))
+
     def reassign(self, new_owner):
         yield Query(
             "Reassign database %s from %s to %s." % (
@@ -370,6 +334,18 @@ class Database(object):
                 self.name, new_owner,
             )
         )
+
+
+class Schema(object):
+    def __init__(self, name, owners=False):
+        self.name = name
+        self.owners = owners
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return self.name
 
 
 def handle_decoding_error(iterator):
