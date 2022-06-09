@@ -294,6 +294,7 @@ class SyncManager(object):
         pgallroles, pgmanagedroles = self.inspector.fetch_roles()
         pgallroles, pgmanagedroles = self.inspector.filter_roles(
             pgallroles, pgmanagedroles)
+        pgallroles.resolve_membership()
 
         logger.debug("Postgres roles inspection done.")
         ldaproles, ldapacl = self.inspect_ldap(syncmap)
@@ -311,7 +312,7 @@ class SyncManager(object):
                 pgmanagedroles.diff(
                     other=ldaproles, available=pgallroles,
                     # For reassign:
-                    databases=databases, fallback_owner=fallback_owner,
+                    me=me, databases=databases, fallback_owner=fallback_owner,
                 ),
                 databases=databases),
             dry=self.dry,

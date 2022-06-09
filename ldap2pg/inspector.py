@@ -105,18 +105,20 @@ class PostgresInspector(object):
                 # Remove blacklisted role from allroles. Prefer to fail on
                 # re-CREATE-ing it rather than even altering options of it.
                 allroles.remove(role)
+                continue
             elif role.name not in whitelist:
                 logger.debug("May reuse role '%s'.", role.name)
             else:
                 logger.debug("Managing role '%s' %s.", role.name, role.options)
-                if role.members:
-                    # Filter members to not revoke unmanaged roles.
-                    role.members = list(set(role.members) & whitelist)
-                    logger.debug(
-                        "Role '%s' has members %s.",
-                        role.name, ','.join(role.members),
-                    )
                 managedroles.add(role)
+
+            if role.members:
+                # Filter members to not revoke unmanaged roles.
+                role.members = list(set(role.members) & whitelist)
+                logger.debug(
+                    "Role '%s' has members %s.",
+                    role.name, ','.join(role.members),
+                )
 
         if 'public' in whitelist:
             managedroles.add(Role(name='public'))

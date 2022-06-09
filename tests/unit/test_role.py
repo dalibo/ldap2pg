@@ -183,14 +183,14 @@ def test_resolve_membership():
 
     alice = Role('alice')
     bob = Role('bob', members=['oscar'])
-    oscar = Role('oscar', parents=['alice', 'bob'])
+    oscar = Role('oscar', parents=['alice'])
 
     roles = RoleSet([alice, bob, oscar])
 
     roles.resolve_membership()
 
-    assert not oscar.parents
     assert 'oscar' in alice.members
+    assert 'bob' in oscar.parents
 
     alice.parents = ['unknown']
 
