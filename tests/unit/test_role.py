@@ -64,8 +64,8 @@ def test_drop():
     queries = [q.args[0] for q in role.drop(databases=[db])]
 
     assert fnfilter(queries, '*pg_terminate_backend*')
-    assert fnfilter(queries, '*REASSIGN OWNED*TO "postgres";')
-    assert fnfilter(queries, 'DROP OWNED BY "toto";')
+    assert fnfilter(queries, '*REASSIGN OWNED*TO "postgres";*')
+    assert fnfilter(queries, '*DROP OWNED BY "toto";')
     assert fnfilter(queries, 'DROP ROLE "toto";')
 
 

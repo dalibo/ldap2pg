@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from itertools import groupby
 import logging
 from fnmatch import fnmatch

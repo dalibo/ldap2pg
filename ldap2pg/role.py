@@ -153,19 +153,13 @@ class Role(object):
         )
         databases = databases or []
         for db in databases:
+            fmtkw = dict(owner=db.owner, role=self.name)
             yield Query(
-                "Reassign %s's objects in %s." % (self.name, db),
-                db.name,
-                dedent("""\
-                REVOKE "%(owner)s" FROM "%(role)s";
-                GRANT "%(role)s" TO "%(owner)s";
+                "Reassign %s's objects and purge ACL in %s." % (self.name, db),
+                db.name, dedent("""\
                 REASSIGN OWNED BY "%(role)s" TO "%(owner)s";
-                """) % dict(role=self.name, owner=db.owner),
-            )
-            yield Query(
-                "Purge %s's ACL in %s." % (self.name, db),
-                db.name,
-                """DROP OWNED BY "%(role)s";""" % dict(role=self.name),
+                DROP OWNED BY "%(role)s";
+                """) % fmtkw
             )
         yield Query(
             'Drop %s.' % (self.name,),
