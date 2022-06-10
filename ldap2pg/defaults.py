@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from itertools import chain
 from textwrap import dedent
 
@@ -303,7 +305,7 @@ def make_privilege(tpl, name, TYPE, privilege):
     fmt_args = dict(
         t=t,
         # Loose SQL formatting
-        t_array='(%s)' % (', '.join(['%r' % i for i in t or []])),
+        t_array='(%s)' % (', '.join(["'%s'" % i for i in t or []])),
         TYPE=TYPE,
         privilege=privilege.upper(),
     )

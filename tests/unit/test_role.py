@@ -64,8 +64,8 @@ def test_drop():
     queries = [q.args[0] for q in role.drop(databases=[db])]
 
     assert fnfilter(queries, '*pg_terminate_backend*')
-    assert fnfilter(queries, '*REASSIGN OWNED*TO "postgres";')
-    assert fnfilter(queries, 'DROP OWNED BY "toto";')
+    assert fnfilter(queries, '*REASSIGN OWNED*TO "postgres";*')
+    assert fnfilter(queries, '*DROP OWNED BY "toto";')
     assert fnfilter(queries, 'DROP ROLE "toto";')
 
 
@@ -183,14 +183,14 @@ def test_resolve_membership():
 
     alice = Role('alice')
     bob = Role('bob', members=['oscar'])
-    oscar = Role('oscar', parents=['alice', 'bob'])
+    oscar = Role('oscar', parents=['alice'])
 
     roles = RoleSet([alice, bob, oscar])
 
     roles.resolve_membership()
 
-    assert not oscar.parents
     assert 'oscar' in alice.members
+    assert 'bob' in oscar.parents
 
     alice.parents = ['unknown']
 

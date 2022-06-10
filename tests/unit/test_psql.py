@@ -1,180 +1,75 @@
-import gc
-
 import pytest
 
 
-def test_connstring():
-    from ldap2pg.psql import inject_database_in_connstring
+def test_pooler(mocker):
+    from ldap2pg.psql import Pooler
 
-    dsns = [
-        '',
-        'postgres://toto@localhost',
-        'postgres://toto@localhost?connect_timeout=4',
-        'postgres://toto@localhost/?connect_timeout=4',
-        'dbname=other',
-        "dbname = 'other'",
-        'postgres://toto@localhost/other',
-    ]
+    connect = mocker.patch('ldap2pg.psql.connect', autospec=True)
+    pool = Pooler("")
 
-    for dsn in dsns:
-        connstring = inject_database_in_connstring(dsn, 'postgres')
-        if dsn.startswith('postgres://'):
-            assert 'localhost/postgres' in connstring
-        else:
-            assert 'dbname=postgres' in connstring
+    pool.getconn()
+    assert connect.called is True
 
-        assert 'other' not in connstring
-        assert dsn == inject_database_in_connstring(dsn, None)
+    assert 1 == len(pool)
 
-
-def test_psql(mocker):
-    connect = mocker.patch('ldap2pg.psql.psycopg2.connect')
-
-    from ldap2pg.psql import PSQL, UserError, psycopg2
-    conn = connect.return_value
-    conn.encoding = 'UTF8'
-    cursor = conn.cursor.return_value
-
-    psql = PSQL()
-    session = psql('postgres')
-
-    # Connection failure is raise to user.
-    connect.side_effect = psycopg2.OperationalError()
-    with pytest.raises(UserError):
-        with session:
-            pass
-
-    # Connection success
     connect.reset_mock()
-    connect.side_effect = None
-    with session:
-        assert connect.called is True
-        assert session.cursor
+    conn = pool.getconn()
+    assert not connect.called
 
-        sql = session.mogrify('SQL')
-        assert sql
-
-        rows = session('SQL')
-        assert rows
-
-    # Reuse connexion until session is actually cleaned.
-    connect.reset_mock()
-    with session:
-        assert connect.called is False
-
-    # Cleaning session triggers connexion closing.
-    del psql, session
-    gc.collect()
-
-    assert cursor.close.called is True
+    pool.putconn()
+    assert 0 == len(pool)
     assert conn.close.called is True
 
 
-def test_psql_pool_limit():
-    from ldap2pg.psql import PSQL, UserError
+def test_pooler_context_manager(mocker):
+    from ldap2pg.psql import Pooler
 
-    psql = PSQL(max_pool_size=1)
-    # Open one session
-    session0 = psql('postgres')
+    connect = mocker.patch('ldap2pg.psql.connect', autospec=True)
 
-    with pytest.raises(UserError):
-        psql('template1')
-
-    session0_bis = psql('postgres')
-
-    assert session0 is session0_bis
-
-
-def test_iter_sessions(mocker):
-    connect = mocker.patch('ldap2pg.psql.psycopg2.connect')
-
-    from ldap2pg.psql import PSQL
-
-    psql = PSQL()
-
-    databases = ['postgres', 'backend', 'frontend']
-    for dbname, session in psql.itersessions(databases):
-        assert dbname in databases
+    with Pooler("") as pool:
+        pool.getconn()
         assert connect.called is True
-        connect.reset_mock()
+        assert 1 == len(pool)
+
+    assert 0 == len(pool)
 
 
-def test_query():
-    from ldap2pg.psql import Query
-
-    qry = Query('Message.', 'postgres', 'SELECT %s;', ('args',))
-
-    assert 2 == len(qry.args)
-    assert 'postgres' == qry.dbname
-    assert 'Message.' == str(qry)
-
-
-def test_expand_queries():
-    from ldap2pg.psql import Query, expandqueries
+def test_queries(mocker):
+    from ldap2pg.psql import Query, expand_queries, execute_queries, UserError
 
     queries = [
-        Query('Message.', Query.ALL_DATABASES, 'SELECT 1;'),
-        Query('Message.', 'postgres', 'SELECT 1;'),
+        Query("Default DB", None, "SELECT 'default-db';"),
+        Query("Targetted DB", 'onedb', "SELECT 'targetted-db';"),
+        Query("All DB", Query.ALL_DATABASES, "SELECT 'targetted-db';"),
     ]
 
-    assert '__ALL_DATABASES__' in repr(queries)
+    pool = mocker.Mock(name='pool')
+    conn = pool.getconn.return_value
 
-    databases = ['postgres', 'template1']
-    allqueries = list(expandqueries(queries, databases))
+    count = execute_queries(
+        pool, expand_queries(queries, ['postgres', 'template1']),
+        timer=None,  # unused when dry
+        dry=True,
+    )
 
-    assert 3 == len(allqueries)
+    assert not conn.execute.called
+    assert 4 == count
 
+    count = execute_queries(
+        pool, expand_queries(queries, ['postgres', 'template1']),
+        mocker.MagicMock(name='timer'),
+        dry=False,
+    )
 
-def test_group_by_sessions(mocker):
-    PSQLSession = mocker.patch('ldap2pg.psql.PSQLSession', mocker.MagicMock())
-    # Identify each with on PSQLSession
-    PSQLSession.return_value.__enter__.side_effect = ['a', 'b', 'c']
+    assert conn.execute.called is True
 
-    from ldap2pg.psql import PSQL, Query
-
-    psql = PSQL()
-    queries = [
-        Query('M.', None, 'SELECT 1;'),
-        Query('M.', None, 'SELECT 2;'),
-        Query('M.', 'other', 'SELECT 3;'),
-        Query('M.', None, 'SELECT 4;'),
-    ]
-
-    sessions = [
-        session for session, _ in psql.iter_queries_by_session(queries)]
-
-    assert len(queries) == len(sessions)
-    # Ensure the session is reused for the second query
-    assert sessions[0] == sessions[1]
-    # But not for the last one.
-    assert sessions[0] != sessions[3]
-
-
-def test_run_queries(mocker):
-    iqbs = mocker.patch('ldap2pg.psql.PSQL.iter_queries_by_session')
-    from ldap2pg.psql import PSQL, Query, UserError
-
-    psql = PSQL()
-
-    queries = [
-        Query('q0', None, 'SQL 0'),
-        Query('q1', 'postgres', 'SQL 1'),
-    ]
-    session = mocker.Mock(name='session')
-    iqbs.return_value = [(session, query) for query in queries]
-
-    # Dry run
-    psql.dry = True
-    count = psql.run_queries(queries)
-    assert session.called is False
-    assert 2 == count
-
-    # Real mode
-    session.side_effect = RuntimeError()
-    psql.dry = False
+    conn.execute.side_effect = Exception()
     with pytest.raises(UserError):
-        psql.run_queries(queries=queries)
-    assert session.called is True
+        execute_queries(
+            pool, expand_queries(queries, ['postgres', 'template1']),
+            mocker.MagicMock(name='timer'),
+            dry=False,
+        )
 
 
 def test_libpq_version(mocker):

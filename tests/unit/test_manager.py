@@ -283,7 +283,7 @@ def test_inspect_ldap_grants(mocker):
 
     privileges = dict(ro=NspAcl(name='ro'))
     manager = SyncManager(
-        psql=mocker.Mock(), ldapconn=mocker.Mock(), privileges=privileges,
+        pool=mocker.Mock(), ldapconn=mocker.Mock(), privileges=privileges,
         privilege_aliases=make_group_map(privileges),
         inspector=mocker.Mock(name='inspector'),
     )
@@ -301,6 +301,7 @@ def test_inspect_ldap_grants(mocker):
 
 
 def test_postprocess_grants():
+    from ldap2pg.inspector import Database, Schema
     from ldap2pg.manager import SyncManager
     from ldap2pg.privilege import DefAcl, Grant, Acl
 
@@ -310,22 +311,21 @@ def test_postprocess_grants():
     )
 
     # No owners
-    acl = manager.postprocess_acl(Acl(), schemas=dict())
+    acl = manager.postprocess_acl(Acl(), databases=dict())
     assert 0 == len(acl)
 
     acl = Acl([Grant(privilege='ro', dbname=['db'], schema=None)])
-    acl = manager.postprocess_acl(
-        acl, schemas=dict(db=dict(
-            public=['postgres', 'owner'],
-            ns=['owner'],
-        )),
-    )
+    db = Database('db', 'postgres')
+    db.schemas['public'] = Schema('public', ['postgres', 'owner'])
+    db.schemas['ns'] = Schema('public', ['owner'])
+    acl = manager.postprocess_acl(acl, databases=[db])
 
     # One grant per schema, per owner
     assert 3 == len(acl)
 
 
 def test_postprocess_acl_bad_database():
+    from ldap2pg.inspector import Database, Schema
     from ldap2pg.manager import SyncManager, UserError
     from ldap2pg.privilege import NspAcl, Grant, Acl
     from ldap2pg.utils import make_group_map
@@ -336,23 +336,27 @@ def test_postprocess_acl_bad_database():
     )
 
     acl = Acl([Grant('ro', ['inexistantdb'], None, 'alice')])
-    schemas = dict(postgres=dict(public=['postgres']))
+    db = Database('db', 'postgres')
+    db.schemas['public'] = Schema('public', ['postgres'])
 
     with pytest.raises(UserError) as ei:
-        manager.postprocess_acl(acl, schemas)
+        manager.postprocess_acl(acl, [db])
     assert 'inexistantdb' in str(ei.value)
 
 
 def test_postprocess_acl_inexistant_privilege():
+    from ldap2pg.inspector import Database, Schema
     from ldap2pg.manager import SyncManager, UserError
     from ldap2pg.privilege import Acl, Grant
 
     manager = SyncManager()
+    db = Database('postgres', 'postgres')
+    db.schemas['public'] = Schema('public', ['postgres'])
 
     with pytest.raises(UserError):
         manager.postprocess_acl(
             acl=Acl([Grant('inexistant')]),
-            schemas=dict(postgres=dict(public=['postgres'])),
+            databases=[db],
         )
 
 
@@ -461,14 +465,15 @@ def test_empty_sync_map(mocker):
 
     manager = SyncManager(
         inspector=mocker.Mock(name='inspector'),
-        psql=mocker.Mock(name='psql'),
+        pool=mocker.Mock(name='pool'),
     )
+    eq = mocker.patch('ldap2pg.manager.execute_queries')
+    eq.return_value = 0
     manager.inspector.fetch_databases.return_value = []
     manager.inspector.fetch_me.return_value = 'me', True
     manager.inspector.fetch_roles_blacklist.return_value = []
     manager.inspector.fetch_roles.return_value = RoleSet(), RoleSet()
     manager.inspector.filter_roles.return_value = RoleSet(), RoleSet()
-    manager.psql.run_queries.return_value = 0
 
     manager.sync([])
 
@@ -551,7 +556,8 @@ def test_entry_build_vars():
 
 
 def test_sync(mocker):
-    from ldap2pg.manager import RoleOptions
+    from ldap2pg.manager import RoleOptions, RoleSet, SyncManager, UserError
+    from ldap2pg.inspector import Database, Schema
 
     mod = 'ldap2pg.manager'
     mocker.patch(
@@ -563,30 +569,31 @@ def test_sync(mocker):
     il = mocker.patch(cls + '.inspect_ldap', autospec=True)
     mocker.patch(cls + '.postprocess_acl', autospec=True)
 
-    from ldap2pg.manager import SyncManager, UserError
+    eq = mocker.patch(mod + '.execute_queries')
+    # No privileges to sync, one query
+    eq.return_value = 1
 
-    psql = mocker.Mock(name='psql')
+    pool = mocker.Mock(name='pool')
     inspector = mocker.Mock(name='inspector')
-    manager = SyncManager(psql=psql, inspector=inspector)
+    manager = SyncManager(dry=True, pool=pool, inspector=inspector)
 
     inspector.fetch_databases.return_value = ['postgres']
     inspector.fetch_me.return_value = ('postgres', False)
     inspector.fetch_roles_blacklist.return_value = ['pg_*']
-    inspector.fetch_roles.return_value = set(), set()
+    inspector.fetch_roles.return_value = RoleSet(), RoleSet()
     pgroles = mocker.Mock(name='pgroles')
     # Simple diff with one query
     pgroles.diff.return_value = qry = [
         mocker.Mock(name='qry', args=(), message='hop')]
-    inspector.filter_roles.return_value = set(), pgroles
-    il.return_value = (mocker.Mock(name='ldaproles'), set())
+    inspector.filter_roles.return_value = RoleSet(), pgroles
+    il.return_value = (mocker.Mock(name='ldaproles'), RoleSet())
     qry[0].expand.return_value = [qry[0]]
-    inspector.fetch_schemas.return_value = dict(postgres=dict(ns=['owner']))
+    db = Database('postgres', 'postgres')
+    db.schemas['ns'] = Schema('ns', ['owner'])
+    inspector.fetch_schemas.return_value = [db]
     inspector.fetch_grants.return_value = pgacl = mocker.Mock(name='pgacl')
     pgacl.diff.return_value = []
 
-    # No privileges to sync, one query
-    psql.dry = False
-    psql.run_queries.return_value = 1
     count = manager.sync(syncmap=[])
     assert pgroles.diff.called is True
     assert pgacl.diff.called is False
@@ -600,11 +607,11 @@ def test_sync(mocker):
     assert 2 == count
 
     # Dry run with roles and ACL
-    manager.psql.dry = True
+    manager.dry = True
     manager.sync(syncmap=[])
 
     # Nothing to do
-    psql.run_queries.return_value = 0
+    eq.return_value = 0
     count = manager.sync(syncmap=[])
     assert 0 == count
 

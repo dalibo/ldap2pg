@@ -142,9 +142,9 @@ class Role(object):
                 )
             )
 
-    def drop(self, databases=None):
+    def drop(self, databases=None, me=None):
         yield Query(
-            'Terminate running session for %s.' % self.name,
+            'Terminate running sessions for %s.' % self.name,
             None, dedent("""\
             SELECT pg_terminate_backend(pid)
             FROM pg_catalog.pg_stat_activity
@@ -153,20 +153,26 @@ class Role(object):
         )
         databases = databases or []
         for db in databases:
+            fmtkw = dict(owner=db.owner, role=self.name, me=me)
+            queries = []
+            if me in self.parents:
+                # Break membership loop before granting.
+                queries.append("""REVOKE "%(me)s" FROM "%(role)s";""")
+                self.parents.remove(me)
+
+            if me not in self.members:
+                # Inherit from target role to reassign even if non-superuser.
+                queries.append("""GRANT "%(role)s" TO %(me)s;""")
+                self.members.append(me)
+
+            queries.append("""REASSIGN OWNED BY "%(role)s" TO "%(owner)s";""")
+            queries.append("""DROP OWNED BY "%(role)s";""")
+
             yield Query(
-                "Reassign %s's objects in %s." % (self.name, db),
-                db.name,
-                dedent("""\
-                REVOKE "%(owner)s" FROM "%(role)s";
-                GRANT "%(role)s" TO "%(owner)s";
-                REASSIGN OWNED BY "%(role)s" TO "%(owner)s";
-                """) % dict(role=self.name, owner=db.owner),
+                "Reassign %s's objects and purge ACL in %s." % (self.name, db),
+                db.name, '\n'.join(queries) % fmtkw,
             )
-            yield Query(
-                "Purge %s's ACL in %s." % (self.name, db),
-                db.name,
-                """DROP OWNED BY "%(role)s";""" % dict(role=self.name),
-            )
+
         yield Query(
             'Drop %s.' % (self.name,),
             None,
@@ -287,8 +293,8 @@ class RoleSet(set):
     def resolve_membership(self):
         index_ = self.reindex()
         for role in self:
-            while role.parents:
-                parent_name = role.parents.pop()
+            # Synchronize role.parents -> parent.members
+            for parent_name in role.parents[:]:
                 try:
                     parent = index_[parent_name]
                 except KeyError:
@@ -296,6 +302,16 @@ class RoleSet(set):
                 if role.name in parent.members:
                     continue
                 parent.members.append(role.name)
+
+            # Synchronize role.members -> member.parents
+            for member_name in role.members[:]:
+                try:
+                    member = index_[member_name]
+                except KeyError:
+                    raise ValueError('Unknown member role %s' % member_name)
+                if role.name in member.parents:
+                    continue
+                member.parents.append(role.name)
 
     def reindex(self):
         return dict([(role.name, role) for role in self])
@@ -331,7 +347,7 @@ class RoleSet(set):
 
     def diff(
             self, other=None, available=None, fallback_owner=None,
-            databases=None):
+            databases=None, me=None):
         # Yield query so that self match other. It's kind of a three-way diff
         # since we reuse `available` roles instead of recreating roles.
 
@@ -448,7 +464,7 @@ class RoleSet(set):
                 database.owner = fallback_owner
 
         for role in reversed(list(spurious.flatten())):
-            for qry in role.drop(databases or []):
+            for qry in role.drop(databases or [], me):
                 yield qry
 
 

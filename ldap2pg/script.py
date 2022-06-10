@@ -17,7 +17,7 @@ from . import ldap
 from .config import Configuration, ConfigurationError
 from .inspector import PostgresInspector
 from .manager import SyncManager
-from .psql import PSQL
+from .psql import Pooler
 from .utils import UserError
 from .role import RoleOptions
 
@@ -101,18 +101,18 @@ def synchronize(config=None, environ=None, argv=None):
         logger.warning("Running in dry mode. Postgres will be untouched.")
     else:
         logger.info("Running in real mode.")
-    psql = PSQL(connstring=config['postgres']['dsn'], dry=config['dry'])
+    pool = Pooler(connstring=config['postgres']['dsn'])
     try:
-        with psql() as psql_:
-            logger.debug("Inspecting role attributes.")
-            supported_columns = psql_(RoleOptions.COLUMNS_QUERY).fetchone()[0]
+        conn = pool.getconn()
+        logger.debug("Inspecting role attributes.")
+        supported_columns = conn.scalar(RoleOptions.COLUMNS_QUERY)
     except psycopg2.OperationalError as e:
         message = "Failed to connect to Postgres: %s." % (str(e).strip(),)
         raise ConfigurationError(message)
     RoleOptions.update_supported_columns(supported_columns)
 
     inspector = PostgresInspector(
-        psql=psql,
+        pool=pool,
         privileges=config['privileges'],
         databases=config['postgres']['databases_query'],
         schemas=config['postgres']['schemas_query'],
@@ -123,12 +123,14 @@ def synchronize(config=None, environ=None, argv=None):
         shared_queries=config['postgres']['shared_queries'],
     )
     manager = SyncManager(
-        ldapconn=ldapconn, psql=psql, inspector=inspector,
+        ldapconn=ldapconn, pool=pool, inspector=inspector,
         privileges=config['privileges'],
         privilege_aliases=config['privilege_aliases'],
         fallback_owner=config['postgres']['fallback_owner'],
+        dry=config.get('dry', True),
     )
-    count = manager.sync(syncmap=config['sync_map'])
+    with pool:
+        count = manager.sync(syncmap=config['sync_map'])
 
     action = "Comparison" if config['dry'] else "Synchronization"
     logger.info("%s complete.", action)
@@ -136,7 +138,7 @@ def synchronize(config=None, environ=None, argv=None):
     logger.debug("Inspecting Postgres took %s.", inspector.timer.delta)
     if ldapconn:
         logger.debug("Searching directory took %s.", ldapconn.timer.delta)
-    logger.debug("Synchronizing Postgres took %s.", psql.timer.delta)
+    logger.debug("Synchronizing Postgres took %s.", manager.timer.delta)
 
     rusage = resource.getrusage(resource.RUSAGE_SELF)
     logger.debug("Used up to %.1fMiB of memory.", rusage.ru_maxrss / 1024.)

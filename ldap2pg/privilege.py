@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from itertools import groupby
 import logging
 from fnmatch import fnmatch
@@ -83,6 +85,9 @@ class DatAcl(Privilege):
             dbnames = grant.dbname
 
         for dbname in dbnames:
+            if dbname not in databases:
+                fmt = "Database %s does not exists or is not managed."
+                raise UserError(fmt % dbname)
             yield grant.copy(privilege=self.name, dbname=dbname)
 
     def expand(self, grant, databases):
@@ -98,31 +103,33 @@ class GlobalDefAcl(DatAcl):
     grantfmt = '%(dbname)s for %(owner)s'
 
     def expand(self, grant, databases):
+        # Expand owners for each database.
         for exp in super(GlobalDefAcl, self).expand(grant, databases):
-            for schema in databases[exp.dbname]:
-                for owner in databases[exp.dbname][schema]:
-                    yield exp.copy(owner=owner)
+            for owner in databases[exp.dbname].owners:
+                yield exp.copy(owner=owner)
 
 
 @Privilege.register
 class NspAcl(DatAcl):
     grantfmt = '%(dbname)s.%(schema)s'
 
-    def expandschema(self, grant, databases):
+    def expandschema(self, grant, all_schemas):
         if grant.schema is Grant.ALL_SCHEMAS:
-            try:
-                schemas = databases[grant.dbname]
-            except KeyError:
-                fmt = "Database %s does not exists or is not managed."
-                raise UserError(fmt % (grant.dbname))
+            schemas = all_schemas.keys()
         else:
             schemas = grant.schema
+
         for schema in schemas:
+            if schema not in all_schemas:
+                fmt = "Unknown schema %s.%s."
+                raise UserError(fmt % (grant.dbname, schema))
             yield grant.copy(privilege=self.name, schema=schema)
 
     def expand(self, grant, databases):
+        # Expand each schema for each database.
         for datexp in self.expanddb(grant, databases):
-            for nspexp in self.expandschema(datexp, databases):
+            schemas = databases[datexp.dbname].schemas
+            for nspexp in self.expandschema(datexp, schemas):
                 yield nspexp
 
 
@@ -131,14 +138,10 @@ class DefAcl(NspAcl):
     grantfmt = '%(dbname)s.%(schema)s for %(owner)s'
 
     def expand(self, grant, databases):
+        # Expand all owners for each schema in each database.
         for expand in super(DefAcl, self).expand(grant, databases):
-            try:
-                owners = databases[expand.dbname][expand.schema]
-            except KeyError:
-                msg = "Unknown schema %s.%s." % (
-                    expand.dbname, expand.schema)
-                raise UserError(msg)
-            for owner in owners:
+            schema = databases[expand.dbname].schemas[expand.schema]
+            for owner in schema.owners:
                 yield expand.copy(owner=owner)
 
 
@@ -163,6 +166,7 @@ class Grant(object):
             self, privilege, dbname=None, schema=None, role=None, full=True,
             owner=None):
         self.privilege = privilege
+        # May be lists, flattened by Privilege.expand method.
         self.dbname = dbname
         self.schema = schema
         self.role = role
