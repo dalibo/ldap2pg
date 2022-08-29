@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/dalibo/ldap2pg/internal/ldap2pg"
+	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
 	ldap "github.com/go-ldap/ldap/v3"
 	"github.com/jackc/pgx/v4"
 	"github.com/kelseyhightower/envconfig"
@@ -20,14 +20,21 @@ type YamlConfig struct {
 }
 
 func main() {
-	log.Printf("ldap2g %s", ldap2pg.Version)
+	err := SetupLogging()
+	if err != nil {
+		log.Panicf("Failed to setup logging: %s", err)
+	}
+	defer Logger.Sync() //nolint:errcheck
+	Logger.Infow("Starting ldap2pg", "commit", CommitSHA, "version", Version, "build", BuildTimestamp)
+
 	var c EnvConfig
+	Logger.Debug("Loading environment variables.")
 	envconfig.MustProcess("", &c)
 
 	y := YamlConfig{}
-	err := yaml.Unmarshal([]byte(data), &y)
+	err = yaml.Unmarshal([]byte(data), &y)
 	if err != nil {
-		log.Fatalf("Failed to parse YAML: %s", err)
+		Logger.Fatalw("Failed to parse YAML", "error", err)
 	}
 	log.Println("Len toto", len(y.Toto))
 	for i, value := range y.Toto {
