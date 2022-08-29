@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/dalibo/ldap2pg/internal/ldap2pg"
 	ldap "github.com/go-ldap/ldap/v3"
 	"github.com/jackc/pgx/v4"
 	"github.com/kelseyhightower/envconfig"
@@ -19,6 +20,7 @@ type YamlConfig struct {
 }
 
 func main() {
+	log.Printf("ldap2g %s", ldap2pg.Version)
 	var c EnvConfig
 	envconfig.MustProcess("", &c)
 
