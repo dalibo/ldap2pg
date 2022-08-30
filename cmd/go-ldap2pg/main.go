@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"runtime"
+	"runtime/debug"
 
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
 	ldap "github.com/go-ldap/ldap/v3"
@@ -25,7 +28,23 @@ func main() {
 		log.Panicf("Failed to setup logging: %s", err)
 	}
 	defer Logger.Sync() //nolint:errcheck
-	Logger.Infow("Starting ldap2pg", "commit", CommitSHA, "version", Version, "build", BuildTimestamp)
+
+	config, err := LoadConfig()
+	if err != nil {
+		Logger.Panicw("Failed to load configuration.", "error", err)
+	}
+	switch config.Action {
+	case ShowHelpAction:
+		ShowHelp()
+		return
+	case ShowVersionAction:
+		showVersion()
+		return
+	case RunAction:
+	}
+
+	LogLevel.SetLevel(config.LogLevel)
+	Logger.Infow("Starting ldap2pg", "commit", ShortRevision, "version", Version, "runtime", runtime.Version())
 
 	var c EnvConfig
 	Logger.Debug("Loading environment variables.")
@@ -79,6 +98,29 @@ func main() {
 	}
 
 	log.Printf("Running as %s.\n", me)
+}
+
+func showVersion() {
+	fmt.Printf("go-ldap2pg %s\n", Version)
+
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+	modmap := make(map[string]string)
+	for _, mod := range bi.Deps {
+		modmap[mod.Path] = mod.Version
+	}
+	modules := []string{
+		"github.com/jackc/pgx/v4",
+		"github.com/go-ldap/ldap/v3",
+		"gopkg.in/yaml.v3",
+	}
+	for _, mod := range modules {
+		fmt.Printf("%s %s\n", mod, modmap[mod])
+	}
+
+	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }
 
 type EnvConfig struct {

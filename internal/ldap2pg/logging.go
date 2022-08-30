@@ -4,12 +4,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var Logger *zap.SugaredLogger
+var (
+	Logger   *zap.SugaredLogger
+	LogLevel zap.AtomicLevel = zap.NewAtomicLevelAt(zap.InfoLevel)
+)
 
 func SetupLogging() (err error) {
 	config := zap.Config{
 		DisableCaller:    true,
-		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
+		Level:            LogLevel,
 		Encoding:         "console",
 		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
 		OutputPaths:      []string{"stderr"},
@@ -24,6 +27,5 @@ func SetupLogging() (err error) {
 		return
 	}
 	Logger = basic.Sugar()
-
 	return
 }
