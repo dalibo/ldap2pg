@@ -10,7 +10,6 @@ import (
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
 	ldap "github.com/go-ldap/ldap/v3"
 	"github.com/jackc/pgx/v4"
-	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,9 +45,24 @@ func main() {
 	LogLevel.SetLevel(config.LogLevel)
 	Logger.Infow("Starting ldap2pg", "commit", ShortRevision, "version", Version, "runtime", runtime.Version())
 
-	var c EnvConfig
-	Logger.Debug("Loading environment variables.")
-	envconfig.MustProcess("", &c)
+	Logger.Debugw("LDAP dial.", "uri", config.Ldap.Uri)
+	ldapconn, err := ldap.DialURL(config.Ldap.Uri)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ldapconn.Close()
+	Logger.Debugw("LDAP simple bind.", "binddn", config.Ldap.BindDn)
+	err = ldapconn.Bind(config.Ldap.BindDn, config.Ldap.Password)
+	if err != nil {
+		Logger.Fatal(err)
+	}
+
+	Logger.Debugw("Running LDAP whoami.")
+	wai, err := ldapconn.WhoAmI(nil)
+	if err != nil {
+		Logger.Fatal(err)
+	}
+	Logger.Debugw("LDAP whoami done.", "authzid", wai.AuthzID)
 
 	y := YamlConfig{}
 	err = yaml.Unmarshal([]byte(data), &y)
@@ -72,24 +86,6 @@ func main() {
 		log.Fatalf("PostgreSQL connection error: %s", err)
 	}
 	defer pgconn.Close(context.Background())
-
-	log.Printf("LDAP dial: %s", c.LdapUri)
-	ldapconn, err := ldap.DialURL(c.LdapUri)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ldapconn.Close()
-	log.Printf("LDAP simple bind: %s", c.LdapBindDn)
-	err = ldapconn.Bind(c.LdapBindDn, c.LdapPassword)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	wai, err := ldapconn.WhoAmI(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("authzid", wai.AuthzID)
 
 	var me string
 	err = pgconn.QueryRow(context.Background(), "SELECT CURRENT_USER;").Scan(&me)
@@ -121,10 +117,4 @@ func showVersion() {
 	}
 
 	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
-}
-
-type EnvConfig struct {
-	LdapUri      string `envconfig:"LDAPURI"`
-	LdapBindDn   string `envconfig:"LDAPBINDDN"`
-	LdapPassword string `envconfig:"LDAPPASSWORD"`
 }

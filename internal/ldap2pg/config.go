@@ -3,6 +3,7 @@ package ldap2pg
 import (
 	"math"
 
+	"github.com/kelseyhightower/envconfig"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap/zapcore"
 )
@@ -10,6 +11,11 @@ import (
 type Config struct {
 	Action   CommandAction
 	LogLevel zapcore.Level
+	Ldap     struct {
+		Uri      string
+		BindDn   string
+		Password string
+	}
 }
 
 func LoadConfig() (self Config, err error) {
@@ -29,6 +35,11 @@ func LoadConfig() (self Config, err error) {
 	}
 	self.LoadFlags(flagValues)
 
+	Logger.Debug("Loading Environment values.")
+	var envValues EnvValues
+	envconfig.MustProcess("", &envValues)
+	self.LoadEnv(envValues)
+
 	return self, nil
 }
 
@@ -45,6 +56,23 @@ func (self *Config) LoadFlags(values FlagValues) {
 	verbosity = int(math.Max(0, float64(verbosity)))
 	verbosity = int(math.Min(float64(verbosity), float64(len(levels)-1)))
 	self.LogLevel = levels[verbosity]
+}
+
+func (self *Config) LoadEnv(values EnvValues) {
+	Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapUri)
+	self.Ldap.Uri = values.LdapUri
+	Logger.Debugw("Setting LDAPBINDDN.", "source", "env", "value", values.LdapBindDn)
+	self.Ldap.BindDn = values.LdapBindDn
+	Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
+	self.Ldap.Password = values.LdapPassword
+}
+
+type EnvValues struct {
+	LdapURI        string `envconfig:"LDAPURI"`
+	LdapBindDn     string `envconfig:"LDAPBINDDN"`
+	LdapPassword   string `envconfig:"LDAPPASSWORD"`
+	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
+	Dry            bool   `envconfig:"DRY" default:"true"`
 }
 
 type CommandAction int
