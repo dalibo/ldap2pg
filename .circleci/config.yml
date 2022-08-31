@@ -6,6 +6,9 @@ workflows:
     jobs:
     - go-build:
         name: "go-stage0-build"
+    - go-test:
+        name: "go-stage1-test"
+        requires: [go-stage0-build]
     - unit:
         name: "stage0-unit-py<< matrix.python >>"
         matrix:
@@ -35,7 +38,7 @@ workflows:
 
 jobs:
   go-build:
-    working_directory: /workspace
+    working_directory: &workspace /workspace
     docker:
     - image: golang:1.19-bullseye
     steps:
@@ -50,6 +53,20 @@ jobs:
     - persist_to_workspace:
         root: .
         paths: [build/]
+
+  go-test:
+    working_directory: *workspace
+    docker:
+    - image: dalibo/buildpack:rockylinux8
+    steps:
+    - checkout
+    - attach_workspace:
+        at: *workspace
+    - run:
+        name: Pen Test
+        command: |
+          build/go-ldap2pg --version
+          build/go-ldap2pg --help
 
   func:
     parameters:
