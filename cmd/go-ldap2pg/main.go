@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"runtime"
 	"runtime/debug"
 
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
-	"github.com/jackc/pgx/v4"
 	"gopkg.in/yaml.v3"
 )
 
@@ -49,20 +47,10 @@ func main() {
 		Logger.Fatal(err)
 	}
 
-	ctx := context.Background()
-	pgconn, err := pgx.Connect(ctx, "")
+	err = PostgresConnect(config)
 	if err != nil {
-		Logger.Fatalw("PostgreSQL connection error.", "error", err)
+		Logger.Fatal(err)
 	}
-	defer pgconn.Close(ctx)
-
-	var me string
-	err = pgconn.QueryRow(ctx, "SELECT CURRENT_USER;").Scan(&me)
-	if err != nil {
-		Logger.Fatalw("Failed to query PostgreSQL", "error", err)
-	}
-
-	Logger.Debugw("Introspected PostgreSQL user.", "username", me)
 
 	y := YamlConfig{}
 	err = yaml.Unmarshal([]byte(data), &y)
