@@ -1,6 +1,8 @@
 package ldap2pg
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 )
 
@@ -27,5 +29,15 @@ func SetupLogging() (err error) {
 		return
 	}
 	Logger = basic.Sugar()
+
+	// Early configuration using environment variable, to debug initialization.
+	envlevel, found := os.LookupEnv("LDAP2PG_VERBOSITY")
+	if !found {
+		return
+	}
+	err = LogLevel.UnmarshalText([]byte(envlevel))
+
+	// Show this debug message only if LDAP2PG_VERBOSITY is set.
+	Logger.Debugw("Initializing ldap2pg.", "version", Version)
 	return
 }

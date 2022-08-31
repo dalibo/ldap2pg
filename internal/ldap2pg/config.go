@@ -21,6 +21,8 @@ type Config struct {
 func LoadConfig() (self Config, err error) {
 	self = Config{
 		Action: RunAction,
+		// Default to current LogLevel.
+		LogLevel: LogLevel.Level(),
 	}
 
 	Logger.Debug("Loading Flag values.")
@@ -52,10 +54,22 @@ var levels []zapcore.Level = []zapcore.Level{
 }
 
 func (self *Config) LoadFlags(values FlagValues) {
-	verbosity := 1 - values.Verbose + values.Quiet
-	verbosity = int(math.Max(0, float64(verbosity)))
-	verbosity = int(math.Min(float64(verbosity), float64(len(levels)-1)))
-	self.LogLevel = levels[verbosity]
+	change := 0 - values.Verbose + values.Quiet
+	if change != 0 {
+		var levelIndex int
+		for i, level := range levels {
+			if level == self.LogLevel {
+				levelIndex = i
+				break
+			}
+		}
+
+		levelIndex = levelIndex + change
+		levelIndex = int(math.Max(0, float64(levelIndex)))
+		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
+		self.LogLevel = levels[levelIndex]
+		Logger.Debugw("Setting log level.", "source", "flags", "level", self.LogLevel)
+	}
 }
 
 func (self *Config) LoadEnv(values EnvValues) {
