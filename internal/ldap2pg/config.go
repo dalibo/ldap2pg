@@ -1,7 +1,11 @@
 package ldap2pg
 
 import (
+	"fmt"
 	"math"
+	"os"
+	"os/user"
+	"path"
 
 	"github.com/kelseyhightower/envconfig"
 	flag "github.com/spf13/pflag"
@@ -16,6 +20,7 @@ type Config struct {
 		BindDn   string
 		Password string
 	}
+	ConfigFile string
 }
 
 func LoadConfig() (self Config, err error) {
@@ -42,7 +47,39 @@ func LoadConfig() (self Config, err error) {
 	envconfig.MustProcess("", &envValues)
 	self.LoadEnv(envValues)
 
+	if self.ConfigFile == "" {
+		self.ConfigFile, err = self.FindConfigFile()
+		if err != nil {
+			return self, err
+		}
+	}
+
 	return self, nil
+}
+
+func (self *Config) FindConfigFile() (configpath string, err error) {
+	Logger.Debugw("Searching configuration file in standard locations.")
+	me, _ := user.Current()
+	candidates := []string{
+		"./ldap2pg.yml",
+		"./ldap2pg.yaml",
+		path.Join(me.HomeDir, "/.config/ldap2pg.yml"),
+		path.Join(me.HomeDir, "/.config/ldap2pg.yaml"),
+		"/etc/ldap2pg.yml",
+		"/etc/ldap2pg.yaml",
+	}
+
+	for _, candidate := range candidates {
+		_, err := os.Stat(candidate)
+		if err == nil {
+			Logger.Debugw("Found configuration file.", "path", candidate)
+			return candidate, nil
+		} else {
+			Logger.Debugw("Ignoring configuration file.", "path", candidate, "error", err)
+		}
+	}
+
+	return "", fmt.Errorf("No configuration file found.")
 }
 
 var levels []zapcore.Level = []zapcore.Level{
@@ -70,6 +107,11 @@ func (self *Config) LoadFlags(values FlagValues) {
 		self.LogLevel = levels[levelIndex]
 		Logger.Debugw("Setting log level.", "source", "flags", "level", self.LogLevel)
 	}
+
+	if values.ConfigFile != "" {
+		Logger.Debugw("Setting config file.", "source", "flags", "path", values.ConfigFile)
+		self.ConfigFile = values.ConfigFile
+	}
 }
 
 func (self *Config) LoadEnv(values EnvValues) {
@@ -79,6 +121,11 @@ func (self *Config) LoadEnv(values EnvValues) {
 	self.Ldap.BindDn = values.LdapBindDn
 	Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
 	self.Ldap.Password = values.LdapPassword
+
+	if self.ConfigFile == "" && values.ConfigFile != "" {
+		Logger.Debugw("Setting config file.", "source", "env", "path", values.ConfigFile)
+		self.ConfigFile = values.ConfigFile
+	}
 }
 
 type EnvValues struct {
@@ -87,6 +134,7 @@ type EnvValues struct {
 	LdapPassword   string `envconfig:"LDAPPASSWORD"`
 	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
 	Dry            bool   `envconfig:"DRY" default:"true"`
+	ConfigFile     string `envconfig:"LDAP2PG_CONFIG"`
 }
 
 type CommandAction int
