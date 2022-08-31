@@ -10,6 +10,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {

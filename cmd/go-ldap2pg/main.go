@@ -7,16 +7,7 @@ import (
 	"runtime/debug"
 
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
-	"gopkg.in/yaml.v3"
 )
-
-var data string = `
-toto: [1, "titi", null, 4.2]
-`
-
-type YamlConfig struct {
-	Toto []interface{} `yaml:"toto"`
-}
 
 func main() {
 	err := SetupLogging()
@@ -41,6 +32,7 @@ func main() {
 
 	LogLevel.SetLevel(config.LogLevel)
 	Logger.Infow("Starting ldap2pg", "commit", ShortRevision, "version", Version, "runtime", runtime.Version())
+	Logger.Infow("Using YAML configuration file.", "path", config.ConfigFile)
 
 	err = LdapConnect(config)
 	if err != nil {
@@ -52,22 +44,7 @@ func main() {
 		Logger.Fatal(err)
 	}
 
-	y := YamlConfig{}
-	err = yaml.Unmarshal([]byte(data), &y)
-	if err != nil {
-		Logger.Fatalw("Failed to parse YAML", "error", err)
-	}
-	log.Println("Len toto", len(y.Toto))
-	for i, value := range y.Toto {
-		switch t := value.(type) {
-		case int:
-			log.Printf("toto[%d] %T = %d", i, t, value.(int))
-		case string:
-			log.Printf("toto[%d] %T = %s", i, t, value.(string))
-		default:
-			log.Printf("toto[%d] %+v %T, unhandled.", i, value, t)
-		}
-	}
+	Logger.Info("Doing nothing yet.")
 }
 
 func showVersion() {
