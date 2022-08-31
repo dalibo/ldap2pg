@@ -6,6 +6,8 @@ workflows:
     jobs:
     - go-build:
         name: "go-stage0-build"
+    - go-lint:
+        name: "go-stage0-lint"
     - go-func:
         name: "go-stage1-func-rockylinux8-pg14"
         requires: [go-stage0-build]
@@ -55,6 +57,23 @@ jobs:
     - persist_to_workspace:
         root: .
         paths: [build/]
+
+  go-lint:
+    working_directory: &workspace /workspace
+    docker:
+    - image: golangci/golangci-lint:v1.49
+    steps:
+    - checkout
+    - restore_cache:
+        keys: [ldap2pg-go-lint]
+    - run:
+        name: Lint
+        command: |
+          golangci-lint run
+    - save_cache:
+        key: ldap2pg-go-lint-{{ epoch }}
+        paths:
+        - /root/.cache/golangci-lint
 
   go-func:
     parameters:
