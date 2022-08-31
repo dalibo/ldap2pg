@@ -2,10 +2,11 @@
 
 from __future__ import unicode_literals
 
+import pytest
 
-def test_dry_run(psql):
-    from sh import ldap2pg
 
+@pytest.mark.go
+def test_dry_run(ldap2pg, psql):
     ldap2pg('--verbose', config='ldap2pg.yml')
     roles = list(psql.roles())
     superusers = list(psql.superusers())
