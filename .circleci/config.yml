@@ -4,6 +4,8 @@ workflows:
   version: 2
   default:
     jobs:
+    - go-build:
+        name: "go-stage0-build"
     - unit:
         name: "stage0-unit-py<< matrix.python >>"
         matrix:
@@ -32,6 +34,23 @@ workflows:
 
 
 jobs:
+  go-build:
+    working_directory: /workspace
+    docker:
+    - image: golang:1.19-bullseye
+    steps:
+    - checkout
+    - run:
+        name: Build Go Files
+        command: |
+          mkdir -p build
+          go build -o build/ ./...
+    - store_artifacts:
+        path: /workspace/build/
+    - persist_to_workspace:
+        root: .
+        paths: [build/]
+
   func:
     parameters:
       dist:
