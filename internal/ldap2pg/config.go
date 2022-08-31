@@ -17,15 +17,15 @@ type Config struct {
 	Action   CommandAction
 	LogLevel zapcore.Level
 	Ldap     struct {
-		Uri      string
+		URI      string
 		BindDn   string
 		Password string
 	}
 	ConfigFile string
 }
 
-func LoadConfig() (self Config, err error) {
-	self = Config{
+func LoadConfig() (config Config, err error) {
+	config = Config{
 		Action: RunAction,
 		// Default to current LogLevel.
 		LogLevel: LogLevel.Level(),
@@ -34,31 +34,36 @@ func LoadConfig() (self Config, err error) {
 	Logger.Debug("Loading Flag values.")
 	flagValues := loadFlags()
 	if flagValues.ShowHelp {
-		self.Action = ShowHelpAction
+		config.Action = ShowHelpAction
 		return
 	}
 	if flagValues.ShowVersion {
-		self.Action = ShowVersionAction
+		config.Action = ShowVersionAction
 		return
 	}
-	self.LoadFlags(flagValues)
+	config.LoadFlags(flagValues)
 
 	Logger.Debug("Loading Environment values.")
 	var envValues EnvValues
 	envconfig.MustProcess("", &envValues)
-	self.LoadEnv(envValues)
+	config.LoadEnv(envValues)
 
-	if self.ConfigFile == "" {
-		self.ConfigFile, err = self.FindConfigFile()
+	if config.ConfigFile == "" {
+		config.ConfigFile, err = config.FindConfigFile()
 		if err != nil {
-			return self, err
+			return config, err
 		}
 	}
 
-	return self, nil
+	err = config.LoadYaml()
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }
 
-func (self *Config) FindConfigFile() (configpath string, err error) {
+func (config *Config) FindConfigFile() (configpath string, err error) {
 	Logger.Debugw("Searching configuration file in standard locations.")
 	me, _ := user.Current()
 	candidates := []string{
@@ -75,12 +80,11 @@ func (self *Config) FindConfigFile() (configpath string, err error) {
 		if err == nil {
 			Logger.Debugw("Found configuration file.", "path", candidate)
 			return candidate, nil
-		} else {
-			Logger.Debugw("Ignoring configuration file.", "path", candidate, "error", err)
 		}
+		Logger.Debugw("Ignoring configuration file.", "path", candidate, "error", err)
 	}
 
-	return "", fmt.Errorf("No configuration file found.")
+	return "", fmt.Errorf("No configuration file found")
 }
 
 var levels []zapcore.Level = []zapcore.Level{
@@ -91,12 +95,12 @@ var levels []zapcore.Level = []zapcore.Level{
 	zapcore.FatalLevel,
 }
 
-func (self *Config) LoadFlags(values FlagValues) {
+func (config *Config) LoadFlags(values FlagValues) {
 	change := 0 - values.Verbose + values.Quiet
 	if change != 0 {
 		var levelIndex int
 		for i, level := range levels {
-			if level == self.LogLevel {
+			if level == config.LogLevel {
 				levelIndex = i
 				break
 			}
@@ -105,27 +109,27 @@ func (self *Config) LoadFlags(values FlagValues) {
 		levelIndex = levelIndex + change
 		levelIndex = int(math.Max(0, float64(levelIndex)))
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
-		self.LogLevel = levels[levelIndex]
-		Logger.Debugw("Setting log level.", "source", "flags", "level", self.LogLevel)
+		config.LogLevel = levels[levelIndex]
+		Logger.Debugw("Setting log level.", "source", "flags", "level", config.LogLevel)
 	}
 
 	if values.ConfigFile != "" {
 		Logger.Debugw("Setting config file.", "source", "flags", "path", values.ConfigFile)
-		self.ConfigFile = values.ConfigFile
+		config.ConfigFile = values.ConfigFile
 	}
 }
 
-func (self *Config) LoadEnv(values EnvValues) {
-	Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapUri)
-	self.Ldap.Uri = values.LdapUri
+func (config *Config) LoadEnv(values EnvValues) {
+	Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapURI)
+	config.Ldap.URI = values.LdapURI
 	Logger.Debugw("Setting LDAPBINDDN.", "source", "env", "value", values.LdapBindDn)
-	self.Ldap.BindDn = values.LdapBindDn
+	config.Ldap.BindDn = values.LdapBindDn
 	Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
-	self.Ldap.Password = values.LdapPassword
+	config.Ldap.Password = values.LdapPassword
 
-	if self.ConfigFile == "" && values.ConfigFile != "" {
+	if config.ConfigFile == "" && values.ConfigFile != "" {
 		Logger.Debugw("Setting config file.", "source", "env", "path", values.ConfigFile)
-		self.ConfigFile = values.ConfigFile
+		config.ConfigFile = values.ConfigFile
 	}
 }
 
@@ -171,3 +175,26 @@ func loadFlags() FlagValues {
 func ShowHelp() {
 	flag.Usage()
 }
+
+func (config *Config) LoadYaml() (err error) {
+	fo, err := os.Open(config.ConfigFile)
+	if err != nil {
+		return
+	}
+	var y YamlConfig
+	dec := yaml.NewDecoder(fo)
+	err = dec.Decode(&y)
+	if err != nil {
+		return
+	}
+
+	switch y.(type) {
+	case map[string]interface{}:
+		Logger.Debugw("YAML is a map", "value", y)
+	case []interface{}:
+		Logger.Debugw("YAML is a list", "value", y)
+	}
+	return
+}
+
+type YamlConfig interface{}

@@ -7,11 +7,11 @@ import (
 )
 
 func LdapConnect(config Config) (err error) {
-	Logger.Infow("Connecting to LDAP directory.", "uri", config.Ldap.Uri, "binddn", config.Ldap.BindDn)
-	Logger.Debugw("LDAP dial.", "uri", config.Ldap.Uri)
+	Logger.Infow("Connecting to LDAP directory.", "uri", config.Ldap.URI, "binddn", config.Ldap.BindDn)
+	Logger.Debugw("LDAP dial.", "uri", config.Ldap.URI)
 	var ldapconn *ldap.Conn
 	for try := 0; try < 15; try++ {
-		ldapconn, err = ldap.DialURL(config.Ldap.Uri)
+		ldapconn, err = ldap.DialURL(config.Ldap.URI)
 		if err != nil {
 			Logger.Debugw("Retrying LDAP connection in 1s.", "error", err)
 			time.Sleep(time.Second)

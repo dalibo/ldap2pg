@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
+	. "github.com/dalibo/ldap2pg/internal/ldap2pg" //nolint:revive
 )
 
 func main() {
