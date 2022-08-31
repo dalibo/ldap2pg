@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg"
-	ldap "github.com/go-ldap/ldap/v3"
 	"github.com/jackc/pgx/v4"
 	"gopkg.in/yaml.v3"
 )
@@ -45,24 +44,25 @@ func main() {
 	LogLevel.SetLevel(config.LogLevel)
 	Logger.Infow("Starting ldap2pg", "commit", ShortRevision, "version", Version, "runtime", runtime.Version())
 
-	Logger.Debugw("LDAP dial.", "uri", config.Ldap.Uri)
-	ldapconn, err := ldap.DialURL(config.Ldap.Uri)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ldapconn.Close()
-	Logger.Debugw("LDAP simple bind.", "binddn", config.Ldap.BindDn)
-	err = ldapconn.Bind(config.Ldap.BindDn, config.Ldap.Password)
+	err = LdapConnect(config)
 	if err != nil {
 		Logger.Fatal(err)
 	}
 
-	Logger.Debugw("Running LDAP whoami.")
-	wai, err := ldapconn.WhoAmI(nil)
+	ctx := context.Background()
+	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
-		Logger.Fatal(err)
+		Logger.Fatalw("PostgreSQL connection error.", "error", err)
 	}
-	Logger.Debugw("LDAP whoami done.", "authzid", wai.AuthzID)
+	defer pgconn.Close(ctx)
+
+	var me string
+	err = pgconn.QueryRow(ctx, "SELECT CURRENT_USER;").Scan(&me)
+	if err != nil {
+		Logger.Fatalw("Failed to query PostgreSQL", "error", err)
+	}
+
+	Logger.Debugw("Introspected PostgreSQL user.", "username", me)
 
 	y := YamlConfig{}
 	err = yaml.Unmarshal([]byte(data), &y)
@@ -80,20 +80,6 @@ func main() {
 			log.Printf("toto[%d] %+v %T, unhandled.", i, value, t)
 		}
 	}
-
-	pgconn, err := pgx.Connect(context.Background(), "")
-	if err != nil {
-		log.Fatalf("PostgreSQL connection error: %s", err)
-	}
-	defer pgconn.Close(context.Background())
-
-	var me string
-	err = pgconn.QueryRow(context.Background(), "SELECT CURRENT_USER;").Scan(&me)
-	if err != nil {
-		log.Fatalf("Failed to query: %s", err)
-	}
-
-	log.Printf("Running as %s.\n", me)
 }
 
 func showVersion() {
