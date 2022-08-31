@@ -52,6 +52,10 @@ jobs:
         command: |
           mkdir -p build
           go build -o build/ ./...
+    - run:
+        name: Unit Test
+        command: |
+          go test ./...
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
