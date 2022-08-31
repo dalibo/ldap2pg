@@ -122,3 +122,34 @@ def sh_errout():
         out=partial(lazy_write, 'stdout'),
         tee=True,
     ))
+
+
+@pytest.fixture(scope='session')
+def ldap2pg(request):
+    return sh.Command(request.config.getoption("--ldap2pg"))
+
+
+def pytest_addoption(parser):
+    candidates = [
+        "ldap2pg",
+        "build/go-ldap2pg"
+    ]
+    for candidate in candidates:
+        try:
+            default = sh.Command(candidate)
+            break
+        except sh.CommandNotFound:
+            continue
+    else:
+        raise pytest.UsageError("Can't find ldap2pg binary.")
+
+    parser.addoption(
+        "--ldap2pg",
+        default=default._path.decode('utf-8'),
+        help="Explicit path to ldap2pg binary.",
+    )
+
+
+def pytest_report_header(config):
+    bin = config.getoption("--ldap2pg")
+    return ["ldap2pg: %s" % bin]
