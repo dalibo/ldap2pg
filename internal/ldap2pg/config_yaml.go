@@ -2,22 +2,32 @@ package ldap2pg
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
+// Marshall YAML from file path or stdin if path is -.
 func ReadYaml(path string) (values interface{}, err error) {
-	Logger.Infof("Using %s.", path)
-	fo, err := os.Open(path)
-	if err != nil {
-		return
+	var fo io.ReadCloser
+	if path == "-" {
+		Logger.Infof("Reading configuration from standard input.")
+		fo = os.Stdin
+	} else {
+		Logger.Infof("Using %s.", path)
+		fo, err = os.Open(path)
+		if err != nil {
+			return
+		}
 	}
+	defer fo.Close()
 	dec := yaml.NewDecoder(fo)
 	err = dec.Decode(&values)
 	return
 }
 
+// Fill configuration from YAML data.
 func (config *Config) LoadYaml(values interface{}) (err error) {
 	yamlMap, err := ensureYamlMap(values)
 	if err != nil {
