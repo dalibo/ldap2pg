@@ -10,7 +10,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -22,7 +21,13 @@ type Config struct {
 		BindDn   string
 		Password string
 	}
+	Postgres struct {
+		DataBasesQuery QueryOrRows
+	}
 }
+
+// Either an SQL string or a slice of static rows.
+type QueryOrRows interface{}
 
 func LoadConfig() (config Config, err error) {
 	config = Config{
@@ -124,12 +129,20 @@ func (config *Config) LoadFlags(values FlagValues) {
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
-	Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapURI)
-	config.Ldap.URI = values.LdapURI
-	Logger.Debugw("Setting LDAPBINDDN.", "source", "env", "value", values.LdapBindDn)
-	config.Ldap.BindDn = values.LdapBindDn
-	Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
-	config.Ldap.Password = values.LdapPassword
+	if values.LdapURI != "" {
+		Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapURI)
+		config.Ldap.URI = values.LdapURI
+	}
+
+	if values.LdapBindDn != "" {
+		Logger.Debugw("Setting LDAPBINDDN.", "source", "env", "value", values.LdapBindDn)
+		config.Ldap.BindDn = values.LdapBindDn
+	}
+
+	if values.LdapPassword != "" {
+		Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
+		config.Ldap.Password = values.LdapPassword
+	}
 
 	if config.ConfigFile == "" && values.ConfigFile != "" {
 		Logger.Debugw("Setting config file.", "source", "env", "path", values.ConfigFile)
@@ -178,29 +191,4 @@ func loadFlags() FlagValues {
 
 func ShowHelp() {
 	flag.Usage()
-}
-
-func ReadYaml(path string) (values interface{}, err error) {
-	fo, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	dec := yaml.NewDecoder(fo)
-	err = dec.Decode(&values)
-	return
-}
-
-func (config *Config) LoadYaml(values interface{}) (err error) {
-	var yamlMap map[string]interface{}
-	switch values.(type) {
-	case map[string]interface{}:
-		yamlMap = values.(map[string]interface{})
-	case []interface{}:
-		yamlMap = make(map[string]interface{})
-		yamlMap["sync_map"] = values.([]interface{})
-	default:
-		err = fmt.Errorf("Unhandled YAML document root: %v (%T)", values, values)
-		return
-	}
-	return
 }
