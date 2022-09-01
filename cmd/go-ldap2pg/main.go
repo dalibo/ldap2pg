@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"runtime"
 	"runtime/debug"
 
@@ -10,15 +10,30 @@ import (
 )
 
 func main() {
-	err := SetupLogging()
+	// Split error management from business logic. This allows defer to
+	// apply before calling os.Exit. Also, deduplicate fatal error logging.
+	// Simply return an error and main will handle this case.
+	err := run()
 	if err != nil {
-		log.Panicf("Failed to setup logging: %s", err)
+		if Logger != nil {
+			Logger.Fatal(err)
+		} else {
+			fmt.Fprintf(os.Stderr, "%s", err)
+		}
+		os.Exit(1)
+	}
+}
+
+func run() (err error) {
+	err = SetupLogging()
+	if err != nil {
+		return
 	}
 	defer Logger.Sync() //nolint:errcheck
 
 	config, err := LoadConfig()
 	if err != nil {
-		Logger.Panicw("Failed to load configuration.", "error", err)
+		return
 	}
 	switch config.Action {
 	case ShowHelpAction:
@@ -36,15 +51,16 @@ func main() {
 
 	err = LdapConnect(config)
 	if err != nil {
-		Logger.Fatal(err)
+		return
 	}
 
 	err = PostgresConnect(config)
 	if err != nil {
-		Logger.Fatal(err)
+		return
 	}
 
 	Logger.Info("Doing nothing yet.")
+	return
 }
 
 func showVersion() {
