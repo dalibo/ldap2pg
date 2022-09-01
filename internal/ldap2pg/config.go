@@ -14,14 +14,14 @@ import (
 )
 
 type Config struct {
-	Action   CommandAction
-	LogLevel zapcore.Level
-	Ldap     struct {
+	Action     CommandAction
+	ConfigFile string
+	LogLevel   zapcore.Level
+	Ldap       struct {
 		URI      string
 		BindDn   string
 		Password string
 	}
-	ConfigFile string
 }
 
 func LoadConfig() (config Config, err error) {
@@ -51,16 +51,20 @@ func LoadConfig() (config Config, err error) {
 	if config.ConfigFile == "" {
 		config.ConfigFile, err = config.FindConfigFile()
 		if err != nil {
-			return config, err
+			return
 		}
 	}
 
-	err = config.LoadYaml()
+	yamlValues, err := ReadYaml(config.ConfigFile)
 	if err != nil {
-		return config, err
+		return
+	}
+	err = config.LoadYaml(yamlValues)
+	if err != nil {
+		return
 	}
 
-	return config, nil
+	return
 }
 
 func (config *Config) FindConfigFile() (configpath string, err error) {
@@ -176,25 +180,27 @@ func ShowHelp() {
 	flag.Usage()
 }
 
-func (config *Config) LoadYaml() (err error) {
-	fo, err := os.Open(config.ConfigFile)
+func ReadYaml(path string) (values interface{}, err error) {
+	fo, err := os.Open(path)
 	if err != nil {
 		return
 	}
-	var y YamlConfig
 	dec := yaml.NewDecoder(fo)
-	err = dec.Decode(&y)
-	if err != nil {
-		return
-	}
-
-	switch y.(type) {
-	case map[string]interface{}:
-		Logger.Debugw("YAML is a map", "value", y)
-	case []interface{}:
-		Logger.Debugw("YAML is a list", "value", y)
-	}
+	err = dec.Decode(&values)
 	return
 }
 
-type YamlConfig interface{}
+func (config *Config) LoadYaml(values interface{}) (err error) {
+	var yamlMap map[string]interface{}
+	switch values.(type) {
+	case map[string]interface{}:
+		yamlMap = values.(map[string]interface{})
+	case []interface{}:
+		yamlMap = make(map[string]interface{})
+		yamlMap["sync_map"] = values.([]interface{})
+	default:
+		err = fmt.Errorf("Unhandled YAML document root: %v (%T)", values, values)
+		return
+	}
+	return
+}
