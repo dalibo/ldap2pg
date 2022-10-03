@@ -1,0 +1,10 @@
+linters:
+  enable:
+  - gofumpt
+  - goimports
+  - misspell
+  - revive
+
+linters-settings:
+  gofumpt:
+    extra-rules: true

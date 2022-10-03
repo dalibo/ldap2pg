@@ -3,11 +3,15 @@ import os
 import pytest
 
 
-def test_help():
-    from sh import ldap2pg
-
+@pytest.mark.go
+def test_help(ldap2pg):
     ldap2pg('-?')
     ldap2pg('--help')
+
+
+@pytest.mark.go
+def test_version(ldap2pg):
+    assert "ldap2pg" in ldap2pg("--version")
 
 
 def test_various_arguments():

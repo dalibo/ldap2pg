@@ -28,8 +28,13 @@ changelog:
 	python setup.py egg_info
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
-release: changelog
-	git commit setup.py docs/changelog.md -m "Version $(VERSION)"
+.PHONY: VERSION
+VERSION: internal/ldap2pg/VERSION
+internal/ldap2pg/VERSION: setup.py
+	echo -n "v$(VERSION).0" > $@
+
+release: changelog VERSION
+	git commit internal/ldap2pg/VERSION setup.py docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git
