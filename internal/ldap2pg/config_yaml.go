@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -12,10 +13,10 @@ import (
 func ReadYaml(path string) (values interface{}, err error) {
 	var fo io.ReadCloser
 	if path == "-" {
-		Logger.Infof("Reading configuration from standard input.")
+		log.Info("Reading configuration from standard input.")
 		fo = os.Stdin
 	} else {
-		Logger.Infof("Using %s.", path)
+		log.Infof("Using %s.", path)
 		fo, err = os.Open(path)
 		if err != nil {
 			return
@@ -72,7 +73,9 @@ func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
 	for k, v := range postgresMap {
 		switch k {
 		case "databases_query":
-			Logger.Debugw("Loading Postgres query.", "name", k)
+			log.
+				WithField("name", k).
+				Debug("Loading Postgres query.")
 			err = loadYamlQuery(v, &config.Postgres.DataBasesQuery)
 			if err != nil {
 				return

@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"runtime/debug"
 
+	log "github.com/sirupsen/logrus"
+
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg" //nolint:revive
 )
 
@@ -15,11 +17,7 @@ func main() {
 	// Simply return an error and main will handle this case.
 	err := run()
 	if err != nil {
-		if Logger != nil {
-			Logger.Fatal(err)
-		} else {
-			fmt.Fprintf(os.Stderr, "%s", err)
-		}
+		log.Fatal(err)
 		os.Exit(1)
 	}
 }
@@ -29,7 +27,6 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
-	defer Logger.Sync() //nolint:errcheck
 
 	config, err := LoadConfig()
 	if err != nil {
@@ -45,9 +42,15 @@ func run() (err error) {
 	case RunAction:
 	}
 
-	LogLevel.SetLevel(config.LogLevel)
-	Logger.Infow("Starting ldap2pg", "commit", ShortRevision, "version", Version, "runtime", runtime.Version())
-	Logger.Infow("Using YAML configuration file.", "path", config.ConfigFile)
+	log.SetLevel(config.LogLevel)
+	log.
+		WithField("commit", ShortRevision).
+		WithField("version", Version).
+		WithField("runtime", runtime.Version()).
+		Info("Starting ldap2pg")
+	log.
+		WithField("path", config.ConfigFile).
+		Info("Using YAML configuration file.")
 
 	err = LdapConnect(config)
 	if err != nil {
@@ -59,7 +62,7 @@ func run() (err error) {
 		return
 	}
 
-	Logger.Info("Doing nothing yet.")
+	log.Info("Doing nothing yet.")
 	return
 }
 
