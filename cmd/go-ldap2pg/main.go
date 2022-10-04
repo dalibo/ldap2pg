@@ -52,12 +52,12 @@ func run() (err error) {
 		WithField("path", config.ConfigFile).
 		Info("Using YAML configuration file.")
 
-	err = LdapConnect(config)
+	_, err = PostgresInspect(config)
 	if err != nil {
 		return
 	}
 
-	err = PostgresConnect(config)
+	err = LdapConnect(config)
 	if err != nil {
 		return
 	}
