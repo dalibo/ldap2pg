@@ -16,7 +16,6 @@ func ReadYaml(path string) (values interface{}, err error) {
 		log.Info("Reading configuration from standard input.")
 		fo = os.Stdin
 	} else {
-		log.Infof("Using %s.", path)
 		fo, err = os.Open(path)
 		if err != nil {
 			return
