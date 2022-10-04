@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 func PostgresConnect(config Config) error {
-	Logger.Infow("Connecting to PostgreSQL instance.")
+	log.Info("Connecting to PostgreSQL instance.")
 	ctx := context.Background()
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
@@ -21,6 +22,8 @@ func PostgresConnect(config Config) error {
 		return err
 	}
 
-	Logger.Debugw("Introspected PostgreSQL user.", "username", me)
+	log.
+		WithField("username", me).
+		Debug("Introspected PostgreSQL user.")
 	return nil
 }

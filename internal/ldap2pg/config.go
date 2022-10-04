@@ -8,14 +8,14 @@ import (
 	"path"
 
 	"github.com/kelseyhightower/envconfig"
+	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
-	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
 	Action     CommandAction
 	ConfigFile string
-	LogLevel   zapcore.Level
+	LogLevel   log.Level
 	Ldap       struct {
 		URI      string
 		BindDn   string
@@ -33,10 +33,10 @@ func LoadConfig() (config Config, err error) {
 	config = Config{
 		Action: RunAction,
 		// Default to current LogLevel.
-		LogLevel: LogLevel.Level(),
+		LogLevel: log.GetLevel(),
 	}
 
-	Logger.Debug("Loading Flag values.")
+	log.Debug("Loading Flag values.")
 	flagValues := loadFlags()
 	if flagValues.ShowHelp {
 		config.Action = ShowHelpAction
@@ -48,7 +48,7 @@ func LoadConfig() (config Config, err error) {
 	}
 	config.LoadFlags(flagValues)
 
-	Logger.Debug("Loading Environment values.")
+	log.Debug("Loading Environment values.")
 	var envValues EnvValues
 	envconfig.MustProcess("", &envValues)
 	config.LoadEnv(envValues)
@@ -73,7 +73,7 @@ func LoadConfig() (config Config, err error) {
 }
 
 func (config *Config) FindConfigFile() (configpath string, err error) {
-	Logger.Debugw("Searching configuration file in standard locations.")
+	log.Debug("Searching configuration file in standard locations.")
 	me, _ := user.Current()
 	candidates := []string{
 		"./ldap2pg.yml",
@@ -87,21 +87,28 @@ func (config *Config) FindConfigFile() (configpath string, err error) {
 	for _, candidate := range candidates {
 		_, err := os.Stat(candidate)
 		if err == nil {
-			Logger.Debugw("Found configuration file.", "path", candidate)
+			log.
+				WithField("path", candidate).
+				Debug("Found configuration file.")
 			return candidate, nil
 		}
-		Logger.Debugw("Ignoring configuration file.", "path", candidate, "error", err)
+		log.
+			WithField("path", candidate).
+			WithField("error", err).
+			Debug("Ignoring configuration file.")
 	}
 
 	return "", fmt.Errorf("No configuration file found")
 }
 
-var levels []zapcore.Level = []zapcore.Level{
-	zapcore.DebugLevel,
-	zapcore.InfoLevel,
-	zapcore.WarnLevel,
-	zapcore.ErrorLevel,
-	zapcore.FatalLevel,
+var levels []log.Level = []log.Level{
+	log.TraceLevel,
+	log.DebugLevel,
+	log.InfoLevel,
+	log.WarnLevel,
+	log.ErrorLevel,
+	log.FatalLevel,
+	log.PanicLevel,
 }
 
 func (config *Config) LoadFlags(values FlagValues) {
@@ -119,33 +126,50 @@ func (config *Config) LoadFlags(values FlagValues) {
 		levelIndex = int(math.Max(0, float64(levelIndex)))
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
 		config.LogLevel = levels[levelIndex]
-		Logger.Debugw("Setting log level.", "source", "flags", "level", config.LogLevel)
+		log.
+			WithField("source", "flags").
+			WithField("level", config.LogLevel.String()).
+			Debug("Setting log level.")
 	}
 
 	if values.ConfigFile != "" {
-		Logger.Debugw("Setting config file.", "source", "flags", "path", values.ConfigFile)
+		log.
+			WithField("source", "flags").
+			WithField("path", values.ConfigFile).
+			Debug("Setting config file.")
 		config.ConfigFile = values.ConfigFile
 	}
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
 	if values.LdapURI != "" {
-		Logger.Debugw("Setting LDAPURI.", "source", "env", "value", values.LdapURI)
+		log.
+			WithField("source", "env").
+			WithField("value", values.LdapURI).
+			Debug("Setting LDAPURI.")
 		config.Ldap.URI = values.LdapURI
 	}
 
 	if values.LdapBindDn != "" {
-		Logger.Debugw("Setting LDAPBINDDN.", "source", "env", "value", values.LdapBindDn)
+		log.
+			WithField("value", values.LdapBindDn).
+			WithField("source", "env").
+			Debug("Setting LDAPBINDDN.")
 		config.Ldap.BindDn = values.LdapBindDn
 	}
 
 	if values.LdapPassword != "" {
-		Logger.Debugw("Setting LDAPPASSWORD.", "source", "env")
+		log.
+			WithField("source", "env").
+			Debug("Setting LDAPPASSWORD.")
 		config.Ldap.Password = values.LdapPassword
 	}
 
 	if config.ConfigFile == "" && values.ConfigFile != "" {
-		Logger.Debugw("Setting config file.", "source", "env", "path", values.ConfigFile)
+		log.
+			WithField("source", "env").
+			WithField("path", values.ConfigFile).
+			Debug("Setting config file.")
 		config.ConfigFile = values.ConfigFile
 	}
 }
