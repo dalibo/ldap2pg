@@ -26,6 +26,7 @@ type Config struct {
 
 type PostgresQueries struct {
 	DatabasesQuery      Query
+	ManagedRolesQuery   Query
 	RolesBlacklistQuery Query
 }
 
@@ -36,8 +37,10 @@ func NewConfig() Config {
 		LogLevel: log.GetLevel(),
 		Postgres: PostgresQueries{
 			DatabasesQuery: Query{
-				Name:    "databases_query",
-				Default: nil,
+				Name: "databases_query",
+			},
+			ManagedRolesQuery: Query{
+				Name: "managed_roles_query",
 			},
 			RolesBlacklistQuery: Query{
 				Name: "roles_blacklist_query",

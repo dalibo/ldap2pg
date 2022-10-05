@@ -23,12 +23,15 @@ func (bl *Blacklist) Filter(items []Blacklistable) []Blacklistable {
 	return filteredItems
 }
 
-func (bl *Blacklist) Match(item Blacklistable) string {
-	key := item.BlacklistKey()
+func (bl *Blacklist) MatchString(item string) string {
 	for _, pattern := range *bl {
-		if fnmatch.Match(pattern, key, 0) {
+		if fnmatch.Match(pattern, item, 0) {
 			return pattern
 		}
 	}
 	return ""
+}
+
+func (bl *Blacklist) Match(item Blacklistable) string {
+	return bl.MatchString(item.BlacklistKey())
 }

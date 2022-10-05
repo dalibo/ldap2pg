@@ -71,6 +71,7 @@ func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
 
 	knownQueries := []*Query{
 		&config.Postgres.DatabasesQuery,
+		&config.Postgres.ManagedRolesQuery,
 		&config.Postgres.RolesBlacklistQuery,
 	}
 
