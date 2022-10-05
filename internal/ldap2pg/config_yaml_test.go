@@ -13,7 +13,7 @@ func (suite *ConfigSuite) TestLoadYamlNull() {
 	var values interface{}
 	yaml.Unmarshal([]byte(rawYaml), &values) //nolint:errcheck
 
-	config := ldap2pg.Config{}
+	config := ldap2pg.NewConfig()
 	err := config.LoadYaml(values)
 
 	r.NotNil(err)
@@ -29,10 +29,12 @@ func (suite *ConfigSuite) TestLoadDatabasesQuery() {
 	var values interface{}
 	yaml.Unmarshal([]byte(rawYaml), &values) //nolint:errcheck
 
-	config := ldap2pg.Config{}
+	config := ldap2pg.NewConfig()
+	r.Equal("databases_query", config.Postgres.DatabasesQuery.Name)
+
 	err := config.LoadYaml(values)
 
 	r.Nil(err)
-	configQuery := config.Postgres.DataBasesQuery.([]interface{})
+	configQuery := config.Postgres.DatabasesQuery.Value.([]interface{})
 	r.Equal("postgres", configQuery[0])
 }

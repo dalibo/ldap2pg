@@ -21,21 +21,34 @@ type Config struct {
 		BindDn   string
 		Password string
 	}
-	Postgres struct {
-		DataBasesQuery QueryOrRows
-	}
+	Postgres PostgresQueries
 }
 
-// Either an SQL string or a slice of static rows.
-type QueryOrRows interface{}
+type PostgresQueries struct {
+	DatabasesQuery      Query
+	RolesBlacklistQuery Query
+}
 
-func LoadConfig() (config Config, err error) {
-	config = Config{
+func NewConfig() Config {
+	return Config{
 		Action: RunAction,
 		// Default to current LogLevel.
 		LogLevel: log.GetLevel(),
+		Postgres: PostgresQueries{
+			DatabasesQuery: Query{
+				Name:    "databases_query",
+				Default: nil,
+			},
+			RolesBlacklistQuery: Query{
+				Name: "roles_blacklist_query",
+				// Inject Static value as returned by YAML
+				Default: []interface{}{"pg_*", "postgres"},
+			},
+		},
 	}
+}
 
+func (config *Config) Load() (err error) {
 	log.Debug("Loading Flag values.")
 	flagValues := loadFlags()
 	if flagValues.ShowHelp {
@@ -53,6 +66,7 @@ func LoadConfig() (config Config, err error) {
 	envconfig.MustProcess("", &envValues)
 	config.LoadEnv(envValues)
 
+	log.Debug("Loading YAML configuration.")
 	if config.ConfigFile == "" {
 		config.ConfigFile, err = config.FindConfigFile()
 		if err != nil {
@@ -68,6 +82,8 @@ func LoadConfig() (config Config, err error) {
 	if err != nil {
 		return
 	}
+
+	config.LoadDefaults()
 
 	return
 }
@@ -215,4 +231,9 @@ func loadFlags() FlagValues {
 
 func ShowHelp() {
 	flag.Usage()
+}
+
+func (config *Config) LoadDefaults() {
+	config.Postgres.DatabasesQuery.SetDefault()
+	config.Postgres.RolesBlacklistQuery.SetDefault()
 }

@@ -102,7 +102,7 @@ func (f *ConsoleFormatter) Format(entry *log.Entry) ([]byte, error) {
 	col = col + len(s)
 
 	// Pad to align logfmt.
-	pad := math.Max(4., float64(64-col))
+	pad := math.Max(1., float64(64-col))
 	fmt.Fprintf(b, "%-*s", int(pad), "")
 
 	// Write extra keys as logfmt.
