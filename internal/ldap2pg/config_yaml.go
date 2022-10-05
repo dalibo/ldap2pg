@@ -48,8 +48,11 @@ func ensureYamlMap(values interface{}) (yamlMap map[string]interface{}, err erro
 	case []interface{}:
 		yamlMap = make(map[string]interface{})
 		yamlMap["sync_map"] = values.([]interface{})
+	case nil:
+		err = fmt.Errorf("YAML is empty")
+		return
 	default:
-		err = fmt.Errorf("Unhandled YAML document root: %v (%T)", values, t)
+		err = fmt.Errorf("Bad YAML document root: %v (%T)", values, t)
 		return
 	}
 	return

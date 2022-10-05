@@ -48,7 +48,7 @@ func SetupLogging() (err error) {
 		}
 		level, err := log.ParseLevel(envlevel)
 		if err != nil {
-			return err
+			return fmt.Errorf("Bad LDAP2PG_VERBOSITY value: %s", envlevel)
 		}
 		log.SetLevel(level)
 	}

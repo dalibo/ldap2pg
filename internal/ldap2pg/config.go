@@ -71,9 +71,9 @@ func (config *Config) Load() (err error) {
 
 	log.Debug("Loading YAML configuration.")
 	if config.ConfigFile == "" {
-		config.ConfigFile, err = config.FindConfigFile()
-		if err != nil {
-			return
+		config.ConfigFile = config.FindConfigFile()
+		if config.ConfigFile == "" {
+			return fmt.Errorf("No configuration file found")
 		}
 	}
 
@@ -91,7 +91,7 @@ func (config *Config) Load() (err error) {
 	return
 }
 
-func (config *Config) FindConfigFile() (configpath string, err error) {
+func (config *Config) FindConfigFile() (configpath string) {
 	log.Debug("Searching configuration file in standard locations.")
 	me, _ := user.Current()
 	candidates := []string{
@@ -109,7 +109,7 @@ func (config *Config) FindConfigFile() (configpath string, err error) {
 			log.
 				WithField("path", candidate).
 				Debug("Found configuration file.")
-			return candidate, nil
+			return candidate
 		}
 		log.
 			WithField("path", candidate).
@@ -117,7 +117,7 @@ func (config *Config) FindConfigFile() (configpath string, err error) {
 			Debug("Ignoring configuration file.")
 	}
 
-	return "", fmt.Errorf("No configuration file found")
+	return ""
 }
 
 var levels []log.Level = []log.Level{
