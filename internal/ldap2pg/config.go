@@ -16,6 +16,7 @@ type Config struct {
 	Action     CommandAction
 	ConfigFile string
 	LogLevel   log.Level
+	Version    int
 	Ldap       struct {
 		URI      string
 		BindDn   string
@@ -26,6 +27,7 @@ type Config struct {
 
 type PostgresQueries struct {
 	DatabasesQuery      Query
+	ManagedRolesQuery   Query
 	RolesBlacklistQuery Query
 }
 
@@ -36,8 +38,10 @@ func NewConfig() Config {
 		LogLevel: log.GetLevel(),
 		Postgres: PostgresQueries{
 			DatabasesQuery: Query{
-				Name:    "databases_query",
-				Default: nil,
+				Name: "databases_query",
+			},
+			ManagedRolesQuery: Query{
+				Name: "managed_roles_query",
 			},
 			RolesBlacklistQuery: Query{
 				Name: "roles_blacklist_query",
@@ -68,9 +72,9 @@ func (config *Config) Load() (err error) {
 
 	log.Debug("Loading YAML configuration.")
 	if config.ConfigFile == "" {
-		config.ConfigFile, err = config.FindConfigFile()
-		if err != nil {
-			return
+		config.ConfigFile = config.FindConfigFile()
+		if config.ConfigFile == "" {
+			return fmt.Errorf("No configuration file found")
 		}
 	}
 
@@ -88,7 +92,7 @@ func (config *Config) Load() (err error) {
 	return
 }
 
-func (config *Config) FindConfigFile() (configpath string, err error) {
+func (config *Config) FindConfigFile() (configpath string) {
 	log.Debug("Searching configuration file in standard locations.")
 	me, _ := user.Current()
 	candidates := []string{
@@ -106,7 +110,7 @@ func (config *Config) FindConfigFile() (configpath string, err error) {
 			log.
 				WithField("path", candidate).
 				Debug("Found configuration file.")
-			return candidate, nil
+			return candidate
 		}
 		log.
 			WithField("path", candidate).
@@ -114,7 +118,7 @@ func (config *Config) FindConfigFile() (configpath string, err error) {
 			Debug("Ignoring configuration file.")
 	}
 
-	return "", fmt.Errorf("No configuration file found")
+	return ""
 }
 
 var levels []log.Level = []log.Level{

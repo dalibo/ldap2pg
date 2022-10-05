@@ -12,6 +12,7 @@ import (
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
 	AllRoles       []Role
+	ManagedRoles   []string
 	RoleColumns    []string
 	RolesBlacklist Blacklist
 }
@@ -87,5 +88,35 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	}
 
 	instance.AllRoles = roles
+	err = instance.InspectManagedRoles(config, pgconn)
 	return
+}
+
+func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx.Conn) error {
+	if nil == config.Postgres.ManagedRolesQuery.Value {
+		for _, role := range instance.AllRoles {
+			instance.ManagedRoles = append(instance.ManagedRoles, role.Name)
+		}
+	} else {
+		names, err := RunQuery(config.Postgres.ManagedRolesQuery, pgconn, RowToString, YamlToString)
+		if err != nil {
+			return err
+		}
+		for _, name := range names {
+			match := instance.RolesBlacklist.MatchString(name)
+			if "" == match {
+				log.
+					WithField("name", name).
+					Debug("Managing Postgres role.")
+				instance.ManagedRoles = append(instance.ManagedRoles, name)
+			} else {
+				log.
+					WithField("name", name).
+					WithField("pattern", match).
+					Warning("Managed role is blacklisted.")
+			}
+
+		}
+	}
+	return nil
 }

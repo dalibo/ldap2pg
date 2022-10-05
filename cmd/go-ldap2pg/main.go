@@ -17,7 +17,7 @@ func main() {
 	// Simply return an error and main will handle this case.
 	err := run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%s.", err)
 		os.Exit(1)
 	}
 }
@@ -25,6 +25,7 @@ func main() {
 func run() (err error) {
 	err = SetupLogging()
 	if err != nil {
+		log.Error("Failed to bootstrap logging.")
 		return
 	}
 
@@ -51,6 +52,7 @@ func run() (err error) {
 		Info("Starting ldap2pg")
 	log.
 		WithField("path", config.ConfigFile).
+		WithField("version", config.Version).
 		Info("Using YAML configuration file.")
 
 	_, err = PostgresInspect(config)
