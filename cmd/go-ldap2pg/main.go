@@ -28,7 +28,8 @@ func run() (err error) {
 		return
 	}
 
-	config, err := LoadConfig()
+	config := NewConfig()
+	err = config.Load()
 	if err != nil {
 		return
 	}

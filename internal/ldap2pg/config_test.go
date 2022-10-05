@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/dalibo/ldap2pg/internal/ldap2pg"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,5 +27,6 @@ func (suite *ConfigSuite) TestLoadEnvDoesNotOverwriteConfigFile() {
 }
 
 func TestConfig(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	suite.Run(t, new(ConfigSuite))
 }

@@ -69,27 +69,20 @@ func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
 		return
 	}
 
-	for k, v := range postgresMap {
-		switch k {
-		case "databases_query":
-			log.
-				WithField("name", k).
-				Debug("Loading Postgres query.")
-			err = loadYamlQuery(v, &config.Postgres.DataBasesQuery)
-			if err != nil {
-				return
-			}
-		}
+	knownQueries := []*Query{
+		&config.Postgres.DatabasesQuery,
+		&config.Postgres.RolesBlacklistQuery,
 	}
-	return
-}
 
-func loadYamlQuery(value interface{}, dest *QueryOrRows) (err error) {
-	switch t := value.(type) {
-	case []interface{}, string:
-		*dest = value
-	default:
-		err = fmt.Errorf("Query must be either string ar list. Got %s (%T)", value, t)
+	for _, q := range knownQueries {
+		value, ok := postgresMap[q.Name]
+		if !ok {
+			continue
+		}
+		log.
+			WithField("name", q.Name).
+			Debug("Loading Postgres query from YAML.")
+		q.Value = value
 	}
 	return
 }

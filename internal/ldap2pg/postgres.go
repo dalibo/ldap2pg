@@ -33,6 +33,12 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	}
 	defer pgconn.Close(ctx)
 
+	patterns, err := RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, RowToString, YamlToString)
+	if err != nil {
+		return
+	}
+	instance.RolesBlacklist = Blacklist(patterns)
+
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
 	if err != nil {
 		log.Error("Failed to query role columns.")
@@ -54,7 +60,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		log.Error("Failed to query role columns.")
 		return
 	}
-	roles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role Role, err error) {
+	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role Role, err error) {
 		role, err = NewRoleFromRow(row, instance.RoleColumns)
 		return
 	})
@@ -63,11 +69,21 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	}
 
-	for _, role := range roles {
-		log.
-			WithField("name", role.Name).
-			WithField("super", role.Super).
-			Debug("Found role in Postgres instance.")
+	var roles []Role
+	for _, role := range unfilteredRoles {
+		match := instance.RolesBlacklist.Match(&role)
+		if match == "" {
+			roles = append(roles, role)
+			log.
+				WithField("name", role.Name).
+				WithField("super", role.Super).
+				Debug("Found role in Postgres instance.")
+		} else {
+			log.
+				WithField("name", role.Name).
+				WithField("pattern", match).
+				Debug("Role name blacklisted. Ignoring.")
+		}
 	}
 
 	instance.AllRoles = roles

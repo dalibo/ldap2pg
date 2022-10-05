@@ -59,3 +59,7 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 func (r *Role) String() string {
 	return r.Name
 }
+
+func (r *Role) BlacklistKey() string {
+	return r.Name
+}
