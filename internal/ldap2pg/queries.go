@@ -56,7 +56,7 @@ func (q *Query) SetDefault() {
 	if nil == q.Value {
 		log.
 			WithField("query", q).
-			Debug("Loading default query.")
+			Debug("Loading Postgres query from default.")
 		q.Value = q.Default
 	}
 }

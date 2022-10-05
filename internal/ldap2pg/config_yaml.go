@@ -80,7 +80,7 @@ func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
 			continue
 		}
 		log.
-			WithField("name", q.Name).
+			WithField("query", q.Name).
 			Debug("Loading Postgres query from YAML.")
 		q.Value = value
 	}
