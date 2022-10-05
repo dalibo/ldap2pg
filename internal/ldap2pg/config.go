@@ -16,6 +16,7 @@ type Config struct {
 	Action     CommandAction
 	ConfigFile string
 	LogLevel   log.Level
+	Version    int
 	Ldap       struct {
 		URI      string
 		BindDn   string

@@ -52,6 +52,7 @@ func run() (err error) {
 		Info("Starting ldap2pg")
 	log.
 		WithField("path", config.ConfigFile).
+		WithField("version", config.Version).
 		Info("Using YAML configuration file.")
 
 	_, err = PostgresInspect(config)

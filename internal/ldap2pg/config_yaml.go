@@ -34,9 +34,34 @@ func (config *Config) LoadYaml(values interface{}) (err error) {
 		return
 	}
 
+	err = config.checkVersion(yamlMap)
+	if err != nil {
+		return
+	}
+
 	postgres, found := yamlMap["postgres"]
 	if found {
 		err = config.loadYamlPostgres(postgres)
+	}
+	return
+}
+
+func (config *Config) checkVersion(yamlMap map[string]interface{}) (err error) {
+	version, ok := yamlMap["version"]
+	if !ok {
+		version = 5
+	}
+
+	switch version.(type) {
+	case int:
+		if version != 5 {
+			err = fmt.Errorf("Unsupported configuration version %v", version)
+		} else {
+			config.Version = version.(int)
+		}
+
+	default:
+		err = fmt.Errorf("Bad version number: %v", version)
 	}
 	return
 }
