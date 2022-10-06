@@ -80,3 +80,54 @@ func (suite *TestSuite) TestNormalizeAliasConflict() {
 	r.Equal("roles", conflict.Key)
 	r.Equal("role", conflict.Conflict)
 }
+
+func (suite *TestSuite) TestNormalizeRoleRuleString() {
+	r := suite.Require()
+
+	value, err := ldap2pg.NormalizeRoleRule("alice")
+	r.Nil(err)
+
+	names, ok := value["names"].([]string)
+	r.True(ok)
+	r.Equal(1, len(names))
+	r.Equal("alice", names[0])
+}
+
+func (suite *TestSuite) TestNormalizeRoleRuleSingle() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	name: alice
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	value, err := ldap2pg.NormalizeRoleRule(raw)
+	r.Nil(err)
+
+	rawNames, ok := value["names"]
+	r.True(ok)
+	names := rawNames.([]string)
+	r.Equal(1, len(names))
+	r.Equal("alice", names[0])
+}
+
+func (suite *TestSuite) TestNormalizeRoleComment() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	name: alice
+	comment: single
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	value, err := ldap2pg.NormalizeRoleRule(raw)
+	r.Nil(err)
+
+	rawComments, ok := value["comments"]
+	r.True(ok, "raw_value=%v", value)
+	comments := rawComments.([]string)
+	r.Len(comments, 1)
+	r.Equal("single", comments[0])
+}
