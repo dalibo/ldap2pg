@@ -154,3 +154,21 @@ func (suite *TestSuite) TestNormalizeSyncItem() {
 	roles := untypedRoles.([]interface{})
 	r.Len(roles, 1)
 }
+
+func (suite *TestSuite) TestNormalizeSyncMap() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	- description: Desc0
+	  role: alice
+	- description: Desc1
+	  roles:
+	  - bob
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	value, err := ldap2pg.NormalizeSyncMap(raw)
+	r.Nil(err)
+	r.Len(value, 2)
+}

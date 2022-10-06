@@ -159,3 +159,19 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	}
 	return
 }
+
+func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
+	rawItems, ok := yaml.([]interface{})
+	if !ok {
+		err = errors.New("Bad sync_map format")
+	}
+	for _, rawItem := range rawItems {
+		var item interface{}
+		item, err = NormalizeSyncItem(rawItem)
+		if err != nil {
+			return
+		}
+		syncMap = append(syncMap, item)
+	}
+	return
+}
