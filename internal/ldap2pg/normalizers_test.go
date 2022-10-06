@@ -172,3 +172,23 @@ func (suite *TestSuite) TestNormalizeSyncMap() {
 	r.Nil(err)
 	r.Len(value, 2)
 }
+
+func (suite *TestSuite) TestNormalizeConfig() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	sync_map:
+	- description: Desc0
+	  role: alice
+	- description: Desc1
+	  roles:
+	  - bob
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	config, err := ldap2pg.NormalizeConfigRoot(raw)
+	r.Nil(err)
+	syncMap := config["sync_map"].([]interface{})
+	r.Len(syncMap, 2)
+}

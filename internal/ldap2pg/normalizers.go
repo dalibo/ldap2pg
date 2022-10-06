@@ -175,3 +175,23 @@ func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
 	}
 	return
 }
+
+func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
+	config, ok := yaml.(map[string]interface{})
+	if !ok {
+		err = errors.New("Bad configuration format")
+		return
+	}
+
+	rawSyncMap, ok := config["sync_map"]
+	if !ok {
+		err = errors.New("Missing sync_map")
+		return
+	}
+	syncMap, err := NormalizeSyncMap(rawSyncMap)
+	if err != nil {
+		return
+	}
+	config["sync_map"] = syncMap
+	return
+}
