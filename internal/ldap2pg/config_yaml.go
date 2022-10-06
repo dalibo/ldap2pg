@@ -1,6 +1,7 @@
 package ldap2pg
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,62 +29,48 @@ func ReadYaml(path string) (values interface{}, err error) {
 }
 
 // Fill configuration from YAML data.
-func (config *Config) LoadYaml(values interface{}) (err error) {
-	yamlMap, err := ensureYamlMap(values)
+func (config *Config) LoadYaml(yaml interface{}) (err error) {
+	root, err := NormalizeConfigRoot(yaml)
 	if err != nil {
 		return
 	}
 
-	err = config.checkVersion(yamlMap)
+	err = config.LoadVersion(root)
 	if err != nil {
 		return
 	}
+	if config.Version != 5 {
+		err = errors.New("Unsupported configuration version")
+		return
+	}
 
-	postgres, found := yamlMap["postgres"]
+	postgres, found := root["postgres"]
 	if found {
-		err = config.loadYamlPostgres(postgres)
+		err = config.LoadYamlPostgres(postgres)
+		if err != nil {
+			return
+		}
 	}
+
+	syncMap := root["sync_map"]
+	err = config.LoadYamlSyncMap(syncMap.([]interface{}))
 	return
 }
 
-func (config *Config) checkVersion(yamlMap map[string]interface{}) (err error) {
-	version, ok := yamlMap["version"]
+func (config *Config) LoadVersion(yaml map[string]interface{}) (err error) {
+	version, ok := yaml["version"]
 	if !ok {
 		version = 5
 	}
-
-	switch version.(type) {
-	case int:
-		if version != 5 {
-			err = fmt.Errorf("Unsupported configuration version %v", version)
-		} else {
-			config.Version = version.(int)
-		}
-
-	default:
-		err = fmt.Errorf("Bad version number: %v", version)
-	}
-	return
-}
-
-func ensureYamlMap(values interface{}) (yamlMap map[string]interface{}, err error) {
-	switch t := values.(type) {
-	case map[string]interface{}:
-		yamlMap = values.(map[string]interface{})
-	case []interface{}:
-		yamlMap = make(map[string]interface{})
-		yamlMap["sync_map"] = values.([]interface{})
-	case nil:
-		err = fmt.Errorf("YAML is empty")
-		return
-	default:
-		err = fmt.Errorf("Bad YAML document root: %v (%T)", values, t)
+	config.Version, ok = version.(int)
+	if !ok {
+		err = errors.New("Configuration version must be integer")
 		return
 	}
 	return
 }
 
-func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
+func (config *Config) LoadYamlPostgres(postgres interface{}) (err error) {
 	var postgresMap map[string]interface{}
 
 	switch t := postgres.(type) {
@@ -112,6 +99,18 @@ func (config *Config) loadYamlPostgres(postgres interface{}) (err error) {
 			WithField("query", q.Name).
 			Debug("Loading Postgres query from YAML.")
 		q.Value = value
+	}
+	return
+}
+
+func (config *Config) LoadYamlSyncMap(yaml []interface{}) (err error) {
+	for _, iItem := range yaml {
+		var item SyncItem
+		err = item.LoadYaml(iItem.(map[string]interface{}))
+		if err != nil {
+			return
+		}
+		config.SyncMap = append(config.SyncMap, item)
 	}
 	return
 }

@@ -23,8 +23,7 @@ func (suite *ConfigSuite) TestLoadDatabasesQuery() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
-	postgres:
-	  databases_query: [postgres]
+	databases_query: [postgres]
 	`)
 	var values interface{}
 	yaml.Unmarshal([]byte(rawYaml), &values) //nolint:errcheck
@@ -32,7 +31,7 @@ func (suite *ConfigSuite) TestLoadDatabasesQuery() {
 	config := ldap2pg.NewConfig()
 	r.Equal("databases_query", config.Postgres.DatabasesQuery.Name)
 
-	err := config.LoadYaml(values)
+	err := config.LoadYamlPostgres(values)
 
 	r.Nil(err)
 	configQuery := config.Postgres.DatabasesQuery.Value.([]interface{})

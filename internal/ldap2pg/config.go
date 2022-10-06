@@ -23,6 +23,7 @@ type Config struct {
 		Password string
 	}
 	Postgres PostgresQueries
+	SyncMap  []SyncItem
 }
 
 type PostgresQueries struct {
