@@ -1,10 +1,7 @@
 package ldap2pg_test
 
 import (
-	"testing"
-
 	"github.com/dalibo/ldap2pg/internal/ldap2pg"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,9 +21,4 @@ func (suite *ConfigSuite) TestLoadEnvDoesNotOverwriteConfigFile() {
 	config.LoadEnv(values)
 
 	r.Equal(config.ConfigFile, "defined-ldap2pg.yaml")
-}
-
-func TestConfig(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	suite.Run(t, new(ConfigSuite))
 }
