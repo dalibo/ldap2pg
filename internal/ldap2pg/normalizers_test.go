@@ -131,3 +131,26 @@ func (suite *TestSuite) TestNormalizeRoleComment() {
 	r.Len(comments, 1)
 	r.Equal("single", comments[0])
 }
+
+func (suite *TestSuite) TestNormalizeSyncItem() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	description: Desc
+	role: alice
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	value, err := ldap2pg.NormalizeSyncItem(raw)
+	r.Nil(err)
+
+	_, exists := value["role"]
+	r.False(exists, "role key must be renamed to roles")
+
+	untypedRoles, exists := value["roles"]
+	r.True(exists, "role key must be renamed to roles")
+
+	roles := untypedRoles.([]interface{})
+	r.Len(roles, 1)
+}

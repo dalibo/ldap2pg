@@ -109,3 +109,53 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 	}
 	return
 }
+
+func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
+	item, ok := yaml.(map[string]interface{})
+	if !ok {
+		err = errors.New("Invalid sync item format")
+		return
+	}
+
+	descYaml, ok := item["description"]
+	if ok {
+		_, ok := descYaml.(string)
+		if !ok {
+			err = errors.New("Sync map item description must be string")
+			return
+		}
+	}
+	err = NormalizeAlias(&item, "roles", "role")
+	if err != nil {
+		return
+	}
+	rawList, exists := item["roles"]
+	if exists {
+		list := NormalizeList(rawList)
+		rules := []interface{}{}
+		for _, rawRule := range list {
+			var rule map[string]interface{}
+			rule, err = NormalizeRoleRule(rawRule)
+			if err != nil {
+				return
+			}
+			rules = append(rules, rule)
+		}
+		item["roles"] = rules
+	}
+
+	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	if err != nil {
+		return
+	}
+	iLdapSearch, exists := item["ldapsearch"]
+	if exists {
+		ldapSearch, ok := iLdapSearch.(map[string]interface{})
+		if !ok {
+			err = errors.New("Invalid ldapsearch format")
+			return
+		}
+		item["ldapsearch"] = ldapSearch
+	}
+	return
+}
