@@ -1,8 +1,38 @@
+// Functions to normalize YAML input before processing into data structure.
 package ldap2pg
 
 import (
 	"errors"
 )
+
+type KeyConflict struct {
+	Key      string
+	Conflict string
+}
+
+func (err *KeyConflict) Error() string {
+	return "YAML alias conflict"
+}
+
+func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error) {
+	value, hasAlias := (*yaml)[alias]
+	if !hasAlias {
+		return
+	}
+
+	_, hasKey := (*yaml)[key]
+	if hasKey {
+		err = &KeyConflict{
+			Key:      key,
+			Conflict: alias,
+		}
+		return
+	}
+
+	delete(*yaml, alias)
+	(*yaml)[key] = value
+	return
+}
 
 func NormalizeList(yaml interface{}) (list []interface{}) {
 	list, ok := yaml.([]interface{})
