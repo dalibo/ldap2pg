@@ -1,6 +1,17 @@
 // Logic to describe wanted state from YAML and LDAP
 package ldap2pg
 
+import (
+	"errors"
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+)
+
+type WantedState struct {
+	Roles RoleSet
+}
+
 type SyncItem struct {
 	Description string
 	LdapSearch  interface{}
@@ -37,4 +48,64 @@ func (item *SyncItem) LoadYaml(yaml map[string]interface{}) (err error) {
 func (rule *RoleRule) LoadYaml(yaml map[string]interface{}) {
 	rule.Names = yaml["names"].([]string)
 	rule.Comments = yaml["comments"].([]string)
+}
+
+func (rule *RoleRule) Generate() (roles []Role, err error) {
+	commentsLen := len(rule.Comments)
+	switch commentsLen {
+	case 0:
+		rule.Comments = []string{"Managed by ldap2pg"}
+		commentsLen = 1
+	case 1: // Copy same comment for all roles.
+	default:
+		if commentsLen != len(rule.Names) {
+			err = errors.New("Comment list inconsistent with generated names")
+			return
+		}
+	}
+
+	for i, name := range rule.Names {
+		role := Role{Name: name}
+		if 1 == commentsLen {
+			role.Comment = rule.Comments[0]
+		} else {
+			role.Comment = rule.Comments[i]
+		}
+		roles = append(roles, role)
+	}
+	return
+}
+
+func ComputeWanted(config Config) (wanted WantedState, err error) {
+	wanted.Roles = make(map[string]Role)
+	for _, item := range config.SyncMap {
+		if item.LdapSearch != nil {
+			log.
+				WithField("description", item.Description).
+				Debug("Skipping LDAP search for now.")
+			continue
+		}
+		if item.Description != "" {
+			log.Info(item.Description)
+		}
+
+		for _, rule := range item.RoleRules {
+			var roles []Role
+			roles, err = rule.Generate()
+			if err != nil {
+				return
+			}
+
+			for _, role := range roles {
+				_, exists := wanted.Roles[role.Name]
+				if exists {
+					err = fmt.Errorf("Duplicated role %s", role.Name)
+					return
+				}
+				log.WithField("name", role.Name).Debug("Wants role.")
+				wanted.Roles[role.Name] = role
+			}
+		}
+	}
+	return
 }

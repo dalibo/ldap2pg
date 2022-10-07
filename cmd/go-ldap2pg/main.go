@@ -60,7 +60,7 @@ func run() (err error) {
 		return
 	}
 
-	err = LdapConnect(config)
+	_, err = ComputeWanted(config)
 	if err != nil {
 		return
 	}
