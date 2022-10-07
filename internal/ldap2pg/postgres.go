@@ -77,7 +77,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 			instance.AllRoles[role.Name] = role
 			log.
 				WithField("name", role.Name).
-				WithField("super", role.Super).
+				WithField("super", role.Options.Super).
 				Debug("Found role in Postgres instance.")
 		} else {
 			log.
