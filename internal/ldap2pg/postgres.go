@@ -11,8 +11,8 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	AllRoles       []Role
-	ManagedRoles   []string
+	AllRoles       RoleSet
+	ManagedRoles   RoleSet
 	RoleColumns    []string
 	RolesBlacklist Blacklist
 }
@@ -70,14 +70,14 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	}
 
-	var roles []Role
+	instance.AllRoles = make(RoleSet)
 	for _, role := range unfilteredRoles {
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
-			roles = append(roles, role)
+			instance.AllRoles[role.Name] = role
 			log.
 				WithField("name", role.Name).
-				WithField("super", role.Super).
+				WithField("super", role.Options.Super).
 				Debug("Found role in Postgres instance.")
 		} else {
 			log.
@@ -87,17 +87,15 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		}
 	}
 
-	instance.AllRoles = roles
 	err = instance.InspectManagedRoles(config, pgconn)
 	return
 }
 
 func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx.Conn) error {
 	if nil == config.Postgres.ManagedRolesQuery.Value {
-		for _, role := range instance.AllRoles {
-			instance.ManagedRoles = append(instance.ManagedRoles, role.Name)
-		}
+		instance.ManagedRoles = instance.AllRoles
 	} else {
+		instance.ManagedRoles = make(RoleSet)
 		names, err := RunQuery(config.Postgres.ManagedRolesQuery, pgconn, RowToString, YamlToString)
 		if err != nil {
 			return err
@@ -105,10 +103,10 @@ func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx
 		for _, name := range names {
 			match := instance.RolesBlacklist.MatchString(name)
 			if "" == match {
+				instance.ManagedRoles[name] = instance.AllRoles[name]
 				log.
 					WithField("name", name).
 					Debug("Managing Postgres role.")
-				instance.ManagedRoles = append(instance.ManagedRoles, name)
 			} else {
 				log.
 					WithField("name", name).

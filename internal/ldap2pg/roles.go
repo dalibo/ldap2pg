@@ -7,9 +7,13 @@ import (
 )
 
 type Role struct {
-	Name        string
-	Comment     string
-	Parents     []string
+	Name    string
+	Comment string
+	Parents []string
+	Options RoleOptions
+}
+
+type RoleOptions struct {
 	Super       bool
 	Inherit     bool
 	CreateRole  bool
@@ -38,19 +42,19 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 		case "rolname":
 			role.Name = value.(string)
 		case "rolbypassrls":
-			role.ByPassRLS = value.(bool)
+			role.Options.ByPassRLS = value.(bool)
 		case "rolcanlogin":
-			role.CanLogin = value.(bool)
+			role.Options.CanLogin = value.(bool)
 		case "rolconnlimit":
-			role.ConnLimit = int(value.(int32))
+			role.Options.ConnLimit = int(value.(int32))
 		case "rolcreatedb":
-			role.CreateDB = value.(bool)
+			role.Options.CreateDB = value.(bool)
 		case "rolcreaterole":
-			role.CreateRole = value.(bool)
+			role.Options.CreateRole = value.(bool)
 		case "rolreplication":
-			role.Replication = value.(bool)
+			role.Options.Replication = value.(bool)
 		case "rolsuper":
-			role.Super = value.(bool)
+			role.Options.Super = value.(bool)
 		}
 	}
 	return
