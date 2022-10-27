@@ -641,7 +641,7 @@ class Configuration(dict):
                 },
                 'verbose': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(asctime)s %(name)-20s %levelname)5.5s: %(message)s',
+                    'format': '%(asctime)s %(name)-20s %(levelname)5.5s: %(message)s',
                 },
             },
             'handlers': {
