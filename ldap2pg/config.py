@@ -539,7 +539,8 @@ class Configuration(dict):
             self['color'] = args.color
         dictConfig(self.logging_dict())
 
-        logger.info("Starting ldap2pg %s at %s.", __version__, datetime.now().isoformat(sep=' ', timespec='seconds'))
+        logger.info("Starting ldap2pg %s at %s.", __version__,
+                    datetime.now().isoformat(sep=' ', timespec='seconds'))
 
         # File loading.
         filename, mode = self.find_filename(os.environ, args)
@@ -637,11 +638,11 @@ class Configuration(dict):
             'formatters': {
                 'info': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(asctime)s %(levelname)5.5s: %(message)s',
+                    'format': '%(asctime)s %(levelname)s:  %(message)s',
                 },
                 'verbose': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(asctime)s %(name)-20s %(levelname)5.5s: %(message)s',
+                    'format': '%(asctime)s %(levelname)s:  %(name)s: %(message)s',
                 },
             },
             'handlers': {
