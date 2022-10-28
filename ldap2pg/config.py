@@ -540,7 +540,7 @@ class Configuration(dict):
         dictConfig(self.logging_dict())
 
         logger.info("Starting ldap2pg %s at %s.", __version__,
-                    datetime.now().isoformat(sep=' ', timespec='seconds'))
+                    datetime.now().replace(microsecond=0).isoformat(sep=' '))
 
         # File loading.
         filename, mode = self.find_filename(os.environ, args)
