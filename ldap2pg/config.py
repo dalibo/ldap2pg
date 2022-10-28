@@ -638,11 +638,13 @@ class Configuration(dict):
             'formatters': {
                 'info': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(asctime)s %(levelname)s:  %(message)s',
+                    'format':
+                        '%(asctime)s %(levelname)s:  %(message)s',
                 },
                 'verbose': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(asctime)s %(levelname)s:  %(name)s: %(message)s',
+                    'format':
+                        '%(asctime)s %(levelname)s:  %(name)s: %(message)s',
                 },
             },
             'handlers': {
