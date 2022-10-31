@@ -22,6 +22,7 @@ import ldap
 import psycopg2
 import yaml
 from pkg_resources import get_distribution
+from datetime import datetime
 
 from .privilege import Privilege
 from .privilege import process_definitions as process_privileges
@@ -538,7 +539,8 @@ class Configuration(dict):
             self['color'] = args.color
         dictConfig(self.logging_dict())
 
-        logger.info("Starting ldap2pg %s.", __version__)
+        logger.info("Starting ldap2pg %s at %s.", __version__,
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # File loading.
         filename, mode = self.find_filename(os.environ, args)
@@ -636,11 +638,13 @@ class Configuration(dict):
             'formatters': {
                 'info': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '%(message)s',
+                    'format':
+                        '%(asctime)s %(levelname)s:  %(message)s',
                 },
                 'verbose': {
                     '()': __name__ + '.MultilineFormatter',
-                    'format': '[%(name)-20s %(levelname)5.5s] %(message)s',
+                    'format':
+                        '%(asctime)s %(levelname)s:  %(name)s: %(message)s',
                 },
             },
             'handlers': {
