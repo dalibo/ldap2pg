@@ -40,7 +40,7 @@ shared_queries = dict(
       FROM pg_catalog.pg_default_acl
     )
     SELECT
-      priv || '_on_' || objtype AS key,
+      CONCAT(priv, '_on_', objtype) AS key,
       nspname,
       COALESCE(rolname, 'public') AS rolname,
       TRUE AS full,
