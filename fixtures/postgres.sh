@@ -44,7 +44,7 @@ for d in template1 postgres ; do
 		|| ' FOR ROLE "' ||  pg_get_userbyid(defaclrole) || '"'
 		|| ' IN SCHEMA "' || nspname || '"'
 		|| ' REVOKE ' || (aclexplode(defaclacl)).privilege_type || ''
-		|| ' ON ' || COALESCE(typename, defaclobjtype)
+		|| ' ON ' || COALESCE(typename, defaclobjtype::TEXT)
 		|| ' FROM "' || pg_get_userbyid((aclexplode(defaclacl)).grantee) || '"'
 		|| ';' AS "sql"
 	FROM pg_catalog.pg_default_acl
