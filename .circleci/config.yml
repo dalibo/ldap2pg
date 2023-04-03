@@ -24,7 +24,7 @@ workflows:
           parameters:
             dist: [rockylinux8, centos7, centos6]
     - func:
-        name: "stage1-func-rockylinux8-pg14"
+        name: "stage1-func-rockylinux8-pg15"
         requires: [stage0-pkg-rockylinux8]
         dist: rockylinux8
         pgversion: "14"
