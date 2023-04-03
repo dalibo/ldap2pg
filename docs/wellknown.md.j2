@@ -74,7 +74,8 @@ Here we go.
 {% for name in groups|sort %}
 
 
-### Group `{{ name }}`  { #{{ name|slugify }} data-toc-label='{{ name|escape_markdown }}' }
+{# Escape _ as HTML entity because RTD bugs on this. See #440 #}
+### Group `{{ name }}`  { #{{ name|slugify }} data-toc-label="{{ name | replace('_', '&#95;') }}" }
 
 Includes:
 
@@ -102,7 +103,7 @@ statement.
 {% for name in privileges|sort %}
 
 
-### Privilege `{{ name }}`  { #{{ name|slugify }} data-toc-label='{{ name|escape_markdown }}' }
+### Privilege `{{ name }}`  { #{{ name|slugify }} data-toc-label="{{ name | replace('_', '&#95;') }}" }
 
 ``` SQL
 {{ privileges[name].grant|trim }}
