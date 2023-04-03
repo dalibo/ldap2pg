@@ -76,6 +76,8 @@ Here we go.
 
 ### Group `{{ name }}`  { #{{ name|slugify }} data-toc-label='{{ name|escape_markdown }}' }
 
+Includes:
+
 {% for child in aliases[name]|sort %}
 - [`{{ child }}`](#{{ child|slugify }})
 {% endfor %}
