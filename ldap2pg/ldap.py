@@ -320,7 +320,7 @@ def connect(**kw):
         elif 'GSSAPI' == mech:
             auth = sasl.gssapi(options.get('SASL_AUTHZID'))
         else:
-            raise UserError("Unmanaged SASL mech %s.", mech)
+            raise UserError("Unmanaged SASL mech %s." % mech)
 
         conn.sasl_interactive_bind_s("", auth)
 
