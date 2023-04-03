@@ -4,6 +4,6 @@ flake8
 pytest
 pytest-cov
 pytest-mock
-pyyaml==3.10  # From CentOS7
+pyyaml==3.10; python_version < '3.11'  # From CentOS7
 psycopg2-binary
 sh
