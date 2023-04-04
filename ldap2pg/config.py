@@ -308,7 +308,8 @@ class Mapping(object):
         else:
             value = default
 
-        return self.processor(value)
+        if value is not None:
+            return self.processor(value)
 
 
 class ConfigurationError(UserError):
