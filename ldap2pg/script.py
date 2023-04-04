@@ -67,7 +67,7 @@ def init_config(config, environ, argv):
     return config_obj
 
 
-def synchronize(config=None, environ=None, argv=None):
+def synchronize(config=None, environ=os.environ, argv=None):
     """Synchronize a Postgres cluster from LDAP directory
 
     This is the main entrypoint of ldap2pg logic. config is either a raw YAML
