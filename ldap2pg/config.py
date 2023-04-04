@@ -432,7 +432,7 @@ class Configuration(dict):
         Mapping('ldap:sasl_mech', env=None),
         Mapping('ldap:binddn', env=None),
         Mapping('ldap:user', env=None),
-        Mapping('ldap:password', secret=True, env=None),
+        Mapping('ldap:password', secret=True, env=None, processor=str),
         Mapping('ldap:referrals', env=None),
         Mapping(
             'postgres:dsn', env='PGDSN',

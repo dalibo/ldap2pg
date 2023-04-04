@@ -19,6 +19,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Add datetime to starting message.
 - Add datetime to each logging operation.
 - Adapt defacl query in order to enhance compatibility.
+- Ensure password from YAML are string.
 
 Support for running ldap2pg on Python 2.7 is now deprecated.
 
