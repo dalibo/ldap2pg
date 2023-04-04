@@ -143,9 +143,12 @@ def pytest_addoption(parser):
     else:
         raise pytest.UsageError("Can't find ldap2pg binary.")
 
+    default = default._path
+    if hasattr(default, 'decode'):
+        default = default.decode('utf-8')
     parser.addoption(
         "--ldap2pg",
-        default=default._path.decode('utf-8'),
+        default=default,
         help="Explicit path to ldap2pg binary.",
     )
 
