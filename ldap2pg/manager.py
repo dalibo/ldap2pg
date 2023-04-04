@@ -286,8 +286,10 @@ class SyncManager(object):
         if not match(me, self.roles_blacklist):
             self.inspector.roles_blacklist.append(me)
 
-        if not issuper:
-            logger.warning("Running ldap2pg as non superuser.")
+        if issuper:
+            logger.info("Running ldap2pg as superuser.")
+        else:
+            logger.info("Running ldap2pg as non superuser.")
             RoleOptions.filter_super_columns()
 
         databases = self.inspector.fetch_databases()
