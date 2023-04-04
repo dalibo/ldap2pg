@@ -440,6 +440,7 @@ class RoleSet(set):
 
         # Now update kept roles options and memberships, including renamed.
         kept = available & other
+        spurious = RoleSet(self - other - set(['public']))
         other_index = other.reindex()
         for role in kept:
             mine = index[role.name]
@@ -450,11 +451,17 @@ class RoleSet(set):
             if role not in self:
                 logger.warning(
                     "Role %s already exists in cluster. Reusing.", role.name)
+            # Trim to be removed roles. Let DROP take care of membership. This
+            # avoid to remove a member that ldap2pg fails to drop afterward.
+            mine.members[:] = [
+                member
+                for member in mine.members
+                if member not in spurious
+            ]
             for qry in mine.alter(its):
                 yield qry
 
         # Don't forget to trash all spurious managed roles!
-        spurious = RoleSet(self - other - set(['public']))
         # reassign databases to fallback_owner
         for database in databases or []:
             if database.owner in spurious:
