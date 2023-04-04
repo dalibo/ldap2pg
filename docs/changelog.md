@@ -28,6 +28,8 @@ Support for running ldap2pg on Python 2.7 is now deprecated.
 
 # ldap2pg 5.8
 
+Released 2022-06-10.
+
 - Fix custom SQL query for `roles_blacklist_query`.
 - Fix missing SASL modules in docker image.
 - Fix members not blacklisted for unmanaged roles.
@@ -78,6 +80,8 @@ Released 2021-06-21.
 
 # ldap2pg 5.5
 
+Released 2020-10-02.
+
 - Permit joins where all the referenced objects are filtered out. The join
   name must be added to the list of attributes that may be missing in the
   result.
@@ -94,6 +98,8 @@ Released 2021-06-21.
 
 # ldap2pg 5.4
 
+Released 2020-06-11.
+
 - Fix grant to capitalized role.
 - Fix rename of members.
 - Log role after their originated LDAP search.
@@ -101,6 +107,8 @@ Released 2021-06-21.
 
 
 # ldap2pg 5.3
+
+Released 2020-05-29.
 
 - Fix join when multiple entries are returned.
 - Fix using multiple attributes from joined entries.
@@ -114,6 +122,8 @@ Released 2021-06-21.
 
 
 # ldap2pg 5.2
+
+Released 2020-04-03.
 
 **Attention!** This release has some behaviour changes. Some silenced errors
 are now raised when encountered. Please test on staging environment before
@@ -133,6 +143,8 @@ deploying on production.
 
 # ldap2pg 5.1
 
+Released 2019-11-07.
+
 **Beware** when upgrading : **ldap2pg will rename roles having uppercase letter
 in their name!** These roles will be renamed from lowercase to original case.
 Run `ldap2pg --dry` before and check for renames.
@@ -146,6 +158,8 @@ Run `ldap2pg --dry` before and check for renames.
 
 
 # ldap2pg 5.0
+
+Released 2019-08-26.
 
 - Fix default ldap settings overriding ldaprc values.
 - Allow joining LDAP entries based on DN attributes, e.g. to support role name
