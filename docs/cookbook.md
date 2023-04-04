@@ -13,7 +13,7 @@ issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
 *Cookbook* with new recipes! Your contribution is welcome!
 
 
-# Configure `pg_hba.conf` with LDAP
+## Configure `pg_hba.conf` with LDAP
 
 ldap2pg does **NOT** configure PostgreSQL for you. You should carefully read
 [PostgreSQL LDAP documentation] for this point. Having PostgreSQL properly
@@ -44,7 +44,7 @@ move to automate role creation from the LDAP directory using ldap2pg:
   execution is frequent, on purpose and notified.
 
 
-# Configure Postgres Connection
+## Configure Postgres Connection
 
 The simplest case is to save the connection settings in `ldap2pg.yaml`, section
 `postgres`:
@@ -66,7 +66,7 @@ complete*. ldap2pg suggests to drop everything. Go on and write the
 synchronization map to tell ldap2pg the required roles for the cluster.
 
 
-# Search LDAP Directory
+## Search LDAP Directory
 
 The first step is to search your LDAP server with ldapsearch(1), the CLI tool
 from OpenLDAP. Like this:
@@ -149,7 +149,7 @@ Read further on how to control role creation from LDAP entry in
 real with `--real`.
 
 
-# Using LDAP High-Availability
+## Using LDAP High-Availability
 
 ldap2pg supports LDAP HA out of the box just like any openldap client. Use a
 space separated list of URI to tells all servers.
@@ -163,7 +163,7 @@ See [ldap.conf(5)] for further details.
 [ldapLconf(5)]: https://www.openldap.org/software/man.cgi?query=ldap.conf
 
 
-# Running as non-superuser
+## Running as non-superuser
 
 Since Postgres provide a `CREATEROLE` role option, you can manage roles without
 superuser privileges. Security-wise, it's a good idea to manage roles without
@@ -181,7 +181,7 @@ Let's call the non-super role creating other roles `creator`.
   That's tricky to give such privileges to `creator`.
 
 
-# Revoking privileges
+## Revoking privileges
 
 There is no explicit revoke in ldap2pg. ldap2pg inspects SQL grants,
 ldap2pg.yml tells what privileges should be granted. Every unexpected grant is
@@ -209,17 +209,15 @@ returns the same result. ldap2pg will always execute the revoke query, thinking
 up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.
 
 
-# Inherit Unmanaged Role
+## Inherit Unmanaged Role
 
-You may want to have a local role, not managed by ldap2pg to have custom
-privileges and grant this role to managed users. This is tricky because ldap2pg
-can't manage members of a role without managing its privileges and other
-options. The solution is to isolate managed membership in a preexisting
-sub-role.
+You may want to grand a local role, not managed by ldap2pg, to managed users.
+This is tricky because ldap2pg can't manage members of a role without managing its own privileges and other options.
+The solution is to isolate managed membership in a preexisting sub-role.
 
-Say you have a `local_readers` roles with custom privileges. Prior to running
-ldap2pg, create a `local_readers_managed_members` role, member of
-`local_readers`:
+Say you have a `local_readers` roles with custom privileges and custom members.
+You want ldap2pg to add member of this role from directory.
+Prior to running ldap2pg, create a `local_readers_managed_members` role, member of `local_readers`:
 
 ``` sql
 =# CREATE ROLE local_readers;
@@ -236,14 +234,13 @@ Now, in `ldap2pg.yml`, declare `local_readers_managed_members` and add members:
     parent: local_readers_managed_members
 ```
 
-Ensure that `local_readers` is not returned by `managed_roles_query` to prevent
-any modifications. Now run ldap2pg as usual. You'll see the message **add
-missing local_readers_managed_members members**. That's it, ldap2pg will never
-touch `local_readers` privileges or direct members, but managed roles can
-inherit from it.
+Ensure that `local_readers` is not returned by `managed_roles_query` to prevent any modifications by ldap2pg.
+Now run ldap2pg as usual.
+You'll see the message **add missing local_readers_managed_members members**.
+That's it, ldap2pg will never touch `local_readers` privileges or direct members, but managed roles can inherit from it.
 
 
-# Removing All Roles
+## Removing All Roles
 
 If ever you want to clean all roles in a PostgreSQL cluster, ldap2pg could be
 helpful. You must explicitly define an empty `sync_map`.
@@ -259,7 +256,7 @@ In this example, default blacklist applies. ldap2pg never drop its connect
 role.
 
 
-# ldap2pg as Docker container
+## ldap2pg as Docker container
 
 Already familiar with Docker and willing to save the setup time? You're at the
 right place.
