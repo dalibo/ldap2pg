@@ -22,7 +22,7 @@ import (
 var (
 	defaultTimeFormat = time.StampMilli
 
-	levelStrings = map[slog.Level]string{
+	defaultLevelStrings = map[slog.Level]string{
 		slog.LevelDebug: "DBG",
 		slog.LevelInfo:  "\033[92mINF\033[0m",
 		slog.LevelWarn:  "\033[93mWRN\033[0m",
@@ -36,6 +36,9 @@ type Options struct {
 	// Minimum level to log (Default: slog.InfoLevel)
 	Level slog.Level
 
+	// Precomputed message prefix for per level. Defaults to zerolog.ConsoleWriter style.
+	LevelStrings map[slog.Level]string
+
 	// Time format (Default: time.StampMilli)
 	TimeFormat string
 }
@@ -44,12 +47,16 @@ type Options struct {
 // given options.
 func (opts Options) NewHandler(w io.Writer) slog.Handler {
 	h := &handler{
-		w:          w,
-		level:      opts.Level,
-		timeFormat: opts.TimeFormat,
+		w:            w,
+		level:        opts.Level,
+		levelStrings: opts.LevelStrings,
+		timeFormat:   opts.TimeFormat,
 	}
 	if h.timeFormat == "" {
 		h.timeFormat = defaultTimeFormat
+	}
+	if 0 == len(h.levelStrings) {
+		h.levelStrings = defaultLevelStrings
 	}
 	return h
 }
@@ -68,17 +75,19 @@ type handler struct {
 	mu sync.Mutex
 	w  io.Writer // Output writer
 
-	level      slog.Level // Minimum level to log (Default: slog.InfoLevel)
-	timeFormat string     // Time format (Default: time.StampMilli)
+	level        slog.Level            // Minimum level to log (Default: slog.InfoLevel)
+	levelStrings map[slog.Level]string // Per level message prefix
+	timeFormat   string                // Time format (Default: time.StampMilli)
 }
 
 func (h *handler) clone() *handler {
 	return &handler{
-		attrs:      h.attrs,
-		groups:     h.groups,
-		w:          h.w,
-		level:      h.level,
-		timeFormat: h.timeFormat,
+		attrs:        h.attrs,
+		groups:       h.groups,
+		w:            h.w,
+		level:        h.level,
+		levelStrings: h.levelStrings,
+		timeFormat:   h.timeFormat,
 	}
 }
 
@@ -95,7 +104,7 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	buf.WriteString("\033[2m")
 	*buf = r.Time.AppendFormat(*buf, h.timeFormat)
 	buf.WriteString("\033[0m ")
-	buf.WriteString(levelStrings[r.Level])
+	buf.WriteString(h.levelStrings[r.Level])
 	buf.WriteByte(' ')
 	buf.WriteString(r.Message)
 
@@ -165,7 +174,7 @@ func (h *handler) appendAttr(buf *buffer, attr slog.Attr, groups string) {
 }
 
 func (h *handler) appendKey(buf *buffer, key string, groups string) {
-	buf.WriteString("\033[2m")
+	buf.WriteString("\033[0;2m")
 	appendString(buf, h.groups+groups+key)
 	buf.WriteString("=\033[0m")
 }
@@ -200,7 +209,7 @@ func appendValue(buf *buffer, v slog.Value) {
 }
 
 func (h *handler) appendTintError(buf *buffer, err error, groups string) {
-	buf.WriteString("\033[91;2m")
+	buf.WriteString("\033[0;91;2m")
 	appendString(buf, h.groups+groups+"err")
 	buf.WriteString("=\033[22m")
 	appendString(buf, err.Error())
