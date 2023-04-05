@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/lithammer/dedent"
 )
 
 type Role struct {
@@ -66,4 +68,41 @@ func (r *Role) String() string {
 
 func (r *Role) BlacklistKey() string {
 	return r.Name
+}
+
+func (r *Role) Create(ch chan SyncQuery) {
+	ch <- SyncQuery{
+		Description: "Create role.",
+		LogArgs: []interface{}{
+			"role", r.Name,
+		},
+		Database: "",
+		Query:    `CREATE ROLE ` + quoteIdentifier(r.Name) + `;`,
+	}
+}
+
+func (r *Role) Drop(ch chan SyncQuery) {
+	ch <- SyncQuery{
+		Description: "Terminate running sessions.",
+		LogArgs: []interface{}{
+			"role", r.Name,
+		},
+		Query: dedent.Dedent(`
+		SELECT pg_terminate_backend(pid)
+		FROM pg_catalog.pg_stat_activity
+		WHERE usename = $1;
+		`),
+		QueryArgs: []interface{}{r.Name},
+	}
+	ch <- SyncQuery{
+		Description: "Drop role.",
+		LogArgs: []interface{}{
+			"role", r.Name,
+		},
+		Query: `DROP ROLE ` + quoteIdentifier(r.Name) + `;`,
+	}
+}
+
+func quoteIdentifier(identifier string) string {
+	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
 }

@@ -53,17 +53,19 @@ func run() (err error) {
 		"path", config.ConfigFile,
 		"version", config.Version)
 
-	_, err = PostgresInspect(config)
+	instance, err := PostgresInspect(config)
 	if err != nil {
 		return
 	}
 
-	_, err = ComputeWanted(config)
+	wanted, err := ComputeWanted(config)
 	if err != nil {
 		return
 	}
 
-	slog.Info("Doing nothing yet.")
+	for query := range wanted.Diff(instance) {
+		slog.Info(query.Description, query.LogArgs...)
+	}
 	return
 }
 
