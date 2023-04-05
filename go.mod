@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.0.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lithammer/dedent v1.1.0
+	github.com/mattn/go-isatty v0.0.18
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.0
 	github.com/tzvetkoff-go/fnmatch v0.0.0-20220210160758-879480b5e662
@@ -25,5 +26,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.6.1 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
