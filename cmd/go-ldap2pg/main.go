@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slog"
 
 	. "github.com/dalibo/ldap2pg/internal/ldap2pg" //nolint:revive
 )
@@ -17,7 +17,7 @@ func main() {
 	// Simply return an error and main will handle this case.
 	err := run()
 	if err != nil {
-		log.Fatalf("%s.", err)
+		slog.Error("Fatal error.", "error", err)
 		os.Exit(1)
 	}
 }
@@ -25,7 +25,6 @@ func main() {
 func run() (err error) {
 	err = SetupLogging()
 	if err != nil {
-		log.Error("Failed to bootstrap logging.")
 		return
 	}
 
@@ -44,16 +43,15 @@ func run() (err error) {
 	case RunAction:
 	}
 
-	log.SetLevel(config.LogLevel)
-	log.
-		WithField("commit", ShortRevision).
-		WithField("version", Version).
-		WithField("runtime", runtime.Version()).
-		Info("Starting ldap2pg")
-	log.
-		WithField("path", config.ConfigFile).
-		WithField("version", config.Version).
-		Info("Using YAML configuration file.")
+	SetLoggingHandler(config.LogLevel)
+	slog.Info("Starting ldap2pg",
+		"commit", ShortRevision,
+		"version", Version,
+		"runtime", runtime.Version())
+
+	slog.Info("Using YAML configuration file.",
+		"path", config.ConfigFile,
+		"version", config.Version)
 
 	_, err = PostgresInspect(config)
 	if err != nil {
@@ -65,7 +63,7 @@ func run() (err error) {
 		return
 	}
 
-	log.Info("Doing nothing yet.")
+	slog.Info("Doing nothing yet.")
 	return
 }
 

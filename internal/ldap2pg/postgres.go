@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slog"
 )
 
 // Fourzitou struct holding everything need to synchronize Instance.
@@ -42,23 +42,22 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
 	if err != nil {
-		log.Error("Failed to query role columns.")
+		slog.Error("Failed to query role columns.")
 		return
 	}
 	columns, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
-		log.Error("Failed to fetch rows.")
+		slog.Error("Failed to fetch rows.")
 		return
 	}
 	instance.RoleColumns = columns
-	log.WithField("columns", instance.RoleColumns).
-		Debug("Querying PostgreSQL instance role columns.")
+	slog.Debug("Querying PostgreSQL instance role columns.", "columns", instance.RoleColumns)
 
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
-		log.Error("Failed to query role columns.")
+		slog.Error("Failed to query role columns.")
 		return
 	}
 	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role Role, err error) {
@@ -66,7 +65,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	})
 	if err != nil {
-		log.Error("Failed to fetch rows.")
+		slog.Error("Failed to fetch rows.")
 		return
 	}
 
@@ -75,15 +74,10 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
 			instance.AllRoles[role.Name] = role
-			log.
-				WithField("name", role.Name).
-				WithField("super", role.Options.Super).
-				Debug("Found role in Postgres instance.")
+			slog.Debug("Found role in Postgres instance.", "name", role.Name, "super", role.Options.Super)
+
 		} else {
-			log.
-				WithField("name", role.Name).
-				WithField("pattern", match).
-				Debug("Role name blacklisted. Ignoring.")
+			slog.Debug("Role name blacklisted. Ignoring.", "name", role.Name, "pattern", match)
 		}
 	}
 
@@ -104,14 +98,10 @@ func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx
 			match := instance.RolesBlacklist.MatchString(name)
 			if "" == match {
 				instance.ManagedRoles[name] = instance.AllRoles[name]
-				log.
-					WithField("name", name).
-					Debug("Managing Postgres role.")
+				slog.Debug("Managing Postgres role.", "name", name)
+
 			} else {
-				log.
-					WithField("name", name).
-					WithField("pattern", match).
-					Warning("Managed role is blacklisted.")
+				slog.Warn("Managed role is blacklisted.", "name", name, "pattern", match)
 			}
 
 		}

@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slog"
 )
 
 // Either an SQL string or a predefined list of YAML rows.
@@ -36,7 +36,7 @@ func RunQuery[T any](q Query, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun 
 	ctx := context.Background()
 	rows, err := pgconn.Query(ctx, q.Value.(string))
 	if err != nil {
-		log.WithField("error", err).Error("Bad query.")
+		slog.Error("Bad query.", "error", err)
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgFun)
@@ -54,9 +54,7 @@ func (q *Query) IsPredefined() bool {
 // Maybe set value from default.
 func (q *Query) SetDefault() {
 	if nil == q.Value {
-		log.
-			WithField("query", q).
-			Debug("Loading Postgres query from default.")
+		slog.Debug("Loading Postgres query from default.", "query", q)
 		q.Value = q.Default
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slog"
 )
 
 type WantedState struct {
@@ -80,13 +80,13 @@ func ComputeWanted(config Config) (wanted WantedState, err error) {
 	wanted.Roles = make(map[string]Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
-			log.
-				WithField("description", item.Description).
-				Debug("Skipping LDAP search for now.")
+			slog.Debug("Skipping LDAP search for now.",
+				"description", item.Description)
+
 			continue
 		}
 		if item.Description != "" {
-			log.Info(item.Description)
+			slog.Info(item.Description)
 		}
 
 		for _, rule := range item.RoleRules {
@@ -102,7 +102,7 @@ func ComputeWanted(config Config) (wanted WantedState, err error) {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
 					return
 				}
-				log.WithField("name", role.Name).Debug("Wants role.")
+				slog.Debug("Wants role.", "name", role.Name)
 				wanted.Roles[role.Name] = role
 			}
 		}
