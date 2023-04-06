@@ -51,6 +51,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	instance.RolesBlacklist = Blacklist(patterns)
 
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
+	slog.Debug(roleColumnsQuery)
 	if err != nil {
 		slog.Error("Failed to query role columns.")
 		return
@@ -65,6 +66,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
+	slog.Debug(rolesQuery)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
 		err = fmt.Errorf("Failed to query role columns: %s", err)

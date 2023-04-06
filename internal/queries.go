@@ -36,6 +36,7 @@ func RunQuery[T any](q InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], y
 
 	ctx := context.Background()
 	rows, err := pgconn.Query(ctx, q.Value.(string))
+	slog.Debug(q.Value.(string))
 	if err != nil {
 		err = fmt.Errorf("Bad query: %w", err)
 		return nil, err
