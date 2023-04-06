@@ -138,11 +138,16 @@ func (wanted *WantedState) Diff(instance PostgresInstance) <-chan SyncQuery {
 		}
 
 		// Drop spurious
-		for name, role := range instance.ManagedRoles {
+		for name := range instance.ManagedRoles {
 			if _, ok := wanted.Roles[name]; ok {
 				continue
 			}
 
+			if "public" == name {
+				continue
+			}
+
+			role := instance.ManagedRoles[name]
 			role.Drop(ch)
 		}
 	}()
