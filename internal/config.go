@@ -16,9 +16,12 @@ import (
 type Config struct {
 	Action     CommandAction
 	ConfigFile string
-	LogLevel   slog.Level
-	Version    int
-	Ldap       struct {
+	// Use a tristate because we load config from highest priority to lowest.
+	MaybeDry int  // Tristate: 0 = undefined, -1 = false, 1 = true
+	Dry      bool // Final value for app.
+	LogLevel slog.Level
+	Version  int
+	Ldap     struct {
 		URI      string
 		BindDn   string
 		Password string
@@ -93,6 +96,8 @@ func (config *Config) Load() (err error) {
 
 	config.LoadDefaults()
 
+	config.Dry = config.MaybeDry >= 0
+
 	return
 }
 
@@ -159,9 +164,20 @@ func (config *Config) LoadFlags(values FlagValues) {
 
 		config.ConfigFile = values.ConfigFile
 	}
+
+	config.MaybeDry = values.MaybeDry
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
+	if 0 == config.MaybeDry && "" != values.RawDry {
+		slog.Debug("Setting DRY.", "source", "env", "value", values.RawDry)
+		if values.Dry {
+			config.MaybeDry = 1
+		} else {
+			config.MaybeDry = -1
+		}
+	}
+
 	if values.LdapURI != "" {
 		slog.Debug("Setting LDAPURI.",
 			"source", "env",
@@ -194,12 +210,15 @@ func (config *Config) LoadEnv(values EnvValues) {
 	}
 }
 
+type Tristate int
+
 type EnvValues struct {
 	LdapURI        string `envconfig:"LDAPURI"`
 	LdapBindDn     string `envconfig:"LDAPBINDDN"`
 	LdapPassword   string `envconfig:"LDAPPASSWORD"`
 	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
-	Dry            bool   `envconfig:"DRY" default:"true"`
+	RawDry         string `envconfig:"DRY"` // Tri state: "" = undefined, else boolean.
+	Dry            bool   `envconfig:"DRY"` // Tri state: "" = undefined, else boolean.
 	ConfigFile     string `envconfig:"LDAP2PG_CONFIG"`
 }
 
@@ -215,6 +234,8 @@ type FlagValues struct {
 	Verbose     int
 	Quiet       int
 	Dry         bool
+	Real        bool
+	MaybeDry    int // Tristate
 	ShowHelp    bool
 	ShowVersion bool
 	ConfigFile  string
@@ -227,9 +248,20 @@ func loadFlags() FlagValues {
 	flag.BoolVarP(&values.ShowVersion, "version", "V", false, "Show version and exit.")
 	flag.CountVarP(&values.Verbose, "verbose", "v", "Increase log verbosity.")
 	flag.CountVarP(&values.Quiet, "quiet", "q", "Increase log verbosity.")
-	flag.BoolVarP(&values.Dry, "dry", "n", true, "Don't touch Postgres, just print what to do.")
-	flag.BoolVarP(&values.Dry, "real", "N", false, "Real mode, apply changes to Postgres instance.")
+	flag.BoolVarP(&values.Dry, "dry", "n", false, "Don't touch Postgres, just print what to do.")
+	flag.BoolVarP(&values.Real, "real", "N", false, "Real mode, apply changes to Postgres instance.")
 	flag.Parse()
+
+	// Apply --real or --dry only if set. --dry prevales.
+	if values.Real {
+		slog.Debug("Setting real mode.", "source", "flags")
+		values.MaybeDry = -1
+	}
+	if values.Dry {
+		slog.Debug("Setting dry mode.", "source", "flags")
+		values.MaybeDry = 1
+	}
+
 	return values
 }
 
@@ -240,4 +272,7 @@ func ShowHelp() {
 func (config *Config) LoadDefaults() {
 	config.Postgres.DatabasesQuery.SetDefault()
 	config.Postgres.RolesBlacklistQuery.SetDefault()
+	if 0 == config.MaybeDry {
+		config.Dry = true
+	}
 }

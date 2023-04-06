@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
 	"runtime/debug"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 
 	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
@@ -56,6 +58,12 @@ func run() (err error) {
 		"path", config.ConfigFile,
 		"version", config.Version)
 
+	if config.Dry {
+		slog.Warn("Dry run. Postgres instance will be untouched.")
+	} else {
+		slog.Info("Running in real mode. Postgres instance will modified.")
+	}
+
 	instance, err := PostgresInspect(config)
 	if err != nil {
 		return
@@ -66,8 +74,12 @@ func run() (err error) {
 		return
 	}
 
+	prefix := ""
+	if config.Dry {
+		prefix = "Would "
+	}
 	for query := range wanted.Diff(instance) {
-		slog.Info(query.Description, query.LogArgs...)
+		slog.Info(prefix+query.Description, query.LogArgs...)
 	}
 
 	elapsed := time.Since(start)
