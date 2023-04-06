@@ -77,7 +77,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 			slog.Debug("Found role in Postgres instance.", "name", role.Name, "super", role.Options.Super)
 
 		} else {
-			slog.Debug("Role name blacklisted. Ignoring.", "name", role.Name, "pattern", match)
+			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
 
