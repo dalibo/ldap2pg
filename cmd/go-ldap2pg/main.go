@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"golang.org/x/exp/slog"
 
@@ -23,6 +24,8 @@ func main() {
 }
 
 func run() (err error) {
+	start := time.Now()
+
 	err = SetupLogging()
 	if err != nil {
 		return
@@ -66,6 +69,9 @@ func run() (err error) {
 	for query := range wanted.Diff(instance) {
 		slog.Info(query.Description, query.LogArgs...)
 	}
+
+	elapsed := time.Since(start)
+	slog.Info("Comparison complete.", "elapsed", elapsed)
 	return
 }
 
