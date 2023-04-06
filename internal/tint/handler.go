@@ -101,7 +101,7 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	defer buf.Free()
 
 	// write time, level, and message
-	buf.WriteString("\033[2m")
+	buf.WriteString("\033[0;2m")
 	*buf = r.Time.AppendFormat(*buf, h.timeFormat)
 	buf.WriteString("\033[0m ")
 	buf.WriteString(h.levelStrings[r.Level])
