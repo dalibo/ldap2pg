@@ -3,6 +3,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
@@ -36,7 +37,7 @@ func RunQuery[T any](q Query, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun 
 	ctx := context.Background()
 	rows, err := pgconn.Query(ctx, q.Value.(string))
 	if err != nil {
-		slog.Error("Bad query.", "error", err)
+		err = fmt.Errorf("Bad query: %w", err)
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgFun)
