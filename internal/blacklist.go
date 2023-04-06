@@ -1,5 +1,5 @@
 // fnmatch pattern list
-package ldap2pg
+package internal
 
 import (
 	"github.com/tzvetkoff-go/fnmatch"

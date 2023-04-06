@@ -1,4 +1,4 @@
-package ldap2pg
+package internal
 
 type RoleSet map[string]Role
 

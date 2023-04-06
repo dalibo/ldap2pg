@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/exp/slog"
 
-	. "github.com/dalibo/ldap2pg/internal/ldap2pg" //nolint:revive
+	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
 )
 
 func main() {

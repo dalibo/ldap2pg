@@ -1,5 +1,5 @@
 // Configurable and overridable queries.
-package ldap2pg
+package internal
 
 import (
 	"context"
