@@ -13,3 +13,7 @@ linters-settings:
     - "all"
     # This check is poorly documented: https://staticcheck.io/docs/checks#S1034
     - "-S1034"
+
+run:
+  skip-dirs:
+  - tint

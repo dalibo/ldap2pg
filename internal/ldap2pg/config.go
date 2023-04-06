@@ -8,14 +8,14 @@ import (
 	"path"
 
 	"github.com/kelseyhightower/envconfig"
-	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/exp/slog"
 )
 
 type Config struct {
 	Action     CommandAction
 	ConfigFile string
-	LogLevel   log.Level
+	LogLevel   slog.Level
 	Version    int
 	Ldap       struct {
 		URI      string
@@ -34,9 +34,8 @@ type PostgresQueries struct {
 
 func NewConfig() Config {
 	return Config{
-		Action: RunAction,
-		// Default to current LogLevel.
-		LogLevel: log.GetLevel(),
+		Action:   RunAction,
+		LogLevel: currentLogLevel,
 		Postgres: PostgresQueries{
 			DatabasesQuery: Query{
 				Name: "databases_query",
@@ -54,7 +53,7 @@ func NewConfig() Config {
 }
 
 func (config *Config) Load() (err error) {
-	log.Debug("Loading Flag values.")
+	slog.Debug("Loading Flag values.")
 	flagValues := loadFlags()
 	if flagValues.ShowHelp {
 		config.Action = ShowHelpAction
@@ -66,12 +65,12 @@ func (config *Config) Load() (err error) {
 	}
 	config.LoadFlags(flagValues)
 
-	log.Debug("Loading Environment values.")
+	slog.Debug("Loading Environment values.")
 	var envValues EnvValues
 	envconfig.MustProcess("", &envValues)
 	config.LoadEnv(envValues)
 
-	log.Debug("Loading YAML configuration.")
+	slog.Debug("Loading YAML configuration.")
 	if config.ConfigFile == "" {
 		config.ConfigFile = config.FindConfigFile()
 		if config.ConfigFile == "" {
@@ -94,7 +93,7 @@ func (config *Config) Load() (err error) {
 }
 
 func (config *Config) FindConfigFile() (configpath string) {
-	log.Debug("Searching configuration file in standard locations.")
+	slog.Debug("Searching configuration file in standard locations.")
 	me, _ := user.Current()
 	candidates := []string{
 		"./ldap2pg.yml",
@@ -108,28 +107,24 @@ func (config *Config) FindConfigFile() (configpath string) {
 	for _, candidate := range candidates {
 		_, err := os.Stat(candidate)
 		if err == nil {
-			log.
-				WithField("path", candidate).
-				Debug("Found configuration file.")
+			slog.Debug("Found configuration file.",
+				"path", candidate)
+
 			return candidate
 		}
-		log.
-			WithField("path", candidate).
-			WithField("error", err).
-			Debug("Ignoring configuration file.")
+		slog.Debug("Ignoring configuration file.",
+			"path", candidate,
+			"error", err)
 	}
 
 	return ""
 }
 
-var levels []log.Level = []log.Level{
-	log.TraceLevel,
-	log.DebugLevel,
-	log.InfoLevel,
-	log.WarnLevel,
-	log.ErrorLevel,
-	log.FatalLevel,
-	log.PanicLevel,
+var levels []slog.Level = []slog.Level{
+	slog.LevelDebug,
+	slog.LevelInfo,
+	slog.LevelWarn,
+	slog.LevelError,
 }
 
 func (config *Config) LoadFlags(values FlagValues) {
@@ -147,50 +142,50 @@ func (config *Config) LoadFlags(values FlagValues) {
 		levelIndex = int(math.Max(0, float64(levelIndex)))
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
 		config.LogLevel = levels[levelIndex]
-		log.
-			WithField("source", "flags").
-			WithField("level", config.LogLevel.String()).
-			Debug("Setting log level.")
+		slog.Debug("Setting log level.",
+			"source", "flags",
+			"level", config.LogLevel.String())
+
 	}
 
 	if values.ConfigFile != "" {
-		log.
-			WithField("source", "flags").
-			WithField("path", values.ConfigFile).
-			Debug("Setting config file.")
+		slog.Debug("Setting config file.",
+			"source", "flags",
+			"path", values.ConfigFile)
+
 		config.ConfigFile = values.ConfigFile
 	}
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
 	if values.LdapURI != "" {
-		log.
-			WithField("source", "env").
-			WithField("value", values.LdapURI).
-			Debug("Setting LDAPURI.")
+		slog.Debug("Setting LDAPURI.",
+			"source", "env",
+			"value", values.LdapURI)
+
 		config.Ldap.URI = values.LdapURI
 	}
 
 	if values.LdapBindDn != "" {
-		log.
-			WithField("value", values.LdapBindDn).
-			WithField("source", "env").
-			Debug("Setting LDAPBINDDN.")
+		slog.Debug("Setting LDAPBINDDN.",
+			"value", values.LdapBindDn,
+			"source", "env")
+
 		config.Ldap.BindDn = values.LdapBindDn
 	}
 
 	if values.LdapPassword != "" {
-		log.
-			WithField("source", "env").
-			Debug("Setting LDAPPASSWORD.")
+		slog.Debug("Setting LDAPPASSWORD.",
+			"source", "env")
+
 		config.Ldap.Password = values.LdapPassword
 	}
 
 	if config.ConfigFile == "" && values.ConfigFile != "" {
-		log.
-			WithField("source", "env").
-			WithField("path", values.ConfigFile).
-			Debug("Setting config file.")
+		slog.Debug("Setting config file.",
+			"source", "env",
+			"path", values.ConfigFile)
+
 		config.ConfigFile = values.ConfigFile
 	}
 }

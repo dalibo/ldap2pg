@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -14,7 +14,7 @@ import (
 func ReadYaml(path string) (values interface{}, err error) {
 	var fo io.ReadCloser
 	if path == "-" {
-		log.Info("Reading configuration from standard input.")
+		slog.Info("Reading configuration from standard input.")
 		fo = os.Stdin
 	} else {
 		fo, err = os.Open(path)
@@ -95,9 +95,9 @@ func (config *Config) LoadYamlPostgres(postgres interface{}) (err error) {
 		if !ok {
 			continue
 		}
-		log.
-			WithField("query", q.Name).
-			Debug("Loading Postgres query from YAML.")
+		slog.Debug("Loading Postgres query from YAML.",
+			"query", q.Name)
+
 		q.Value = value
 	}
 	return
