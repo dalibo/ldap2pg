@@ -154,3 +154,11 @@ ldap2pg does not have default SASL mechanism. If `SASL_MECH` is empty or
 undefined, ldap2pg uses simple bind.
 
 If you want to force simple bind, ensure `SASL_MECH` is none.
+Do this with `LDAPSASL_MECH` environment variable set as empty or empty `sasl_mech` in `ldap` section of your ldap2pg.yml.
+
+``` console
+$ LDAPSASL_MECH= ldap2pg -v
+...
+2023-04-03 16:08:28,494 DEBUG:  ldap2pg.ldap: Read SASL_MECH from env.
+...
+```
