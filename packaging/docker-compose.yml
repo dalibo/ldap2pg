@@ -6,6 +6,7 @@ services:
     volumes:
     - ../:/workspace
     working_dir: /workspace
+    entrypoint: [/usr/local/sbin/tini]
     command: [/workspace/packaging/build_rpm.sh]
 
   rhel7:
