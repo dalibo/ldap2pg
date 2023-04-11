@@ -1,8 +1,9 @@
-package ldap2pg
+package internal
 
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -47,7 +48,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	}
 	columns, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
-		slog.Error("Failed to fetch rows.")
+		err = fmt.Errorf("Failed to fetch rows: %w", err)
 		return
 	}
 	instance.RoleColumns = columns
@@ -57,7 +58,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
-		slog.Error("Failed to query role columns.")
+		err = fmt.Errorf("Failed to query role columns: %s", err)
 		return
 	}
 	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role Role, err error) {
@@ -65,7 +66,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	})
 	if err != nil {
-		slog.Error("Failed to fetch rows.")
+		err = fmt.Errorf("Failed to fetch rows: %w", err)
 		return
 	}
 
@@ -77,7 +78,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 			slog.Debug("Found role in Postgres instance.", "name", role.Name, "super", role.Options.Super)
 
 		} else {
-			slog.Debug("Role name blacklisted. Ignoring.", "name", role.Name, "pattern", match)
+			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
 

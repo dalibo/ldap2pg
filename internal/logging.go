@@ -1,4 +1,4 @@
-package ldap2pg
+package internal
 
 import (
 	"fmt"
@@ -53,5 +53,4 @@ func SetLoggingHandler(level slog.Level) {
 		}.NewTextHandler(os.Stderr)
 	}
 	slog.SetDefault(slog.New(h))
-	slog.Debug("Initializing ldap2pg.", "version", Version)
 }

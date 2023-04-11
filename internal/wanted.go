@@ -1,5 +1,5 @@
 // Logic to describe wanted state from YAML and LDAP
-package ldap2pg
+package internal
 
 import (
 	"errors"

@@ -1,5 +1,5 @@
 // Global unit test suite.
-package ldap2pg_test
+package internal_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/exp/slog"
 
-	"github.com/dalibo/ldap2pg/internal/ldap2pg"
+	ldap2pg "github.com/dalibo/ldap2pg/internal"
 )
 
 type TestSuite struct {

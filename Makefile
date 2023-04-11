@@ -29,8 +29,8 @@ changelog:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
 .PHONY: VERSION
-VERSION: internal/ldap2pg/VERSION
-internal/ldap2pg/VERSION: setup.py
+VERSION: internal/VERSION
+internaldap2pg/VERSION: setup.py
 	echo -n "v$(VERSION).0" > $@
 
 release: changelog VERSION

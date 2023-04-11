@@ -1,5 +1,5 @@
 // Functions to normalize YAML input before processing into data structure.
-package ldap2pg
+package internal
 
 import (
 	"errors"

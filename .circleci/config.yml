@@ -48,14 +48,17 @@ jobs:
     steps:
     - checkout
     - run:
-        name: Build Go Files
-        command: |
-          mkdir -p build
-          go build -o build/ ./...
+        name: Go vet
+        command: go vet ./...
     - run:
         name: Unit Test
         command: |
           go test ./...
+    - run:
+        name: Build Go Files
+        command: |
+          mkdir -p build
+          go build -o build/ ./...
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
