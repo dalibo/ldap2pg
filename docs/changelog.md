@@ -13,7 +13,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 5.9
 
-**Unreleased**
+Released 2023-04-11.
 
 - Support for PostgreSQL 15.
 - Fix SASL mech error formatting.
