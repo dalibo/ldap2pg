@@ -109,3 +109,47 @@ func ComputeWanted(config Config) (wanted WantedState, err error) {
 	}
 	return
 }
+
+type SyncQuery struct {
+	Description string
+	LogArgs     []interface{}
+	Database    string
+	Query       string
+	QueryArgs   []interface{}
+}
+
+func (q SyncQuery) String() string {
+	return q.Description
+}
+
+func (wanted *WantedState) Diff(instance PostgresInstance) <-chan SyncQuery {
+	ch := make(chan SyncQuery)
+	go func() {
+		defer close(ch)
+		// Create missing
+		for name := range wanted.Roles {
+			if _, ok := instance.AllRoles[name]; ok {
+				slog.Debug("Role already in instance.", "role", name)
+				continue
+			}
+
+			role := wanted.Roles[name]
+			role.Create(ch)
+		}
+
+		// Drop spurious
+		for name := range instance.ManagedRoles {
+			if _, ok := wanted.Roles[name]; ok {
+				continue
+			}
+
+			if "public" == name {
+				continue
+			}
+
+			role := instance.ManagedRoles[name]
+			role.Drop(instance.Databases, ch)
+		}
+	}()
+	return ch
+}

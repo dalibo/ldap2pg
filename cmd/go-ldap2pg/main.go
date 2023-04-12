@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"golang.org/x/exp/slog"
 
@@ -23,6 +25,8 @@ func main() {
 }
 
 func run() (err error) {
+	start := time.Now()
+
 	err = SetupLogging()
 	if err != nil {
 		return
@@ -53,17 +57,48 @@ func run() (err error) {
 		"path", config.ConfigFile,
 		"version", config.Version)
 
-	_, err = PostgresInspect(config)
+	if config.Dry {
+		slog.Warn("Dry run. Postgres instance will be untouched.")
+	} else {
+		slog.Info("Running in real mode. Postgres instance will modified.")
+	}
+
+	instance, err := PostgresInspect(config)
 	if err != nil {
 		return
 	}
 
-	_, err = ComputeWanted(config)
+	wanted, err := ComputeWanted(config)
 	if err != nil {
 		return
 	}
 
-	slog.Info("Doing nothing yet.")
+	ctx := context.Background()
+	pool := PostgresDBPool{}
+	defer pool.CloseAll()
+
+	prefix := ""
+	if config.Dry {
+		prefix = "Would "
+	}
+
+	for query := range wanted.Diff(instance) {
+		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Debug(query.Query, "args", query.QueryArgs)
+		if !config.Dry {
+			pgconn, err := pool.Get(query.Database)
+			if err != nil {
+				return fmt.Errorf("PostgreSQL error: %w", err)
+			}
+			_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
+			if err != nil {
+				return fmt.Errorf("PostgreSQL error: %w", err)
+			}
+		}
+	}
+
+	elapsed := time.Since(start)
+	slog.Info("Comparison complete.", "elapsed", elapsed)
 	return
 }
 
