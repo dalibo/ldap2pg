@@ -1,4 +1,4 @@
-package internal
+package config
 
 import (
 	"fmt"
@@ -30,13 +30,18 @@ type Config struct {
 	SyncMap  []SyncItem
 }
 
+type RoleRule struct {
+	Names    []string
+	Comments []string
+}
+
 type PostgresQueries struct {
 	DatabasesQuery      InspectQuery
 	ManagedRolesQuery   InspectQuery
 	RolesBlacklistQuery InspectQuery
 }
 
-func NewConfig() Config {
+func New() Config {
 	return Config{
 		Action:   RunAction,
 		LogLevel: currentLogLevel,

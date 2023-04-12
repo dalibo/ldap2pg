@@ -1,12 +1,12 @@
-package internal_test
+package config_test
 
 import (
-	ldap2pg "github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *TestSuite) TestNormalizeList() {
+func (suite *ConfigSuite) TestNormalizeList() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -15,21 +15,21 @@ func (suite *TestSuite) TestNormalizeList() {
 	var value interface{}
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
-	values := ldap2pg.NormalizeList(value)
+	values := config.NormalizeList(value)
 	r.Equal(1, len(values))
 }
 
-func (suite *TestSuite) TestNormalizeStringList() {
+func (suite *ConfigSuite) TestNormalizeStringList() {
 	r := suite.Require()
 
 	value := interface{}("alice")
-	values, err := ldap2pg.NormalizeStringList(value)
+	values, err := config.NormalizeStringList(value)
 	r.Nil(err)
 	r.Equal(1, len(values))
 	r.Equal("alice", values[0])
 }
 
-func (suite *TestSuite) TestNormalizeAlias() {
+func (suite *ConfigSuite) TestNormalizeAlias() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -39,7 +39,7 @@ func (suite *TestSuite) TestNormalizeAlias() {
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	mapValue := value.(map[string]interface{})
-	err := ldap2pg.NormalizeAlias(&mapValue, "roles", "role")
+	err := config.NormalizeAlias(&mapValue, "roles", "role")
 	r.Nil(err)
 	_, found := mapValue["role"]
 	r.False(found)
@@ -47,7 +47,7 @@ func (suite *TestSuite) TestNormalizeAlias() {
 	r.True(found)
 }
 
-func (suite *TestSuite) TestNormalizeAliasEmpty() {
+func (suite *ConfigSuite) TestNormalizeAliasEmpty() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -57,13 +57,13 @@ func (suite *TestSuite) TestNormalizeAliasEmpty() {
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	mapValue := value.(map[string]interface{})
-	err := ldap2pg.NormalizeAlias(&mapValue, "roles", "role")
+	err := config.NormalizeAlias(&mapValue, "roles", "role")
 	r.Nil(err)
 	_, found := mapValue["roles"]
 	r.False(found)
 }
 
-func (suite *TestSuite) TestNormalizeAliasConflict() {
+func (suite *ConfigSuite) TestNormalizeAliasConflict() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -74,17 +74,17 @@ func (suite *TestSuite) TestNormalizeAliasConflict() {
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	mapValue := value.(map[string]interface{})
-	err := ldap2pg.NormalizeAlias(&mapValue, "roles", "role")
-	conflict := err.(*ldap2pg.KeyConflict)
+	err := config.NormalizeAlias(&mapValue, "roles", "role")
+	conflict := err.(*config.KeyConflict)
 	r.NotNil(err)
 	r.Equal("roles", conflict.Key)
 	r.Equal("role", conflict.Conflict)
 }
 
-func (suite *TestSuite) TestNormalizeRoleRuleString() {
+func (suite *ConfigSuite) TestNormalizeRoleRuleString() {
 	r := suite.Require()
 
-	value, err := ldap2pg.NormalizeRoleRule("alice")
+	value, err := config.NormalizeRoleRule("alice")
 	r.Nil(err)
 
 	names, ok := value["names"].([]string)
@@ -93,7 +93,7 @@ func (suite *TestSuite) TestNormalizeRoleRuleString() {
 	r.Equal("alice", names[0])
 }
 
-func (suite *TestSuite) TestNormalizeRoleRuleSingle() {
+func (suite *ConfigSuite) TestNormalizeRoleRuleSingle() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -102,7 +102,7 @@ func (suite *TestSuite) TestNormalizeRoleRuleSingle() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := ldap2pg.NormalizeRoleRule(raw)
+	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
 
 	rawNames, ok := value["names"]
@@ -112,7 +112,7 @@ func (suite *TestSuite) TestNormalizeRoleRuleSingle() {
 	r.Equal("alice", names[0])
 }
 
-func (suite *TestSuite) TestNormalizeRoleComment() {
+func (suite *ConfigSuite) TestNormalizeRoleComment() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -122,7 +122,7 @@ func (suite *TestSuite) TestNormalizeRoleComment() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := ldap2pg.NormalizeRoleRule(raw)
+	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
 
 	rawComments, ok := value["comments"]
@@ -132,7 +132,7 @@ func (suite *TestSuite) TestNormalizeRoleComment() {
 	r.Equal("single", comments[0])
 }
 
-func (suite *TestSuite) TestNormalizeSyncItem() {
+func (suite *ConfigSuite) TestNormalizeSyncItem() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -142,7 +142,7 @@ func (suite *TestSuite) TestNormalizeSyncItem() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := ldap2pg.NormalizeSyncItem(raw)
+	value, err := config.NormalizeSyncItem(raw)
 	r.Nil(err)
 
 	_, exists := value["role"]
@@ -155,7 +155,7 @@ func (suite *TestSuite) TestNormalizeSyncItem() {
 	r.Len(roles, 1)
 }
 
-func (suite *TestSuite) TestNormalizeSyncMap() {
+func (suite *ConfigSuite) TestNormalizeSyncMap() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -168,12 +168,12 @@ func (suite *TestSuite) TestNormalizeSyncMap() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := ldap2pg.NormalizeSyncMap(raw)
+	value, err := config.NormalizeSyncMap(raw)
 	r.Nil(err)
 	r.Len(value, 2)
 }
 
-func (suite *TestSuite) TestNormalizeConfig() {
+func (suite *ConfigSuite) TestNormalizeConfig() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -187,7 +187,7 @@ func (suite *TestSuite) TestNormalizeConfig() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	config, err := ldap2pg.NormalizeConfigRoot(raw)
+	config, err := config.NormalizeConfigRoot(raw)
 	r.Nil(err)
 	syncMap := config["sync_map"].([]interface{})
 	r.Len(syncMap, 2)

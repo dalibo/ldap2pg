@@ -1,4 +1,4 @@
-package internal
+package config
 
 import (
 	"fmt"
@@ -29,7 +29,6 @@ func SetupLogging() error {
 
 	SetLoggingHandler(level.Level())
 
-	slog.Debug("Initializing ldap2pg.", "version", Version)
 	return nil
 }
 

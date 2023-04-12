@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
@@ -26,7 +27,7 @@ var (
 	rolesQuery string
 )
 
-func PostgresInspect(config Config) (instance PostgresInstance, err error) {
+func PostgresInspect(config config.Config) (instance PostgresInstance, err error) {
 	instance = PostgresInstance{}
 
 	ctx := context.Background()
@@ -97,7 +98,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	return
 }
 
-func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx.Conn) error {
+func (instance *PostgresInstance) InspectManagedRoles(config config.Config, pgconn *pgx.Conn) error {
 	if nil == config.Postgres.ManagedRolesQuery.Value {
 		instance.ManagedRoles = instance.AllRoles
 	} else {

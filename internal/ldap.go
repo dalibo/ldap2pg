@@ -3,11 +3,12 @@ package internal
 import (
 	"time"
 
+	"github.com/dalibo/ldap2pg/internal/config"
 	ldap "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
-func LdapConnect(config Config) (err error) {
+func LdapConnect(config config.Config) (err error) {
 	slog.Info("Connecting to LDAP directory.",
 		"uri", config.Ldap.URI,
 		"binddn", config.Ldap.BindDn)

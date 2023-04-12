@@ -1,7 +1,7 @@
-package internal_test
+package config_test
 
 import (
-	ldap2pg "github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
 	"gopkg.in/yaml.v3"
 )
@@ -13,8 +13,8 @@ func (suite *ConfigSuite) TestLoadYamlNull() {
 	var values interface{}
 	yaml.Unmarshal([]byte(rawYaml), &values) //nolint:errcheck
 
-	config := ldap2pg.NewConfig()
-	err := config.LoadYaml(values)
+	c := config.New()
+	err := c.LoadYaml(values)
 
 	r.NotNil(err)
 }
@@ -28,12 +28,12 @@ func (suite *ConfigSuite) TestLoadDatabasesQuery() {
 	var values interface{}
 	yaml.Unmarshal([]byte(rawYaml), &values) //nolint:errcheck
 
-	config := ldap2pg.NewConfig()
-	r.Equal("databases_query", config.Postgres.DatabasesQuery.Name)
+	c := config.New()
+	r.Equal("databases_query", c.Postgres.DatabasesQuery.Name)
 
-	err := config.LoadYamlPostgres(values)
+	err := c.LoadYamlPostgres(values)
 
 	r.Nil(err)
-	configQuery := config.Postgres.DatabasesQuery.Value.([]interface{})
+	configQuery := c.Postgres.DatabasesQuery.Value.([]interface{})
 	r.Equal("postgres", configQuery[0])
 }
