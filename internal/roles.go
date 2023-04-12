@@ -81,7 +81,8 @@ func (r *Role) Create(ch chan SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(ch chan SyncQuery) {
+func (r *Role) Drop(databases []string, ch chan SyncQuery) {
+	identifier := quoteIdentifier(r.Name)
 	ch <- SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs: []interface{}{
@@ -93,6 +94,16 @@ func (r *Role) Drop(ch chan SyncQuery) {
 		WHERE usename = $1;
 		`),
 		QueryArgs: []interface{}{r.Name},
+	}
+	for _, database := range databases {
+		ch <- SyncQuery{
+			Description: "Reassign objects and purge ACL.",
+			LogArgs:     []interface{}{"role", r.Name, "database", database},
+			Database:    database,
+			Query: dedent.Dedent(`
+			REASSIGN OWNED BY ` + identifier + ` TO CURRENT_USER;
+			DROP OWNED BY ` + identifier + `;`),
+		}
 	}
 	ch <- SyncQuery{
 		Description: "Drop role.",

@@ -148,7 +148,7 @@ func (wanted *WantedState) Diff(instance PostgresInstance) <-chan SyncQuery {
 			}
 
 			role := instance.ManagedRoles[name]
-			role.Drop(ch)
+			role.Drop(instance.Databases, ch)
 		}
 	}()
 	return ch
