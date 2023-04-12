@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/lithammer/dedent"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/exp/slog"
 )
@@ -27,9 +28,9 @@ type Config struct {
 }
 
 type PostgresQueries struct {
-	DatabasesQuery      Query
-	ManagedRolesQuery   Query
-	RolesBlacklistQuery Query
+	DatabasesQuery      InspectQuery
+	ManagedRolesQuery   InspectQuery
+	RolesBlacklistQuery InspectQuery
 }
 
 func NewConfig() Config {
@@ -37,13 +38,16 @@ func NewConfig() Config {
 		Action:   RunAction,
 		LogLevel: currentLogLevel,
 		Postgres: PostgresQueries{
-			DatabasesQuery: Query{
+			DatabasesQuery: InspectQuery{
 				Name: "databases_query",
+				Default: dedent.Dedent(`
+				SELECT datname FROM pg_catalog.pg_database
+				WHERE datallowconn IS TRUE ORDER BY 1;`),
 			},
-			ManagedRolesQuery: Query{
+			ManagedRolesQuery: InspectQuery{
 				Name: "managed_roles_query",
 			},
-			RolesBlacklistQuery: Query{
+			RolesBlacklistQuery: InspectQuery{
 				Name: "roles_blacklist_query",
 				// Inject Static value as returned by YAML
 				Default: []interface{}{"pg_*", "postgres"},

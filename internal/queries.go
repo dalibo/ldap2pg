@@ -12,7 +12,7 @@ import (
 // Either an SQL string or a predefined list of YAML rows.
 type SQLOrRows interface{}
 
-type Query struct {
+type InspectQuery struct {
 	Name    string
 	Default SQLOrRows
 	Value   SQLOrRows
@@ -21,7 +21,7 @@ type Query struct {
 // Like pgx.RowToFunc, but from YAML
 type YamlToFunc[T any] func(row interface{}) (T, error)
 
-func RunQuery[T any](q Query, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun YamlToFunc[T]) ([]T, error) {
+func RunQuery[T any](q InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun YamlToFunc[T]) ([]T, error) {
 	if q.IsPredefined() {
 		var rows []T
 		for _, value := range q.Value.([]interface{}) {
@@ -36,6 +36,7 @@ func RunQuery[T any](q Query, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun 
 
 	ctx := context.Background()
 	rows, err := pgconn.Query(ctx, q.Value.(string))
+	slog.Debug(q.Value.(string))
 	if err != nil {
 		err = fmt.Errorf("Bad query: %w", err)
 		return nil, err
@@ -43,7 +44,7 @@ func RunQuery[T any](q Query, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun 
 	return pgx.CollectRows(rows, pgFun)
 }
 
-func (q *Query) IsPredefined() bool {
+func (q *InspectQuery) IsPredefined() bool {
 	switch q.Value.(type) {
 	case string:
 		return false
@@ -53,14 +54,14 @@ func (q *Query) IsPredefined() bool {
 }
 
 // Maybe set value from default.
-func (q *Query) SetDefault() {
+func (q *InspectQuery) SetDefault() {
 	if nil == q.Value {
 		slog.Debug("Loading Postgres query from default.", "query", q)
 		q.Value = q.Default
 	}
 }
 
-func (q *Query) String() string {
+func (q *InspectQuery) String() string {
 	return q.Name
 }
 

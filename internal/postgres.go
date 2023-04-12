@@ -13,6 +13,7 @@ import (
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
 	AllRoles       RoleSet
+	Databases      []string
 	ManagedRoles   RoleSet
 	RoleColumns    []string
 	RolesBlacklist Blacklist
@@ -35,6 +36,14 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	}
 	defer pgconn.Close(ctx)
 
+	instance.Databases, err = RunQuery(config.Postgres.DatabasesQuery, pgconn, RowToString, YamlToString)
+	if err != nil {
+		return
+	}
+	for _, name := range instance.Databases {
+		slog.Debug("Found database.", "name", name)
+	}
+
 	patterns, err := RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, RowToString, YamlToString)
 	if err != nil {
 		return
@@ -42,6 +51,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	instance.RolesBlacklist = Blacklist(patterns)
 
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
+	slog.Debug(roleColumnsQuery)
 	if err != nil {
 		slog.Error("Failed to query role columns.")
 		return
@@ -56,6 +66,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
+	slog.Debug(rolesQuery)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
 		err = fmt.Errorf("Failed to query role columns: %s", err)
