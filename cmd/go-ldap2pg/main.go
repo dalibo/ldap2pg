@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 
 	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
@@ -75,20 +74,22 @@ func run() (err error) {
 	}
 
 	ctx := context.Background()
-	pgconn, err := pgx.Connect(ctx, "")
-	if err != nil {
-		return
-	}
-	defer pgconn.Close(ctx)
+	pool := PostgresDBPool{}
+	defer pool.CloseAll()
 
 	prefix := ""
 	if config.Dry {
 		prefix = "Would "
 	}
+
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		slog.Debug(query.Query, "args", query.QueryArgs)
 		if !config.Dry {
+			pgconn, err := pool.Get(query.Database)
+			if err != nil {
+				return fmt.Errorf("PostgreSQL error: %w", err)
+			}
 			_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
 			if err != nil {
 				return fmt.Errorf("PostgreSQL error: %w", err)
