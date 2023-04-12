@@ -74,12 +74,26 @@ func run() (err error) {
 		return
 	}
 
+	ctx := context.Background()
+	pgconn, err := pgx.Connect(ctx, "")
+	if err != nil {
+		return
+	}
+	defer pgconn.Close(ctx)
+
 	prefix := ""
 	if config.Dry {
 		prefix = "Would "
 	}
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Debug(query.Query, "args", query.QueryArgs)
+		if !config.Dry {
+			_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
+			if err != nil {
+				return fmt.Errorf("PostgreSQL error: %w", err)
+			}
+		}
 	}
 
 	elapsed := time.Since(start)
