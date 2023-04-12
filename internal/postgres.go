@@ -13,6 +13,7 @@ import (
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
 	AllRoles       RoleSet
+	Databases      []string
 	ManagedRoles   RoleSet
 	RoleColumns    []string
 	RolesBlacklist Blacklist
@@ -34,6 +35,14 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	}
 	defer pgconn.Close(ctx)
+
+	instance.Databases, err = RunQuery(config.Postgres.DatabasesQuery, pgconn, RowToString, YamlToString)
+	if err != nil {
+		return
+	}
+	for _, name := range instance.Databases {
+		slog.Debug("Found database.", "name", name)
+	}
 
 	patterns, err := RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, RowToString, YamlToString)
 	if err != nil {
