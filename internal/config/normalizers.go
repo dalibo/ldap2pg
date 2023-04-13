@@ -52,16 +52,19 @@ func NormalizeList(yaml interface{}) (list []interface{}) {
 }
 
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
-	iList, ok := yaml.([]interface{})
-	if !ok {
-		iList = append(iList, yaml)
-	}
-	for _, iItem := range iList {
-		item, ok := iItem.(string)
-		if !ok {
-			err = errors.New("Must be string")
+	switch yaml.(type) {
+	case nil:
+		return
+	case string:
+		list = append(list, yaml.(string))
+	case []interface{}:
+		for _, iItem := range yaml.([]interface{}) {
+			item, ok := iItem.(string)
+			if !ok {
+				err = errors.New("Must be string")
+			}
+			list = append(list, item)
 		}
-		list = append(list, item)
 	}
 	return
 }
@@ -93,10 +96,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		if err != nil {
 			return
 		}
-		comments, ok := rule["comments"]
-		if !ok {
-			comments = []interface{}{}
-		}
+		comments, _ := rule["comments"]
 		rule["comments"], err = NormalizeStringList(comments)
 		if err != nil {
 			return
