@@ -2,6 +2,7 @@
 package states
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -105,4 +106,34 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 		}
 	}()
 	return ch
+}
+
+func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count int, err error) {
+	ctx := context.Background()
+	pool := postgres.DBPool{}
+	defer pool.CloseAll()
+
+	prefix := ""
+	if c.Dry {
+		prefix = "Would "
+	}
+
+	for query := range wanted.Diff(instance) {
+		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Debug(query.Query, "args", query.QueryArgs)
+		count++
+		if c.Dry {
+			continue
+		}
+
+		pgconn, err := pool.Get(query.Database)
+		if err != nil {
+			return count, fmt.Errorf("PostgreSQL error: %w", err)
+		}
+		_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
+		if err != nil {
+			return count, fmt.Errorf("PostgreSQL error: %w", err)
+		}
+	}
+	return
 }
