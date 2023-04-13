@@ -137,7 +137,7 @@ sync_map:
     role: owners
     schema: __all__
 
-- description: "Query LDAP to create superusers."
+- description: "Search LDAP to create superusers."
   ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=dba)"
@@ -152,7 +152,7 @@ sync_map:
     comment: "From LDAP group {dn}"
 
 
-- description: "Query LDAP to create writers."
+- description: "Search LDAP to create writers."
   ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(cn=team*)"
@@ -165,7 +165,7 @@ sync_map:
     - writers
     comment: 'From LDAP groupe {dn}'
 
-- description: "Query LDAP to create readers."
+- description: "Search LDAP to create readers."
   ldapsearch:
     base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
     filter: "
