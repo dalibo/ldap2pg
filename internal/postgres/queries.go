@@ -1,27 +1,28 @@
 // Configurable and overridable queries.
-package internal
+package postgres
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
-// Either an SQL string or a predefined list of YAML rows.
-type SQLOrRows interface{}
-
-type InspectQuery struct {
-	Name    string
-	Default SQLOrRows
-	Value   SQLOrRows
+type SyncQuery struct {
+	Description string
+	LogArgs     []interface{}
+	Database    string
+	Query       string
+	QueryArgs   []interface{}
 }
 
-// Like pgx.RowToFunc, but from YAML
-type YamlToFunc[T any] func(row interface{}) (T, error)
+func (q SyncQuery) String() string {
+	return q.Description
+}
 
-func RunQuery[T any](q InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun YamlToFunc[T]) ([]T, error) {
+func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) ([]T, error) {
 	if q.IsPredefined() {
 		var rows []T
 		for _, value := range q.Value.([]interface{}) {
@@ -42,27 +43,6 @@ func RunQuery[T any](q InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], y
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgFun)
-}
-
-func (q *InspectQuery) IsPredefined() bool {
-	switch q.Value.(type) {
-	case string:
-		return false
-	default:
-		return true
-	}
-}
-
-// Maybe set value from default.
-func (q *InspectQuery) SetDefault() {
-	if nil == q.Value {
-		slog.Debug("Loading Postgres query from default.", "query", q)
-		q.Value = q.Default
-	}
-}
-
-func (q *InspectQuery) String() string {
-	return q.Name
 }
 
 func RowToString(row pgx.CollectableRow) (pattern string, err error) {

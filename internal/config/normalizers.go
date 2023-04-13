@@ -1,5 +1,5 @@
 // Functions to normalize YAML input before processing into data structure.
-package internal
+package config
 
 import (
 	"errors"

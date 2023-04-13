@@ -1,9 +1,10 @@
-package internal
+package roles
 
 import (
 	"strings"
 	"time"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
 )
@@ -26,6 +27,8 @@ type RoleOptions struct {
 	ValidUntil  time.Time
 	ByPassRLS   bool
 }
+
+type RoleSet map[string]Role
 
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
 	var name string
@@ -70,8 +73,8 @@ func (r *Role) BlacklistKey() string {
 	return r.Name
 }
 
-func (r *Role) Create(ch chan SyncQuery) {
-	ch <- SyncQuery{
+func (r *Role) Create(ch chan postgres.SyncQuery) {
+	ch <- postgres.SyncQuery{
 		Description: "Create role.",
 		LogArgs: []interface{}{
 			"role", r.Name,
@@ -81,9 +84,9 @@ func (r *Role) Create(ch chan SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(databases []string, ch chan SyncQuery) {
+func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 	identifier := quoteIdentifier(r.Name)
-	ch <- SyncQuery{
+	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs: []interface{}{
 			"role", r.Name,
@@ -96,7 +99,7 @@ func (r *Role) Drop(databases []string, ch chan SyncQuery) {
 		QueryArgs: []interface{}{r.Name},
 	}
 	for _, database := range databases {
-		ch <- SyncQuery{
+		ch <- postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
 			LogArgs:     []interface{}{"role", r.Name, "database", database},
 			Database:    database,
@@ -105,7 +108,7 @@ func (r *Role) Drop(databases []string, ch chan SyncQuery) {
 			DROP OWNED BY ` + identifier + `;`),
 		}
 	}
-	ch <- SyncQuery{
+	ch <- postgres.SyncQuery{
 		Description: "Drop role.",
 		LogArgs: []interface{}{
 			"role", r.Name,

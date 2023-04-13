@@ -10,7 +10,10 @@ import (
 
 	"golang.org/x/exp/slog"
 
-	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
+	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/internal/states"
+	"github.com/dalibo/ldap2pg/internal/utils"
 )
 
 func main() {
@@ -27,65 +30,66 @@ func main() {
 func run() (err error) {
 	start := time.Now()
 
-	err = SetupLogging()
+	err = config.SetupLogging()
 	if err != nil {
 		return
 	}
+	slog.Debug("Initializing ldap2pg.", "version", utils.Version)
 
-	config := NewConfig()
-	err = config.Load()
+	c := config.New()
+	err = c.Load()
 	if err != nil {
 		return
 	}
-	switch config.Action {
-	case ShowHelpAction:
-		ShowHelp()
+	switch c.Action {
+	case config.ShowHelpAction:
+		config.ShowHelp()
 		return
-	case ShowVersionAction:
+	case config.ShowVersionAction:
 		showVersion()
 		return
-	case RunAction:
+	case config.RunAction:
 	}
 
-	SetLoggingHandler(config.LogLevel)
+	config.SetLoggingHandler(c.LogLevel)
 	slog.Info("Starting ldap2pg",
-		"commit", ShortRevision,
-		"version", Version,
+		"commit", utils.ShortRevision,
+		"version", utils.Version,
 		"runtime", runtime.Version())
 
 	slog.Info("Using YAML configuration file.",
-		"path", config.ConfigFile,
-		"version", config.Version)
+		"path", c.ConfigFile,
+		"version", c.Version)
 
-	if config.Dry {
+	if c.Dry {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	} else {
 		slog.Info("Running in real mode. Postgres instance will modified.")
 	}
 
-	instance, err := PostgresInspect(config)
+	instance, err := states.PostgresInspect(c)
 	if err != nil {
 		return
 	}
 
-	wanted, err := ComputeWanted(config)
+	wanted, err := states.ComputeWanted(c)
 	if err != nil {
 		return
 	}
 
 	ctx := context.Background()
-	pool := PostgresDBPool{}
+	pool := postgres.DBPool{}
 	defer pool.CloseAll()
 
 	prefix := ""
-	if config.Dry {
+	if c.Dry {
 		prefix = "Would "
 	}
 
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		slog.Debug(query.Query, "args", query.QueryArgs)
-		if !config.Dry {
+		if !c.Dry {
 			pgconn, err := pool.Get(query.Database)
 			if err != nil {
 				return fmt.Errorf("PostgreSQL error: %w", err)
@@ -103,7 +107,7 @@ func run() (err error) {
 }
 
 func showVersion() {
-	fmt.Printf("go-ldap2pg %s\n", Version)
+	fmt.Printf("go-ldap2pg %s\n", utils.Version)
 
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {

@@ -1,4 +1,4 @@
-package internal
+package states
 
 import (
 	"context"
@@ -6,17 +6,21 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	AllRoles       RoleSet
+	AllRoles       roles.RoleSet
 	Databases      []string
-	ManagedRoles   RoleSet
+	ManagedRoles   roles.RoleSet
 	RoleColumns    []string
-	RolesBlacklist Blacklist
+	RolesBlacklist utils.Blacklist
 }
 
 var (
@@ -26,7 +30,7 @@ var (
 	rolesQuery string
 )
 
-func PostgresInspect(config Config) (instance PostgresInstance, err error) {
+func PostgresInspect(config config.Config) (instance PostgresInstance, err error) {
 	instance = PostgresInstance{}
 
 	ctx := context.Background()
@@ -36,7 +40,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	}
 	defer pgconn.Close(ctx)
 
-	instance.Databases, err = RunQuery(config.Postgres.DatabasesQuery, pgconn, RowToString, YamlToString)
+	instance.Databases, err = postgres.RunQuery(config.Postgres.DatabasesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 	if err != nil {
 		return
 	}
@@ -44,11 +48,11 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		slog.Debug("Found database.", "name", name)
 	}
 
-	patterns, err := RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, RowToString, YamlToString)
+	patterns, err := postgres.RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 	if err != nil {
 		return
 	}
-	instance.RolesBlacklist = Blacklist(patterns)
+	instance.RolesBlacklist = utils.Blacklist(patterns)
 
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
 	slog.Debug(roleColumnsQuery)
@@ -72,8 +76,8 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		err = fmt.Errorf("Failed to query role columns: %s", err)
 		return
 	}
-	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role Role, err error) {
-		role, err = NewRoleFromRow(row, instance.RoleColumns)
+	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role roles.Role, err error) {
+		role, err = roles.NewRoleFromRow(row, instance.RoleColumns)
 		return
 	})
 	if err != nil {
@@ -81,7 +85,7 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 		return
 	}
 
-	instance.AllRoles = make(RoleSet)
+	instance.AllRoles = make(roles.RoleSet)
 	for _, role := range unfilteredRoles {
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
@@ -97,12 +101,12 @@ func PostgresInspect(config Config) (instance PostgresInstance, err error) {
 	return
 }
 
-func (instance *PostgresInstance) InspectManagedRoles(config Config, pgconn *pgx.Conn) error {
+func (instance *PostgresInstance) InspectManagedRoles(config config.Config, pgconn *pgx.Conn) error {
 	if nil == config.Postgres.ManagedRolesQuery.Value {
 		instance.ManagedRoles = instance.AllRoles
 	} else {
-		instance.ManagedRoles = make(RoleSet)
-		names, err := RunQuery(config.Postgres.ManagedRolesQuery, pgconn, RowToString, YamlToString)
+		instance.ManagedRoles = make(roles.RoleSet)
+		names, err := postgres.RunQuery(config.Postgres.ManagedRolesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 		if err != nil {
 			return err
 		}

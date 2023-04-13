@@ -1,4 +1,4 @@
-package internal
+package postgres
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type PostgresDBPool map[string]*pgx.Conn
+type DBPool map[string]*pgx.Conn
 
-func (p PostgresDBPool) Get(database string) (*pgx.Conn, error) {
+func (p DBPool) Get(database string) (*pgx.Conn, error) {
 	connp, ok := p[database]
 	if ok {
 		return connp, nil
@@ -28,7 +28,7 @@ func (p PostgresDBPool) Get(database string) (*pgx.Conn, error) {
 	return connp, nil
 }
 
-func (p PostgresDBPool) CloseAll() {
+func (p DBPool) CloseAll() {
 	var names []string
 	for name, connp := range p {
 		slog.Debug("Closing Postgres connection.", "db", name)
