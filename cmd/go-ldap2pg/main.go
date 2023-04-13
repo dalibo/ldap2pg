@@ -10,9 +10,9 @@ import (
 
 	"golang.org/x/exp/slog"
 
-	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
 )
 
@@ -67,12 +67,12 @@ func run() (err error) {
 		slog.Info("Running in real mode. Postgres instance will modified.")
 	}
 
-	instance, err := PostgresInspect(c)
+	instance, err := states.PostgresInspect(c)
 	if err != nil {
 		return
 	}
 
-	wanted, err := ComputeWanted(c)
+	wanted, err := states.ComputeWanted(c)
 	if err != nil {
 		return
 	}
