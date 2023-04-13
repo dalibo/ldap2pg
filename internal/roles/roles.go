@@ -31,11 +31,8 @@ type RoleOptions struct {
 type RoleSet map[string]Role
 
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
-	var name string
 	var variableRow interface{}
-	var comment string
-	var parents []string
-	err = row.Scan(&name, &variableRow, &comment, &parents)
+	err = row.Scan(&role.Name, &variableRow, &role.Comment, &role.Parents)
 	if err != nil {
 		return
 	}
@@ -44,8 +41,6 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 	for i, value := range record {
 		colname = instanceRoleColumns[i]
 		switch colname {
-		case "rolname":
-			role.Name = value.(string)
 		case "rolbypassrls":
 			role.Options.ByPassRLS = value.(bool)
 		case "rolcanlogin":
