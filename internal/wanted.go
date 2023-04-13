@@ -7,15 +7,16 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/internal/roles"
 	"golang.org/x/exp/slog"
 )
 
 type WantedState struct {
-	Roles RoleSet
+	Roles roles.RoleSet
 }
 
 func ComputeWanted(config config.Config) (wanted WantedState, err error) {
-	wanted.Roles = make(map[string]Role)
+	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
 			slog.Debug("Skipping LDAP search for now.",
@@ -28,13 +29,13 @@ func ComputeWanted(config config.Config) (wanted WantedState, err error) {
 		}
 
 		for _, rule := range item.RoleRules {
-			var roles []Role
-			roles, err = GenerateRoles(rule)
+			var roleList []roles.Role
+			roleList, err = GenerateRoles(rule)
 			if err != nil {
 				return
 			}
 
-			for _, role := range roles {
+			for _, role := range roleList {
 				_, exists := wanted.Roles[role.Name]
 				if exists {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
@@ -48,7 +49,7 @@ func ComputeWanted(config config.Config) (wanted WantedState, err error) {
 	return
 }
 
-func GenerateRoles(rule config.RoleRule) (roles []Role, err error) {
+func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
 	commentsLen := len(rule.Comments)
 	switch commentsLen {
 	case 0:
@@ -63,13 +64,13 @@ func GenerateRoles(rule config.RoleRule) (roles []Role, err error) {
 	}
 
 	for i, name := range rule.Names {
-		role := Role{Name: name}
+		role := roles.Role{Name: name}
 		if 1 == commentsLen {
 			role.Comment = rule.Comments[0]
 		} else {
 			role.Comment = rule.Comments[i]
 		}
-		roles = append(roles, role)
+		roleList = append(roleList, role)
 	}
 	return
 }
