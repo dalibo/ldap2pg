@@ -74,18 +74,19 @@ func (r *Role) BlacklistKey() string {
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {
+	identifier := postgres.QuoteIdentifier(r.Name)
+
 	ch <- postgres.SyncQuery{
 		Description: "Create role.",
 		LogArgs: []interface{}{
 			"role", r.Name,
 		},
-		Database: "",
-		Query:    `CREATE ROLE ` + quoteIdentifier(r.Name) + `;`,
+		Query: `CREATE ROLE ` + identifier + ` ` + r.Options.String() + `;`,
 	}
 }
 
 func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
-	identifier := quoteIdentifier(r.Name)
+	identifier := postgres.QuoteIdentifier(r.Name)
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs: []interface{}{
@@ -113,10 +114,6 @@ func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 		LogArgs: []interface{}{
 			"role", r.Name,
 		},
-		Query: `DROP ROLE ` + quoteIdentifier(r.Name) + `;`,
+		Query: `DROP ROLE ` + identifier + `;`,
 	}
-}
-
-func quoteIdentifier(identifier string) string {
-	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
 }
