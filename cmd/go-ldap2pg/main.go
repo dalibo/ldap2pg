@@ -71,7 +71,11 @@ func run() (err error) {
 	count, err := wanted.Sync(c, instance)
 
 	elapsed := time.Since(start)
-	slog.Info("Comparison complete.", "queries", count, "elapsed", elapsed)
+	if count > 0 {
+		slog.Info("Comparison complete.", "queries", count, "elapsed", elapsed)
+	} else {
+		slog.Info("Nothing to do.", "queries", 0, "elapsed", elapsed)
+	}
 	return
 }
 

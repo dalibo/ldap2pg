@@ -120,7 +120,7 @@ func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count in
 
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
-		slog.Debug(query.Query, "args", query.QueryArgs)
+		slog.Debug(prefix+"Execute SQL query:\n"+query.Query, "args", query.QueryArgs)
 		count++
 		if c.Dry {
 			continue
