@@ -11,11 +11,11 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type WantedState struct {
+type Wanted struct {
 	Roles roles.RoleSet
 }
 
-func ComputeWanted(config config.Config) (wanted WantedState, err error) {
+func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
@@ -75,7 +75,7 @@ func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
 	return
 }
 
-func (wanted *WantedState) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
+func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
