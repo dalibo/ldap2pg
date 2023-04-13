@@ -29,12 +29,12 @@ changelog:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
 .PHONY: VERSION
-VERSION: internal/VERSION
-internaldap2pg/VERSION: setup.py
+VERSION: internal/utils/VERSION
+internal/utils/VERSION: setup.py
 	echo -n "v$(VERSION).0" > $@
 
 release: changelog VERSION
-	git commit internal/ldap2pg/VERSION setup.py docs/changelog.md -m "Version $(VERSION)"
+	git commit internal/utils/VERSION setup.py docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git

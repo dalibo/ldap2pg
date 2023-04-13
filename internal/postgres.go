@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
@@ -17,7 +18,7 @@ type PostgresInstance struct {
 	Databases      []string
 	ManagedRoles   RoleSet
 	RoleColumns    []string
-	RolesBlacklist Blacklist
+	RolesBlacklist utils.Blacklist
 }
 
 var (
@@ -49,7 +50,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 	if err != nil {
 		return
 	}
-	instance.RolesBlacklist = Blacklist(patterns)
+	instance.RolesBlacklist = utils.Blacklist(patterns)
 
 	rows, err := pgconn.Query(ctx, roleColumnsQuery)
 	slog.Debug(roleColumnsQuery)

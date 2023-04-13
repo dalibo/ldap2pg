@@ -12,6 +12,7 @@ import (
 
 	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/utils"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
-	slog.Debug("Initializing ldap2pg.", "version", Version)
+	slog.Debug("Initializing ldap2pg.", "version", utils.Version)
 
 	c := config.New()
 	err = c.Load()
@@ -51,8 +52,8 @@ func run() (err error) {
 
 	config.SetLoggingHandler(c.LogLevel)
 	slog.Info("Starting ldap2pg",
-		"commit", ShortRevision,
-		"version", Version,
+		"commit", utils.ShortRevision,
+		"version", utils.Version,
 		"runtime", runtime.Version())
 
 	slog.Info("Using YAML configuration file.",
@@ -105,7 +106,7 @@ func run() (err error) {
 }
 
 func showVersion() {
-	fmt.Printf("go-ldap2pg %s\n", Version)
+	fmt.Printf("go-ldap2pg %s\n", utils.Version)
 
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
