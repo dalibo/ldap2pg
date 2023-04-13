@@ -12,6 +12,7 @@ import (
 
 	. "github.com/dalibo/ldap2pg/internal" //nolint:revive
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/utils"
 )
 
@@ -77,7 +78,7 @@ func run() (err error) {
 	}
 
 	ctx := context.Background()
-	pool := PostgresDBPool{}
+	pool := postgres.DBPool{}
 	defer pool.CloseAll()
 
 	prefix := ""

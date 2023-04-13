@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"golang.org/x/exp/slog"
 )
 
@@ -73,20 +74,8 @@ func GenerateRoles(rule config.RoleRule) (roles []Role, err error) {
 	return
 }
 
-type SyncQuery struct {
-	Description string
-	LogArgs     []interface{}
-	Database    string
-	Query       string
-	QueryArgs   []interface{}
-}
-
-func (q SyncQuery) String() string {
-	return q.Description
-}
-
-func (wanted *WantedState) Diff(instance PostgresInstance) <-chan SyncQuery {
-	ch := make(chan SyncQuery)
+func (wanted *WantedState) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
+	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
 		// Create missing

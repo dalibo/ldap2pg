@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
@@ -38,7 +39,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 	}
 	defer pgconn.Close(ctx)
 
-	instance.Databases, err = RunQuery(config.Postgres.DatabasesQuery, pgconn, RowToString, YamlToString)
+	instance.Databases, err = postgres.RunQuery(config.Postgres.DatabasesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 	if err != nil {
 		return
 	}
@@ -46,7 +47,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 		slog.Debug("Found database.", "name", name)
 	}
 
-	patterns, err := RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, RowToString, YamlToString)
+	patterns, err := postgres.RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 	if err != nil {
 		return
 	}
@@ -104,7 +105,7 @@ func (instance *PostgresInstance) InspectManagedRoles(config config.Config, pgco
 		instance.ManagedRoles = instance.AllRoles
 	} else {
 		instance.ManagedRoles = make(RoleSet)
-		names, err := RunQuery(config.Postgres.ManagedRolesQuery, pgconn, RowToString, YamlToString)
+		names, err := postgres.RunQuery(config.Postgres.ManagedRolesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
 		if err != nil {
 			return err
 		}

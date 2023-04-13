@@ -1,5 +1,5 @@
 // Configurable and overridable queries.
-package internal
+package postgres
 
 import (
 	"context"
@@ -9,6 +9,18 @@ import (
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
+
+type SyncQuery struct {
+	Description string
+	LogArgs     []interface{}
+	Database    string
+	Query       string
+	QueryArgs   []interface{}
+}
+
+func (q SyncQuery) String() string {
+	return q.Description
+}
 
 func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) ([]T, error) {
 	if q.IsPredefined() {
