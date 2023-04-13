@@ -1,4 +1,4 @@
-package internal
+package ldap
 
 import (
 	"time"
@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func LdapConnect(config config.Config) (err error) {
+func Connect(config config.Config) (err error) {
 	slog.Info("Connecting to LDAP directory.",
 		"uri", config.Ldap.URI,
 		"binddn", config.Ldap.BindDn)
