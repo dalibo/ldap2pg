@@ -30,14 +30,7 @@ func main() {
 func run() (err error) {
 	start := time.Now()
 
-	err = config.SetupLogging()
-	if err != nil {
-		return
-	}
-	slog.Debug("Initializing ldap2pg.", "version", utils.Version)
-
-	c := config.New()
-	err = c.Load()
+	c, err := config.Load()
 	if err != nil {
 		return
 	}
