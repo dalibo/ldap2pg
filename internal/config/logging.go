@@ -27,7 +27,14 @@ func SetupLogging() error {
 		}
 	}
 
-	SetLoggingHandler(level.Level())
+	colorEnv, found := os.LookupEnv("COLOR")
+	var color bool
+	if found {
+		color = "true" == colorEnv
+	} else {
+		color = isatty.IsTerminal(os.Stderr.Fd())
+	}
+	SetLoggingHandler(level.Level(), color)
 
 	return nil
 }
@@ -39,15 +46,19 @@ var levelStrings = map[slog.Level]string{
 	slog.LevelError: "\033[1;31mERROR",
 }
 
-func SetLoggingHandler(level slog.Level) {
+func SetLoggingHandler(level slog.Level, color bool) {
 	currentLogLevel = level
 	var h slog.Handler
-	if isatty.IsTerminal(os.Stderr.Fd()) {
+	if color {
 		h = tint.Options{
 			Level: level,
 			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 				if a.Key == slog.LevelKey {
 					a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
+				}
+				if a.Key == "err" && a.Value.Kind() == slog.KindAny && a.Value.Any() == nil {
+					// Drop nil error.
+					a.Key = ""
 				}
 				return a
 			},

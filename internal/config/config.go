@@ -10,15 +10,18 @@ import (
 	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lithammer/dedent"
+	"github.com/mattn/go-isatty"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/exp/slog"
 )
 
 type Config struct {
 	Action     CommandAction
+	MaybeColor Tristate
+	Color      bool
 	ConfigFile string
 	// Use a tristate because we load config from highest priority to lowest.
-	MaybeDry int  // Tristate: 0 = undefined, -1 = false, 1 = true
+	MaybeDry Tristate
 	Dry      bool // Final value for app.
 	LogLevel slog.Level
 	Version  int
@@ -109,7 +112,8 @@ func (config *Config) Load() (err error) {
 
 	config.LoadDefaults()
 
-	config.Dry = config.MaybeDry >= 0
+	config.Color = config.MaybeColor.Bool()
+	config.Dry = config.MaybeDry.Bool()
 
 	return
 }
@@ -179,16 +183,18 @@ func (config *Config) LoadFlags(values FlagValues) {
 	}
 
 	config.MaybeDry = values.MaybeDry
+	config.MaybeColor = values.MaybeColor
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
-	if 0 == config.MaybeDry && "" != values.RawDry {
+	if !config.MaybeColor.Defined() && "" != values.RawColor {
+		slog.Debug("Setting color mode.", "source", "env", "value", values.RawColor)
+		config.MaybeColor.Set(values.Color)
+	}
+
+	if !config.MaybeDry.Defined() && "" != values.RawDry {
 		slog.Debug("Setting DRY.", "source", "env", "value", values.RawDry)
-		if values.Dry {
-			config.MaybeDry = 1
-		} else {
-			config.MaybeDry = -1
-		}
+		config.MaybeDry.Set(values.Dry)
 	}
 
 	if values.LdapURI != "" {
@@ -225,13 +231,31 @@ func (config *Config) LoadEnv(values EnvValues) {
 
 type Tristate int
 
+func (t Tristate) Bool() bool {
+	return t > 0
+}
+
+func (t Tristate) Defined() bool {
+	return t != 0
+}
+
+func (t *Tristate) Set(value bool) {
+	if value {
+		*t = 1
+	} else {
+		*t = -1
+	}
+}
+
 type EnvValues struct {
 	LdapURI        string `envconfig:"LDAPURI"`
 	LdapBindDn     string `envconfig:"LDAPBINDDN"`
 	LdapPassword   string `envconfig:"LDAPPASSWORD"`
 	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
 	RawDry         string `envconfig:"DRY"` // Tri state: "" = undefined, else boolean.
-	Dry            bool   `envconfig:"DRY"` // Tri state: "" = undefined, else boolean.
+	Dry            bool   `envconfig:"DRY"`
+	RawColor       string `envconfig:"COLOR"`
+	Color          bool   `envconfig:"COLOR"`
 	ConfigFile     string `envconfig:"LDAP2PG_CONFIG"`
 }
 
@@ -244,11 +268,14 @@ const (
 )
 
 type FlagValues struct {
+	Color       bool
+	NoColor     bool
+	MaybeColor  Tristate
 	Verbose     int
 	Quiet       int
 	Dry         bool
 	Real        bool
-	MaybeDry    int // Tristate
+	MaybeDry    Tristate
 	ShowHelp    bool
 	ShowVersion bool
 	ConfigFile  string
@@ -257,6 +284,8 @@ type FlagValues struct {
 func loadFlags() FlagValues {
 	values := FlagValues{}
 	flag.StringVarP(&values.ConfigFile, "config", "c", "", "Path to YAML configuration file.")
+	flag.BoolVar(&values.Color, "color", false, "Force color output.")
+	flag.BoolVar(&values.NoColor, "no-color", false, "Force plain text output.")
 	flag.BoolVarP(&values.ShowHelp, "help", "?", false, "Show this help message and exit.")
 	flag.BoolVarP(&values.ShowVersion, "version", "V", false, "Show version and exit.")
 	flag.CountVarP(&values.Verbose, "verbose", "v", "Increase log verbosity.")
@@ -264,6 +293,16 @@ func loadFlags() FlagValues {
 	flag.BoolVarP(&values.Dry, "dry", "n", false, "Don't touch Postgres, just print what to do.")
 	flag.BoolVarP(&values.Real, "real", "N", false, "Real mode, apply changes to Postgres instance.")
 	flag.Parse()
+
+	// --nocolor prevales.
+	if values.Color {
+		slog.Debug("Setting color mode.", "source", "flags")
+		values.MaybeColor = 1
+	}
+	if values.NoColor {
+		slog.Debug("Setting plain-text mode.", "source", "flags")
+		values.MaybeColor = -1
+	}
 
 	// Apply --real or --dry only if set. --dry prevales.
 	if values.Real {
@@ -285,7 +324,11 @@ func ShowHelp() {
 func (config *Config) LoadDefaults() {
 	config.Postgres.DatabasesQuery.SetDefault()
 	config.Postgres.RolesBlacklistQuery.SetDefault()
-	if 0 == config.MaybeDry {
-		config.Dry = true
+	if !config.MaybeDry.Defined() {
+		config.MaybeDry.Set(true)
+	}
+	if !config.MaybeColor.Defined() {
+		config.MaybeColor.Set(isatty.IsTerminal(os.Stderr.Fd()))
+		slog.Debug("Setting color mode from stderr.", "color", config.Color)
 	}
 }

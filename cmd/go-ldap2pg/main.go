@@ -43,7 +43,7 @@ func run() (err error) {
 	case config.RunAction:
 	}
 
-	config.SetLoggingHandler(c.LogLevel)
+	config.SetLoggingHandler(c.LogLevel, c.Color)
 	slog.Info("Starting ldap2pg",
 		"commit", utils.ShortRevision,
 		"version", utils.Version,

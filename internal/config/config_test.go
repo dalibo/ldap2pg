@@ -28,9 +28,9 @@ func (suite *ConfigSuite) TestLoadEnvDoesNotOverwriteConfigFile() {
 
 func TestConfig(t *testing.T) {
 	if testing.Verbose() {
-		config.SetLoggingHandler(slog.LevelDebug)
+		config.SetLoggingHandler(slog.LevelDebug, false)
 	} else {
-		config.SetLoggingHandler(slog.LevelDebug)
+		config.SetLoggingHandler(slog.LevelDebug, false)
 	}
 	suite.Run(t, new(ConfigSuite))
 }
