@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dalibo/ldap2pg/internal/tint"
+	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 	"golang.org/x/exp/slog"
 )
@@ -32,17 +32,24 @@ func SetupLogging() error {
 	return nil
 }
 
+var levelStrings = map[slog.Level]string{
+	slog.LevelDebug: "\033[2mDEBUG",
+	slog.LevelInfo:  "\033[1mINFO ",
+	slog.LevelWarn:  "\033[1;38;5;185mWARN ",
+	slog.LevelError: "\033[1;31mERROR",
+}
+
 func SetLoggingHandler(level slog.Level) {
 	currentLogLevel = level
 	var h slog.Handler
 	if isatty.IsTerminal(os.Stderr.Fd()) {
 		h = tint.Options{
 			Level: level,
-			LevelStrings: map[slog.Level]string{
-				slog.LevelDebug: "\033[0;2mDEBUG",
-				slog.LevelInfo:  "\033[0;1mINFO ",
-				slog.LevelWarn:  "\033[0;1;38;5;185mINFO ",
-				slog.LevelError: "\033[0;1;31mERROR",
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				if a.Key == slog.LevelKey {
+					a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
+				}
+				return a
 			},
 			TimeFormat: "15:04:05",
 		}.NewHandler(os.Stderr)
