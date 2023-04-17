@@ -42,7 +42,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
 					return
 				}
-				slog.Debug("Wants role.", "name", role.Name)
+				slog.Debug("Wants role.", "name", role.Name, "options", role.Options)
 				wanted.Roles[role.Name] = role
 			}
 		}
@@ -65,7 +65,7 @@ func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
 	}
 
 	for i, name := range rule.Names {
-		role := roles.Role{Name: name}
+		role := roles.Role{Name: name, Options: rule.Options}
 		if 1 == commentsLen {
 			role.Comment = rule.Comments[0]
 		} else {

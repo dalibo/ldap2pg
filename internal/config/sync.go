@@ -16,6 +16,10 @@ func (item *SyncItem) LoadYaml(yaml map[string]interface{}) (err error) {
 		ruleList := rules.([]interface{})
 		for _, yamlRule := range ruleList {
 			rule := RoleRule{}
+			// Default Inherit like Postgres.
+			rule.Options.Inherit = true
+			// Default ConnLimit like Postgres.
+			rule.Options.ConnLimit = -1
 			yamlRuleMap := yamlRule.(map[string]interface{})
 			rule.LoadYaml(yamlRuleMap)
 			item.RoleRules = append(item.RoleRules, rule)
@@ -26,9 +30,4 @@ func (item *SyncItem) LoadYaml(yaml map[string]interface{}) (err error) {
 		item.LdapSearch = iLdap
 	}
 	return
-}
-
-func (rule *RoleRule) LoadYaml(yaml map[string]interface{}) {
-	rule.Names = yaml["names"].([]string)
-	rule.Comments = yaml["comments"].([]string)
 }

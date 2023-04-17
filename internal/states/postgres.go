@@ -90,7 +90,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
 			instance.AllRoles[role.Name] = role
-			slog.Debug("Found role in Postgres instance.", "name", role.Name, "super", role.Options.Super)
+			slog.Debug("Found role in Postgres instance.", "name", role.Name, "options", role.Options)
 
 		} else {
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)

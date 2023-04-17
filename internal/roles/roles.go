@@ -1,9 +1,7 @@
 package roles
 
 import (
-	"strings"
-	"time"
-
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
@@ -13,19 +11,7 @@ type Role struct {
 	Name    string
 	Comment string
 	Parents []string
-	Options RoleOptions
-}
-
-type RoleOptions struct {
-	Super       bool
-	Inherit     bool
-	CreateRole  bool
-	CreateDB    bool
-	CanLogin    bool
-	Replication bool
-	ConnLimit   int
-	ValidUntil  time.Time
-	ByPassRLS   bool
+	Options config.RoleOptions
 }
 
 type RoleSet map[string]Role
