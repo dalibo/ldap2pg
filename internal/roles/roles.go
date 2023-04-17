@@ -37,6 +37,8 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 			role.Options.CreateDB = value.(bool)
 		case "rolcreaterole":
 			role.Options.CreateRole = value.(bool)
+		case "rolinherit":
+			role.Options.Inherit = value.(bool)
 		case "rolreplication":
 			role.Options.Replication = value.(bool)
 		case "rolsuper":
@@ -52,6 +54,24 @@ func (r *Role) String() string {
 
 func (r *Role) BlacklistKey() string {
 	return r.Name
+}
+
+// Generate queries to update current role configuration to match wanted role
+// configuration.
+func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
+	identifier := postgres.QuoteIdentifier(r.Name)
+
+	if wanted.Options != r.Options {
+		ch <- postgres.SyncQuery{
+			Description: "Alter options.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"current", r.Options,
+				"wanted", wanted.Options,
+			},
+			Query: `ALTER ROLE ` + identifier + ` WITH ` + wanted.Options.String() + `;`,
+		}
+	}
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {

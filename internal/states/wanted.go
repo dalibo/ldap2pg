@@ -82,13 +82,12 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 		defer close(ch)
 		// Create missing
 		for name := range wanted.Roles {
-			if _, ok := instance.AllRoles[name]; ok {
-				slog.Debug("Role already in instance.", "role", name)
-				continue
-			}
-
 			role := wanted.Roles[name]
-			role.Create(ch)
+			if other, ok := instance.AllRoles[name]; ok {
+				other.Alter(role, ch)
+			} else {
+				role.Create(ch)
+			}
 		}
 
 		// Drop spurious
