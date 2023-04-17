@@ -1,9 +1,7 @@
 package roles
 
 import (
-	"strings"
-	"time"
-
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
@@ -13,29 +11,14 @@ type Role struct {
 	Name    string
 	Comment string
 	Parents []string
-	Options RoleOptions
-}
-
-type RoleOptions struct {
-	Super       bool
-	Inherit     bool
-	CreateRole  bool
-	CreateDB    bool
-	CanLogin    bool
-	Replication bool
-	ConnLimit   int
-	ValidUntil  time.Time
-	ByPassRLS   bool
+	Options config.RoleOptions
 }
 
 type RoleSet map[string]Role
 
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
-	var name string
 	var variableRow interface{}
-	var comment string
-	var parents []string
-	err = row.Scan(&name, &variableRow, &comment, &parents)
+	err = row.Scan(&role.Name, &variableRow, &role.Comment, &role.Parents)
 	if err != nil {
 		return
 	}
@@ -44,8 +27,6 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 	for i, value := range record {
 		colname = instanceRoleColumns[i]
 		switch colname {
-		case "rolname":
-			role.Name = value.(string)
 		case "rolbypassrls":
 			role.Options.ByPassRLS = value.(bool)
 		case "rolcanlogin":
@@ -56,6 +37,8 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 			role.Options.CreateDB = value.(bool)
 		case "rolcreaterole":
 			role.Options.CreateRole = value.(bool)
+		case "rolinherit":
+			role.Options.Inherit = value.(bool)
 		case "rolreplication":
 			role.Options.Replication = value.(bool)
 		case "rolsuper":
@@ -73,19 +56,38 @@ func (r *Role) BlacklistKey() string {
 	return r.Name
 }
 
+// Generate queries to update current role configuration to match wanted role
+// configuration.
+func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
+	identifier := postgres.QuoteIdentifier(r.Name)
+
+	if wanted.Options != r.Options {
+		ch <- postgres.SyncQuery{
+			Description: "Alter options.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"current", r.Options,
+				"wanted", wanted.Options,
+			},
+			Query: `ALTER ROLE ` + identifier + ` WITH ` + wanted.Options.String() + `;`,
+		}
+	}
+}
+
 func (r *Role) Create(ch chan postgres.SyncQuery) {
+	identifier := postgres.QuoteIdentifier(r.Name)
+
 	ch <- postgres.SyncQuery{
 		Description: "Create role.",
 		LogArgs: []interface{}{
 			"role", r.Name,
 		},
-		Database: "",
-		Query:    `CREATE ROLE ` + quoteIdentifier(r.Name) + `;`,
+		Query: `CREATE ROLE ` + identifier + ` ` + r.Options.String() + `;`,
 	}
 }
 
 func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
-	identifier := quoteIdentifier(r.Name)
+	identifier := postgres.QuoteIdentifier(r.Name)
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs: []interface{}{
@@ -113,10 +115,6 @@ func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 		LogArgs: []interface{}{
 			"role", r.Name,
 		},
-		Query: `DROP ROLE ` + quoteIdentifier(r.Name) + `;`,
+		Query: `DROP ROLE ` + identifier + `;`,
 	}
-}
-
-func quoteIdentifier(identifier string) string {
-	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
 }

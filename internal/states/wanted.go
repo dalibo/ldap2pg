@@ -2,6 +2,7 @@
 package states
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -11,11 +12,11 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type WantedState struct {
+type Wanted struct {
 	Roles roles.RoleSet
 }
 
-func ComputeWanted(config config.Config) (wanted WantedState, err error) {
+func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
@@ -41,7 +42,7 @@ func ComputeWanted(config config.Config) (wanted WantedState, err error) {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
 					return
 				}
-				slog.Debug("Wants role.", "name", role.Name)
+				slog.Debug("Wants role.", "name", role.Name, "options", role.Options)
 				wanted.Roles[role.Name] = role
 			}
 		}
@@ -64,7 +65,7 @@ func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
 	}
 
 	for i, name := range rule.Names {
-		role := roles.Role{Name: name}
+		role := roles.Role{Name: name, Options: rule.Options}
 		if 1 == commentsLen {
 			role.Comment = rule.Comments[0]
 		} else {
@@ -75,19 +76,18 @@ func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
 	return
 }
 
-func (wanted *WantedState) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
+func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
 		// Create missing
 		for name := range wanted.Roles {
-			if _, ok := instance.AllRoles[name]; ok {
-				slog.Debug("Role already in instance.", "role", name)
-				continue
-			}
-
 			role := wanted.Roles[name]
-			role.Create(ch)
+			if other, ok := instance.AllRoles[name]; ok {
+				other.Alter(role, ch)
+			} else {
+				role.Create(ch)
+			}
 		}
 
 		// Drop spurious
@@ -105,4 +105,34 @@ func (wanted *WantedState) Diff(instance PostgresInstance) <-chan postgres.SyncQ
 		}
 	}()
 	return ch
+}
+
+func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count int, err error) {
+	ctx := context.Background()
+	pool := postgres.DBPool{}
+	defer pool.CloseAll()
+
+	prefix := ""
+	if c.Dry {
+		prefix = "Would "
+	}
+
+	for query := range wanted.Diff(instance) {
+		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Debug(prefix+"Execute SQL query:\n"+query.Query, "args", query.QueryArgs)
+		count++
+		if c.Dry {
+			continue
+		}
+
+		pgconn, err := pool.Get(query.Database)
+		if err != nil {
+			return count, fmt.Errorf("PostgreSQL error: %w", err)
+		}
+		_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
+		if err != nil {
+			return count, fmt.Errorf("PostgreSQL error: %w", err)
+		}
+	}
+	return
 }

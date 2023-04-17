@@ -48,7 +48,7 @@ def ldapfree_env():
 def test_custom_yaml():
     from sh import ErrorReturnCode, chmod, ldap2pg, rm
 
-    LDAP2PG_CONFIG = 'my-test-ldap2pg.yml'
+    LDAP2PG_CONFIG = 'tests-func-ldap2pg.yml'
     rm('-f', LDAP2PG_CONFIG)
     with pytest.raises(ErrorReturnCode):
         ldap2pg(_env=dict(os.environ, LDAP2PG_CONFIG=LDAP2PG_CONFIG))
@@ -65,6 +65,8 @@ def test_custom_yaml():
     # And that fixing file mode do the trick.
     chmod('0600', LDAP2PG_CONFIG)
     ldap2pg('--config', LDAP2PG_CONFIG, _env=ldapfree_env())
+
+    os.unlink(LDAP2PG_CONFIG)
 
 
 def test_stdin(capsys):

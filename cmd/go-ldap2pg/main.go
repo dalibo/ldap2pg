@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -11,7 +10,6 @@ import (
 	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal/config"
-	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
 )
@@ -30,14 +28,7 @@ func main() {
 func run() (err error) {
 	start := time.Now()
 
-	err = config.SetupLogging()
-	if err != nil {
-		return
-	}
-	slog.Debug("Initializing ldap2pg.", "version", utils.Version)
-
-	c := config.New()
-	err = c.Load()
+	c, err := config.Load()
 	if err != nil {
 		return
 	}
@@ -77,32 +68,14 @@ func run() (err error) {
 		return
 	}
 
-	ctx := context.Background()
-	pool := postgres.DBPool{}
-	defer pool.CloseAll()
-
-	prefix := ""
-	if c.Dry {
-		prefix = "Would "
-	}
-
-	for query := range wanted.Diff(instance) {
-		slog.Info(prefix+query.Description, query.LogArgs...)
-		slog.Debug(query.Query, "args", query.QueryArgs)
-		if !c.Dry {
-			pgconn, err := pool.Get(query.Database)
-			if err != nil {
-				return fmt.Errorf("PostgreSQL error: %w", err)
-			}
-			_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
-			if err != nil {
-				return fmt.Errorf("PostgreSQL error: %w", err)
-			}
-		}
-	}
+	count, err := wanted.Sync(c, instance)
 
 	elapsed := time.Since(start)
-	slog.Info("Comparison complete.", "elapsed", elapsed)
+	if count > 0 {
+		slog.Info("Comparison complete.", "queries", count, "elapsed", elapsed)
+	} else {
+		slog.Info("Nothing to do.", "queries", 0, "elapsed", elapsed)
+	}
 	return
 }
 

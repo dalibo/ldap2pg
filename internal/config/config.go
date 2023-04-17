@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lithammer/dedent"
 	flag "github.com/spf13/pflag"
@@ -28,11 +29,6 @@ type Config struct {
 	}
 	Postgres PostgresQueries
 	SyncMap  []SyncItem
-}
-
-type RoleRule struct {
-	Names    []string
-	Comments []string
 }
 
 type PostgresQueries struct {
@@ -62,6 +58,18 @@ func New() Config {
 			},
 		},
 	}
+}
+
+func Load() (Config, error) {
+	// Bootstrap logging before loading config.
+	err := SetupLogging()
+	if err != nil {
+		return Config{}, err
+	}
+	slog.Debug("Initializing ldap2pg.", "version", utils.Version)
+	c := New()
+	err = c.Load()
+	return c, err
 }
 
 func (config *Config) Load() (err error) {

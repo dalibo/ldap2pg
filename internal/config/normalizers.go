@@ -3,6 +3,7 @@ package config
 
 import (
 	"errors"
+	"strings"
 )
 
 type KeyConflict struct {
@@ -52,16 +53,19 @@ func NormalizeList(yaml interface{}) (list []interface{}) {
 }
 
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
-	iList, ok := yaml.([]interface{})
-	if !ok {
-		iList = append(iList, yaml)
-	}
-	for _, iItem := range iList {
-		item, ok := iItem.(string)
-		if !ok {
-			err = errors.New("Must be string")
+	switch yaml.(type) {
+	case nil:
+		return
+	case string:
+		list = append(list, yaml.(string))
+	case []interface{}:
+		for _, iItem := range yaml.([]interface{}) {
+			item, ok := iItem.(string)
+			if !ok {
+				err = errors.New("Must be string")
+			}
+			list = append(list, item)
 		}
-		list = append(list, item)
 	}
 	return
 }
@@ -93,17 +97,42 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		if err != nil {
 			return
 		}
-		comments, ok := rule["comments"]
-		if !ok {
-			comments = []interface{}{}
-		}
+		comments := rule["comments"]
 		rule["comments"], err = NormalizeStringList(comments)
+		if err != nil {
+			return
+		}
+		options := rule["options"]
+		rule["options"], err = NormalizeRoleOptions(options)
 		if err != nil {
 			return
 		}
 	default:
 		err = &ParseError{
 			Message: "Invalid role rule YAML",
+			Value:   yaml,
+		}
+	}
+	return
+}
+
+func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err error) {
+	// Normal form of role options is a map with SQL token as key and
+	// boolean or int value.
+	value = make(map[string]interface{})
+
+	switch yaml.(type) {
+	case string:
+		s := yaml.(string)
+		tokens := strings.Split(s, " ")
+		for _, token := range tokens {
+			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
+		}
+	case nil:
+		return
+	default:
+		err = &ParseError{
+			Message: "Invalid role options YAML",
 			Value:   yaml,
 		}
 	}

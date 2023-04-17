@@ -132,6 +132,17 @@ func (suite *ConfigSuite) TestNormalizeRoleComment() {
 	r.Equal("single", comments[0])
 }
 
+func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {
+	r := suite.Require()
+
+	raw := interface{}("SUPERUSER LOGIN")
+
+	value, err := config.NormalizeRoleOptions(raw)
+	r.Nil(err)
+	r.True(value["SUPERUSER"].(bool))
+	r.True(value["LOGIN"].(bool))
+}
+
 func (suite *ConfigSuite) TestNormalizeSyncItem() {
 	r := suite.Require()
 
