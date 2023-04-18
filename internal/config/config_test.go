@@ -30,7 +30,7 @@ func TestConfig(t *testing.T) {
 	if testing.Verbose() {
 		config.SetLoggingHandler(slog.LevelDebug, false)
 	} else {
-		config.SetLoggingHandler(slog.LevelDebug, false)
+		config.SetLoggingHandler(slog.LevelWarn, false)
 	}
 	suite.Run(t, new(ConfigSuite))
 }
