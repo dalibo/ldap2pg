@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dalibo/ldap2pg/internal/tint"
+	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 	"golang.org/x/exp/slog"
 )
@@ -27,22 +27,40 @@ func SetupLogging() error {
 		}
 	}
 
-	SetLoggingHandler(level.Level())
+	colorEnv, found := os.LookupEnv("COLOR")
+	var color bool
+	if found {
+		color = "true" == colorEnv
+	} else {
+		color = isatty.IsTerminal(os.Stderr.Fd())
+	}
+	SetLoggingHandler(level.Level(), color)
 
 	return nil
 }
 
-func SetLoggingHandler(level slog.Level) {
+var levelStrings = map[slog.Level]string{
+	slog.LevelDebug: "\033[2mDEBUG",
+	slog.LevelInfo:  "\033[1mINFO ",
+	slog.LevelWarn:  "\033[1;38;5;185mWARN ",
+	slog.LevelError: "\033[1;31mERROR",
+}
+
+func SetLoggingHandler(level slog.Level, color bool) {
 	currentLogLevel = level
 	var h slog.Handler
-	if isatty.IsTerminal(os.Stderr.Fd()) {
+	if color {
 		h = tint.Options{
 			Level: level,
-			LevelStrings: map[slog.Level]string{
-				slog.LevelDebug: "\033[0;2mDEBUG",
-				slog.LevelInfo:  "\033[0;1mINFO ",
-				slog.LevelWarn:  "\033[0;1;38;5;185mINFO ",
-				slog.LevelError: "\033[0;1;31mERROR",
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				if a.Key == slog.LevelKey {
+					a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
+				}
+				if a.Key == "err" && a.Value.Kind() == slog.KindAny && a.Value.Any() == nil {
+					// Drop nil error.
+					a.Key = ""
+				}
+				return a
 			},
 			TimeFormat: "15:04:05",
 		}.NewHandler(os.Stderr)
