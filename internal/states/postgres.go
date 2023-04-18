@@ -73,7 +73,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 	slog.Debug(rolesQuery)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
-		err = fmt.Errorf("Failed to query role columns: %s", err)
+		err = fmt.Errorf("Failed to query role columns: %w", err)
 		return
 	}
 	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role roles.Role, err error) {
