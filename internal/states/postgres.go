@@ -66,7 +66,7 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 		return
 	}
 	instance.RoleColumns = columns
-	slog.Debug("Querying PostgreSQL instance role columns.", "columns", instance.RoleColumns)
+	slog.Debug("Inspected PostgreSQL instance role columns.", "columns", instance.RoleColumns)
 
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
