@@ -44,7 +44,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
 					return wanted, err
 				}
-				slog.Debug("Wants role.", "name", role.Name, "options", role.Options)
+				slog.Debug("Wants role.", "name", role.Name, "options", role.Options, "parents", role.Parents)
 				wanted.Roles[role.Name] = role
 			}
 		}
@@ -76,6 +76,9 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 			} else {
 				role.Comment = rule.Comments[i]
 			}
+
+			role.Parents = rule.Parents.Clone()
+
 			ch <- interface{}(role)
 		}
 	}()

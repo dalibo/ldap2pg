@@ -3,13 +3,14 @@ package roles
 import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 )
 
 type Role struct {
 	Name    string
 	Comment string
-	Parents []string
+	Parents mapset.Set[string]
 	Options config.RoleOptions
 }
 
@@ -17,10 +18,12 @@ type RoleSet map[string]Role
 
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
 	var variableRow interface{}
-	err = row.Scan(&role.Name, &variableRow, &role.Comment, &role.Parents)
+	var parents []string
+	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
 	if err != nil {
 		return
 	}
+	role.Parents = mapset.NewSet[string](parents...)
 	record := variableRow.([]interface{})
 	var colname string
 	for i, value := range record {
