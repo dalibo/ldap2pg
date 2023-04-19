@@ -4,7 +4,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
-	"github.com/lithammer/dedent"
 )
 
 type Role struct {
@@ -59,7 +58,7 @@ func (r *Role) BlacklistKey() string {
 // Generate queries to update current role configuration to match wanted role
 // configuration.
 func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 
 	if wanted.Options != r.Options {
 		ch <- postgres.SyncQuery{
@@ -69,43 +68,34 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 				"current", r.Options,
 				"wanted", wanted.Options,
 			},
-			Query: `ALTER ROLE ` + identifier + ` WITH ` + wanted.Options.String() + `;`,
+			Query:     `ALTER ROLE %s WITH ` + wanted.Options.String() + `;`,
+			QueryArgs: []interface{}{identifier},
 		}
 	}
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 
 	ch <- postgres.SyncQuery{
 		Description: "Create role.",
 		LogArgs: []interface{}{
 			"role", r.Name,
 		},
-		Query: `CREATE ROLE ` + identifier + ` ` + r.Options.String() + `;`,
-	}
-	ch <- postgres.SyncQuery{
-		Description: "Set role comment.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query:     `COMMENT ON ROLE ` + identifier + ` IS $1;`,
-		QueryArgs: []interface{}{r.Comment},
+		Query:     `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
+		QueryArgs: []interface{}{identifier},
 	}
 }
 
 func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query: dedent.Dedent(`
+		LogArgs:     []interface{}{"role", r.Name},
+		Query: `
 		SELECT pg_terminate_backend(pid)
 		FROM pg_catalog.pg_stat_activity
-		WHERE usename = $1;
-		`),
+		WHERE usename = %s;`,
 		QueryArgs: []interface{}{r.Name},
 	}
 	for _, database := range databases {
@@ -113,16 +103,18 @@ func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 			Description: "Reassign objects and purge ACL.",
 			LogArgs:     []interface{}{"role", r.Name, "database", database},
 			Database:    database,
-			Query: dedent.Dedent(`
-			REASSIGN OWNED BY ` + identifier + ` TO CURRENT_USER;
-			DROP OWNED BY ` + identifier + `;`),
+			Query: `
+			REASSIGN OWNED BY %s TO CURRENT_USER;
+			DROP OWNED BY %s;`,
+			QueryArgs: []interface{}{
+				identifier, identifier,
+			},
 		}
 	}
 	ch <- postgres.SyncQuery{
 		Description: "Drop role.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query: `DROP ROLE ` + identifier + `;`,
+		LogArgs:     []interface{}{"role", r.Name},
+		Query:       `DROP ROLE %s;`,
+		QueryArgs:   []interface{}{identifier},
 	}
 }

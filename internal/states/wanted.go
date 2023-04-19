@@ -116,6 +116,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
+	formatter := postgres.FmtQueryRewriter{}
 	defer pool.CloseAll()
 
 	prefix := ""
@@ -125,17 +126,21 @@ func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count in
 
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
-		slog.Debug(prefix+"Execute SQL query:\n"+query.Query, "args", query.QueryArgs)
 		count++
-		if c.Dry {
-			continue
-		}
-
 		pgconn, err := pool.Get(query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
-		_, err = pgconn.Exec(ctx, query.Query, query.QueryArgs...)
+
+		// Rewrite query to log a pasteable query even when in Dry run.
+		sql, _, _ := formatter.RewriteQuery(ctx, pgconn, query.Query, query.QueryArgs)
+		slog.Debug(prefix + "Execute SQL query:\n" + sql)
+
+		if c.Dry {
+			continue
+		}
+
+		_, err = pgconn.Exec(ctx, sql)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
