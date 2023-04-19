@@ -29,6 +29,8 @@ github.com/lithammer/dedent v1.1.0 h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffkt
 github.com/lithammer/dedent v1.1.0/go.mod h1:jrXYCQtgg0nJiN+StA2KgR7w6CiQNv9Fd/Z9BP0jIOc=
 github.com/lmittmann/tint v0.3.0 h1:uL4z76990006jbXq93YbuD4yd6kZurE1GlAy7NwI9TE=
 github.com/lmittmann/tint v0.3.0/go.mod h1:Hi8xHQVw7I5gYrQ2hVhB/dDhqdGATpCoFVX0Ep4pPDY=
+github.com/lmittmann/tint v0.3.1 h1:FglmyjhkTPteCABqOL4J/zvmDYq89dVNz3g+snmVrkU=
+github.com/lmittmann/tint v0.3.1/go.mod h1:Hi8xHQVw7I5gYrQ2hVhB/dDhqdGATpCoFVX0Ep4pPDY=
 github.com/mattn/go-isatty v0.0.18 h1:DOKFKCQ7FNG2L1rbrmstDN4QVRdS89Nkh85u68Uwp98=
 github.com/mattn/go-isatty v0.0.18/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
