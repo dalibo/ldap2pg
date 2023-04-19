@@ -59,7 +59,7 @@ func (r *Role) BlacklistKey() string {
 // Generate queries to update current role configuration to match wanted role
 // configuration.
 func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
-	identifier := postgres.QuoteIdentifier(r.Name)
+	identifier := pgx.Identifier{r.Name}.Sanitize()
 
 	if wanted.Options != r.Options {
 		ch <- postgres.SyncQuery{
@@ -75,7 +75,7 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {
-	identifier := postgres.QuoteIdentifier(r.Name)
+	identifier := pgx.Identifier{r.Name}.Sanitize()
 
 	ch <- postgres.SyncQuery{
 		Description: "Create role.",
@@ -84,10 +84,18 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 		},
 		Query: `CREATE ROLE ` + identifier + ` ` + r.Options.String() + `;`,
 	}
+	ch <- postgres.SyncQuery{
+		Description: "Set role comment.",
+		LogArgs: []interface{}{
+			"role", r.Name,
+		},
+		Query:     `COMMENT ON ROLE ` + identifier + ` IS $1;`,
+		QueryArgs: []interface{}{r.Comment},
+	}
 }
 
 func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
-	identifier := postgres.QuoteIdentifier(r.Name)
+	identifier := pgx.Identifier{r.Name}.Sanitize()
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs: []interface{}{

@@ -30,17 +30,19 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 		}
 
 		for _, rule := range item.RoleRules {
-			var roleList []roles.Role
-			roleList, err = GenerateRoles(rule)
-			if err != nil {
-				return
-			}
-
-			for _, role := range roleList {
+			for item := range GenerateRoles(rule) {
+				err, _ := item.(error)
+				if err != nil {
+					return wanted, err
+				}
+				role, ok := item.(roles.Role)
+				if !ok {
+					panic(fmt.Sprintf("bad object generated: %v", item))
+				}
 				_, exists := wanted.Roles[role.Name]
 				if exists {
 					err = fmt.Errorf("Duplicated role %s", role.Name)
-					return
+					return wanted, err
 				}
 				slog.Debug("Wants role.", "name", role.Name, "options", role.Options)
 				wanted.Roles[role.Name] = role
@@ -50,30 +52,34 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	return
 }
 
-func GenerateRoles(rule config.RoleRule) (roleList []roles.Role, err error) {
-	commentsLen := len(rule.Comments)
-	switch commentsLen {
-	case 0:
-		rule.Comments = []string{"Managed by ldap2pg"}
-		commentsLen = 1
-	case 1: // Copy same comment for all roles.
-	default:
-		if commentsLen != len(rule.Names) {
-			err = errors.New("Comment list inconsistent with generated names")
-			return
+func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
+	ch = make(chan interface{})
+	go func() {
+		defer close(ch)
+		commentsLen := len(rule.Comments)
+		switch commentsLen {
+		case 0:
+			rule.Comments = []string{"Managed by ldap2pg"}
+			commentsLen = 1
+		case 1: // Copy same comment for all roles.
+		default:
+			if commentsLen != len(rule.Names) {
+				ch <- interface{}(errors.New("Comment list inconsistent with generated names"))
+				return
+			}
 		}
-	}
 
-	for i, name := range rule.Names {
-		role := roles.Role{Name: name, Options: rule.Options}
-		if 1 == commentsLen {
-			role.Comment = rule.Comments[0]
-		} else {
-			role.Comment = rule.Comments[i]
+		for i, name := range rule.Names {
+			role := roles.Role{Name: name, Options: rule.Options}
+			if 1 == commentsLen {
+				role.Comment = rule.Comments[0]
+			} else {
+				role.Comment = rule.Comments[i]
+			}
+			ch <- interface{}(role)
 		}
-		roleList = append(roleList, role)
-	}
-	return
+	}()
+	return ch
 }
 
 func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {

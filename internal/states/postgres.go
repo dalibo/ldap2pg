@@ -66,14 +66,14 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 		return
 	}
 	instance.RoleColumns = columns
-	slog.Debug("Querying PostgreSQL instance role columns.", "columns", instance.RoleColumns)
+	slog.Debug("Inspected PostgreSQL instance role columns.", "columns", instance.RoleColumns)
 
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug(rolesQuery)
 	rows, err = pgconn.Query(ctx, rolesQuery)
 	if err != nil {
-		err = fmt.Errorf("Failed to query role columns: %s", err)
+		err = fmt.Errorf("Failed to query role columns: %w", err)
 		return
 	}
 	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role roles.Role, err error) {

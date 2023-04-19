@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lithammer/dedent v1.1.0
-	github.com/lmittmann/tint v0.3.0
+	github.com/lmittmann/tint v0.3.1
 	github.com/mattn/go-isatty v0.0.18
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1

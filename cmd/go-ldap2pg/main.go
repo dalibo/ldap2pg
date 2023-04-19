@@ -92,7 +92,7 @@ func showVersion() {
 		modmap[mod.Path] = mod.Version
 	}
 	modules := []string{
-		"github.com/jackc/pgx/v4",
+		"github.com/jackc/pgx/v5",
 		"github.com/go-ldap/ldap/v3",
 		"gopkg.in/yaml.v3",
 	}
