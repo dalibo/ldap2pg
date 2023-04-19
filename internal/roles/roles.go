@@ -72,6 +72,19 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 			QueryArgs: []interface{}{identifier},
 		}
 	}
+
+	if wanted.Comment != r.Comment {
+		ch <- postgres.SyncQuery{
+			Description: "Set role comment.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"current", r.Comment,
+				"wanted", wanted.Comment,
+			},
+			Query:     `COMMENT ON ROLE %s IS %s;`,
+			QueryArgs: []interface{}{identifier, wanted.Comment},
+		}
+	}
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {
@@ -84,6 +97,14 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 		},
 		Query:     `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
 		QueryArgs: []interface{}{identifier},
+	}
+	ch <- postgres.SyncQuery{
+		Description: "Set role comment.",
+		LogArgs: []interface{}{
+			"role", r.Name,
+		},
+		Query:     `COMMENT ON ROLE %s IS %s;`,
+		QueryArgs: []interface{}{identifier, r.Comment},
 	}
 }
 
