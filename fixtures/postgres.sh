@@ -64,7 +64,7 @@ fi
 
 $psql <<'EOSQL'
 -- For non-superuser case
-CREATE ROLE "nonsuper" LOGIN CREATEROLE;
+CREATE ROLE "nonsuper" LOGIN CREATEDB CREATEROLE;
 CREATE DATABASE nonsuperdb WITH OWNER nonsuper;
 
 -- Create role as it should be. for NOOP
@@ -96,6 +96,8 @@ CREATE ROLE "kevin";
 -- Create databases
 CREATE DATABASE olddb;
 CREATE DATABASE appdb WITH OWNER "œdipe";
+-- Grant owner to nonsuper. For reassign.
+GRANT "œdipe" TO "nonsuper";
 
 -- Revoke connect on group app so that revoke connect from public wont grant it
 -- back.

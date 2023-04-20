@@ -99,7 +99,9 @@ func (r *Role) BlacklistKey() string {
 func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	if wanted.Options != r.Options {
+	optionsString := r.Options.String()
+	wantedOptionsString := wanted.Options.String()
+	if wantedOptionsString != optionsString {
 		ch <- postgres.SyncQuery{
 			Description: "Alter options.",
 			LogArgs: []interface{}{
@@ -192,7 +194,7 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
+func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwner string, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
@@ -203,7 +205,52 @@ func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
 		WHERE usename = %s;`,
 		QueryArgs: []interface{}{r.Name},
 	}
-	for _, database := range databases {
+	if !currentUser.Options.Super {
+		// Non-super user needs to inherit to-be-dropped role to reassign objects.
+		if r.Parents.Contains(currentUser.Name) {
+			// First, avoid membership loop.
+			ch <- postgres.SyncQuery{
+				Description: "Revoke membership on current user.",
+				LogArgs: []interface{}{
+					"role", r.Name, "parent", currentUser.Name,
+				},
+				Query: `REVOKE %s FROM %s;`,
+				QueryArgs: []interface{}{
+					pgx.Identifier{currentUser.Name},
+					identifier,
+				},
+			}
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Allow current user to reassign objects.",
+			LogArgs: []interface{}{
+				"role", r.Name, "parent", currentUser.Name,
+			},
+			Query: `GRANT %s TO %s;`,
+			QueryArgs: []interface{}{
+				identifier,
+				pgx.Identifier{currentUser.Name},
+			},
+		}
+	}
+	for i, database := range databases {
+		if database.Owner == r.Name {
+			ch <- postgres.SyncQuery{
+				Description: "Reassign database.",
+				LogArgs: []interface{}{
+					"role", r.Name,
+					"db", database.Name,
+					"owner", fallbackOwner,
+				},
+				Query: `ALTER DATABASE %s OWNER TO %s;`,
+				QueryArgs: []interface{}{
+					pgx.Identifier{database.Name},
+					pgx.Identifier{fallbackOwner},
+				},
+			}
+			// Update model to generate propery queries next.
+			databases[i].Owner = fallbackOwner
+		}
 		ch <- postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
 			LogArgs: []interface{}{
