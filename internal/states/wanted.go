@@ -119,7 +119,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 				continue
 			}
 
-			role.Drop(instance.Databases, ch)
+			role.Drop(instance.Databases, instance.Me, ch)
 		}
 	}()
 	return ch

@@ -192,7 +192,7 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
+func (r *Role) Drop(databases []postgres.Database, currentUser Role, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
@@ -202,6 +202,34 @@ func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
 		FROM pg_catalog.pg_stat_activity
 		WHERE usename = %s;`,
 		QueryArgs: []interface{}{r.Name},
+	}
+	if !currentUser.Options.Super {
+		// Non-super user needs to inherit to-be-dropped role to reassign objects.
+		if r.Parents.Contains(currentUser.Name) {
+			// First, avoid membership loop.
+			ch <- postgres.SyncQuery{
+				Description: "Revoke membership on current user.",
+				LogArgs: []interface{}{
+					"role", r.Name, "parent", currentUser.Name,
+				},
+				Query: `REVOKE %s FROM %s;`,
+				QueryArgs: []interface{}{
+					pgx.Identifier{currentUser.Name},
+					identifier,
+				},
+			}
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Allow current user to reassign objects.",
+			LogArgs: []interface{}{
+				"role", r.Name, "parent", currentUser.Name,
+			},
+			Query: `GRANT %s TO %s;`,
+			QueryArgs: []interface{}{
+				identifier,
+				pgx.Identifier{currentUser.Name},
+			},
+		}
 	}
 	for _, database := range databases {
 		ch <- postgres.SyncQuery{
