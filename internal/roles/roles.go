@@ -192,7 +192,7 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(databases []postgres.Database, currentUser Role, ch chan postgres.SyncQuery) {
+func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwner string, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
@@ -231,7 +231,24 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, ch chan pos
 			},
 		}
 	}
-	for _, database := range databases {
+	for i, database := range databases {
+		if database.Owner == r.Name {
+			ch <- postgres.SyncQuery{
+				Description: "Reassign database.",
+				LogArgs: []interface{}{
+					"role", r.Name,
+					"db", database.Name,
+					"owner", fallbackOwner,
+				},
+				Query: `ALTER DATABASE %s OWNER TO %s;`,
+				QueryArgs: []interface{}{
+					pgx.Identifier{database.Name},
+					pgx.Identifier{fallbackOwner},
+				},
+			}
+			// Update model to generate propery queries next.
+			databases[i].Owner = fallbackOwner
+		}
 		ch <- postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
 			LogArgs: []interface{}{
