@@ -63,6 +63,20 @@ func (suite *ConfigSuite) TestNormalizeAliasEmpty() {
 	r.False(found)
 }
 
+func (suite *ConfigSuite) TestNormalizeString() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	fallback_owner: owner
+	`)
+	var value interface{}
+	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
+
+	mapValue := value.(map[string]interface{})
+	err := config.NormalizeString(mapValue["fallback_owner"])
+	r.Nil(err)
+}
+
 func (suite *ConfigSuite) TestNormalizeAliasConflict() {
 	r := suite.Require()
 

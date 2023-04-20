@@ -3,6 +3,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -50,6 +51,14 @@ func NormalizeList(yaml interface{}) (list []interface{}) {
 		list = append(list, yaml)
 	}
 	return
+}
+
+func NormalizeString(yaml interface{}) error {
+	_, ok := yaml.(string)
+	if !ok && yaml != nil {
+		return fmt.Errorf("bad value %v, must be string", yaml)
+	}
+	return nil
 }
 
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
@@ -225,15 +234,32 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 		return
 	}
 
-	rawSyncMap, ok := config["sync_map"]
+	section, ok := config["postgres"]
+	if ok {
+		err = NormalizePostgres(section)
+		if err != nil {
+			return
+		}
+	}
+
+	section, ok = config["sync_map"]
 	if !ok {
 		err = errors.New("Missing sync_map")
 		return
 	}
-	syncMap, err := NormalizeSyncMap(rawSyncMap)
+	syncMap, err := NormalizeSyncMap(section)
 	if err != nil {
 		return
 	}
 	config["sync_map"] = syncMap
 	return
+}
+
+func NormalizePostgres(yaml interface{}) error {
+	yamlMap, ok := yaml.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("bad postgres section, must be a map")
+	}
+
+	return NormalizeString(yamlMap["fallback_owner"])
 }
