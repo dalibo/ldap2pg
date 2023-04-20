@@ -139,6 +139,9 @@ func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count in
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		count++
+		if "" == query.Database {
+			query.Database = instance.DefaultDatabase
+		}
 		pgconn, err := pool.Get(query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
