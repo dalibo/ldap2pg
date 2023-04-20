@@ -12,6 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Implements config.YamlToFunc. Similar to pgx.RowTo.
+func YamlToString(value interface{}) (pattern string, err error) {
+	pattern = value.(string)
+	return
+}
+
 // Marshall YAML from file path or stdin if path is -.
 func ReadYaml(path string) (values interface{}, err error) {
 	var fo io.ReadCloser
