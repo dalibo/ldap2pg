@@ -14,37 +14,39 @@ import (
 
 // INSPECT
 
-func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) ([]T, error) {
-	if q.IsPredefined() {
-		var rows []T
-		for _, value := range q.Value.([]interface{}) {
-			row, err := yamlFun(value)
-			if err != nil {
-				return nil, err
+func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
+	ch := make(chan any)
+	go func() {
+		defer close(ch)
+		if q.IsPredefined() {
+			slog.Debug("Reading values from YAML.")
+			for _, value := range q.Value.([]interface{}) {
+				row, err := yamlFun(value)
+				if err != nil {
+					ch <- err
+				} else {
+					ch <- row
+				}
 			}
-			rows = append(rows, row)
+			return
 		}
-		return rows, nil
-	}
 
-	ctx := context.Background()
-	rows, err := pgconn.Query(ctx, q.Value.(string))
-	slog.Debug(q.Value.(string))
-	if err != nil {
-		err = fmt.Errorf("Bad query: %w", err)
-		return nil, err
-	}
-	return pgx.CollectRows(rows, pgFun)
-}
-
-func RowToString(row pgx.CollectableRow) (pattern string, err error) {
-	err = row.Scan(&pattern)
-	return
-}
-
-func YamlToString(value interface{}) (pattern string, err error) {
-	pattern = value.(string)
-	return
+		ctx := context.Background()
+		rows, err := pgconn.Query(ctx, q.Value.(string))
+		slog.Debug("Executing SQL query:\n" + q.Value.(string))
+		if err != nil {
+			ch <- fmt.Errorf("Bad query: %w", err)
+		}
+		for rows.Next() {
+			rowData, err := pgFun(rows)
+			if err != nil {
+				ch <- err
+			} else {
+				ch <- rowData
+			}
+		}
+	}()
+	return ch
 }
 
 // SYNC

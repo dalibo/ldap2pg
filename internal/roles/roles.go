@@ -192,7 +192,7 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 	}
 }
 
-func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
+func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
@@ -206,13 +206,15 @@ func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 	for _, database := range databases {
 		ch <- postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
-			LogArgs:     []interface{}{"role", r.Name, "database", database},
-			Database:    database,
+			LogArgs: []interface{}{
+				"role", r.Name, "db", database.Name, "owner", database.Owner,
+			},
+			Database: database.Name,
 			Query: `
-			REASSIGN OWNED BY %s TO CURRENT_USER;
+			REASSIGN OWNED BY %s TO %s;
 			DROP OWNED BY %s;`,
 			QueryArgs: []interface{}{
-				identifier, identifier,
+				identifier, pgx.Identifier{database.Owner}, identifier,
 			},
 		}
 	}

@@ -3,35 +3,39 @@ package states
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/dalibo/ldap2pg/internal/utils"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	AllRoles       roles.RoleSet
-	Databases      []string
-	ManagedRoles   roles.RoleSet
-	RoleColumns    []string
-	RolesBlacklist utils.Blacklist
+	AllRoles         roles.RoleSet
+	ManagedDatabases mapset.Set[string]
+	Databases        []postgres.Database
+	ManagedRoles     roles.RoleSet
+	RoleColumns      []string
+	RolesBlacklist   utils.Blacklist
 }
 
 var (
+	//go:embed sql/inspect-databases.sql
+	databasesQuery string
 	//go:embed sql/role-columns.sql
 	roleColumnsQuery string
 	//go:embed sql/roles.sql
 	rolesQuery string
 )
 
-func PostgresInspect(config config.Config) (instance PostgresInstance, err error) {
+func PostgresInspect(c config.Config) (instance PostgresInstance, err error) {
 	instance = PostgresInstance{}
+	instance.ManagedDatabases = mapset.NewSet[string]()
 
 	ctx := context.Background()
 	pgconn, err := pgx.Connect(ctx, "")
@@ -40,53 +44,70 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 	}
 	defer pgconn.Close(ctx)
 
-	instance.Databases, err = postgres.RunQuery(config.Postgres.DatabasesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
+	err = instance.InspectDatabases(c, pgconn)
 	if err != nil {
 		return
-	}
-	for _, name := range instance.Databases {
-		slog.Debug("Found database.", "name", name)
 	}
 
-	patterns, err := postgres.RunQuery(config.Postgres.RolesBlacklistQuery, pgconn, postgres.RowToString, postgres.YamlToString)
+	err = instance.InspectRoles(c, pgconn)
 	if err != nil {
 		return
 	}
-	instance.RolesBlacklist = utils.Blacklist(patterns)
+	err = instance.InspectManagedRoles(c, pgconn)
+	return
+}
 
-	rows, err := pgconn.Query(ctx, roleColumnsQuery)
-	slog.Debug(roleColumnsQuery)
+func (instance *PostgresInstance) InspectDatabases(c config.Config, pgconn *pgx.Conn) error {
+	slog.Debug("Inspecting managed databases.")
+	err := utils.IterateToSet(postgres.RunQuery(c.Postgres.DatabasesQuery, pgconn, pgx.RowTo[string], config.YamlToString), &instance.ManagedDatabases)
 	if err != nil {
-		slog.Error("Failed to query role columns.")
-		return
+		return err
 	}
-	columns, err := pgx.CollectRows(rows, pgx.RowTo[string])
-	if err != nil {
-		err = fmt.Errorf("Failed to fetch rows: %w", err)
-		return
+	slog.Debug("Inspecting database owners.")
+	for item := range postgres.RunQuery(config.InspectQuery{Value: databasesQuery}, pgconn, postgres.RowToDatabase, nil) {
+		err, _ := item.(error)
+		if err != nil {
+			return err
+		}
+		db := item.(postgres.Database)
+		if instance.ManagedDatabases.Contains(db.Name) {
+			slog.Debug("Found database.", "name", db.Name)
+			instance.Databases = append(instance.Databases, db)
+		}
 	}
-	instance.RoleColumns = columns
-	slog.Debug("Inspected PostgreSQL instance role columns.", "columns", instance.RoleColumns)
+	return nil
+}
 
-	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
-	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
-	slog.Debug(rolesQuery)
-	rows, err = pgconn.Query(ctx, rolesQuery)
-	if err != nil {
-		err = fmt.Errorf("Failed to query role columns: %w", err)
-		return
+func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn) error {
+	slog.Debug("Inspecting roles blacklist.")
+	for item := range postgres.RunQuery(c.Postgres.RolesBlacklistQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
+		if err, _ := item.(error); err != nil {
+			return err
+		}
+		pattern := item.(string)
+		instance.RolesBlacklist = append(instance.RolesBlacklist, pattern)
 	}
-	unfilteredRoles, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (role roles.Role, err error) {
-		role, err = roles.NewRoleFromRow(row, instance.RoleColumns)
-		return
-	})
+	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
+
+	slog.Debug("Inspecting roles options.")
+	err := utils.IterateToSlice(postgres.RunQuery(config.InspectQuery{Value: roleColumnsQuery}, pgconn, pgx.RowTo[string], nil), &instance.RoleColumns)
 	if err != nil {
-		err = fmt.Errorf("Failed to fetch rows: %w", err)
-		return
+		return err
 	}
+	slog.Debug("Inspected PostgreSQL instance role options.", "columns", instance.RoleColumns)
 
 	instance.AllRoles = make(roles.RoleSet)
-	for _, role := range unfilteredRoles {
+	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
+	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
+	slog.Debug("Inspecting all roles.")
+	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, func(row pgx.CollectableRow) (role roles.Role, err error) {
+		role, err = roles.NewRoleFromRow(row, instance.RoleColumns)
+		return
+	}, nil) {
+		if err, _ := item.(error); err != nil {
+			return err
+		}
+		role := item.(roles.Role)
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
 			instance.AllRoles[role.Name] = role
@@ -96,30 +117,30 @@ func PostgresInspect(config config.Config) (instance PostgresInstance, err error
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-
-	err = instance.InspectManagedRoles(config, pgconn)
-	return
+	return nil
 }
 
-func (instance *PostgresInstance) InspectManagedRoles(config config.Config, pgconn *pgx.Conn) error {
-	if nil == config.Postgres.ManagedRolesQuery.Value {
+func (instance *PostgresInstance) InspectManagedRoles(c config.Config, pgconn *pgx.Conn) error {
+	if nil == c.Postgres.ManagedRolesQuery.Value {
+		slog.Debug("Managing all roles.")
 		instance.ManagedRoles = instance.AllRoles
-	} else {
-		instance.ManagedRoles = make(roles.RoleSet)
-		names, err := postgres.RunQuery(config.Postgres.ManagedRolesQuery, pgconn, postgres.RowToString, postgres.YamlToString)
-		if err != nil {
+		return nil
+	}
+
+	slog.Debug("Inspecting managed roles.")
+	instance.ManagedRoles = make(roles.RoleSet)
+	for item := range postgres.RunQuery(c.Postgres.ManagedRolesQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
+		if err, _ := item.(error); err != nil {
 			return err
 		}
-		for _, name := range names {
-			match := instance.RolesBlacklist.MatchString(name)
-			if "" == match {
-				instance.ManagedRoles[name] = instance.AllRoles[name]
-				slog.Debug("Managing Postgres role.", "name", name)
+		name := item.(string)
+		match := instance.RolesBlacklist.MatchString(name)
+		if match == "" {
+			instance.ManagedRoles[name] = instance.AllRoles[name]
+			slog.Debug("Managing role.", "role", name)
 
-			} else {
-				slog.Warn("Managed role is blacklisted.", "name", name, "pattern", match)
-			}
-
+		} else {
+			slog.Debug("Ignoring blacklisted role name.", "role", name, "pattern", match)
 		}
 	}
 	return nil

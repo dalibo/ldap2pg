@@ -96,7 +96,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 			if other, ok := instance.ManagedRoles[name]; ok {
 				other.Alter(role, ch)
 			} else if other, ok := instance.AllRoles[name]; ok {
-				slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns it.", "role", name)
+				slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns all wanted roles.", "role", name)
 				other.Alter(role, ch)
 			} else {
 				role.Create(ch)

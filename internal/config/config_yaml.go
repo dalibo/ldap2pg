@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +11,12 @@ import (
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
+
+// Implements config.YamlToFunc. Similar to pgx.RowTo.
+func YamlToString(value interface{}) (pattern string, err error) {
+	pattern = value.(string)
+	return
+}
 
 // Marshall YAML from file path or stdin if path is -.
 func ReadYaml(path string) (values interface{}, err error) {
@@ -29,10 +37,19 @@ func ReadYaml(path string) (values interface{}, err error) {
 }
 
 // Fill configuration from YAML data.
-func (config *Config) LoadYaml(yaml interface{}) (err error) {
-	root, err := NormalizeConfigRoot(yaml)
+func (config *Config) LoadYaml(yamlData interface{}) (err error) {
+	root, err := NormalizeConfigRoot(yamlData)
 	if err != nil {
 		return
+	}
+
+	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		var buf bytes.Buffer
+		encoder := yaml.NewEncoder(&buf)
+		encoder.SetIndent(2)
+		_ = encoder.Encode(root)
+		encoder.Close()
+		slog.Debug("Normalized YAML:\n" + buf.String())
 	}
 
 	err = config.LoadVersion(root)
