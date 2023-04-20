@@ -89,17 +89,22 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
-		// Create missing
+		// Create missing.
 		for _, name := range wanted.Roles.Flatten() {
 			role := wanted.Roles[name]
-			if other, ok := instance.AllRoles[name]; ok {
+			// Check for existing role, even if unmanaged.
+			if other, ok := instance.ManagedRoles[name]; ok {
+				other.Alter(role, ch)
+			} else if other, ok := instance.AllRoles[name]; ok {
+				slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns it.", "role", name)
 				other.Alter(role, ch)
 			} else {
 				role.Create(ch)
 			}
 		}
 
-		// Drop spurious
+		// Drop spurious.
+		// Only from managed roles.
 		for name := range instance.ManagedRoles {
 			if _, ok := wanted.Roles[name]; ok {
 				continue
