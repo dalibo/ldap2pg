@@ -90,7 +90,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 	go func() {
 		defer close(ch)
 		// Create missing
-		for name := range wanted.Roles {
+		for _, name := range wanted.Roles.Flatten() {
 			role := wanted.Roles[name]
 			if other, ok := instance.AllRoles[name]; ok {
 				other.Alter(role, ch)

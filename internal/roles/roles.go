@@ -5,6 +5,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 type Role struct {
@@ -15,6 +16,41 @@ type Role struct {
 }
 
 type RoleSet map[string]Role
+
+func (rs RoleSet) Flatten() []string {
+	var names []string
+	seen := mapset.NewSet[string]()
+	for _, role := range rs {
+		for name := range rs.flattenRole(role, &seen) {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+func (rs RoleSet) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
+	ch = make(chan string)
+	go func() {
+		defer close(ch)
+		if (*seen).Contains(r.Name) {
+			return
+		}
+		for parentName := range r.Parents.Iter() {
+			parent, ok := rs[parentName]
+			if !ok {
+				slog.Debug("Role herits from unknown parent.", "role", r.Name, "parent", parentName)
+				continue
+			}
+			for deepName := range rs.flattenRole(parent, seen) {
+				ch <- deepName
+			}
+		}
+
+		(*seen).Add(r.Name)
+		ch <- r.Name
+	}()
+	return
+}
 
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
 	var variableRow interface{}
@@ -76,6 +112,39 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 		}
 	}
 
+	missingParents := wanted.Parents.Difference(r.Parents)
+	if missingParents.Cardinality() > 0 {
+		var parentIdentifiers []interface{}
+		for parent := range missingParents.Iter() {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Grant missing parents.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"parents", missingParents,
+			},
+			Query:     `GRANT %s TO %s;`,
+			QueryArgs: []interface{}{parentIdentifiers, identifier},
+		}
+	}
+	spuriousParents := r.Parents.Difference(wanted.Parents)
+	if spuriousParents.Cardinality() > 0 {
+		var parentIdentifiers []interface{}
+		for parent := range spuriousParents.Iter() {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Revoke spurious parents.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"parents", spuriousParents,
+			},
+			Query:     `REVOKE %s FROM %s;`,
+			QueryArgs: []interface{}{parentIdentifiers, identifier},
+		}
+	}
+
 	if wanted.Comment != r.Comment {
 		ch <- postgres.SyncQuery{
 			Description: "Set role comment.",
@@ -93,21 +162,33 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 func (r *Role) Create(ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	ch <- postgres.SyncQuery{
-		Description: "Create role.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query:     `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
-		QueryArgs: []interface{}{identifier},
+	if 0 < r.Parents.Cardinality() {
+		parents := []interface{}{}
+		for parent := range r.Parents.Iter() {
+			parents = append(parents, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Create role.",
+			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
+			Query: `
+			CREATE ROLE %s
+			WITH ` + r.Options.String() + `
+			IN ROLE %s;`,
+			QueryArgs: []interface{}{identifier, parents},
+		}
+	} else {
+		ch <- postgres.SyncQuery{
+			Description: "Create role.",
+			LogArgs:     []interface{}{"role", r.Name},
+			Query:       `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
+			QueryArgs:   []interface{}{identifier},
+		}
 	}
 	ch <- postgres.SyncQuery{
 		Description: "Set role comment.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query:     `COMMENT ON ROLE %s IS %s;`,
-		QueryArgs: []interface{}{identifier, r.Comment},
+		LogArgs:     []interface{}{"role", r.Name},
+		Query:       `COMMENT ON ROLE %s IS %s;`,
+		QueryArgs:   []interface{}{identifier, r.Comment},
 	}
 }
 
