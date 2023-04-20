@@ -30,11 +30,12 @@ type Config struct {
 		BindDn   string
 		Password string
 	}
-	Postgres PostgresQueries
+	Postgres PostgresConfig
 	SyncMap  []SyncItem
 }
 
-type PostgresQueries struct {
+type PostgresConfig struct {
+	FallbackOwner       string
 	DatabasesQuery      InspectQuery
 	ManagedRolesQuery   InspectQuery
 	RolesBlacklistQuery InspectQuery
@@ -44,7 +45,7 @@ func New() Config {
 	return Config{
 		Action:   RunAction,
 		LogLevel: currentLogLevel,
-		Postgres: PostgresQueries{
+		Postgres: PostgresConfig{
 			DatabasesQuery: InspectQuery{
 				Name: "databases_query",
 				Default: dedent.Dedent(`

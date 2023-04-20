@@ -16,12 +16,16 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
+	DefaultDatabase  string
 	AllRoles         roles.RoleSet
 	ManagedDatabases mapset.Set[string]
 	Databases        []postgres.Database
 	ManagedRoles     roles.RoleSet
 	RoleColumns      []string
 	RolesBlacklist   utils.Blacklist
+	ServerVersionNum int
+	ServerVersion    string
+	Me               roles.Role
 }
 
 var (
@@ -31,6 +35,8 @@ var (
 	roleColumnsQuery string
 	//go:embed sql/roles.sql
 	rolesQuery string
+	//go:embed sql/session.sql
+	sessionQuery string
 )
 
 func PostgresInspect(c config.Config) (instance PostgresInstance, err error) {
@@ -44,6 +50,10 @@ func PostgresInspect(c config.Config) (instance PostgresInstance, err error) {
 	}
 	defer pgconn.Close(ctx)
 
+	err = instance.InspectSession(c, pgconn)
+	if err != nil {
+		return
+	}
 	err = instance.InspectDatabases(c, pgconn)
 	if err != nil {
 		return
@@ -53,8 +63,49 @@ func PostgresInspect(c config.Config) (instance PostgresInstance, err error) {
 	if err != nil {
 		return
 	}
-	err = instance.InspectManagedRoles(c, pgconn)
 	return
+}
+
+func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Conn) error {
+	slog.Debug("Executing SQL query:\n" + sessionQuery)
+	rows, err := pgconn.Query(context.Background(), sessionQuery)
+	if err != nil {
+		return err
+	}
+	if !rows.Next() {
+		panic("No data returned.")
+	}
+	var clusterName string
+	err = rows.Scan(
+		&instance.ServerVersion, &instance.ServerVersionNum,
+		&clusterName, &instance.DefaultDatabase,
+		&instance.Me.Name, &instance.Me.Options.Super,
+	)
+	if err != nil {
+		return err
+	}
+	var msg string
+	if instance.Me.Options.Super {
+		msg = "Running as superuser."
+	} else {
+		msg = "Running as unprivileged user."
+	}
+	slog.Info(
+		msg,
+		"user", instance.Me.Name,
+		"super", instance.Me.Options.Super,
+		"version", instance.ServerVersion,
+		"cluster", clusterName,
+		"db", instance.DefaultDatabase,
+	)
+	if rows.Next() {
+		panic("Multiple row returned.")
+	}
+	if "" == c.Postgres.FallbackOwner {
+		slog.Info("Using current user as fallback owner.")
+		c.Postgres.FallbackOwner = instance.Me.Name
+	}
+	return nil
 }
 
 func (instance *PostgresInstance) InspectDatabases(c config.Config, pgconn *pgx.Conn) error {
@@ -117,12 +168,8 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-	return nil
-}
-
-func (instance *PostgresInstance) InspectManagedRoles(c config.Config, pgconn *pgx.Conn) error {
 	if nil == c.Postgres.ManagedRolesQuery.Value {
-		slog.Debug("Managing all roles.")
+		slog.Debug("Managing all roles found.")
 		instance.ManagedRoles = instance.AllRoles
 		return nil
 	}

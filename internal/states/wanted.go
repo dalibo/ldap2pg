@@ -20,9 +20,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
-			slog.Debug("Skipping LDAP search for now.",
-				"description", item.Description)
-
+			slog.Warn("Skipping LDAP search for now.", "description", item.Description)
 			continue
 		}
 		if item.Description != "" {
@@ -92,11 +90,11 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 		// Create missing.
 		for _, name := range wanted.Roles.Flatten() {
 			role := wanted.Roles[name]
-			// Check for existing role, even if unmanaged.
-			if other, ok := instance.ManagedRoles[name]; ok {
-				other.Alter(role, ch)
-			} else if other, ok := instance.AllRoles[name]; ok {
-				slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns all wanted roles.", "role", name)
+			if other, ok := instance.AllRoles[name]; ok {
+				// Check for existing role, even if unmanaged.
+				if _, ok := instance.ManagedRoles[name]; !ok {
+					slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns all wanted roles.", "role", name)
+				}
 				other.Alter(role, ch)
 			} else {
 				role.Create(ch)
@@ -114,7 +112,13 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 				continue
 			}
 
-			role := instance.ManagedRoles[name]
+			role, ok := instance.AllRoles[name]
+			if !ok {
+				// Already dropped. ldap2pg hits this case whan
+				// ManagedRoles is static.
+				continue
+			}
+
 			role.Drop(instance.Databases, ch)
 		}
 	}()
@@ -135,6 +139,9 @@ func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count in
 	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		count++
+		if "" == query.Database {
+			query.Database = instance.DefaultDatabase
+		}
 		pgconn, err := pool.Get(query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)

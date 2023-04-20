@@ -101,6 +101,11 @@ func (config *Config) LoadYamlPostgres(postgres interface{}) (err error) {
 		return
 	}
 
+	v, ok := postgresMap["fallback_owner"]
+	if ok {
+		config.Postgres.FallbackOwner = v.(string)
+	}
+
 	knownQueries := []*InspectQuery{
 		&config.Postgres.DatabasesQuery,
 		&config.Postgres.ManagedRolesQuery,
