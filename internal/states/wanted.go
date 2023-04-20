@@ -112,7 +112,13 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 				continue
 			}
 
-			role := instance.ManagedRoles[name]
+			role, ok := instance.AllRoles[name]
+			if !ok {
+				// Already dropped. ldap2pg hits this case whan
+				// ManagedRoles is static.
+				continue
+			}
+
 			role.Drop(instance.Databases, ch)
 		}
 	}()
