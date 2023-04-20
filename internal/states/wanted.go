@@ -20,9 +20,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
 		if item.LdapSearch != nil {
-			slog.Debug("Skipping LDAP search for now.",
-				"description", item.Description)
-
+			slog.Warn("Skipping LDAP search for now.", "description", item.Description)
 			continue
 		}
 		if item.Description != "" {
