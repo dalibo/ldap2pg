@@ -207,7 +207,7 @@ func (r *Role) Drop(databases []postgres.Database, ch chan postgres.SyncQuery) {
 		ch <- postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
 			LogArgs: []interface{}{
-				"role", r.Name, "database", database.Name, "owner", database.Owner,
+				"role", r.Name, "db", database.Name, "owner", database.Owner,
 			},
 			Database: database.Name,
 			Query: `
