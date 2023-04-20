@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/carlmjohnson/versioninfo v0.22.4
+	github.com/deckarep/golang-set/v2 v2.3.0
 	github.com/go-ldap/ldap/v3 v3.4.4
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/kelseyhightower/envconfig v1.4.0

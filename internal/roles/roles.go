@@ -3,25 +3,63 @@ package roles
 import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
-	"github.com/lithammer/dedent"
+	"golang.org/x/exp/slog"
 )
 
 type Role struct {
 	Name    string
 	Comment string
-	Parents []string
+	Parents mapset.Set[string]
 	Options config.RoleOptions
 }
 
 type RoleSet map[string]Role
 
+func (rs RoleSet) Flatten() []string {
+	var names []string
+	seen := mapset.NewSet[string]()
+	for _, role := range rs {
+		for name := range rs.flattenRole(role, &seen) {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+func (rs RoleSet) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
+	ch = make(chan string)
+	go func() {
+		defer close(ch)
+		if (*seen).Contains(r.Name) {
+			return
+		}
+		for parentName := range r.Parents.Iter() {
+			parent, ok := rs[parentName]
+			if !ok {
+				slog.Debug("Role herits from unknown parent.", "role", r.Name, "parent", parentName)
+				continue
+			}
+			for deepName := range rs.flattenRole(parent, seen) {
+				ch <- deepName
+			}
+		}
+
+		(*seen).Add(r.Name)
+		ch <- r.Name
+	}()
+	return
+}
+
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
 	var variableRow interface{}
-	err = row.Scan(&role.Name, &variableRow, &role.Comment, &role.Parents)
+	var parents []string
+	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
 	if err != nil {
 		return
 	}
+	role.Parents = mapset.NewSet[string](parents...)
 	record := variableRow.([]interface{})
 	var colname string
 	for i, value := range record {
@@ -59,7 +97,7 @@ func (r *Role) BlacklistKey() string {
 // Generate queries to update current role configuration to match wanted role
 // configuration.
 func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 
 	if wanted.Options != r.Options {
 		ch <- postgres.SyncQuery{
@@ -69,43 +107,100 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 				"current", r.Options,
 				"wanted", wanted.Options,
 			},
-			Query: `ALTER ROLE ` + identifier + ` WITH ` + wanted.Options.String() + `;`,
+			Query:     `ALTER ROLE %s WITH ` + wanted.Options.String() + `;`,
+			QueryArgs: []interface{}{identifier},
+		}
+	}
+
+	missingParents := wanted.Parents.Difference(r.Parents)
+	if missingParents.Cardinality() > 0 {
+		var parentIdentifiers []interface{}
+		for parent := range missingParents.Iter() {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Grant missing parents.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"parents", missingParents,
+			},
+			Query:     `GRANT %s TO %s;`,
+			QueryArgs: []interface{}{parentIdentifiers, identifier},
+		}
+	}
+	spuriousParents := r.Parents.Difference(wanted.Parents)
+	if spuriousParents.Cardinality() > 0 {
+		var parentIdentifiers []interface{}
+		for parent := range spuriousParents.Iter() {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Revoke spurious parents.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"parents", spuriousParents,
+			},
+			Query:     `REVOKE %s FROM %s;`,
+			QueryArgs: []interface{}{parentIdentifiers, identifier},
+		}
+	}
+
+	if wanted.Comment != r.Comment {
+		ch <- postgres.SyncQuery{
+			Description: "Set role comment.",
+			LogArgs: []interface{}{
+				"role", r.Name,
+				"current", r.Comment,
+				"wanted", wanted.Comment,
+			},
+			Query:     `COMMENT ON ROLE %s IS %s;`,
+			QueryArgs: []interface{}{identifier, wanted.Comment},
 		}
 	}
 }
 
 func (r *Role) Create(ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 
-	ch <- postgres.SyncQuery{
-		Description: "Create role.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query: `CREATE ROLE ` + identifier + ` ` + r.Options.String() + `;`,
+	if 0 < r.Parents.Cardinality() {
+		parents := []interface{}{}
+		for parent := range r.Parents.Iter() {
+			parents = append(parents, pgx.Identifier{parent})
+		}
+		ch <- postgres.SyncQuery{
+			Description: "Create role.",
+			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
+			Query: `
+			CREATE ROLE %s
+			WITH ` + r.Options.String() + `
+			IN ROLE %s;`,
+			QueryArgs: []interface{}{identifier, parents},
+		}
+	} else {
+		ch <- postgres.SyncQuery{
+			Description: "Create role.",
+			LogArgs:     []interface{}{"role", r.Name},
+			Query:       `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
+			QueryArgs:   []interface{}{identifier},
+		}
 	}
 	ch <- postgres.SyncQuery{
 		Description: "Set role comment.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query:     `COMMENT ON ROLE ` + identifier + ` IS $1;`,
-		QueryArgs: []interface{}{r.Comment},
+		LogArgs:     []interface{}{"role", r.Name},
+		Query:       `COMMENT ON ROLE %s IS %s;`,
+		QueryArgs:   []interface{}{identifier, r.Comment},
 	}
 }
 
 func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
-	identifier := pgx.Identifier{r.Name}.Sanitize()
+	identifier := pgx.Identifier{r.Name}
 	ch <- postgres.SyncQuery{
 		Description: "Terminate running sessions.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query: dedent.Dedent(`
+		LogArgs:     []interface{}{"role", r.Name},
+		Query: `
 		SELECT pg_terminate_backend(pid)
 		FROM pg_catalog.pg_stat_activity
-		WHERE usename = $1;
-		`),
+		WHERE usename = %s;`,
 		QueryArgs: []interface{}{r.Name},
 	}
 	for _, database := range databases {
@@ -113,16 +208,18 @@ func (r *Role) Drop(databases []string, ch chan postgres.SyncQuery) {
 			Description: "Reassign objects and purge ACL.",
 			LogArgs:     []interface{}{"role", r.Name, "database", database},
 			Database:    database,
-			Query: dedent.Dedent(`
-			REASSIGN OWNED BY ` + identifier + ` TO CURRENT_USER;
-			DROP OWNED BY ` + identifier + `;`),
+			Query: `
+			REASSIGN OWNED BY %s TO CURRENT_USER;
+			DROP OWNED BY %s;`,
+			QueryArgs: []interface{}{
+				identifier, identifier,
+			},
 		}
 	}
 	ch <- postgres.SyncQuery{
 		Description: "Drop role.",
-		LogArgs: []interface{}{
-			"role", r.Name,
-		},
-		Query: `DROP ROLE ` + identifier + `;`,
+		LogArgs:     []interface{}{"role", r.Name},
+		Query:       `DROP ROLE %s;`,
+		QueryArgs:   []interface{}{identifier},
 	}
 }

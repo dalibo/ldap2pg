@@ -93,6 +93,19 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 			err = errors.New("Missing name in role rule")
 			return
 		}
+		err = NormalizeAlias(&rule, "parents", "parent")
+		if err != nil {
+			return
+		}
+		parents, ok := rule["parents"]
+		if ok {
+			rule["parents"], err = NormalizeStringList(parents)
+			if err != nil {
+				return
+			}
+		} else {
+			rule["parents"] = []string{}
+		}
 		err = NormalizeAlias(&rule, "comments", "comment")
 		if err != nil {
 			return

@@ -143,6 +143,23 @@ func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {
 	r.True(value["LOGIN"].(bool))
 }
 
+func (suite *ConfigSuite) TestNormalizeRoleParents() {
+	r := suite.Require()
+
+	rawYaml := dedent.Dedent(`
+	name: toto
+	parents: groupe
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	value, err := config.NormalizeRoleRule(raw)
+	r.Nil(err)
+	parents := value["parents"].([]string)
+	r.Equal(1, len(parents))
+	r.Equal("groupe", parents[0])
+}
+
 func (suite *ConfigSuite) TestNormalizeSyncItem() {
 	r := suite.Require()
 
