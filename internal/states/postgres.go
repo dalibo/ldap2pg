@@ -145,6 +145,8 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	if err != nil {
 		return err
 	}
+	// Setup global var to configure RoleOptions.String()
+	config.ProcessRoleColumns(instance.RoleColumns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", instance.RoleColumns)
 
 	instance.AllRoles = make(roles.RoleSet)

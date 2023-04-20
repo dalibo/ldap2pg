@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/slog"
 )
 
 type RoleRule struct {
@@ -33,11 +34,31 @@ type RoleOptions struct {
 	ConnLimit   int  `column:"rolconnlimit" token:"CONNECTION LIMIT"`
 }
 
+var instanceRoleColumns map[string]bool
+
+func ProcessRoleColumns(columns []string, super bool) {
+	instanceRoleColumns = make(map[string]bool)
+	t := reflect.TypeOf(RoleOptions{})
+	for _, f := range reflect.VisibleFields(t) {
+		instanceRoleColumns[f.Tag.Get("column")] = false
+	}
+	for _, name := range columns {
+		if !super && ("rolsuper" == name || "rolreplication" == name || "rolbypassrls" == name) {
+			slog.Debug("Ignoring privileged role column", "column", name)
+			continue
+		}
+		instanceRoleColumns[name] = true
+	}
+}
+
 func (o RoleOptions) String() string {
 	v := reflect.ValueOf(o)
 	t := v.Type()
 	var b strings.Builder
 	for _, f := range reflect.VisibleFields(t) {
+		if !instanceRoleColumns[f.Tag.Get("column")] {
+			continue
+		}
 		if b.Len() > 0 {
 			b.WriteByte(' ')
 		}

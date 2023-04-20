@@ -99,7 +99,9 @@ func (r *Role) BlacklistKey() string {
 func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	if wanted.Options != r.Options {
+	optionsString := r.Options.String()
+	wantedOptionsString := wanted.Options.String()
+	if wantedOptionsString != optionsString {
 		ch <- postgres.SyncQuery{
 			Description: "Alter options.",
 			LogArgs: []interface{}{
