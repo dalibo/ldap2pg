@@ -29,29 +29,7 @@ func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role 
 		return
 	}
 	role.Parents.Append(parents...)
-	record := variableRow.([]interface{})
-	var colname string
-	for i, value := range record {
-		colname = instanceRoleColumns[i]
-		switch colname {
-		case "rolbypassrls":
-			role.Options.ByPassRLS = value.(bool)
-		case "rolcanlogin":
-			role.Options.CanLogin = value.(bool)
-		case "rolconnlimit":
-			role.Options.ConnLimit = int(value.(int32))
-		case "rolcreatedb":
-			role.Options.CreateDB = value.(bool)
-		case "rolcreaterole":
-			role.Options.CreateRole = value.(bool)
-		case "rolinherit":
-			role.Options.Inherit = value.(bool)
-		case "rolreplication":
-			role.Options.Replication = value.(bool)
-		case "rolsuper":
-			role.Options.Super = value.(bool)
-		}
-	}
+	role.Options.LoadRow(variableRow.([]interface{}))
 	return
 }
 
