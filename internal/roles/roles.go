@@ -14,14 +14,21 @@ type Role struct {
 	Options config.RoleOptions
 }
 
+func NewRole() Role {
+	role := Role{}
+	role.Parents = mapset.NewSet[string]()
+	return role
+}
+
 func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
+	role = NewRole()
 	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
 	if err != nil {
 		return
 	}
-	role.Parents = mapset.NewSet[string](parents...)
+	role.Parents.Append(parents...)
 	record := variableRow.([]interface{})
 	var colname string
 	for i, value := range record {
