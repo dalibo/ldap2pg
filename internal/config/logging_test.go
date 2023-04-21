@@ -10,11 +10,15 @@ import (
 )
 
 func ExampleSetLoggingHandler() {
-	config.SetLoggingHandler(slog.LevelDebug, true)
-	slog.Debug("Lorem ipsum dolor sit amet.", "version", utils.Version)
-	slog.Info("Consectetur adipiscing elit.", "vivamus", "ut accumsan elit", "maecenas", 4.23)
-	slog.Debug("Tristique nulla ac nisl dignissim.")
-	slog.Debug("Eu feugiat velit dapibus. Curabitur faucibus accumsan purus.")
-	slog.Error("Quisque et posuere libero.", tint.Err(fmt.Errorf("pouet")))
+	colors := []bool{false, true}
+	for _, color := range colors {
+		config.SetLoggingHandler(slog.LevelDebug, color)
+		slog.Debug("Lorem ipsum dolor sit amet.", "version", utils.Version)
+		slog.Info("Consectetur adipiscing elit.", "vivamus", "ut accumsan elit", "maecenas", 4.23)
+		slog.Debug("Tristique nulla ac nisl dignissim.")
+		slog.Debug("Eu feugiat velit dapibus. Curabitur faucibus accumsan purus.", tint.Err(nil))
+		slog.Warn("Mauris placerat molestie tempor.", "err", nil)
+		slog.Error("Quisque et posuere libero.", "err", fmt.Errorf("pouet"))
+	}
 	// Output:
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
-	"github.com/lmittmann/tint"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	// Simply return an error and main will handle this case.
 	err := ldap2pg()
 	if err != nil {
-		slog.Error("Fatal error.", tint.Err(err))
+		slog.Error("Fatal error.", "err", err)
 		os.Exit(1)
 	}
 }

@@ -51,36 +51,47 @@ func SetLoggingHandler(level slog.Level, color bool) {
 	currentLogLevel = level
 	var h slog.Handler
 	if color {
-		h = tint.Options{
-			Level: level,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				switch a.Key {
-				case slog.LevelKey:
-					a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
-				case slog.MessageKey:
-					// Reset color after message.
-					a.Value = slog.StringValue(a.Value.String() + "\033[0m")
-				case "err":
-					if a.Value.Kind() == slog.KindAny && a.Value.Any() == nil {
-						// Drop nil error.
-						a.Key = ""
-					}
-				default:
-					if a.Value.Kind() == slog.KindAny {
-						set, ok := a.Value.Any().(mapset.Set[string])
-						if ok {
-							a.Value = slog.AnyValue(set.ToSlice())
-						}
-					}
-				}
-				return a
-			},
-			TimeFormat: "15:04:05",
-		}.NewHandler(os.Stderr)
+		h = BuildTintOptions(level).NewHandler(os.Stderr)
 	} else {
 		h = slog.HandlerOptions{
 			Level: level,
 		}.NewTextHandler(os.Stderr)
 	}
 	slog.SetDefault(slog.New(h))
+}
+
+func BuildTintOptions(level slog.Level) tint.Options {
+	return tint.Options{
+		Level: level,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			switch a.Key {
+			case slog.LevelKey:
+				a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
+			case slog.MessageKey:
+				// Reset color after message.
+				a.Value = slog.StringValue(a.Value.String() + "\033[0m")
+			default:
+				if a.Value.Kind() == slog.KindAny {
+					v := a.Value.Any()
+					set, ok := v.(mapset.Set[string])
+					if ok {
+						a.Value = slog.AnyValue(set.ToSlice())
+						return a
+					}
+					if nil == v && "err" == a.Key {
+						// Drop nil error.
+						a.Key = ""
+						return a
+					}
+					// Automatic tint.Err()
+					err, ok := v.(error)
+					if ok {
+						a = tint.Err(err)
+					}
+				}
+			}
+			return a
+		},
+		TimeFormat: "15:04:05",
+	}
 }
