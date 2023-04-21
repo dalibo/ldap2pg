@@ -13,7 +13,7 @@ import (
 )
 
 type Wanted struct {
-	Roles roles.RoleSet
+	Roles roles.RoleMap
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
@@ -68,14 +68,15 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 		}
 
 		for i, name := range rule.Names {
-			role := roles.Role{Name: name, Options: rule.Options}
+			role := roles.NewRole()
+			role.Name = name
+			role.Options = rule.Options
+			role.Parents = rule.Parents.Clone()
 			if 1 == commentsLen {
 				role.Comment = rule.Comments[0]
 			} else {
 				role.Comment = rule.Comments[i]
 			}
-
-			role.Parents = rule.Parents.Clone()
 
 			ch <- interface{}(role)
 		}

@@ -5,7 +5,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 )
 
 type Role struct {
@@ -15,74 +14,22 @@ type Role struct {
 	Options config.RoleOptions
 }
 
-type RoleSet map[string]Role
-
-func (rs RoleSet) Flatten() []string {
-	var names []string
-	seen := mapset.NewSet[string]()
-	for _, role := range rs {
-		for name := range rs.flattenRole(role, &seen) {
-			names = append(names, name)
-		}
-	}
-	return names
+func NewRole() Role {
+	role := Role{}
+	role.Parents = mapset.NewSet[string]()
+	return role
 }
 
-func (rs RoleSet) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
-	ch = make(chan string)
-	go func() {
-		defer close(ch)
-		if (*seen).Contains(r.Name) {
-			return
-		}
-		for parentName := range r.Parents.Iter() {
-			parent, ok := rs[parentName]
-			if !ok {
-				slog.Debug("Role herits from unknown parent.", "role", r.Name, "parent", parentName)
-				continue
-			}
-			for deepName := range rs.flattenRole(parent, seen) {
-				ch <- deepName
-			}
-		}
-
-		(*seen).Add(r.Name)
-		ch <- r.Name
-	}()
-	return
-}
-
-func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
+func RowToRole(row pgx.CollectableRow) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
+	role = NewRole()
 	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
 	if err != nil {
 		return
 	}
-	role.Parents = mapset.NewSet[string](parents...)
-	record := variableRow.([]interface{})
-	var colname string
-	for i, value := range record {
-		colname = instanceRoleColumns[i]
-		switch colname {
-		case "rolbypassrls":
-			role.Options.ByPassRLS = value.(bool)
-		case "rolcanlogin":
-			role.Options.CanLogin = value.(bool)
-		case "rolconnlimit":
-			role.Options.ConnLimit = int(value.(int32))
-		case "rolcreatedb":
-			role.Options.CreateDB = value.(bool)
-		case "rolcreaterole":
-			role.Options.CreateRole = value.(bool)
-		case "rolinherit":
-			role.Options.Inherit = value.(bool)
-		case "rolreplication":
-			role.Options.Replication = value.(bool)
-		case "rolsuper":
-			role.Options.Super = value.(bool)
-		}
-	}
+	role.Parents.Append(parents...)
+	role.Options.LoadRow(variableRow.([]interface{}))
 	return
 }
 

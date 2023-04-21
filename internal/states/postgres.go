@@ -16,16 +16,16 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	DefaultDatabase  string
-	AllRoles         roles.RoleSet
-	ManagedDatabases mapset.Set[string]
+	AllRoles         roles.RoleMap
 	Databases        []postgres.Database
-	ManagedRoles     roles.RoleSet
+	DefaultDatabase  string
+	ManagedDatabases mapset.Set[string]
+	ManagedRoles     roles.RoleMap
+	Me               roles.Role
 	RoleColumns      []string
 	RolesBlacklist   utils.Blacklist
-	ServerVersionNum int
 	ServerVersion    string
-	Me               roles.Role
+	ServerVersionNum int
 }
 
 var (
@@ -101,10 +101,6 @@ func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Co
 	if rows.Next() {
 		panic("Multiple row returned.")
 	}
-	if "" == c.Postgres.FallbackOwner {
-		slog.Info("Using current user as fallback owner.")
-		c.Postgres.FallbackOwner = instance.Me.Name
-	}
 	return nil
 }
 
@@ -149,14 +145,11 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	config.ProcessRoleColumns(instance.RoleColumns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", instance.RoleColumns)
 
-	instance.AllRoles = make(roles.RoleSet)
+	instance.AllRoles = make(roles.RoleMap)
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
-	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, func(row pgx.CollectableRow) (role roles.Role, err error) {
-		role, err = roles.NewRoleFromRow(row, instance.RoleColumns)
-		return
-	}, nil) {
+	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, roles.RowToRole, nil) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}
@@ -177,7 +170,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	}
 
 	slog.Debug("Inspecting managed roles.")
-	instance.ManagedRoles = make(roles.RoleSet)
+	instance.ManagedRoles = make(roles.RoleMap)
 	for item := range postgres.RunQuery(c.Postgres.ManagedRolesQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err

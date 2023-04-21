@@ -12,21 +12,20 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
-	"github.com/lmittmann/tint"
 )
 
 func main() {
 	// Split error management from business logic. This allows defer to
 	// apply before calling os.Exit. Also, deduplicate fatal error logging.
 	// Simply return an error and main will handle this case.
-	err := run()
+	err := ldap2pg()
 	if err != nil {
-		slog.Error("Fatal error.", tint.Err(err))
+		slog.Error("Fatal error.", "err", err)
 		os.Exit(1)
 	}
 }
 
-func run() (err error) {
+func ldap2pg() (err error) {
 	start := time.Now()
 
 	c, err := config.Load()
@@ -41,13 +40,12 @@ func run() (err error) {
 		showVersion()
 		return
 	case config.RunAction:
+		config.SetLoggingHandler(c.LogLevel, c.Color)
+		slog.Info("Starting ldap2pg",
+			"commit", utils.ShortRevision,
+			"version", utils.Version,
+			"runtime", runtime.Version())
 	}
-
-	config.SetLoggingHandler(c.LogLevel, c.Color)
-	slog.Info("Starting ldap2pg",
-		"commit", utils.ShortRevision,
-		"version", utils.Version,
-		"runtime", runtime.Version())
 
 	slog.Info("Using YAML configuration file.",
 		"path", c.ConfigFile,
@@ -63,6 +61,10 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
+	if "" == c.Postgres.FallbackOwner {
+		c.Postgres.FallbackOwner = instance.Me.Name
+	}
+	slog.Debug("Fallback owner configured.", "role", c.Postgres.FallbackOwner)
 
 	wanted, err := states.ComputeWanted(c)
 	if err != nil {

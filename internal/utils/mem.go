@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lmittmann/tint"
 	"golang.org/x/exp/slog"
 )
 
 func ReadVMPeak() int {
 	fo, err := os.Open("/proc/self/status")
 	if err != nil {
-		slog.Debug("Failed to read /proc/self/status.", tint.Err(err))
+		slog.Debug("Failed to read /proc/self/status.", "err", err)
 		return 0
 	}
 	defer fo.Close()
@@ -29,14 +28,14 @@ func ReadVMPeak() int {
 		fields := strings.Fields(line)
 		value, err := strconv.Atoi(fields[1])
 		if err != nil {
-			slog.Debug("Failed to parse VmPeak.", tint.Err(err))
+			slog.Debug("Failed to parse VmPeak.", "err", err)
 			return 0
 		}
 		return value
 	}
 
 	if err := scanner.Err(); err != nil {
-		slog.Debug("Failed to read from file.", tint.Err(err))
+		slog.Debug("Failed to read from file.", "err", err)
 	}
 
 	return 0
