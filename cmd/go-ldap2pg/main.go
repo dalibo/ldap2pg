@@ -19,14 +19,14 @@ func main() {
 	// Split error management from business logic. This allows defer to
 	// apply before calling os.Exit. Also, deduplicate fatal error logging.
 	// Simply return an error and main will handle this case.
-	err := run()
+	err := ldap2pg()
 	if err != nil {
 		slog.Error("Fatal error.", tint.Err(err))
 		os.Exit(1)
 	}
 }
 
-func run() (err error) {
+func ldap2pg() (err error) {
 	start := time.Now()
 
 	c, err := config.Load()
