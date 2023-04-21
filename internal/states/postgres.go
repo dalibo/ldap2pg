@@ -16,16 +16,16 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	DefaultDatabase  string
 	AllRoles         roles.RoleSet
-	ManagedDatabases mapset.Set[string]
 	Databases        []postgres.Database
+	DefaultDatabase  string
+	ManagedDatabases mapset.Set[string]
 	ManagedRoles     roles.RoleSet
+	Me               roles.Role
 	RoleColumns      []string
 	RolesBlacklist   utils.Blacklist
-	ServerVersionNum int
 	ServerVersion    string
-	Me               roles.Role
+	ServerVersionNum int
 }
 
 var (

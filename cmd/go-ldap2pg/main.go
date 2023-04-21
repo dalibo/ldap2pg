@@ -41,13 +41,12 @@ func ldap2pg() (err error) {
 		showVersion()
 		return
 	case config.RunAction:
+		config.SetLoggingHandler(c.LogLevel, c.Color)
+		slog.Info("Starting ldap2pg",
+			"commit", utils.ShortRevision,
+			"version", utils.Version,
+			"runtime", runtime.Version())
 	}
-
-	config.SetLoggingHandler(c.LogLevel, c.Color)
-	slog.Info("Starting ldap2pg",
-		"commit", utils.ShortRevision,
-		"version", utils.Version,
-		"runtime", runtime.Version())
 
 	slog.Info("Using YAML configuration file.",
 		"path", c.ConfigFile,
