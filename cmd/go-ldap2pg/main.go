@@ -71,11 +71,15 @@ func run() (err error) {
 
 	count, err := wanted.Sync(c, instance)
 
+	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)
+	logAttrs := []interface{}{
+		"queries", count, "elapsed", elapsed, "mempeak", utils.FormatBytes(vmPeak),
+	}
 	if count > 0 {
-		slog.Info("Comparison complete.", "queries", count, "elapsed", elapsed)
+		slog.Info("Comparison complete.", logAttrs...)
 	} else {
-		slog.Info("Nothing to do.", "queries", 0, "elapsed", elapsed)
+		slog.Info("Nothing to do.", logAttrs...)
 	}
 	return
 }
