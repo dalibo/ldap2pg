@@ -101,10 +101,6 @@ func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Co
 	if rows.Next() {
 		panic("Multiple row returned.")
 	}
-	if "" == c.Postgres.FallbackOwner {
-		slog.Info("Using current user as fallback owner.")
-		c.Postgres.FallbackOwner = instance.Me.Name
-	}
 	return nil
 }
 

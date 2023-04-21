@@ -61,6 +61,10 @@ func ldap2pg() (err error) {
 	if err != nil {
 		return
 	}
+	if "" == c.Postgres.FallbackOwner {
+		c.Postgres.FallbackOwner = instance.Me.Name
+	}
+	slog.Debug("Fallback owner configured.", "role", c.Postgres.FallbackOwner)
 
 	wanted, err := states.ComputeWanted(c)
 	if err != nil {
