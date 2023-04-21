@@ -153,10 +153,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
-	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, func(row pgx.CollectableRow) (role roles.Role, err error) {
-		role, err = roles.NewRoleFromRow(row, instance.RoleColumns)
-		return
-	}, nil) {
+	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, roles.RowToRole, nil) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}

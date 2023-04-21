@@ -20,7 +20,7 @@ func NewRole() Role {
 	return role
 }
 
-func NewRoleFromRow(row pgx.CollectableRow, instanceRoleColumns []string) (role Role, err error) {
+func RowToRole(row pgx.CollectableRow) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
 	role = NewRole()
