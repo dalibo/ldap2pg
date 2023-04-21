@@ -15,9 +15,9 @@ type Role struct {
 	Options config.RoleOptions
 }
 
-type RoleSet map[string]Role
+type RoleMap map[string]Role
 
-func (rs RoleSet) Flatten() []string {
+func (rs RoleMap) Flatten() []string {
 	var names []string
 	seen := mapset.NewSet[string]()
 	for _, role := range rs {
@@ -28,7 +28,7 @@ func (rs RoleSet) Flatten() []string {
 	return names
 }
 
-func (rs RoleSet) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
+func (rs RoleMap) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
 	ch = make(chan string)
 	go func() {
 		defer close(ch)

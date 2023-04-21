@@ -13,7 +13,7 @@ import (
 )
 
 type Wanted struct {
-	Roles roles.RoleSet
+	Roles roles.RoleMap
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {

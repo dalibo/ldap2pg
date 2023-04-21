@@ -16,11 +16,11 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type PostgresInstance struct {
-	AllRoles         roles.RoleSet
+	AllRoles         roles.RoleMap
 	Databases        []postgres.Database
 	DefaultDatabase  string
 	ManagedDatabases mapset.Set[string]
-	ManagedRoles     roles.RoleSet
+	ManagedRoles     roles.RoleMap
 	Me               roles.Role
 	RoleColumns      []string
 	RolesBlacklist   utils.Blacklist
@@ -149,7 +149,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	config.ProcessRoleColumns(instance.RoleColumns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", instance.RoleColumns)
 
-	instance.AllRoles = make(roles.RoleSet)
+	instance.AllRoles = make(roles.RoleMap)
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
@@ -177,7 +177,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	}
 
 	slog.Debug("Inspecting managed roles.")
-	instance.ManagedRoles = make(roles.RoleSet)
+	instance.ManagedRoles = make(roles.RoleMap)
 	for item := range postgres.RunQuery(c.Postgres.ManagedRolesQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err
