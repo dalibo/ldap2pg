@@ -67,6 +67,7 @@ func PostgresInspect(c config.Config) (instance PostgresInstance, err error) {
 }
 
 func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Conn) error {
+	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
 	rows, err := pgconn.Query(context.Background(), sessionQuery)
 	if err != nil {
