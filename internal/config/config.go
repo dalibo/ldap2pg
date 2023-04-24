@@ -104,10 +104,10 @@ func FindConfigFile(userValue string) (configpath string) {
 }
 
 type EnvValues struct {
-	LdapURI        string `envconfig:"LDAPURI"`
-	LdapBindDn     string `envconfig:"LDAPBINDDN"`
-	LdapPassword   string `envconfig:"LDAPPASSWORD"`
-	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
+	LdapURI        string
+	LdapBindDn     string
+	LdapPassword   string
+	LdapTLSReqcert string
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
