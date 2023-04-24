@@ -15,9 +15,8 @@ def test_dry_run(ldap2pg, psql):
     assert 'ALICE' in superusers
 
 
-def test_check_mode(psql):
-    from sh import ldap2pg
-
+@pytest.mark.go
+def test_check_mode(ldap2pg, psql):
     ldap2pg('--check', config='ldap2pg.yml', _ok_code=1)
 
 

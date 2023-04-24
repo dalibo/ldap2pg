@@ -71,6 +71,7 @@ func (config *Config) LoadYaml(yamlData interface{}) (err error) {
 
 	syncMap := root["sync_map"]
 	err = config.LoadYamlSyncMap(syncMap.([]interface{}))
+	slog.Debug("Loaded configuration file.", "version", config.Version)
 	return
 }
 

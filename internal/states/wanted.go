@@ -126,14 +126,14 @@ func (wanted *Wanted) Diff(instance PostgresInstance, fallbackOwner string) <-ch
 	return ch
 }
 
-func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count int, err error) {
+func (wanted *Wanted) Sync(real bool, c config.Config, instance PostgresInstance) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
 	defer pool.CloseAll()
 
 	prefix := ""
-	if c.Dry {
+	if !real {
 		prefix = "Would "
 	}
 
@@ -148,11 +148,11 @@ func (wanted *Wanted) Sync(c config.Config, instance PostgresInstance) (count in
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
 
-		// Rewrite query to log a pasteable query even when in Dry run.
+		// Rewrite query to log a pasteable query even when in Dry mode.
 		sql, _, _ := formatter.RewriteQuery(ctx, pgconn, query.Query, query.QueryArgs)
 		slog.Debug(prefix + "Execute SQL query:\n" + sql)
 
-		if c.Dry {
+		if !real {
 			continue
 		}
 

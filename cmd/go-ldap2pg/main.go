@@ -12,6 +12,8 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -26,35 +28,37 @@ func main() {
 }
 
 func ldap2pg() (err error) {
+	SetupConfig()
+	if viper.GetBool("help") {
+		pflag.Usage()
+		return
+	} else if viper.GetBool("version") {
+		showVersion()
+		return
+	}
+	err = sync()
+	return
+}
+
+func sync() (err error) {
 	start := time.Now()
 
-	c, err := config.Load()
+	controller, err := UnmarshalController()
 	if err != nil {
 		return
 	}
-	switch c.Action {
-	case config.ShowHelpAction:
-		config.ShowHelp()
-		return
-	case config.ShowVersionAction:
-		showVersion()
-		return
-	case config.RunAction:
-		config.SetLoggingHandler(c.LogLevel, c.Color)
-		slog.Info("Starting ldap2pg",
-			"commit", utils.ShortRevision,
-			"version", utils.Version,
-			"runtime", runtime.Version())
-	}
 
-	slog.Info("Using YAML configuration file.",
-		"path", c.ConfigFile,
-		"version", c.Version)
+	config.SetLoggingHandler(controller.LogLevel, controller.Color)
+	slog.Info("Starting ldap2pg",
+		"commit", utils.ShortRevision,
+		"version", utils.Version,
+		"runtime", runtime.Version())
 
-	if c.Dry {
-		slog.Warn("Dry run. Postgres instance will be untouched.")
-	} else {
-		slog.Info("Running in real mode. Postgres instance will modified.")
+	configPath := config.FindConfigFile(controller.Config)
+	slog.Info("Using YAML configuration file.", "path", configPath)
+	c, err := config.Load(configPath)
+	if err != nil {
+		return
 	}
 
 	instance, err := states.PostgresInspect(c)
@@ -71,7 +75,13 @@ func ldap2pg() (err error) {
 		return
 	}
 
-	count, err := wanted.Sync(c, instance)
+	if controller.Real {
+		slog.Info("Real mode. Postgres instance will modified.")
+	} else {
+		slog.Warn("Dry run. Postgres instance will be untouched.")
+	}
+
+	count, err := wanted.Sync(controller.Real, c, instance)
 
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)
@@ -83,6 +93,15 @@ func ldap2pg() (err error) {
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
 	}
+
+	if err != nil {
+		return
+	}
+
+	if controller.Check && count > 0 {
+		os.Exit(1)
+	}
+
 	return
 }
 
