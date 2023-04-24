@@ -112,7 +112,7 @@ func (instance *PostgresInstance) InspectDatabases(c config.Config, pgconn *pgx.
 		return err
 	}
 	slog.Debug("Inspecting database owners.")
-	for item := range postgres.RunQuery(config.InspectQuery{Value: databasesQuery}, pgconn, postgres.RowToDatabase, nil) {
+	for item := range postgres.RunQuery(databasesQuery, pgconn, postgres.RowToDatabase, nil) {
 		err, _ := item.(error)
 		if err != nil {
 			return err
@@ -138,7 +138,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
 	slog.Debug("Inspecting roles options.")
-	err := utils.IterateToSlice(postgres.RunQuery(config.InspectQuery{Value: roleColumnsQuery}, pgconn, pgx.RowTo[string], nil), &instance.RoleColumns)
+	err := utils.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &instance.RoleColumns)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
-	for item := range postgres.RunQuery(config.InspectQuery{Value: rolesQuery}, pgconn, roles.RowToRole, nil) {
+	for item := range postgres.RunQuery(rolesQuery, pgconn, roles.RowToRole, nil) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-	if nil == c.Postgres.ManagedRolesQuery.Value {
+	if nil == c.Postgres.ManagedRolesQuery {
 		slog.Debug("Managing all roles found.")
 		instance.ManagedRoles = instance.AllRoles
 		return nil

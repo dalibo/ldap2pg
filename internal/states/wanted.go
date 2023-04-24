@@ -9,6 +9,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
 
@@ -71,7 +72,7 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 			role := roles.NewRole()
 			role.Name = name
 			role.Options = rule.Options
-			role.Parents = rule.Parents.Clone()
+			role.Parents = mapset.NewSet[string](rule.Parents...)
 			if 1 == commentsLen {
 				role.Comment = rule.Comments[0]
 			} else {
