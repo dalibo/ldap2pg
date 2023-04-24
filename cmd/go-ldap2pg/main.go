@@ -93,6 +93,15 @@ func sync() (err error) {
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
 	}
+
+	if err != nil {
+		return
+	}
+
+	if controller.Check && count > 0 {
+		os.Exit(1)
+	}
+
 	return
 }
 

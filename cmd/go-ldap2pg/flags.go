@@ -11,6 +11,9 @@ import (
 )
 
 func SetupConfig() {
+	viper.SetDefault("check", false)
+	pflag.Bool("check", viper.GetBool("check"), "Check mode: exits with 1 if Postgres instance is unsynchronized.")
+
 	viper.SetDefault("color", isatty.IsTerminal(os.Stderr.Fd()))
 	_ = viper.BindEnv("color")
 	pflag.Bool("color", viper.GetBool("color"), "Force color output.")
@@ -40,6 +43,7 @@ func SetupConfig() {
 
 // Holds flags/env values to control the execution of ldap2pg.
 type Controller struct {
+	Check    bool
 	Color    bool
 	Config   string
 	Dry      bool
