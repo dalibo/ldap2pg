@@ -135,24 +135,6 @@ func (config *Config) LoadEnv(values EnvValues) {
 	}
 }
 
-type Tristate int
-
-func (t Tristate) Bool() bool {
-	return t > 0
-}
-
-func (t Tristate) Defined() bool {
-	return t != 0
-}
-
-func (t *Tristate) Set(value bool) {
-	if value {
-		*t = 1
-	} else {
-		*t = -1
-	}
-}
-
 func (config *Config) LoadDefaults() {
 	config.Postgres.DatabasesQuery.SetDefault()
 	config.Postgres.RolesBlacklistQuery.SetDefault()
