@@ -38,6 +38,10 @@ func ReadYaml(path string) (values interface{}, err error) {
 
 // Fill configuration from YAML data.
 func (config *Config) LoadYaml(yamlData interface{}) (err error) {
+	err = config.checkVersion(yamlData)
+	if err != nil {
+		return
+	}
 	root, err := NormalizeConfigRoot(yamlData)
 	if err != nil {
 		return
@@ -50,15 +54,6 @@ func (config *Config) LoadYaml(yamlData interface{}) (err error) {
 		_ = encoder.Encode(root)
 		encoder.Close()
 		slog.Debug("Normalized YAML:\n" + buf.String())
-	}
-
-	err = config.LoadVersion(root)
-	if err != nil {
-		return
-	}
-	if config.Version != 5 {
-		err = errors.New("Unsupported configuration version")
-		return
 	}
 
 	postgres, found := root["postgres"]
@@ -75,15 +70,23 @@ func (config *Config) LoadYaml(yamlData interface{}) (err error) {
 	return
 }
 
-func (config *Config) LoadVersion(yaml map[string]interface{}) (err error) {
-	version, ok := yaml["version"]
+func (config *Config) checkVersion(yaml interface{}) (err error) {
+	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
+		return errors.New("YAML is not a map")
+	}
+	version, ok := yamlMap["version"]
+	if !ok {
+		slog.Debug("Fallback to version 5.")
 		version = 5
 	}
 	config.Version, ok = version.(int)
 	if !ok {
-		err = errors.New("Configuration version must be integer")
-		return
+		return errors.New("Configuration version must be integer")
+	}
+	if config.Version != 5 {
+		slog.Debug("Unsupported configuration version.", "version", config.Version)
+		return errors.New("Unsupported configuration version")
 	}
 	return
 }
