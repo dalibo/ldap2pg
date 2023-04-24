@@ -22,9 +22,9 @@ func SetupConfig() {
 	_ = viper.BindEnv("config", "LDAPG2PG_CONFIG")
 	pflag.StringP("config", "c", "", "Path to YAML configuration file. Use - for stdin.")
 
-	viper.SetDefault("dry", true)
-	_ = viper.BindEnv("dry", "DRY")
-	pflag.BoolP("dry", "n", true, "Don't touch Postgres, just print what to do.")
+	viper.SetDefault("real", false)
+	_ = viper.BindEnv("real")
+	pflag.BoolP("real", "N", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
 
 	viper.SetDefault("help", false)
 	pflag.BoolP("help", "?", true, "Show this help message and exit.")
@@ -46,7 +46,7 @@ type Controller struct {
 	Check    bool
 	Color    bool
 	Config   string
-	Dry      bool
+	Real     bool
 	Quiet    int
 	Verbose  int
 	LogLevel slog.Level
