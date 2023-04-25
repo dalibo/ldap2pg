@@ -30,7 +30,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 	}
 
 	wanted.Roles = make(map[string]roles.Role)
-	for _, item := range config.SyncMap {
+	for _, item := range config.SyncItems {
 		if item.LdapSearch != nil {
 			slog.Warn("Skipping LDAP search for now.", "description", item.Description)
 			continue

@@ -10,10 +10,10 @@ import (
 )
 
 type Config struct {
-	Version  int
-	Ldap     LdapConfig
-	Postgres PostgresConfig
-	SyncMap  []SyncItem `mapstructure:"sync_map"`
+	Version   int
+	Ldap      LdapConfig
+	Postgres  PostgresConfig
+	SyncItems []SyncItem `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
@@ -114,7 +114,7 @@ func FindConfigFile(userValue string) (configpath string) {
 }
 
 func (c Config) HasLDAPSearches() bool {
-	for _, item := range c.SyncMap {
+	for _, item := range c.SyncItems {
 		if item.LdapSearch != nil {
 			return true
 		}
