@@ -112,3 +112,12 @@ func FindConfigFile(userValue string) (configpath string) {
 
 	return ""
 }
+
+func (c Config) HasLDAPSearches() bool {
+	for _, item := range c.SyncMap {
+		if item.LdapSearch != nil {
+			return true
+		}
+	}
+	return false
+}

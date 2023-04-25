@@ -11,6 +11,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	mapset "github.com/deckarep/golang-set/v2"
+	ldapv3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
@@ -19,11 +20,14 @@ type Wanted struct {
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
-	ldapconn, err := ldap.Connect(config)
-	if err != nil {
-		return
+	var ldapconn *ldapv3.Conn
+	if config.HasLDAPSearches() {
+		ldapconn, err = ldap.Connect(config)
+		if err != nil {
+			return
+		}
+		defer ldapconn.Close()
 	}
-	defer ldapconn.Close()
 
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncMap {
