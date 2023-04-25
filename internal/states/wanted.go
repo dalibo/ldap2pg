@@ -85,7 +85,7 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 	return ch
 }
 
-func (wanted *Wanted) Diff(instance PostgresInstance, fallbackOwner string) <-chan postgres.SyncQuery {
+func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
@@ -121,7 +121,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance, fallbackOwner string) <-ch
 				continue
 			}
 
-			role.Drop(instance.Databases, instance.Me, fallbackOwner, ch)
+			role.Drop(instance.Databases, instance.Me, instance.FallbackOwner, ch)
 		}
 	}()
 	return ch
@@ -138,7 +138,7 @@ func (wanted *Wanted) Sync(real bool, c config.Config, instance PostgresInstance
 		prefix = "Would "
 	}
 
-	for query := range wanted.Diff(instance, c.Postgres.FallbackOwner) {
+	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {

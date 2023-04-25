@@ -19,6 +19,7 @@ type PostgresInstance struct {
 	AllRoles         roles.RoleMap
 	Databases        []postgres.Database
 	DefaultDatabase  string
+	FallbackOwner    string
 	ManagedDatabases mapset.Set[string]
 	ManagedRoles     roles.RoleMap
 	Me               roles.Role
@@ -102,6 +103,13 @@ func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Co
 	if rows.Next() {
 		panic("Multiple row returned.")
 	}
+	if "" == c.Postgres.FallbackOwner {
+		instance.FallbackOwner = instance.Me.Name
+	} else {
+		instance.FallbackOwner = c.Postgres.FallbackOwner
+	}
+	slog.Debug("Fallback owner configured.", "role", instance.FallbackOwner)
+
 	return nil
 }
 
