@@ -24,8 +24,6 @@ type PostgresInstance struct {
 	ManagedRoles     roles.RoleMap
 	Me               roles.Role
 	RolesBlacklist   utils.Blacklist
-	ServerVersion    string
-	ServerVersionNum int
 }
 
 var (
@@ -76,9 +74,10 @@ func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Co
 	if !rows.Next() {
 		panic("No data returned.")
 	}
-	var clusterName string
+	var clusterName, serverVersion string
+	var serverVersionNum int
 	err = rows.Scan(
-		&instance.ServerVersion, &instance.ServerVersionNum,
+		&serverVersion, &serverVersionNum,
 		&clusterName, &instance.DefaultDatabase,
 		&instance.Me.Name, &instance.Me.Options.Super,
 	)
@@ -95,7 +94,7 @@ func (instance *PostgresInstance) InspectSession(c config.Config, pgconn *pgx.Co
 		msg,
 		"user", instance.Me.Name,
 		"super", instance.Me.Options.Super,
-		"version", instance.ServerVersion,
+		"version", serverVersion,
 		"cluster", clusterName,
 		"db", instance.DefaultDatabase,
 	)
