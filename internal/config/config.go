@@ -112,35 +112,3 @@ func FindConfigFile(userValue string) (configpath string) {
 
 	return ""
 }
-
-type EnvValues struct {
-	LdapURI        string
-	LdapBindDn     string
-	LdapPassword   string
-	LdapTLSReqcert string
-}
-
-func (config *Config) LoadEnv(values EnvValues) {
-	if values.LdapURI != "" {
-		slog.Debug("Setting LDAPURI.",
-			"source", "env",
-			"value", values.LdapURI)
-
-		config.Ldap.URI = values.LdapURI
-	}
-
-	if values.LdapBindDn != "" {
-		slog.Debug("Setting LDAPBINDDN.",
-			"value", values.LdapBindDn,
-			"source", "env")
-
-		config.Ldap.BindDn = values.LdapBindDn
-	}
-
-	if values.LdapPassword != "" {
-		slog.Debug("Setting LDAPPASSWORD.",
-			"source", "env")
-
-		config.Ldap.Password = values.LdapPassword
-	}
-}

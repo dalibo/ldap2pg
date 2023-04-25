@@ -1,51 +1,41 @@
 package ldap
 
 import (
-	"time"
-
+	"github.com/avast/retry-go"
 	"github.com/dalibo/ldap2pg/internal/config"
-	ldap "github.com/go-ldap/ldap/v3"
+	"github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
-func Connect(config config.Config) (err error) {
-	slog.Info("Connecting to LDAP directory.",
-		"uri", config.Ldap.URI,
-		"binddn", config.Ldap.BindDn)
-
-	slog.Debug("LDAP dial.",
-		"uri", config.Ldap.URI)
-
-	var ldapconn *ldap.Conn
-	for try := 0; try < 15; try++ {
-		ldapconn, err = ldap.DialURL(config.Ldap.URI)
-		if err != nil {
-			slog.Debug("Retrying LDAP connection in 1s.",
-				"error", err)
-
-			time.Sleep(time.Second)
-		}
-	}
+func Connect(c config.Config) (conn *ldap.Conn, err error) {
+	options, err := Initialize()
 	if err != nil {
 		return
 	}
 
-	defer ldapconn.Close()
-	slog.Debug("LDAP simple bind.",
-		"binddn", config.Ldap.BindDn)
+	uri := options.GetString("URI")
+	binddn := options.GetString("BINDDN")
 
-	err = ldapconn.Bind(config.Ldap.BindDn, config.Ldap.Password)
+	slog.Debug("LDAP dial.", "uri", uri)
+	err = retry.Do(func() error {
+		conn, err = ldap.DialURL(uri)
+		return err
+	})
+	if err != nil {
+		return
+	}
+
+	slog.Debug("LDAP simple bind.", "binddn", binddn)
+	err = conn.Bind(binddn, options.GetString("PASSWORD"))
 	if err != nil {
 		return
 	}
 
 	slog.Debug("Running LDAP whoami.")
-	wai, err := ldapconn.WhoAmI(nil)
+	wai, err := conn.WhoAmI(nil)
 	if err != nil {
 		return
 	}
-	slog.Debug("LDAP whoami done.",
-		"authzid", wai.AuthzID)
-
+	slog.Info("Connected to LDAP directory.", "uri", uri, "authzid", wai.AuthzID)
 	return
 }
