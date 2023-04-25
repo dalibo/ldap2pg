@@ -45,7 +45,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 			search := ldapv3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
 				Scope:      ldapv3.ScopeWholeSubtree,
-				Filter:     item.LdapSearch.Filter,
+				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
 				Attributes: []string{"dn"},
 			}
 			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter)
