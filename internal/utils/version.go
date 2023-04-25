@@ -2,6 +2,7 @@ package utils
 
 import (
 	_ "embed"
+	"strings"
 
 	"github.com/carlmjohnson/versioninfo"
 )
@@ -18,4 +19,5 @@ func init() {
 	} else {
 		ShortRevision = versioninfo.Revision[:8]
 	}
+	Version = strings.TrimSpace(Version)
 }

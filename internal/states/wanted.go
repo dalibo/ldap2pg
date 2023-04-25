@@ -9,6 +9,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
 
@@ -71,7 +72,7 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 			role := roles.NewRole()
 			role.Name = name
 			role.Options = rule.Options
-			role.Parents = rule.Parents.Clone()
+			role.Parents = mapset.NewSet[string](rule.Parents...)
 			if 1 == commentsLen {
 				role.Comment = rule.Comments[0]
 			} else {
@@ -84,7 +85,7 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 	return ch
 }
 
-func (wanted *Wanted) Diff(instance PostgresInstance, fallbackOwner string) <-chan postgres.SyncQuery {
+func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
@@ -120,7 +121,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance, fallbackOwner string) <-ch
 				continue
 			}
 
-			role.Drop(instance.Databases, instance.Me, fallbackOwner, ch)
+			role.Drop(instance.Databases, instance.Me, instance.FallbackOwner, ch)
 		}
 	}()
 	return ch
@@ -137,7 +138,7 @@ func (wanted *Wanted) Sync(real bool, c config.Config, instance PostgresInstance
 		prefix = "Would "
 	}
 
-	for query := range wanted.Diff(instance, c.Postgres.FallbackOwner) {
+	for query := range wanted.Diff(instance) {
 		slog.Info(prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {

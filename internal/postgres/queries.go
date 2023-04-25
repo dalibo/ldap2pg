@@ -14,13 +14,13 @@ import (
 
 // INSPECT
 
-func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
+func RunQuery[T any](q config.RowsOrSQL, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
 	ch := make(chan any)
 	go func() {
 		defer close(ch)
-		if q.IsPredefined() {
+		if config.IsPredefined(q) {
 			slog.Debug("Reading values from YAML.")
-			for _, value := range q.Value.([]interface{}) {
+			for _, value := range q.([]interface{}) {
 				row, err := yamlFun(value)
 				if err != nil {
 					ch <- err
@@ -32,8 +32,8 @@ func RunQuery[T any](q config.InspectQuery, pgconn *pgx.Conn, pgFun pgx.RowToFun
 		}
 
 		ctx := context.Background()
-		rows, err := pgconn.Query(ctx, q.Value.(string))
-		slog.Debug("Executing SQL query:\n" + q.Value.(string))
+		rows, err := pgconn.Query(ctx, q.(string))
+		slog.Debug("Executing SQL query:\n" + q.(string))
 		if err != nil {
 			ch <- fmt.Errorf("Bad query: %w", err)
 		}

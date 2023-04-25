@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
@@ -38,6 +38,10 @@ func ReadYaml(path string) (values interface{}, err error) {
 
 // Fill configuration from YAML data.
 func (config *Config) LoadYaml(yamlData interface{}) (err error) {
+	err = config.checkVersion(yamlData)
+	if err != nil {
+		return
+	}
 	root, err := NormalizeConfigRoot(yamlData)
 	if err != nil {
 		return
@@ -52,88 +56,28 @@ func (config *Config) LoadYaml(yamlData interface{}) (err error) {
 		slog.Debug("Normalized YAML:\n" + buf.String())
 	}
 
-	err = config.LoadVersion(root)
-	if err != nil {
-		return
-	}
-	if config.Version != 5 {
-		err = errors.New("Unsupported configuration version")
-		return
-	}
-
-	postgres, found := root["postgres"]
-	if found {
-		err = config.LoadYamlPostgres(postgres)
-		if err != nil {
-			return
-		}
-	}
-
-	syncMap := root["sync_map"]
-	err = config.LoadYamlSyncMap(syncMap.([]interface{}))
+	err = mapstructure.Decode(root, config)
 	slog.Debug("Loaded configuration file.", "version", config.Version)
 	return
 }
 
-func (config *Config) LoadVersion(yaml map[string]interface{}) (err error) {
-	version, ok := yaml["version"]
+func (config *Config) checkVersion(yaml interface{}) (err error) {
+	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
+		return errors.New("YAML is not a map")
+	}
+	version, ok := yamlMap["version"]
+	if !ok {
+		slog.Debug("Fallback to version 5.")
 		version = 5
 	}
 	config.Version, ok = version.(int)
 	if !ok {
-		err = errors.New("Configuration version must be integer")
-		return
+		return errors.New("Configuration version must be integer")
 	}
-	return
-}
-
-func (config *Config) LoadYamlPostgres(postgres interface{}) (err error) {
-	var postgresMap map[string]interface{}
-
-	switch t := postgres.(type) {
-	case map[string]interface{}:
-		postgresMap = postgres.(map[string]interface{})
-	case nil:
-		err = fmt.Errorf("postgres: section must not be null")
-		return
-	default:
-		err = fmt.Errorf("postgres: section must be a map, got %v (%T)", postgres, t)
-		return
-	}
-
-	v, ok := postgresMap["fallback_owner"]
-	if ok {
-		config.Postgres.FallbackOwner = v.(string)
-	}
-
-	knownQueries := []*InspectQuery{
-		&config.Postgres.DatabasesQuery,
-		&config.Postgres.ManagedRolesQuery,
-		&config.Postgres.RolesBlacklistQuery,
-	}
-
-	for _, q := range knownQueries {
-		value, ok := postgresMap[q.Name]
-		if !ok {
-			continue
-		}
-		slog.Debug("Loading Postgres query from YAML.",
-			"query", q.Name)
-
-		q.Value = value
-	}
-	return
-}
-
-func (config *Config) LoadYamlSyncMap(yaml []interface{}) (err error) {
-	for _, iItem := range yaml {
-		var item SyncItem
-		err = item.LoadYaml(iItem.(map[string]interface{}))
-		if err != nil {
-			return
-		}
-		config.SyncMap = append(config.SyncMap, item)
+	if config.Version != 5 {
+		slog.Debug("Unsupported configuration version.", "version", config.Version)
+		return errors.New("Unsupported configuration version")
 	}
 	return
 }

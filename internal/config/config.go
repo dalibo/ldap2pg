@@ -10,40 +10,45 @@ import (
 )
 
 type Config struct {
-	Version int
-	Ldap    struct {
-		URI      string
-		BindDn   string
-		Password string
-	}
+	Version  int
+	Ldap     LdapConfig
 	Postgres PostgresConfig
-	SyncMap  []SyncItem
+	SyncMap  []SyncItem `mapstructure:"sync_map"`
+}
+
+type LdapConfig struct {
+	URI      string
+	BindDn   string
+	Password string
 }
 
 type PostgresConfig struct {
-	FallbackOwner       string
-	DatabasesQuery      InspectQuery
-	ManagedRolesQuery   InspectQuery
-	RolesBlacklistQuery InspectQuery
+	FallbackOwner       string    `mapstructure:"fallback_owner"`
+	DatabasesQuery      RowsOrSQL `mapstructure:"databases_query"`
+	ManagedRolesQuery   RowsOrSQL `mapstructure:"managed_roles_query"`
+	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
+}
+
+type SyncItem struct {
+	Description string
+	LdapSearch  interface{}
+	RoleRules   []RoleRule `mapstructure:"roles"`
+}
+
+type RoleRule struct {
+	Names    []string
+	Options  RoleOptions
+	Comments []string
+	Parents  []string
 }
 
 func New() Config {
 	return Config{
 		Postgres: PostgresConfig{
-			DatabasesQuery: InspectQuery{
-				Name: "databases_query",
-				Default: dedent.Dedent(`
-				SELECT datname FROM pg_catalog.pg_database
-				WHERE datallowconn IS TRUE ORDER BY 1;`),
-			},
-			ManagedRolesQuery: InspectQuery{
-				Name: "managed_roles_query",
-			},
-			RolesBlacklistQuery: InspectQuery{
-				Name: "roles_blacklist_query",
-				// Inject Static value as returned by YAML
-				Default: []interface{}{"pg_*", "postgres"},
-			},
+			DatabasesQuery: dedent.Dedent(`
+			SELECT datname FROM pg_catalog.pg_database
+			WHERE datallowconn IS TRUE ORDER BY 1;`),
+			RolesBlacklistQuery: []interface{}{"pg_*", "postgres"},
 		},
 	}
 }
@@ -65,9 +70,6 @@ func (config *Config) Load(path string) (err error) {
 	if err != nil {
 		return
 	}
-
-	config.LoadDefaults()
-
 	return
 }
 
@@ -104,10 +106,10 @@ func FindConfigFile(userValue string) (configpath string) {
 }
 
 type EnvValues struct {
-	LdapURI        string `envconfig:"LDAPURI"`
-	LdapBindDn     string `envconfig:"LDAPBINDDN"`
-	LdapPassword   string `envconfig:"LDAPPASSWORD"`
-	LdapTLSReqcert string `envconfig:"LDAPTLS_REQCERT"`
+	LdapURI        string
+	LdapBindDn     string
+	LdapPassword   string
+	LdapTLSReqcert string
 }
 
 func (config *Config) LoadEnv(values EnvValues) {
@@ -133,27 +135,4 @@ func (config *Config) LoadEnv(values EnvValues) {
 
 		config.Ldap.Password = values.LdapPassword
 	}
-}
-
-type Tristate int
-
-func (t Tristate) Bool() bool {
-	return t > 0
-}
-
-func (t Tristate) Defined() bool {
-	return t != 0
-}
-
-func (t *Tristate) Set(value bool) {
-	if value {
-		*t = 1
-	} else {
-		*t = -1
-	}
-}
-
-func (config *Config) LoadDefaults() {
-	config.Postgres.DatabasesQuery.SetDefault()
-	config.Postgres.RolesBlacklistQuery.SetDefault()
 }
