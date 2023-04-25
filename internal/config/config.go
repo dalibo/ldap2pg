@@ -2,12 +2,43 @@ package config
 
 import (
 	"os"
-	"os/user"
 	"path"
 
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
+
+func FindConfigFile(userValue string) (configpath string) {
+	if "" != userValue {
+		return userValue
+	}
+
+	slog.Debug("Searching configuration file in standard locations.")
+	home, _ := os.UserHomeDir()
+	candidates := []string{
+		"./ldap2pg.yml",
+		"./ldap2pg.yaml",
+		path.Join(home, "/.config/ldap2pg.yml"),
+		path.Join(home, "/.config/ldap2pg.yaml"),
+		"/etc/ldap2pg.yml",
+		"/etc/ldap2pg.yaml",
+	}
+
+	for _, candidate := range candidates {
+		_, err := os.Stat(candidate)
+		if err == nil {
+			slog.Debug("Found configuration file.",
+				"path", candidate)
+
+			return candidate
+		}
+		slog.Debug("Ignoring configuration file.",
+			"path", candidate,
+			"error", err)
+	}
+
+	return ""
+}
 
 type Config struct {
 	Version   int
@@ -64,14 +95,14 @@ func Load(path string) (Config, error) {
 	return c, err
 }
 
-func (config *Config) Load(path string) (err error) {
+func (c *Config) Load(path string) (err error) {
 	slog.Debug("Loading YAML configuration.")
 
 	yamlData, err := ReadYaml(path)
 	if err != nil {
 		return
 	}
-	err = config.checkVersion(yamlData)
+	err = c.checkVersion(yamlData)
 	if err != nil {
 		return
 	}
@@ -79,43 +110,11 @@ func (config *Config) Load(path string) (err error) {
 	if err != nil {
 		return
 	}
-	err = config.LoadYaml(root)
+	err = c.LoadYaml(root)
 	if err != nil {
 		return
 	}
 	return
-}
-
-func FindConfigFile(userValue string) (configpath string) {
-	if "" != userValue {
-		return userValue
-	}
-
-	slog.Debug("Searching configuration file in standard locations.")
-	me, _ := user.Current()
-	candidates := []string{
-		"./ldap2pg.yml",
-		"./ldap2pg.yaml",
-		path.Join(me.HomeDir, "/.config/ldap2pg.yml"),
-		path.Join(me.HomeDir, "/.config/ldap2pg.yaml"),
-		"/etc/ldap2pg.yml",
-		"/etc/ldap2pg.yaml",
-	}
-
-	for _, candidate := range candidates {
-		_, err := os.Stat(candidate)
-		if err == nil {
-			slog.Debug("Found configuration file.",
-				"path", candidate)
-
-			return candidate
-		}
-		slog.Debug("Ignoring configuration file.",
-			"path", candidate,
-			"error", err)
-	}
-
-	return ""
 }
 
 func (c Config) HasLDAPSearches() bool {
