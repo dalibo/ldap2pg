@@ -37,16 +37,7 @@ func ReadYaml(path string) (values interface{}, err error) {
 }
 
 // Fill configuration from YAML data.
-func (config *Config) LoadYaml(yamlData interface{}) (err error) {
-	err = config.checkVersion(yamlData)
-	if err != nil {
-		return
-	}
-	root, err := NormalizeConfigRoot(yamlData)
-	if err != nil {
-		return
-	}
-
+func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
 		var buf bytes.Buffer
 		encoder := yaml.NewEncoder(&buf)

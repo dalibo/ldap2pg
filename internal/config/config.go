@@ -62,11 +62,19 @@ func Load(path string) (Config, error) {
 func (config *Config) Load(path string) (err error) {
 	slog.Debug("Loading YAML configuration.")
 
-	yamlValues, err := ReadYaml(path)
+	yamlData, err := ReadYaml(path)
 	if err != nil {
 		return
 	}
-	err = config.LoadYaml(yamlValues)
+	err = config.checkVersion(yamlData)
+	if err != nil {
+		return
+	}
+	root, err := NormalizeConfigRoot(yamlData)
+	if err != nil {
+		return
+	}
+	err = config.LoadYaml(root)
 	if err != nil {
 		return
 	}
