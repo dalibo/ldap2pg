@@ -23,7 +23,6 @@ type PostgresInstance struct {
 	ManagedDatabases mapset.Set[string]
 	ManagedRoles     roles.RoleMap
 	Me               roles.Role
-	RoleColumns      []string
 	RolesBlacklist   utils.Blacklist
 	ServerVersion    string
 	ServerVersionNum int
@@ -135,6 +134,16 @@ func (instance *PostgresInstance) InspectDatabases(c config.Config, pgconn *pgx.
 }
 
 func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn) error {
+	slog.Debug("Inspecting roles options.")
+	var columns []string
+	err := utils.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
+	if err != nil {
+		return err
+	}
+	// Setup global var to configure RoleOptions.String()
+	config.ProcessRoleColumns(columns, instance.Me.Options.Super)
+	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
+
 	slog.Debug("Inspecting roles blacklist.")
 	for item := range postgres.RunQuery(c.Postgres.RolesBlacklistQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
 		if err, _ := item.(error); err != nil {
@@ -145,17 +154,8 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 	}
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
-	slog.Debug("Inspecting roles options.")
-	err := utils.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &instance.RoleColumns)
-	if err != nil {
-		return err
-	}
-	// Setup global var to configure RoleOptions.String()
-	config.ProcessRoleColumns(instance.RoleColumns, instance.Me.Options.Super)
-	slog.Debug("Inspected PostgreSQL instance role options.", "columns", instance.RoleColumns)
-
 	instance.AllRoles = make(roles.RoleMap)
-	sql := "rol." + strings.Join(instance.RoleColumns, ", rol.")
+	sql := "rol." + strings.Join(columns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
 	for item := range postgres.RunQuery(rolesQuery, pgconn, roles.RowToRole, nil) {
