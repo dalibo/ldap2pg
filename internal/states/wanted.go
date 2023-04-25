@@ -7,9 +7,11 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	mapset "github.com/deckarep/golang-set/v2"
+	ldapv3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
@@ -18,33 +20,67 @@ type Wanted struct {
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
-	wanted.Roles = make(map[string]roles.Role)
-	for _, item := range config.SyncMap {
-		if item.LdapSearch != nil {
-			slog.Warn("Skipping LDAP search for now.", "description", item.Description)
-			continue
+	var ldapConn *ldapv3.Conn
+	if config.HasLDAPSearches() {
+		ldapOptions, err := ldap.Initialize()
+		if err != nil {
+			return wanted, err
 		}
+
+		ldapConn, err = ldap.Connect(ldapOptions)
+		if err != nil {
+			return wanted, err
+		}
+		defer ldapConn.Close()
+	}
+
+	wanted.Roles = make(map[string]roles.Role)
+	for _, item := range config.SyncItems {
+		var entries []*ldapv3.Entry
 		if item.Description != "" {
 			slog.Info(item.Description)
 		}
 
-		for _, rule := range item.RoleRules {
-			for item := range GenerateRoles(rule) {
-				err, _ := item.(error)
-				if err != nil {
-					return wanted, err
+		if "" != item.LdapSearch.Filter {
+			search := ldapv3.SearchRequest{
+				BaseDN:     item.LdapSearch.Base,
+				Scope:      ldapv3.ScopeWholeSubtree,
+				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
+				Attributes: []string{"dn"},
+			}
+			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter)
+			res, err := ldapConn.Search(&search)
+			if err != nil {
+				return wanted, err
+			}
+			entries = res.Entries
+		} else {
+			entries = [](*ldapv3.Entry){nil}
+		}
+
+		for _, entry := range entries {
+			if entry != nil {
+				slog.Debug("Got LDAP entry.", "dn", entry.DN)
+				continue
+			}
+			for _, rule := range item.RoleRules {
+				for item := range GenerateRoles(rule) {
+					err, _ := item.(error)
+					if err != nil {
+						return wanted, err
+					}
+					role, ok := item.(roles.Role)
+					if !ok {
+						panic(fmt.Sprintf("bad object generated: %v", item))
+					}
+					_, exists := wanted.Roles[role.Name]
+					if exists {
+						err = fmt.Errorf("Duplicated role %s", role.Name)
+						return wanted, err
+					}
+					slog.Debug("Wants role.", "name", role.Name, "options", role.Options, "parents", role.Parents)
+					wanted.Roles[role.Name] = role
 				}
-				role, ok := item.(roles.Role)
-				if !ok {
-					panic(fmt.Sprintf("bad object generated: %v", item))
-				}
-				_, exists := wanted.Roles[role.Name]
-				if exists {
-					err = fmt.Errorf("Duplicated role %s", role.Name)
-					return wanted, err
-				}
-				slog.Debug("Wants role.", "name", role.Name, "options", role.Options, "parents", role.Parents)
-				wanted.Roles[role.Name] = role
 			}
 		}
 	}

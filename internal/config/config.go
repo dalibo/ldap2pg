@@ -2,18 +2,49 @@ package config
 
 import (
 	"os"
-	"os/user"
 	"path"
 
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
 
+func FindConfigFile(userValue string) (configpath string) {
+	if "" != userValue {
+		return userValue
+	}
+
+	slog.Debug("Searching configuration file in standard locations.")
+	home, _ := os.UserHomeDir()
+	candidates := []string{
+		"./ldap2pg.yml",
+		"./ldap2pg.yaml",
+		path.Join(home, "/.config/ldap2pg.yml"),
+		path.Join(home, "/.config/ldap2pg.yaml"),
+		"/etc/ldap2pg.yml",
+		"/etc/ldap2pg.yaml",
+	}
+
+	for _, candidate := range candidates {
+		_, err := os.Stat(candidate)
+		if err == nil {
+			slog.Debug("Found configuration file.",
+				"path", candidate)
+
+			return candidate
+		}
+		slog.Debug("Ignoring configuration file.",
+			"path", candidate,
+			"error", err)
+	}
+
+	return ""
+}
+
 type Config struct {
-	Version  int
-	Ldap     LdapConfig
-	Postgres PostgresConfig
-	SyncMap  []SyncItem `mapstructure:"sync_map"`
+	Version   int
+	Ldap      LdapConfig
+	Postgres  PostgresConfig
+	SyncItems []SyncItem `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
@@ -31,8 +62,13 @@ type PostgresConfig struct {
 
 type SyncItem struct {
 	Description string
-	LdapSearch  interface{}
+	LdapSearch  LdapSearch
 	RoleRules   []RoleRule `mapstructure:"roles"`
+}
+
+type LdapSearch struct {
+	Base   string
+	Filter string
 }
 
 type RoleRule struct {
@@ -59,80 +95,33 @@ func Load(path string) (Config, error) {
 	return c, err
 }
 
-func (config *Config) Load(path string) (err error) {
+func (c *Config) Load(path string) (err error) {
 	slog.Debug("Loading YAML configuration.")
 
-	yamlValues, err := ReadYaml(path)
+	yamlData, err := ReadYaml(path)
 	if err != nil {
 		return
 	}
-	err = config.LoadYaml(yamlValues)
+	err = c.checkVersion(yamlData)
+	if err != nil {
+		return
+	}
+	root, err := NormalizeConfigRoot(yamlData)
+	if err != nil {
+		return
+	}
+	err = c.LoadYaml(root)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func FindConfigFile(userValue string) (configpath string) {
-	if "" != userValue {
-		return userValue
-	}
-
-	slog.Debug("Searching configuration file in standard locations.")
-	me, _ := user.Current()
-	candidates := []string{
-		"./ldap2pg.yml",
-		"./ldap2pg.yaml",
-		path.Join(me.HomeDir, "/.config/ldap2pg.yml"),
-		path.Join(me.HomeDir, "/.config/ldap2pg.yaml"),
-		"/etc/ldap2pg.yml",
-		"/etc/ldap2pg.yaml",
-	}
-
-	for _, candidate := range candidates {
-		_, err := os.Stat(candidate)
-		if err == nil {
-			slog.Debug("Found configuration file.",
-				"path", candidate)
-
-			return candidate
+func (c Config) HasLDAPSearches() bool {
+	for _, item := range c.SyncItems {
+		if "" != item.LdapSearch.Filter {
+			return true
 		}
-		slog.Debug("Ignoring configuration file.",
-			"path", candidate,
-			"error", err)
 	}
-
-	return ""
-}
-
-type EnvValues struct {
-	LdapURI        string
-	LdapBindDn     string
-	LdapPassword   string
-	LdapTLSReqcert string
-}
-
-func (config *Config) LoadEnv(values EnvValues) {
-	if values.LdapURI != "" {
-		slog.Debug("Setting LDAPURI.",
-			"source", "env",
-			"value", values.LdapURI)
-
-		config.Ldap.URI = values.LdapURI
-	}
-
-	if values.LdapBindDn != "" {
-		slog.Debug("Setting LDAPBINDDN.",
-			"value", values.LdapBindDn,
-			"source", "env")
-
-		config.Ldap.BindDn = values.LdapBindDn
-	}
-
-	if values.LdapPassword != "" {
-		slog.Debug("Setting LDAPPASSWORD.",
-			"source", "env")
-
-		config.Ldap.Password = values.LdapPassword
-	}
+	return false
 }
