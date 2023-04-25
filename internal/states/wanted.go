@@ -36,31 +36,51 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncItems {
-		if item.LdapSearch != nil {
-			slog.Warn("Skipping LDAP search for now.", "description", item.Description)
-			continue
-		}
+		var entries []*ldapv3.Entry
 		if item.Description != "" {
 			slog.Info(item.Description)
 		}
 
-		for _, rule := range item.RoleRules {
-			for item := range GenerateRoles(rule) {
-				err, _ := item.(error)
-				if err != nil {
-					return wanted, err
+		if "" != item.LdapSearch.Filter {
+			search := ldapv3.SearchRequest{
+				BaseDN:     item.LdapSearch.Base,
+				Scope:      ldapv3.ScopeWholeSubtree,
+				Filter:     item.LdapSearch.Filter,
+				Attributes: []string{"dn"},
+			}
+			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter)
+			res, err := ldapConn.Search(&search)
+			if err != nil {
+				return wanted, err
+			}
+			entries = res.Entries
+		} else {
+			entries = [](*ldapv3.Entry){nil}
+		}
+
+		for _, entry := range entries {
+			if entry != nil {
+				slog.Debug("Got LDAP entry.", "dn", entry.DN)
+				continue
+			}
+			for _, rule := range item.RoleRules {
+				for item := range GenerateRoles(rule) {
+					err, _ := item.(error)
+					if err != nil {
+						return wanted, err
+					}
+					role, ok := item.(roles.Role)
+					if !ok {
+						panic(fmt.Sprintf("bad object generated: %v", item))
+					}
+					_, exists := wanted.Roles[role.Name]
+					if exists {
+						err = fmt.Errorf("Duplicated role %s", role.Name)
+						return wanted, err
+					}
+					slog.Debug("Wants role.", "name", role.Name, "options", role.Options, "parents", role.Parents)
+					wanted.Roles[role.Name] = role
 				}
-				role, ok := item.(roles.Role)
-				if !ok {
-					panic(fmt.Sprintf("bad object generated: %v", item))
-				}
-				_, exists := wanted.Roles[role.Name]
-				if exists {
-					err = fmt.Errorf("Duplicated role %s", role.Name)
-					return wanted, err
-				}
-				slog.Debug("Wants role.", "name", role.Name, "options", role.Options, "parents", role.Parents)
-				wanted.Roles[role.Name] = role
 			}
 		}
 	}

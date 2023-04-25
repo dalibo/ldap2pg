@@ -116,11 +116,6 @@ jobs:
     - restore_cache:
         keys: [ldap2pg-go-func]
     - run:
-        name: Pen Test
-        command: |
-          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          LDAP2PG_VERBOSITY=debug build/go-ldap2pg
-    - run:
         name: Install Pytest Requirements
         command: |
           pip3 install --prefix=/usr/local --requirement tests/func/requirements.txt

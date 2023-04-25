@@ -31,8 +31,13 @@ type PostgresConfig struct {
 
 type SyncItem struct {
 	Description string
-	LdapSearch  interface{}
+	LdapSearch  LdapSearch
 	RoleRules   []RoleRule `mapstructure:"roles"`
+}
+
+type LdapSearch struct {
+	Base   string
+	Filter string
 }
 
 type RoleRule struct {
@@ -115,7 +120,7 @@ func FindConfigFile(userValue string) (configpath string) {
 
 func (c Config) HasLDAPSearches() bool {
 	for _, item := range c.SyncItems {
-		if item.LdapSearch != nil {
+		if "" != item.LdapSearch.Filter {
 			return true
 		}
 	}
