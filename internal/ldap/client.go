@@ -2,17 +2,11 @@ package ldap
 
 import (
 	"github.com/avast/retry-go"
-	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
-func Connect(c config.Config) (conn *ldap.Conn, err error) {
-	options, err := Initialize()
-	if err != nil {
-		return
-	}
-
+func Connect(options OptionsMap) (conn *ldap.Conn, err error) {
 	uri := options.GetString("URI")
 	binddn := options.GetString("BINDDN")
 

@@ -20,13 +20,18 @@ type Wanted struct {
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
-	var ldapconn *ldapv3.Conn
+	var ldapConn *ldapv3.Conn
 	if config.HasLDAPSearches() {
-		ldapconn, err = ldap.Connect(config)
+		ldapOptions, err := ldap.Initialize()
 		if err != nil {
-			return
+			return wanted, err
 		}
-		defer ldapconn.Close()
+
+		ldapConn, err = ldap.Connect(ldapOptions)
+		if err != nil {
+			return wanted, err
+		}
+		defer ldapConn.Close()
 	}
 
 	wanted.Roles = make(map[string]roles.Role)
