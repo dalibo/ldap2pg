@@ -121,7 +121,7 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 				role.Comment = comments[i]
 			}
 
-			ch <- interface{}(role)
+			ch <- role
 		}
 	}()
 	return ch
