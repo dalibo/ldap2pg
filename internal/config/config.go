@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
@@ -60,22 +61,17 @@ type PostgresConfig struct {
 	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
 }
 
-type SyncItem struct {
-	Description string
-	LdapSearch  LdapSearch
-	RoleRules   []RoleRule `mapstructure:"roles"`
-}
-
 type LdapSearch struct {
-	Base   string
-	Filter string
+	Base       string
+	Filter     string
+	Attributes []string
 }
 
 type RoleRule struct {
-	Names    []string
+	Names    []pyfmt.Format
 	Options  RoleOptions
-	Comments []string
-	Parents  []string
+	Comments []pyfmt.Format
+	Parents  []pyfmt.Format
 }
 
 func New() Config {
@@ -119,7 +115,7 @@ func (c *Config) Load(path string) (err error) {
 
 func (c Config) HasLDAPSearches() bool {
 	for _, item := range c.SyncItems {
-		if "" != item.LdapSearch.Filter {
+		if item.HasLDAPSearch() {
 			return true
 		}
 	}

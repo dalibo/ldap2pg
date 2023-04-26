@@ -41,14 +41,14 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 			slog.Info(item.Description)
 		}
 
-		if "" != item.LdapSearch.Filter {
+		if item.HasLDAPSearch() {
 			search := ldapv3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
 				Scope:      ldapv3.ScopeWholeSubtree,
 				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
-				Attributes: []string{"dn"},
+				Attributes: item.LdapSearch.Attributes,
 			}
-			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter)
+			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
 			res, err := ldapConn.Search(&search)
 			if err != nil {
 				return wanted, err
@@ -93,9 +93,6 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 		defer close(ch)
 		commentsLen := len(rule.Comments)
 		switch commentsLen {
-		case 0:
-			rule.Comments = []string{"Managed by ldap2pg"}
-			commentsLen = 1
 		case 1: // Copy same comment for all roles.
 		default:
 			if commentsLen != len(rule.Names) {
@@ -103,16 +100,25 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 				return
 			}
 		}
+		var comments []string
+		for _, comment := range rule.Comments {
+			comments = append(comments, comment.String())
+		}
+
+		var parents []string
+		for _, parent := range rule.Parents {
+			parents = append(parents, parent.String())
+		}
 
 		for i, name := range rule.Names {
 			role := roles.NewRole()
-			role.Name = name
+			role.Name = name.String()
 			role.Options = rule.Options
-			role.Parents = mapset.NewSet[string](rule.Parents...)
+			role.Parents = mapset.NewSet[string](parents...)
 			if 1 == commentsLen {
-				role.Comment = rule.Comments[0]
+				role.Comment = comments[0]
 			} else {
-				role.Comment = rule.Comments[i]
+				role.Comment = comments[i]
 			}
 
 			ch <- interface{}(role)

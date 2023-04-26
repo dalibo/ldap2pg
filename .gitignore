@@ -2,6 +2,8 @@
 *.pyc
 .coverage
 .pytest_cache/
+# Delve binary.
+__debug_bin
 __pycache__/
 build/
 dist/

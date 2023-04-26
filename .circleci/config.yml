@@ -222,7 +222,7 @@ jobs:
         command: |
           . .venv/bin/activate
           set -x
-          sort --check .gitignore
+          grep -v '^#' .gitignore | sort --check
           git diff --exit-code docs/
           flake8
           python setup.py --long-description | rst2html.py --strict >/dev/null
