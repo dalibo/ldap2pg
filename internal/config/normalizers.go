@@ -119,11 +119,17 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		if err != nil {
 			return
 		}
-		comments := rule["comments"]
-		rule["comments"], err = NormalizeStringList(comments)
+		commentsIface := rule["comments"]
+		var comments []string
+		comments, err = NormalizeStringList(commentsIface)
 		if err != nil {
 			return
 		}
+		if 0 == len(comments) {
+			comments = append(comments, "Managed by ldap2pg")
+		}
+		rule["comments"] = comments
+
 		options := rule["options"]
 		rule["options"], err = NormalizeRoleOptions(options)
 		if err != nil {

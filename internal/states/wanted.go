@@ -93,9 +93,6 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 		defer close(ch)
 		commentsLen := len(rule.Comments)
 		switch commentsLen {
-		case 0:
-			rule.Comments = []string{"Managed by ldap2pg"}
-			commentsLen = 1
 		case 1: // Copy same comment for all roles.
 		default:
 			if commentsLen != len(rule.Names) {
