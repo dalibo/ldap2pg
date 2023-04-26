@@ -41,14 +41,14 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 			slog.Info(item.Description)
 		}
 
-		if "" != item.LdapSearch.Filter {
+		if item.HasLDAPSearch() {
 			search := ldapv3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
 				Scope:      ldapv3.ScopeWholeSubtree,
 				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
-				Attributes: []string{"dn"},
+				Attributes: item.LdapSearch.Attributes,
 			}
-			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter)
+			slog.Debug("Searching LDAP directory.", "base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
 			res, err := ldapConn.Search(&search)
 			if err != nil {
 				return wanted, err
