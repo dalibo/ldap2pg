@@ -60,12 +60,6 @@ type PostgresConfig struct {
 	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
 }
 
-type SyncItem struct {
-	Description string
-	LdapSearch  LdapSearch
-	RoleRules   []RoleRule `mapstructure:"roles"`
-}
-
 type LdapSearch struct {
 	Base   string
 	Filter string
