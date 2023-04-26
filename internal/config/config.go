@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
@@ -66,10 +67,10 @@ type LdapSearch struct {
 }
 
 type RoleRule struct {
-	Names    []string
+	Names    []pyfmt.Format
 	Options  RoleOptions
-	Comments []string
-	Parents  []string
+	Comments []pyfmt.Format
+	Parents  []pyfmt.Format
 }
 
 func New() Config {

@@ -6,7 +6,9 @@ import (
 	"errors"
 	"io"
 	"os"
+	"reflect"
 
+	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
@@ -47,9 +49,35 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 		slog.Debug("Normalized YAML:\n" + buf.String())
 	}
 
-	err = mapstructure.Decode(root, config)
+	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: decodeMapHook,
+		Metadata:   &mapstructure.Metadata{},
+		Result:     config,
+	})
+	if err != nil {
+		return
+	}
+	err = d.Decode(root)
+	if err != nil {
+		return
+	}
+
 	slog.Debug("Loaded configuration file.", "version", config.Version)
 	return
+}
+
+// Decode custom types for mapstructure. Implements mapstructure.DecodeHookFuncValue.
+func decodeMapHook(from, to reflect.Value) (interface{}, error) {
+	switch to.Type() {
+	case reflect.TypeOf(pyfmt.Format{}):
+		f := to.Interface().(pyfmt.Format)
+		err := f.Parse(from.String())
+		if err != nil {
+			return nil, err
+		}
+		return f, nil
+	}
+	return from.Interface(), nil
 }
 
 func (config *Config) checkVersion(yaml interface{}) (err error) {
