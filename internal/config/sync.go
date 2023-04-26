@@ -34,6 +34,9 @@ func (i *SyncItem) InferAttributes() {
 			for _, f := range list {
 				for _, field := range f.Fields {
 					attribute, _, _ := strings.Cut(field.FieldName, ".")
+					if "dn" == attribute {
+						continue
+					}
 					attributes.Add(attribute)
 				}
 			}
