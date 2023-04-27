@@ -43,3 +43,33 @@ func (i *SyncItem) InferAttributes() {
 	}
 	i.LdapSearch.Attributes = attributes.ToSlice()
 }
+
+func (i SyncItem) SplitStaticItems() (items []SyncItem) {
+	var staticRules, dynamicRules []RoleRule
+	for _, rule := range i.RoleRules {
+		if rule.IsStatic() {
+			staticRules = append(staticRules, rule)
+		} else {
+			dynamicRules = append(dynamicRules, rule)
+		}
+	}
+
+	if len(staticRules) == 0 || len(dynamicRules) == 0 {
+		items = append(items, i)
+		return
+	}
+
+	items = append(items, SyncItem{
+		Description: i.Description,
+		LdapSearch:  i.LdapSearch,
+		RoleRules:   dynamicRules,
+	})
+
+	items = append(items, SyncItem{
+		// Avoid duplicating log message, use a silent item.
+		Description: "",
+		RoleRules:   staticRules,
+	})
+
+	return
+}
