@@ -24,20 +24,17 @@ func (i SyncItem) HasLDAPSearch() bool {
 func (i *SyncItem) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	for _, rule := range i.RoleRules {
-		listOfLists := []interface{}{
-			[]pyfmt.Format{rule.Name, rule.Comment},
-			rule.Parents,
+		allFormats := []pyfmt.Format{
+			rule.Name, rule.Comment,
 		}
-		for _, item := range listOfLists {
-			list := item.([]pyfmt.Format)
-			for _, f := range list {
-				for _, field := range f.Fields {
-					attribute, _, _ := strings.Cut(field.FieldName, ".")
-					if "dn" == attribute {
-						continue
-					}
-					attributes.Add(attribute)
+		allFormats = append(allFormats, rule.Parents...)
+		for _, f := range allFormats {
+			for _, field := range f.Fields {
+				attribute, _, _ := strings.Cut(field.FieldName, ".")
+				if "dn" == attribute {
+					continue
 				}
+				attributes.Add(attribute)
 			}
 		}
 	}
