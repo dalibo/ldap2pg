@@ -90,21 +90,18 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 	ch = make(chan interface{})
 	go func() {
 		defer close(ch)
-		comment := rule.Comment.String()
 		var parents []string
 		for _, parent := range rule.Parents {
 			parents = append(parents, parent.String())
 		}
 
-		for _, name := range rule.Names {
-			role := roles.NewRole()
-			role.Name = name.String()
-			role.Options = rule.Options
-			role.Parents = mapset.NewSet[string](parents...)
-			role.Comment = comment
+		role := roles.NewRole()
+		role.Name = rule.Name.String()
+		role.Options = rule.Options
+		role.Parents = mapset.NewSet[string](parents...)
+		role.Comment = rule.Comment.String()
 
-			ch <- role
-		}
+		ch <- role
 	}()
 	return ch
 }

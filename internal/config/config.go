@@ -68,7 +68,7 @@ type LdapSearch struct {
 }
 
 type RoleRule struct {
-	Names   []pyfmt.Format
+	Name    pyfmt.Format
 	Options RoleOptions
 	Comment pyfmt.Format
 	Parents []pyfmt.Format

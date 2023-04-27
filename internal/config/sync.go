@@ -25,8 +25,7 @@ func (i *SyncItem) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	for _, rule := range i.RoleRules {
 		listOfLists := []interface{}{
-			[]pyfmt.Format{rule.Comment},
-			rule.Names,
+			[]pyfmt.Format{rule.Name, rule.Comment},
 			rule.Parents,
 		}
 		for _, item := range listOfLists {

@@ -79,7 +79,7 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 	return
 }
 
-func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
+func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
 	var names []string
 	switch yaml.(type) {
 	case string:
@@ -135,6 +135,23 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 	return
 }
 
+// Normalize one rule with a list of names to a list of rules with a single
+// name.
+func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interface{}) {
+	for _, name := range yaml["names"].([]string) {
+		rule := make(map[string]interface{})
+		rule["name"] = name
+		for key, value := range yaml {
+			if "names" == key {
+				continue
+			}
+			rule[key] = value
+		}
+		rules = append(rules, rule)
+	}
+	return
+}
+
 func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err error) {
 	// Normal form of role options is a map with SQL token as key and
 	// boolean or int value.
@@ -183,11 +200,13 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		rules := []interface{}{}
 		for _, rawRule := range list {
 			var rule map[string]interface{}
-			rule, err = NormalizeRoleRule(rawRule)
+			rule, err = NormalizeRoleRules(rawRule)
 			if err != nil {
 				return
 			}
-			rules = append(rules, rule)
+			for _, rule := range DuplicateRoleRules(rule) {
+				rules = append(rules, rule)
+			}
 		}
 		item["roles"] = rules
 	}
