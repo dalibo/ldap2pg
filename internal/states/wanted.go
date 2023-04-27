@@ -11,7 +11,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	mapset "github.com/deckarep/golang-set/v2"
-	ldapv3 "github.com/go-ldap/ldap/v3"
+	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
@@ -20,7 +20,7 @@ type Wanted struct {
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
-	var ldapConn *ldapv3.Conn
+	var ldapConn *ldap3.Conn
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
 		if err != nil {
@@ -36,15 +36,15 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncItems {
-		var entries []*ldapv3.Entry
+		var entries []*ldap3.Entry
 		if item.Description != "" {
 			slog.Info(item.Description)
 		}
 
 		if item.HasLDAPSearch() {
-			search := ldapv3.SearchRequest{
+			search := ldap3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
-				Scope:      ldapv3.ScopeWholeSubtree,
+				Scope:      ldap3.ScopeWholeSubtree,
 				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
 				Attributes: item.LdapSearch.Attributes,
 			}
@@ -55,7 +55,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 			}
 			entries = res.Entries
 		} else {
-			entries = [](*ldapv3.Entry){nil}
+			entries = [](*ldap3.Entry){nil}
 		}
 
 		for _, entry := range entries {
