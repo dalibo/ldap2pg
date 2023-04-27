@@ -151,7 +151,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		return
 	default:
 		err = &ParseError{
-			Message: "Invalid role options YAML",
+			Message: "invalid role options YAML",
 			Value:   yaml,
 		}
 	}
@@ -161,7 +161,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
 	item, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("Invalid sync item format")
+		err = errors.New("invalid sync item type")
 		return
 	}
 
@@ -169,7 +169,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	if ok {
 		_, ok := descYaml.(string)
 		if !ok {
-			err = errors.New("Sync map item description must be string")
+			err = errors.New("sync item description must be string")
 			return
 		}
 	}
@@ -200,7 +200,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	if exists {
 		ldapSearch, ok := iLdapSearch.(map[string]interface{})
 		if !ok {
-			err = errors.New("Invalid ldapsearch format")
+			err = errors.New("invalid ldapsearch type")
 			return
 		}
 		item["ldapsearch"] = ldapSearch
