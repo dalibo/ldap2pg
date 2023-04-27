@@ -90,16 +90,19 @@ func parseField(s string) (f Field) {
 	return
 }
 
-func (f Format) Format(args ...any) string {
-	// For now, just join literals
-	var literals []string
+func (f Format) Format(values map[string]string) string {
+	b := strings.Builder{}
+
 	for _, item := range f.Sections {
 		literal, ok := item.(string)
 		if ok {
-			literals = append(literals, literal)
+			b.WriteString(literal)
+		} else {
+			f := item.(Field)
+			b.WriteString(values[f.FieldName])
 		}
 	}
-	return strings.Join(literals, "")
+	return b.String()
 }
 
 func (f Format) String() string {
