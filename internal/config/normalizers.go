@@ -115,20 +115,11 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		} else {
 			rule["parents"] = []string{}
 		}
-		err = NormalizeAlias(&rule, "comments", "comment")
-		if err != nil {
-			return
+
+		_, ok = rule["comment"]
+		if !ok {
+			rule["comment"] = "Managed by ldap2pg"
 		}
-		commentsIface := rule["comments"]
-		var comments []string
-		comments, err = NormalizeStringList(commentsIface)
-		if err != nil {
-			return
-		}
-		if 0 == len(comments) {
-			comments = append(comments, "Managed by ldap2pg")
-		}
-		rule["comments"] = comments
 
 		options := rule["options"]
 		rule["options"], err = NormalizeRoleOptions(options)

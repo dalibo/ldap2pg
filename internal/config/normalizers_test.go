@@ -124,6 +124,7 @@ func (suite *ConfigSuite) TestNormalizeRoleRuleSingle() {
 	names := rawNames.([]string)
 	r.Equal(1, len(names))
 	r.Equal("alice", names[0])
+	r.Equal("Managed by ldap2pg", value["comment"])
 }
 
 func (suite *ConfigSuite) TestNormalizeRoleComment() {
@@ -131,19 +132,15 @@ func (suite *ConfigSuite) TestNormalizeRoleComment() {
 
 	rawYaml := dedent.Dedent(`
 	name: alice
-	comment: single
+	comment: au pays des merveilles.
 	`)
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
-
-	rawComments, ok := value["comments"]
-	r.True(ok, "raw_value=%v", value)
-	comments := rawComments.([]string)
-	r.Len(comments, 1)
-	r.Equal("single", comments[0])
+	r.Equal([]string{"alice"}, value["names"])
+	r.Equal("au pays des merveilles.", value["comment"])
 }
 
 func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {

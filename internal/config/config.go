@@ -68,10 +68,10 @@ type LdapSearch struct {
 }
 
 type RoleRule struct {
-	Names    []pyfmt.Format
-	Options  RoleOptions
-	Comments []pyfmt.Format
-	Parents  []pyfmt.Format
+	Names   []pyfmt.Format
+	Options RoleOptions
+	Comment pyfmt.Format
+	Parents []pyfmt.Format
 }
 
 func New() Config {
