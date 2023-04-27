@@ -80,6 +80,10 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 			return nil, err
 		}
 		return f, nil
+	case reflect.TypeOf(RoleOptions{}):
+		r := to.Interface().(RoleOptions)
+		r.LoadYaml(from.Interface().(map[string]interface{}))
+		return r, nil
 	}
 	return from.Interface(), nil
 }
