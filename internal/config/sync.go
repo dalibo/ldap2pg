@@ -24,20 +24,49 @@ func (i SyncItem) HasLDAPSearch() bool {
 func (i *SyncItem) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	for _, rule := range i.RoleRules {
-		listOfLists := []interface{}{
-			rule.Comments,
-			rule.Names,
-			rule.Parents,
+		allFormats := []pyfmt.Format{
+			rule.Name, rule.Comment,
 		}
-		for _, item := range listOfLists {
-			list := item.([]pyfmt.Format)
-			for _, f := range list {
-				for _, field := range f.Fields {
-					attribute, _, _ := strings.Cut(field.FieldName, ".")
-					attributes.Add(attribute)
+		allFormats = append(allFormats, rule.Parents...)
+		for _, f := range allFormats {
+			for _, field := range f.Fields {
+				attribute, _, _ := strings.Cut(field.FieldName, ".")
+				if "dn" == attribute {
+					continue
 				}
+				attributes.Add(attribute)
 			}
 		}
 	}
 	i.LdapSearch.Attributes = attributes.ToSlice()
+}
+
+func (i SyncItem) SplitStaticItems() (items []SyncItem) {
+	var staticRules, dynamicRules []RoleRule
+	for _, rule := range i.RoleRules {
+		if rule.IsStatic() {
+			staticRules = append(staticRules, rule)
+		} else {
+			dynamicRules = append(dynamicRules, rule)
+		}
+	}
+
+	if len(staticRules) == 0 || len(dynamicRules) == 0 {
+		items = append(items, i)
+		return
+	}
+
+	items = append(items, SyncItem{
+		Description: i.Description,
+		LdapSearch:  i.LdapSearch,
+		RoleRules:   dynamicRules,
+	})
+
+	items = append(items, SyncItem{
+		// Avoid duplicating log message, use a silent item.
+		Description: "",
+		RoleRules:   staticRules,
+	})
+
+	return
 }

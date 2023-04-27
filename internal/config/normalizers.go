@@ -79,7 +79,7 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 	return
 }
 
-func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
+func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
 	var names []string
 	switch yaml.(type) {
 	case string:
@@ -115,20 +115,11 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		} else {
 			rule["parents"] = []string{}
 		}
-		err = NormalizeAlias(&rule, "comments", "comment")
-		if err != nil {
-			return
+
+		_, ok = rule["comment"]
+		if !ok {
+			rule["comment"] = "Managed by ldap2pg"
 		}
-		commentsIface := rule["comments"]
-		var comments []string
-		comments, err = NormalizeStringList(commentsIface)
-		if err != nil {
-			return
-		}
-		if 0 == len(comments) {
-			comments = append(comments, "Managed by ldap2pg")
-		}
-		rule["comments"] = comments
 
 		options := rule["options"]
 		rule["options"], err = NormalizeRoleOptions(options)
@@ -140,6 +131,23 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 			Message: "Invalid role rule YAML",
 			Value:   yaml,
 		}
+	}
+	return
+}
+
+// Normalize one rule with a list of names to a list of rules with a single
+// name.
+func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interface{}) {
+	for _, name := range yaml["names"].([]string) {
+		rule := make(map[string]interface{})
+		rule["name"] = name
+		for key, value := range yaml {
+			if "names" == key {
+				continue
+			}
+			rule[key] = value
+		}
+		rules = append(rules, rule)
 	}
 	return
 }
@@ -160,7 +168,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		return
 	default:
 		err = &ParseError{
-			Message: "Invalid role options YAML",
+			Message: "invalid role options YAML",
 			Value:   yaml,
 		}
 	}
@@ -170,7 +178,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
 	item, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("Invalid sync item format")
+		err = errors.New("invalid sync item type")
 		return
 	}
 
@@ -178,7 +186,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	if ok {
 		_, ok := descYaml.(string)
 		if !ok {
-			err = errors.New("Sync map item description must be string")
+			err = errors.New("sync item description must be string")
 			return
 		}
 	}
@@ -192,11 +200,13 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		rules := []interface{}{}
 		for _, rawRule := range list {
 			var rule map[string]interface{}
-			rule, err = NormalizeRoleRule(rawRule)
+			rule, err = NormalizeRoleRules(rawRule)
 			if err != nil {
 				return
 			}
-			rules = append(rules, rule)
+			for _, rule := range DuplicateRoleRules(rule) {
+				rules = append(rules, rule)
+			}
 		}
 		item["roles"] = rules
 	}
@@ -209,7 +219,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	if exists {
 		ldapSearch, ok := iLdapSearch.(map[string]interface{})
 		if !ok {
-			err = errors.New("Invalid ldapsearch format")
+			err = errors.New("invalid ldapsearch type")
 			return
 		}
 		item["ldapsearch"] = ldapSearch

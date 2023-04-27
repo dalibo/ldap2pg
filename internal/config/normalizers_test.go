@@ -95,10 +95,10 @@ func (suite *ConfigSuite) TestNormalizeAliasConflict() {
 	r.Equal("role", conflict.Conflict)
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleRuleString() {
+func (suite *ConfigSuite) TestNormalizeRoleRulesString() {
 	r := suite.Require()
 
-	value, err := config.NormalizeRoleRule("alice")
+	value, err := config.NormalizeRoleRules("alice")
 	r.Nil(err)
 
 	names, ok := value["names"].([]string)
@@ -107,7 +107,7 @@ func (suite *ConfigSuite) TestNormalizeRoleRuleString() {
 	r.Equal("alice", names[0])
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleRuleSingle() {
+func (suite *ConfigSuite) TestNormalizeRoleRulesSingle() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -116,7 +116,7 @@ func (suite *ConfigSuite) TestNormalizeRoleRuleSingle() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRule(raw)
+	value, err := config.NormalizeRoleRules(raw)
 	r.Nil(err)
 
 	rawNames, ok := value["names"]
@@ -124,26 +124,23 @@ func (suite *ConfigSuite) TestNormalizeRoleRuleSingle() {
 	names := rawNames.([]string)
 	r.Equal(1, len(names))
 	r.Equal("alice", names[0])
+	r.Equal("Managed by ldap2pg", value["comment"])
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleComment() {
+func (suite *ConfigSuite) TestNormalizeRolesComment() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
 	name: alice
-	comment: single
+	comment: au pays des merveilles.
 	`)
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRule(raw)
+	value, err := config.NormalizeRoleRules(raw)
 	r.Nil(err)
-
-	rawComments, ok := value["comments"]
-	r.True(ok, "raw_value=%v", value)
-	comments := rawComments.([]string)
-	r.Len(comments, 1)
-	r.Equal("single", comments[0])
+	r.Equal([]string{"alice"}, value["names"])
+	r.Equal("au pays des merveilles.", value["comment"])
 }
 
 func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {
@@ -167,7 +164,7 @@ func (suite *ConfigSuite) TestNormalizeRoleParents() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRule(raw)
+	value, err := config.NormalizeRoleRules(raw)
 	r.Nil(err)
 	parents := value["parents"].([]string)
 	r.Equal(1, len(parents))

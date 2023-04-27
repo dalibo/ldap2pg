@@ -3,7 +3,6 @@ package states
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/config"
@@ -11,7 +10,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	mapset "github.com/deckarep/golang-set/v2"
-	ldapv3 "github.com/go-ldap/ldap/v3"
+	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
@@ -20,7 +19,7 @@ type Wanted struct {
 }
 
 func ComputeWanted(config config.Config) (wanted Wanted, err error) {
-	var ldapConn *ldapv3.Conn
+	var ldapConn *ldap3.Conn
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
 		if err != nil {
@@ -36,15 +35,15 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 
 	wanted.Roles = make(map[string]roles.Role)
 	for _, item := range config.SyncItems {
-		var entries []*ldapv3.Entry
+		var entries []*ldap3.Entry
 		if item.Description != "" {
 			slog.Info(item.Description)
 		}
 
 		if item.HasLDAPSearch() {
-			search := ldapv3.SearchRequest{
+			search := ldap3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
-				Scope:      ldapv3.ScopeWholeSubtree,
+				Scope:      ldap3.ScopeWholeSubtree,
 				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
 				Attributes: item.LdapSearch.Attributes,
 			}
@@ -55,7 +54,7 @@ func ComputeWanted(config config.Config) (wanted Wanted, err error) {
 			}
 			entries = res.Entries
 		} else {
-			entries = [](*ldapv3.Entry){nil}
+			entries = [](*ldap3.Entry){nil}
 		}
 
 		for _, entry := range entries {
@@ -91,38 +90,18 @@ func GenerateRoles(rule config.RoleRule) (ch chan interface{}) {
 	ch = make(chan interface{})
 	go func() {
 		defer close(ch)
-		commentsLen := len(rule.Comments)
-		switch commentsLen {
-		case 1: // Copy same comment for all roles.
-		default:
-			if commentsLen != len(rule.Names) {
-				ch <- interface{}(errors.New("Comment list inconsistent with generated names"))
-				return
-			}
-		}
-		var comments []string
-		for _, comment := range rule.Comments {
-			comments = append(comments, comment.String())
-		}
-
 		var parents []string
 		for _, parent := range rule.Parents {
 			parents = append(parents, parent.String())
 		}
 
-		for i, name := range rule.Names {
-			role := roles.NewRole()
-			role.Name = name.String()
-			role.Options = rule.Options
-			role.Parents = mapset.NewSet[string](parents...)
-			if 1 == commentsLen {
-				role.Comment = comments[0]
-			} else {
-				role.Comment = comments[i]
-			}
+		role := roles.NewRole()
+		role.Name = rule.Name.String()
+		role.Options = rule.Options
+		role.Parents = mapset.NewSet[string](parents...)
+		role.Comment = rule.Comment.String()
 
-			ch <- interface{}(role)
-		}
+		ch <- role
 	}()
 	return ch
 }

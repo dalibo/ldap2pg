@@ -71,3 +71,16 @@ func (suite *Suite) TestParseConversionAndSpec() {
 	r.Equal(1, len(f.Fields))
 	r.Equal(pyfmt.Field{FieldName: "0", Conversion: "r", FormatSpec: ">30"}, f.Fields[0])
 }
+
+func (suite *Suite) TestFormat() {
+	r := suite.Require()
+
+	f, err := pyfmt.Parse("ext_{dn.cn}_{member.cn}")
+	r.Nil(err)
+
+	s := f.Format(map[string]string{
+		"dn.cn":     "dba",
+		"member.cn": "alice",
+	})
+	r.Equal("ext_dba_alice", s)
+}
