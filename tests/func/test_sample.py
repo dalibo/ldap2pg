@@ -20,9 +20,8 @@ def test_check_mode(ldap2pg, psql):
     ldap2pg('--check', config='ldap2pg.yml', _ok_code=1)
 
 
-def test_real_mode(psql):
-    from sh import ldap2pg
-
+@pytest.mark.go
+def test_real_mode(ldap2pg, psql):
     assert 'keepme' in psql.tables(dbname='olddb')
 
     ldap2pg('-N', c='ldap2pg.yml')
@@ -77,9 +76,8 @@ def test_re_revoke(psql):
     ldap2pg('-C', c=c)
 
 
-def test_nothing_to_do(capsys):
-    from sh import ldap2pg
-
+@pytest.mark.go
+def test_nothing_to_do(ldap2pg, capsys):
     ldap2pg('--real', config='ldap2pg.yml')
 
     _, err = capsys.readouterr()

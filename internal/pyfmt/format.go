@@ -3,6 +3,8 @@ package pyfmt
 import (
 	"fmt"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type Format struct {
@@ -107,4 +109,24 @@ func (f Format) Format(values map[string]string) string {
 
 func (f Format) String() string {
 	return f.Input
+}
+
+func ListExpressions(fmts ...Format) []string {
+	set := mapset.NewSet[string]()
+	for _, f := range fmts {
+		for _, field := range f.Fields {
+			set.Add(field.FieldName)
+		}
+	}
+	return set.ToSlice()
+}
+
+// Extract root variables references by expressions.
+func ListVariables(expressions ...string) []string {
+	attrSet := mapset.NewSet[string]()
+	for _, expr := range expressions {
+		attr, _, _ := strings.Cut(expr, ".")
+		attrSet.Add(attr)
+	}
+	return attrSet.ToSlice()
 }

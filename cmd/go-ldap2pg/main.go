@@ -66,7 +66,7 @@ func sync() (err error) {
 		return
 	}
 
-	wanted, err := states.ComputeWanted(c)
+	wanted, err := states.ComputeWanted(c, instance.RolesBlacklist)
 	if err != nil {
 		return
 	}
