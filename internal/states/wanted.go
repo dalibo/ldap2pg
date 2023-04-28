@@ -180,7 +180,7 @@ func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err
 	}
 
 	for query := range wanted.Diff(instance) {
-		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Log(ctx, config.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {
 			query.Database = instance.DefaultDatabase

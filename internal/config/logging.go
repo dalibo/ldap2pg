@@ -8,11 +8,15 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+const LevelChange slog.Level = slog.LevelInfo + 2
+
 var levelStrings = map[slog.Level]string{
-	slog.LevelDebug: "\033[2mDEBUG",
-	slog.LevelInfo:  "\033[1mINFO ",
-	slog.LevelWarn:  "\033[1;38;5;185mWARN ",
-	slog.LevelError: "\033[1;31mERROR",
+	slog.LevelDebug: "\033[2mDEBUG ",
+	slog.LevelInfo:  "\033[1mINFO  ",
+	// Level for changes only. Aka Magnus owns level. See #219
+	LevelChange:     "\033[1mCHANGE",
+	slog.LevelWarn:  "\033[1;38;5;185mWARN  ",
+	slog.LevelError: "\033[1;31mERROR ",
 }
 
 func SetLoggingHandler(level slog.Level, color bool) {
@@ -22,6 +26,14 @@ func SetLoggingHandler(level slog.Level, color bool) {
 	} else {
 		h = slog.HandlerOptions{
 			Level: level,
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				if slog.LevelKey == a.Key {
+					if a.Value.Any().(slog.Level) == LevelChange {
+						a.Value = slog.StringValue("CHANGE")
+					}
+				}
+				return a
+			},
 		}.NewTextHandler(os.Stderr)
 	}
 	slog.SetDefault(slog.New(h))

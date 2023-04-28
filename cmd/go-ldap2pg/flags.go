@@ -4,6 +4,7 @@ import (
 	"math"
 	"os"
 
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -55,6 +56,7 @@ type Controller struct {
 var levels []slog.Level = []slog.Level{
 	slog.LevelDebug,
 	slog.LevelInfo,
+	config.LevelChange,
 	slog.LevelWarn,
 	slog.LevelError,
 }
