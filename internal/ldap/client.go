@@ -33,6 +33,8 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 		return
 	}
 
+	conn.SetTimeout(options.GetSeconds("TIMEOUT"))
+
 	slog.Debug("LDAP simple bind.", "binddn", binddn)
 	err = conn.Bind(binddn, options.GetString("PASSWORD"))
 	if err != nil {

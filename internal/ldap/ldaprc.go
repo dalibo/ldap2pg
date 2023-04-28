@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slog"
 )
@@ -71,6 +73,21 @@ func Initialize() (options OptionsMap, err error) {
 	return
 }
 
+func (m OptionsMap) GetSeconds(name string) time.Duration {
+	option, ok := m[name]
+	if ok {
+		integer, err := strconv.Atoi(option.Value)
+		if nil == err {
+			slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
+			return time.Duration(integer) * time.Second
+		} else {
+			slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
+			return 0
+		}
+	}
+	return 0
+}
+
 func (m OptionsMap) GetString(name string) string {
 	option, ok := m[name]
 	if ok {
@@ -83,7 +100,9 @@ func (m OptionsMap) GetString(name string) string {
 func (m *OptionsMap) LoadDefaults() {
 	defaults := map[string]string{
 		"TLS_REQCERT": "try",
+		"TIMEOUT":     "30",
 	}
+
 	for key, value := range defaults {
 		(*m)[key] = RawOption{
 			Key:    key,
