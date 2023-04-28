@@ -44,7 +44,7 @@ jobs:
   go-build:
     working_directory: &workspace /workspace
     docker:
-    - image: golang:1.19-bullseye
+    - image: golang:1.20-bullseye
     steps:
     - checkout
     - run:
