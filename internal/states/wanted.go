@@ -19,7 +19,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
 	var ldapConn *ldap3.Conn
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
@@ -50,7 +50,11 @@ func ComputeWanted(config config.Config, blacklist utils.Blacklist) (wanted Want
 			}
 			slog.Debug("Searching LDAP directory.",
 				"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
-			res, err := ldapConn.Search(&search)
+
+			var res *ldap3.SearchResult
+			timer.TimeIt(func() {
+				res, err = ldapConn.Search(&search)
+			})
 			if err != nil {
 				return wanted, err
 			}
@@ -168,7 +172,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err error) {
+func (wanted *Wanted) Sync(timer *utils.Timer, real bool, instance PostgresInstance) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
@@ -180,7 +184,7 @@ func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err
 	}
 
 	for query := range wanted.Diff(instance) {
-		slog.Info(prefix+query.Description, query.LogArgs...)
+		slog.Log(ctx, config.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {
 			query.Database = instance.DefaultDatabase
@@ -198,7 +202,10 @@ func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err
 			continue
 		}
 
-		_, err = pgconn.Exec(ctx, sql)
+		timer.TimeIt(func() {
+			_, err = pgconn.Exec(ctx, sql)
+		})
+
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -28,6 +29,8 @@ func main() {
 }
 
 func ldap2pg() (err error) {
+	// Bootstrap logging first to log in setup.
+	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
 	SetupConfig()
 	if viper.GetBool("help") {
 		pflag.Usage()
@@ -66,7 +69,7 @@ func sync() (err error) {
 		return
 	}
 
-	wanted, err := states.ComputeWanted(c, instance.RolesBlacklist)
+	wanted, err := states.ComputeWanted(&controller.LdapTimer, c, instance.RolesBlacklist)
 	if err != nil {
 		return
 	}
@@ -77,12 +80,17 @@ func sync() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(controller.Real, instance)
+	count, err := wanted.Sync(&controller.PostgresTimer, controller.Real, instance)
 
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)
 	logAttrs := []interface{}{
-		"queries", count, "elapsed", elapsed, "mempeak", utils.FormatBytes(vmPeak),
+		"elapsed", elapsed,
+		"mempeak", utils.FormatBytes(vmPeak),
+		"postgres", controller.PostgresTimer.Total,
+		"queries", count,
+		"ldap", controller.LdapTimer.Total,
+		"searches", controller.LdapTimer.Count,
 	}
 	if count > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
