@@ -78,7 +78,7 @@ func (m OptionsMap) GetSeconds(name string) time.Duration {
 	if ok {
 		integer, err := strconv.Atoi(option.Value)
 		if nil == err {
-			slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
+			slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
 			return time.Duration(integer) * time.Second
 		} else {
 			slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
@@ -88,10 +88,20 @@ func (m OptionsMap) GetSeconds(name string) time.Duration {
 	return 0
 }
 
-func (m OptionsMap) GetString(name string) string {
+// Like GetString, but does not log value.
+func (m OptionsMap) GetSecret(name string) string {
 	option, ok := m[name]
 	if ok {
 		slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
+		return option.Value
+	}
+	return ""
+}
+
+func (m OptionsMap) GetString(name string) string {
+	option, ok := m[name]
+	if ok {
+		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
 		return option.Value
 	}
 	return ""
