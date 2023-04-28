@@ -2,7 +2,9 @@ package ldap
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -40,8 +42,24 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 
 	conn.SetTimeout(options.GetSeconds("TIMEOUT"))
 
-	slog.Debug("LDAP simple bind.", "binddn", binddn)
-	err = conn.Bind(binddn, options.GetSecret("PASSWORD"))
+	switch options.GetString("SASL_MECH") {
+	case "":
+		password := options.GetSecret("PASSWORD")
+		slog.Debug("LDAP simple bind.", "binddn", binddn)
+		err = conn.Bind(binddn, password)
+	case "DIGEST-MD5":
+		user := options.GetString("SASL_AUTHCID")
+		password := options.GetSecret("PASSWORD")
+		var parsedURI *url.URL
+		parsedURI, err = url.Parse(uri)
+		if err != nil {
+			return nil, err
+		}
+		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "username", user, "host", parsedURI.Host)
+		err = conn.MD5Bind(parsedURI.Host, user, password)
+	default:
+		err = fmt.Errorf("unhandled SASL_MECH")
+	}
 	if err != nil {
 		return
 	}
