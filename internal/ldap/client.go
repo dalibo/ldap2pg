@@ -14,16 +14,18 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 	uri := options.GetString("URI")
 	binddn := options.GetString("BINDDN")
 
+	t := tls.Config{
+		InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
+	}
+	d := net.Dialer{
+		Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
+	}
 	slog.Debug("LDAP dial.", "uri", uri)
 	err = retry.Do(
 		func() error {
 			conn, err = ldap3.DialURL(
 				uri,
-				ldap3.DialWithTLSDialer(&tls.Config{
-					InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
-				}, &net.Dialer{
-					Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
-				}),
+				ldap3.DialWithTLSDialer(&t, &d),
 			)
 			return err
 		},
