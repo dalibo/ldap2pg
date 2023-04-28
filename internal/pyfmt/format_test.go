@@ -11,6 +11,16 @@ func (suite *Suite) TestParseLiteralOnly() {
 	r.Equal("toto", f.Sections[0])
 }
 
+func (suite *Suite) TestParseMethod() {
+	r := suite.Require()
+	f, err := pyfmt.Parse("{member.cn.lower()}")
+	r.Nil(err)
+	r.Equal(1, len(f.Fields))
+	r.Equal(1, len(f.Sections))
+	r.Equal("member.cn", f.Fields[0].FieldName)
+	r.Equal("lower()", f.Fields[0].Method)
+}
+
 func (suite *Suite) TestParseFieldOnly() {
 	r := suite.Require()
 	f, err := pyfmt.Parse("{member.cn}")
@@ -75,12 +85,12 @@ func (suite *Suite) TestParseConversionAndSpec() {
 func (suite *Suite) TestFormat() {
 	r := suite.Require()
 
-	f, err := pyfmt.Parse("ext_{dn.cn}_{member.cn}")
+	f, err := pyfmt.Parse("ext_{dn.cn}_{member.cn.upper()}")
 	r.Nil(err)
 
 	s := f.Format(map[string]string{
 		"dn.cn":     "dba",
 		"member.cn": "alice",
 	})
-	r.Equal("ext_dba_alice", s)
+	r.Equal("ext_dba_ALICE", s)
 }

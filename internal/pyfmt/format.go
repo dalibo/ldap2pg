@@ -18,6 +18,7 @@ type Field struct {
 	FieldName  string
 	FormatSpec string
 	Conversion string
+	Method     string
 }
 
 func Parse(f string) (format Format, err error) {
@@ -89,6 +90,11 @@ func parseField(s string) (f Field) {
 		f.FieldName = before
 	}
 	f.FormatSpec = after
+	if strings.HasSuffix(f.FieldName, "()") {
+		lastPoint := strings.LastIndex(f.FieldName, ".")
+		f.Method = f.FieldName[lastPoint+1:]
+		f.FieldName = f.FieldName[:lastPoint]
+	}
 	return
 }
 
@@ -101,7 +107,17 @@ func (f Format) Format(values map[string]string) string {
 			b.WriteString(literal)
 		} else {
 			f := item.(Field)
-			b.WriteString(values[f.FieldName])
+			v := values[f.FieldName]
+			switch f.Method {
+			case "":
+			case "lower()":
+				v = strings.ToLower(v)
+			case "upper()":
+				v = strings.ToUpper(v)
+			default:
+				v = "!INVALID_METHOD"
+			}
+			b.WriteString(v)
 		}
 	}
 	return b.String()
