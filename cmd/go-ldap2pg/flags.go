@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -46,14 +47,15 @@ func SetupConfig() {
 
 // Holds flags/env values to control the execution of ldap2pg.
 type Controller struct {
-	Check     bool
-	Color     bool
-	Config    string
-	Real      bool
-	Quiet     int
-	Verbose   int
-	Verbosity string
-	LogLevel  slog.Level
+	Check         bool
+	Color         bool
+	Config        string
+	Real          bool
+	Quiet         int
+	Verbose       int
+	Verbosity     string
+	LogLevel      slog.Level
+	PostgresTimer utils.Timer
 }
 
 var levels []slog.Level = []slog.Level{

@@ -168,7 +168,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err error) {
+func (wanted *Wanted) Sync(timer *utils.Timer, real bool, instance PostgresInstance) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
@@ -198,7 +198,10 @@ func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err
 			continue
 		}
 
-		_, err = pgconn.Exec(ctx, sql)
+		timer.TimeIt(func() {
+			_, err = pgconn.Exec(ctx, sql)
+		})
+
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

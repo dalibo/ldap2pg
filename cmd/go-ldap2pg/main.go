@@ -80,12 +80,15 @@ func sync() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(controller.Real, instance)
+	count, err := wanted.Sync(&controller.PostgresTimer, controller.Real, instance)
 
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)
 	logAttrs := []interface{}{
-		"queries", count, "elapsed", elapsed, "mempeak", utils.FormatBytes(vmPeak),
+		"queries", count,
+		"elapsed", elapsed,
+		"mempeak", utils.FormatBytes(vmPeak),
+		"postgres", controller.PostgresTimer.Total,
 	}
 	if count > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
