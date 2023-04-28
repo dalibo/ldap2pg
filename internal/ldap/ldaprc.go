@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slog"
 )
@@ -18,6 +20,7 @@ var knownOptions = []string{
 	"PASSWORD", // ldap2pg extension.
 	"REFERRALS",
 	"TIMEOUT",
+	"TLS_REQCERT",
 	"NETWORK_TIMEOUT",
 	"URI",
 }
@@ -41,6 +44,7 @@ func Initialize() (options OptionsMap, err error) {
 	path := "/etc/ldap/ldap.conf"
 	home, _ := os.UserHomeDir()
 	options = make(OptionsMap)
+	options.LoadDefaults()
 	err = options.LoadFiles(
 		path,
 		filepath.Join(home, "ldaprc"),
@@ -69,13 +73,52 @@ func Initialize() (options OptionsMap, err error) {
 	return
 }
 
-func (m OptionsMap) GetString(name string) string {
+func (m OptionsMap) GetSeconds(name string) time.Duration {
+	option, ok := m[name]
+	if ok {
+		integer, err := strconv.Atoi(option.Value)
+		if nil == err {
+			slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
+			return time.Duration(integer) * time.Second
+		}
+		slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
+	}
+	return 0
+}
+
+// Like GetString, but does not log value.
+func (m OptionsMap) GetSecret(name string) string {
 	option, ok := m[name]
 	if ok {
 		slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
 		return option.Value
 	}
 	return ""
+}
+
+func (m OptionsMap) GetString(name string) string {
+	option, ok := m[name]
+	if ok {
+		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
+		return option.Value
+	}
+	return ""
+}
+
+func (m *OptionsMap) LoadDefaults() {
+	defaults := map[string]string{
+		"NETWORK_TIMEOUT": "30",
+		"TLS_REQCERT":     "try",
+		"TIMEOUT":         "30",
+	}
+
+	for key, value := range defaults {
+		(*m)[key] = RawOption{
+			Key:    key,
+			Value:  value,
+			Origin: "default",
+		}
+	}
 }
 
 func (m *OptionsMap) LoadEnv() {

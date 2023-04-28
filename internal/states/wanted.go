@@ -168,7 +168,7 @@ func (wanted *Wanted) Diff(instance PostgresInstance) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (wanted *Wanted) Sync(real bool, c config.Config, instance PostgresInstance) (count int, err error) {
+func (wanted *Wanted) Sync(real bool, instance PostgresInstance) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
