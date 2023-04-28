@@ -22,9 +22,6 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 					InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
 				}),
 			)
-			if err != nil {
-				return err
-			}
 			return err
 		},
 		retry.RetryIf(IsErrorRecoverable),
