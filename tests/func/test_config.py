@@ -81,10 +81,13 @@ def test_stdin(capsys):
 @pytest.mark.xfail(
     'CI' in os.environ,
     reason="Can't setup SASL on CircleCI")
-def test_sasl(capsys):
-    from sh import ldap2pg
-
-    env = dict(os.environ, LDAPUSER='testsasl', LDAPPASSWORD='voyage')
+@pytest.mark.go
+def test_sasl(ldap2pg, capsys):
+    env = dict(
+        os.environ,
+        LDAPSASL_AUTHCID='testsasl', LDAPUSER='testsasl',
+        LDAPPASSWORD='voyage',
+    )
     ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
 
     _, err = capsys.readouterr()

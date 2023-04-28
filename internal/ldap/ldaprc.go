@@ -19,6 +19,9 @@ var knownOptions = []string{
 	"BINDDN",
 	"PASSWORD", // ldap2pg extension.
 	"REFERRALS",
+	"SASL_AUTHCID",
+	"SASL_AUTHZID",
+	"SASL_MECH",
 	"TIMEOUT",
 	"TLS_REQCERT",
 	"NETWORK_TIMEOUT",
