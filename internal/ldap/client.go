@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
+	"net"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -18,8 +19,10 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 		func() error {
 			conn, err = ldap3.DialURL(
 				uri,
-				ldap3.DialWithTLSConfig(&tls.Config{
+				ldap3.DialWithTLSDialer(&tls.Config{
 					InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
+				}, &net.Dialer{
+					Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
 				}),
 			)
 			return err

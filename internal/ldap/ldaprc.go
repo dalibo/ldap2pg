@@ -99,8 +99,9 @@ func (m OptionsMap) GetString(name string) string {
 
 func (m *OptionsMap) LoadDefaults() {
 	defaults := map[string]string{
-		"TLS_REQCERT": "try",
-		"TIMEOUT":     "30",
+		"NETWORK_TIMEOUT": "30",
+		"TLS_REQCERT":     "try",
+		"TIMEOUT":         "30",
 	}
 
 	for key, value := range defaults {
