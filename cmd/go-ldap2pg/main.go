@@ -12,6 +12,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -28,6 +29,8 @@ func main() {
 }
 
 func ldap2pg() (err error) {
+	// Bootstrap logging first to log in setup.
+	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
 	SetupConfig()
 	if viper.GetBool("help") {
 		pflag.Usage()

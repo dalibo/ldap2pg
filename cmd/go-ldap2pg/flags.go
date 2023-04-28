@@ -37,6 +37,8 @@ func SetupConfig() {
 	pflag.CountP("quiet", "q", "Increase log verbosity.")
 	viper.SetDefault("verbose", 0)
 	pflag.CountP("verbose", "v", "Increase log verbosity.")
+	viper.SetDefault("verbosity", "")
+	_ = viper.BindEnv("verbosity", "LDAP2PG_VERBOSITY")
 
 	pflag.Parse()
 	_ = viper.BindPFlags(pflag.CommandLine)
@@ -44,13 +46,14 @@ func SetupConfig() {
 
 // Holds flags/env values to control the execution of ldap2pg.
 type Controller struct {
-	Check    bool
-	Color    bool
-	Config   string
-	Real     bool
-	Quiet    int
-	Verbose  int
-	LogLevel slog.Level
+	Check     bool
+	Color     bool
+	Config    string
+	Real      bool
+	Quiet     int
+	Verbose   int
+	Verbosity string
+	LogLevel  slog.Level
 }
 
 var levels []slog.Level = []slog.Level{
@@ -63,10 +66,24 @@ var levels []slog.Level = []slog.Level{
 
 func UnmarshalController() (controller Controller, err error) {
 	err = viper.Unmarshal(&controller)
-	// Default log level is INFO, which index is 1.
-	levelIndex := 1 - viper.GetInt("verbose") + viper.GetInt("quiet")
-	levelIndex = int(math.Max(0, float64(levelIndex)))
-	levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
-	controller.LogLevel = levels[levelIndex]
+	verbosity := viper.GetString("verbosity")
+	var level slog.LevelVar
+	switch verbosity {
+	case "":
+		// Default log level is INFO, which index is 1.
+		levelIndex := 1 - viper.GetInt("verbose") + viper.GetInt("quiet")
+		levelIndex = int(math.Max(0, float64(levelIndex)))
+		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
+		controller.LogLevel = levels[levelIndex]
+	case "CHANGE":
+		controller.LogLevel = config.LevelChange
+	default:
+		err := level.UnmarshalText([]byte(verbosity))
+		if err == nil {
+			controller.LogLevel = level.Level()
+		} else {
+			slog.Warn("Bad verbosity.", "source", "env", "value", verbosity)
+		}
+	}
 	return controller, err
 }
