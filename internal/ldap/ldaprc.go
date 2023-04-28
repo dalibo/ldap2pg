@@ -80,10 +80,8 @@ func (m OptionsMap) GetSeconds(name string) time.Duration {
 		if nil == err {
 			slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
 			return time.Duration(integer) * time.Second
-		} else {
-			slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
-			return 0
 		}
+		slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
 	}
 	return 0
 }

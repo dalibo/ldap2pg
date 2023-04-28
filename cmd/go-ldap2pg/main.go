@@ -77,7 +77,7 @@ func sync() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(controller.Real, c, instance)
+	count, err := wanted.Sync(controller.Real, instance)
 
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)

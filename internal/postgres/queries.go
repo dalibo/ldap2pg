@@ -65,7 +65,7 @@ func (q SyncQuery) String() string {
 
 type FmtQueryRewriter struct{}
 
-func (q FmtQueryRewriter) RewriteQuery(ctx context.Context, conn *pgx.Conn, sql string, args []any) (newSQL string, newArgs []any, err error) {
+func (q FmtQueryRewriter) RewriteQuery(_ context.Context, conn *pgx.Conn, sql string, args []any) (newSQL string, newArgs []any, err error) {
 	sql = strings.TrimSpace(dedent.Dedent(sql))
 	var fmtArgs []interface{}
 	for _, arg := range args {
