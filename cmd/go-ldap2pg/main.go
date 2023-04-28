@@ -85,11 +85,12 @@ func sync() (err error) {
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)
 	logAttrs := []interface{}{
-		"queries", count,
 		"elapsed", elapsed,
 		"mempeak", utils.FormatBytes(vmPeak),
 		"postgres", controller.PostgresTimer.Total,
+		"queries", count,
 		"ldap", controller.LdapTimer.Total,
+		"searches", controller.LdapTimer.Count,
 	}
 	if count > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
