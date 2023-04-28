@@ -56,6 +56,7 @@ type Controller struct {
 	Verbosity     string
 	LogLevel      slog.Level
 	PostgresTimer utils.Timer
+	LdapTimer     utils.Timer
 }
 
 var levels []slog.Level = []slog.Level{

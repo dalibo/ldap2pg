@@ -19,7 +19,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
 	var ldapConn *ldap3.Conn
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
@@ -50,7 +50,11 @@ func ComputeWanted(config config.Config, blacklist utils.Blacklist) (wanted Want
 			}
 			slog.Debug("Searching LDAP directory.",
 				"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
-			res, err := ldapConn.Search(&search)
+
+			var res *ldap3.SearchResult
+			timer.TimeIt(func() {
+				res, err = ldapConn.Search(&search)
+			})
 			if err != nil {
 				return wanted, err
 			}

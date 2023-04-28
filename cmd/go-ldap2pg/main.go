@@ -69,7 +69,7 @@ func sync() (err error) {
 		return
 	}
 
-	wanted, err := states.ComputeWanted(c, instance.RolesBlacklist)
+	wanted, err := states.ComputeWanted(&controller.LdapTimer, c, instance.RolesBlacklist)
 	if err != nil {
 		return
 	}
@@ -89,6 +89,7 @@ func sync() (err error) {
 		"elapsed", elapsed,
 		"mempeak", utils.FormatBytes(vmPeak),
 		"postgres", controller.PostgresTimer.Total,
+		"ldap", controller.LdapTimer.Total,
 	}
 	if count > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
