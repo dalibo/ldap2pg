@@ -16,7 +16,12 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 	slog.Debug("LDAP dial.", "uri", uri)
 	err = retry.Do(
 		func() error {
-			conn, err = ldap3.DialURL(uri)
+			conn, err = ldap3.DialURL(
+				uri,
+				ldap3.DialWithTLSConfig(&tls.Config{
+					InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
+				}),
+			)
 			if err != nil {
 				return err
 			}

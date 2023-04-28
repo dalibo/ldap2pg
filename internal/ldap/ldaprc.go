@@ -18,6 +18,7 @@ var knownOptions = []string{
 	"PASSWORD", // ldap2pg extension.
 	"REFERRALS",
 	"TIMEOUT",
+	"TLS_REQCERT",
 	"NETWORK_TIMEOUT",
 	"URI",
 }
@@ -41,6 +42,7 @@ func Initialize() (options OptionsMap, err error) {
 	path := "/etc/ldap/ldap.conf"
 	home, _ := os.UserHomeDir()
 	options = make(OptionsMap)
+	options.LoadDefaults()
 	err = options.LoadFiles(
 		path,
 		filepath.Join(home, "ldaprc"),
@@ -76,6 +78,19 @@ func (m OptionsMap) GetString(name string) string {
 		return option.Value
 	}
 	return ""
+}
+
+func (m *OptionsMap) LoadDefaults() {
+	defaults := map[string]string{
+		"TLS_REQCERT": "try",
+	}
+	for key, value := range defaults {
+		(*m)[key] = RawOption{
+			Key:    key,
+			Value:  value,
+			Origin: "default",
+		}
+	}
 }
 
 func (m *OptionsMap) LoadEnv() {
