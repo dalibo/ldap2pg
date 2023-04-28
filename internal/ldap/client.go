@@ -5,18 +5,18 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/go-ldap/ldap/v3"
+	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
-func Connect(options OptionsMap) (conn *ldap.Conn, err error) {
+func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 	uri := options.GetString("URI")
 	binddn := options.GetString("BINDDN")
 
 	slog.Debug("LDAP dial.", "uri", uri)
 	err = retry.Do(
 		func() error {
-			conn, err = ldap.DialURL(uri)
+			conn, err = ldap3.DialURL(uri)
 			if err != nil {
 				return err
 			}
@@ -48,7 +48,7 @@ func Connect(options OptionsMap) (conn *ldap.Conn, err error) {
 
 // Implements retry.RetryIfFunc
 func IsErrorRecoverable(err error) bool {
-	ldapErr, ok := err.(*ldap.Error)
+	ldapErr, ok := err.(*ldap3.Error)
 	if !ok {
 		return true
 	}
