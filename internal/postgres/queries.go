@@ -14,26 +14,33 @@ import (
 
 // INSPECT
 
-func RunQuery[T any](q config.RowsOrSQL, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
+func RunQuery[T any](q interface{}, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
 	ch := make(chan any)
 	go func() {
 		defer close(ch)
-		if config.IsPredefined(q) {
-			slog.Debug("Reading values from YAML.")
-			for _, value := range q.([]interface{}) {
-				row, err := yamlFun(value)
-				if err != nil {
-					ch <- err
-				} else {
-					ch <- row
+		var sql string
+		rowsOrSQL, ok := q.(config.RowsOrSQL)
+		if ok {
+			if config.IsPredefined(rowsOrSQL) {
+				slog.Debug("Reading values from YAML.")
+				for _, value := range rowsOrSQL.Value.([]interface{}) {
+					row, err := yamlFun(value)
+					if err != nil {
+						ch <- err
+					} else {
+						ch <- row
+					}
 				}
+				return
 			}
-			return
+			sql = rowsOrSQL.Value.(string)
+		} else {
+			sql = q.(string)
 		}
 
 		ctx := context.Background()
-		rows, err := pgconn.Query(ctx, q.(string))
-		slog.Debug("Executing SQL query:\n" + q.(string))
+		rows, err := pgconn.Query(ctx, sql)
+		slog.Debug("Executing SQL query:\n" + sql)
 		if err != nil {
 			ch <- fmt.Errorf("Bad query: %w", err)
 		}

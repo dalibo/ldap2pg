@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"reflect"
@@ -84,6 +85,15 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 		r := to.Interface().(RoleOptions)
 		r.LoadYaml(from.Interface().(map[string]interface{}))
 		return r, nil
+	case reflect.TypeOf(RowsOrSQL{}):
+		switch from.Interface().(type) {
+		case string:
+			return RowsOrSQL{Value: from.String()}, nil
+		case []interface{}:
+			return RowsOrSQL{Value: from.Interface()}, nil
+		default:
+			return nil, fmt.Errorf("bad YAML for query")
+		}
 	}
 	return from.Interface(), nil
 }
