@@ -18,9 +18,16 @@ import (
 )
 
 func main() {
-	// Split error management from business logic. This allows defer to
-	// apply before calling os.Exit. Also, deduplicate fatal error logging.
-	// Simply return an error and main will handle this case.
+	// Bootstrap logging first to log in setup.
+	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
+	config.SetupViper()
+	if viper.GetBool("help") {
+		pflag.Usage()
+		return
+	} else if viper.GetBool("version") {
+		showVersion()
+		return
+	}
 	err := ldap2pg()
 	if err != nil {
 		slog.Error("Fatal error.", "err", err)
@@ -29,24 +36,9 @@ func main() {
 }
 
 func ldap2pg() (err error) {
-	// Bootstrap logging first to log in setup.
-	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
-	SetupConfig()
-	if viper.GetBool("help") {
-		pflag.Usage()
-		return
-	} else if viper.GetBool("version") {
-		showVersion()
-		return
-	}
-	err = sync()
-	return
-}
-
-func sync() (err error) {
 	start := time.Now()
 
-	controller, err := UnmarshalController()
+	controller, err := config.UnmarshalController()
 	if err != nil {
 		return
 	}
@@ -80,7 +72,7 @@ func sync() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(&controller.PostgresTimer, controller.Real, instance)
+	count, err := instance.Sync(&controller.PostgresTimer, controller.Real, wanted)
 
 	vmPeak := utils.ReadVMPeak()
 	elapsed := time.Since(start)

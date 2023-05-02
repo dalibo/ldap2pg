@@ -2,8 +2,9 @@ package states
 
 import (
 	"context"
-	_ "embed"
 	"strings"
+
+	_ "embed"
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
