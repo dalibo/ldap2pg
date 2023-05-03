@@ -6,6 +6,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
@@ -16,12 +17,20 @@ type SyncItem struct {
 	RoleRules   []RoleRule `mapstructure:"roles"`
 }
 
-func (i SyncItem) ListAttributes() []string {
-	return nil
-}
-
 func (i SyncItem) HasLDAPSearch() bool {
 	return 0 < len(i.LdapSearch.Attributes)
+}
+
+func (i SyncItem) HasSubsearch() bool {
+	return 0 < len(i.LdapSearch.Subsearches)
+}
+
+func (s LdapSearch) SubsearchAttribute() string {
+	keys := maps.Keys(s.Subsearches)
+	if 0 == len(keys) {
+		return ""
+	}
+	return keys[0]
 }
 
 var knownRDN = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}

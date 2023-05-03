@@ -50,15 +50,7 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 		slog.Debug("Normalized YAML:\n" + buf.String())
 	}
 
-	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: decodeMapHook,
-		Metadata:   &mapstructure.Metadata{},
-		Result:     config,
-	})
-	if err != nil {
-		return
-	}
-	err = d.Decode(root)
+	err = DecodeYaml(root, config)
 	if err != nil {
 		return
 	}
@@ -68,6 +60,19 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 	}
 
 	slog.Debug("Loaded configuration file.", "version", config.Version)
+	return
+}
+
+// Wrap mapstructure for config object
+func DecodeYaml(yaml any, c *Config) (err error) {
+	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: decodeMapHook,
+		Metadata:   &mapstructure.Metadata{},
+		Result:     c,
+	})
+	if err == nil {
+		err = d.Decode(yaml)
+	}
 	return
 }
 
