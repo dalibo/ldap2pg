@@ -70,7 +70,7 @@ func (suite *Suite) TestParseSpec() {
 	f, err := pyfmt.Parse("{:>30}")
 	r.Nil(err)
 	r.Equal(1, len(f.Fields))
-	r.Equal(pyfmt.Field{FieldName: "", Conversion: "", FormatSpec: ">30"}, f.Fields[0])
+	r.Equal(&pyfmt.Field{FieldName: "", Conversion: "", FormatSpec: ">30"}, f.Fields[0])
 }
 
 func (suite *Suite) TestParseConversionAndSpec() {
@@ -79,7 +79,7 @@ func (suite *Suite) TestParseConversionAndSpec() {
 	f, err := pyfmt.Parse("{0!r:>30}")
 	r.Nil(err)
 	r.Equal(1, len(f.Fields))
-	r.Equal(pyfmt.Field{FieldName: "0", Conversion: "r", FormatSpec: ">30"}, f.Fields[0])
+	r.Equal(&pyfmt.Field{FieldName: "0", Conversion: "r", FormatSpec: ">30"}, f.Fields[0])
 }
 
 func (suite *Suite) TestFormat() {

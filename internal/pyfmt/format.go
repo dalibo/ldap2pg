@@ -11,7 +11,7 @@ type Format struct {
 	Input string
 	// List of either literal or field, in order.
 	Sections []interface{}
-	Fields   []Field
+	Fields   []*Field
 }
 
 type Field struct {
@@ -41,8 +41,8 @@ func (f *Format) Parse(s string) (err error) {
 			} else {
 				i += loc // Move before }
 				field := parseField(s[start:i])
-				f.Sections = append(f.Sections, field)
-				f.Fields = append(f.Fields, field)
+				f.Sections = append(f.Sections, &field)
+				f.Fields = append(f.Fields, &field)
 				i++ // Move after }
 				inField = false
 			}
@@ -106,7 +106,7 @@ func (f Format) Format(values map[string]string) string {
 		if ok {
 			b.WriteString(literal)
 		} else {
-			f := item.(Field)
+			f := item.(*Field)
 			v := values[f.FieldName]
 			switch f.Method {
 			case "":
