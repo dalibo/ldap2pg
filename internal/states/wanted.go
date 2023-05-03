@@ -41,7 +41,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 			search := ldap3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
 				Scope:      ldap3.ScopeWholeSubtree,
-				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
+				Filter:     item.LdapSearch.Filter,
 				Attributes: item.LdapSearch.Attributes,
 			}
 			slog.Debug("Searching LDAP directory.",

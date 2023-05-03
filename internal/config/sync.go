@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -38,7 +39,11 @@ func (i *SyncItem) InferAttributes() {
 			}
 		}
 	}
+	if 0 == attributes.Cardinality() {
+		return
+	}
 	i.LdapSearch.Attributes = attributes.ToSlice()
+	i.LdapSearch.Filter = ldap.CleanFilter(i.LdapSearch.Filter)
 }
 
 func (i SyncItem) SplitStaticItems() (items []SyncItem) {
