@@ -58,6 +58,12 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 	for i := range config.SyncItems {
 		item := &config.SyncItems[i]
 		item.InferAttributes()
+		// states.ComputeWanted is simplified base on the assumption
+		// there is no more than one sub-search. Fail otherwise.
+		if 1 < len(item.LdapSearch.Subsearches) {
+			err = fmt.Errorf("multiple sub-search unsupported")
+			return
+		}
 		item.ReplaceAttributeAsSubentryField()
 	}
 
