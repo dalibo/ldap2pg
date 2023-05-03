@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type ConfigSuite struct {
+type Suite struct {
 	suite.Suite
 }
 
@@ -18,5 +18,5 @@ func TestConfig(t *testing.T) {
 	} else {
 		config.SetLoggingHandler(slog.LevelWarn, false)
 	}
-	suite.Run(t, new(ConfigSuite))
+	suite.Run(t, new(Suite))
 }
