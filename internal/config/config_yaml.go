@@ -56,7 +56,9 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 	}
 
 	for i := range config.SyncItems {
-		config.SyncItems[i].InferAttributes()
+		item := &config.SyncItems[i]
+		item.InferAttributes()
+		item.ReplaceAttributeAsSubentryField()
 	}
 
 	slog.Debug("Loaded configuration file.", "version", config.Version)

@@ -97,6 +97,24 @@ func (i *SyncItem) InferAttributes() {
 	}
 }
 
+func (i *SyncItem) ReplaceAttributeAsSubentryField() {
+	subsearchAttr := i.LdapSearch.SubsearchAttribute()
+	for field := range i.IterFields() {
+		attribute, _, found := strings.Cut(field.FieldName, ".")
+		if attribute != subsearchAttr {
+			continue
+		}
+		// When sub-searching, never use sub attribute directly but
+		// always use sub-entry attributes. This avoid double product
+		// when computing combinations.
+		if !found {
+			// Case {member} -> {member.dn}
+			field.FieldName = attribute + ".dn"
+			continue
+		}
+	}
+}
+
 // Yields all {attr} from all formats in item.
 func (i SyncItem) IterFields() <-chan *pyfmt.Field {
 	ch := make(chan *pyfmt.Field)

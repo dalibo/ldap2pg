@@ -47,3 +47,25 @@ func (suite *Suite) TestSyncItemLdapAnalyze() {
 	r.True(i.HasSubsearch())
 	r.Equal("member", i.LdapSearch.SubsearchAttribute())
 }
+
+func (suite *Suite) TestSyncItemReplaceMemberAsMemberDotDN() {
+	r := suite.Require()
+
+	c := configFromYAML(`
+	sync_map:
+	- ldapsearch:
+	    base: cn=toto
+	  roles:
+	  - name: "{member.SAMAccountName}"
+	    comment: "{member}"
+	`)
+	i := c.SyncItems[0]
+	i.InferAttributes()
+	i.ReplaceAttributeAsSubentryField()
+	for f := range i.IterFields() {
+		if f.FieldName == "member.dn" {
+			return
+		}
+	}
+	r.Fail("member.dn not found")
+}
