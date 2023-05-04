@@ -48,13 +48,14 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 				"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
 
 			var res *ldap3.SearchResult
-			timer.TimeIt(func() {
+			duration := timer.TimeIt(func() {
 				res, err = ldapConn.Search(&search)
 			})
 			if err != nil {
 				return wanted, err
 			}
 			entries = res.Entries
+			slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
 		} else {
 			entries = [](*ldap3.Entry){nil}
 		}
