@@ -62,7 +62,13 @@ type PostgresConfig struct {
 }
 
 type LdapSearch struct {
-	Base       string
+	Base        string
+	Filter      string
+	Attributes  []string
+	Subsearches map[string]Subsearch `mapstructure:"joins"`
+}
+
+type Subsearch struct {
 	Filter     string
 	Attributes []string
 }

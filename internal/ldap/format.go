@@ -2,36 +2,87 @@
 package ldap
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/utils"
 	ldap3 "github.com/go-ldap/ldap/v3"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
 )
 
-// Generate all combination of attribute values from entry as referenced by formats in fmts.
-func GenerateValues(entry *ldap3.Entry, fmts ...pyfmt.Format) <-chan map[string]string {
+// Holds a consistent set of entry and sub-search entries.
+type Results struct {
+	// Is nil for static generation
+	Entry *ldap3.Entry
+	// Is empty if no sub-search.
+	SubsearchAttribute string
+	SubsearchEntries   []*ldap3.Entry
+}
+
+func (r *Results) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 	expressions := pyfmt.ListExpressions(fmts...)
 	attributes := pyfmt.ListVariables(expressions...)
+
+	// If sub-search, we want to combine parent attributes with all
+	// combinations of sub-entries at once. We prepare sub-entries
+	// combination and index them by a string key to combine keys with
+	// parent values, all string lists.
+	//
+	// subMap["subentry0-comb0"] = {"cn": "toto"}
+	var subMap map[string]map[string]string
+	if "" != r.SubsearchAttribute {
+		subMap = r.GenerateSubsearchValues(expressions)
+	}
+
 	ch := make(chan map[string]string)
 	go func() {
 		defer close(ch)
-		for values := range GenerateCombinations(entry, attributes) {
-			ch <- ResolveExpressions(expressions, values)
+		for values := range r.GenerateCombinations(attributes, maps.Keys(subMap)) {
+			ch <- r.ResolveExpressions(expressions, values, subMap)
 		}
 	}()
 	return ch
 }
 
-func GenerateCombinations(entry *ldap3.Entry, attributes []string) <-chan map[string]string {
+// Return a list of expression -> values for formatting, indexed by a string key.
+func (r *Results) GenerateSubsearchValues(parentExpressions []string) map[string]map[string]string {
+	prefix := r.SubsearchAttribute + "."
+	// First, remove sub-attribute from parent expressions. For example :
+	// {member.SAMAccountName} become {SAMAccountname} in the scope of the
+	// sub-entry.
+	var expressions []string
+	for _, e := range parentExpressions {
+		if strings.HasPrefix(e, prefix) {
+			expressions = append(expressions, strings.TrimPrefix(e, prefix))
+		}
+	}
+	subAttributes := pyfmt.ListVariables(expressions...)
+	subMap := make(map[string]map[string]string)
+	for i, subEntry := range r.SubsearchEntries {
+		j := 0
+		subResult := Results{Entry: subEntry}
+		for values := range subResult.GenerateCombinations(subAttributes, nil) {
+			subKey := fmt.Sprintf("subentry%d-comb%d", i, j)
+			values = subResult.ResolveExpressions(expressions, values, nil)
+			subMap[subKey] = values
+			j++
+		}
+	}
+	return subMap
+}
+
+func (r *Results) GenerateCombinations(attributes, subKeys []string) <-chan map[string]string {
 	// Extract raw LDAP attributes values from entry.
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
 		if "dn" == attr {
-			valuesList[i] = []string{entry.DN}
+			valuesList[i] = []string{r.Entry.DN}
+		} else if r.SubsearchAttribute == attr {
+			valuesList[i] = subKeys
 		} else {
-			valuesList[i] = entry.GetAttributeValues(attr)
+			valuesList[i] = r.Entry.GetAttributeValues(attr)
 		}
 	}
 
@@ -52,8 +103,8 @@ func GenerateCombinations(entry *ldap3.Entry, attributes []string) <-chan map[st
 	return ch
 }
 
-// Map expresssion to the corresponding value from attributes.
-func ResolveExpressions(expressions []string, attrValues map[string]string) map[string]string {
+// Resolve format expression from entry or pre-resolved expression for sub-entries.
+func (r *Results) ResolveExpressions(expressions []string, attrValues map[string]string, subExprMap map[string]map[string]string) map[string]string {
 	exprMap := make(map[string]string)
 exprloop:
 	for _, expr := range expressions {
@@ -64,8 +115,19 @@ exprloop:
 			continue
 		}
 
+		// Case {member.SAMAccountName}
+		if attr == r.SubsearchAttribute {
+			exprMap[expr] = subExprMap[attrValues[attr]][field]
+			continue
+		}
+
 		// Case {member.cn}
-		dn, _ := ldap3.ParseDN(attrValues[attr])
+		dn, err := ldap3.ParseDN(attrValues[attr])
+		if err != nil {
+			slog.Warn("Bad DN.", "dn", attrValues[attr], "rdn", field, "err", err)
+			continue
+		}
+
 		for _, rdn := range dn.RDNs {
 			attr0 := rdn.Attributes[0]
 			if field == attr0.Type {

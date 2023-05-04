@@ -50,24 +50,37 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 		slog.Debug("Normalized YAML:\n" + buf.String())
 	}
 
-	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: decodeMapHook,
-		Metadata:   &mapstructure.Metadata{},
-		Result:     config,
-	})
-	if err != nil {
-		return
-	}
-	err = d.Decode(root)
+	err = DecodeYaml(root, config)
 	if err != nil {
 		return
 	}
 
 	for i := range config.SyncItems {
-		config.SyncItems[i].InferAttributes()
+		item := &config.SyncItems[i]
+		item.InferAttributes()
+		// states.ComputeWanted is simplified base on the assumption
+		// there is no more than one sub-search. Fail otherwise.
+		if 1 < len(item.LdapSearch.Subsearches) {
+			err = fmt.Errorf("multiple sub-search unsupported")
+			return
+		}
+		item.ReplaceAttributeAsSubentryField()
 	}
 
 	slog.Debug("Loaded configuration file.", "version", config.Version)
+	return
+}
+
+// Wrap mapstructure for config object
+func DecodeYaml(yaml any, c *Config) (err error) {
+	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: decodeMapHook,
+		Metadata:   &mapstructure.Metadata{},
+		Result:     c,
+	})
+	if err == nil {
+		err = d.Decode(yaml)
+	}
 	return
 }
 
