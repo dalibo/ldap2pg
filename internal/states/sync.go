@@ -7,6 +7,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slog"
 )
 
@@ -69,26 +70,27 @@ func (instance *PostgresInstance) Sync(timer *utils.Timer, real bool, wanted Wan
 		if "" == query.Database {
 			query.Database = instance.DefaultDatabase
 		}
-		pgconn, err := pool.Get(query.Database)
+		pgConn, err := pool.Get(query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
 
 		// Rewrite query to log a pasteable query even when in Dry mode.
-		sql, _, _ := formatter.RewriteQuery(ctx, pgconn, query.Query, query.QueryArgs)
+		sql, _, _ := formatter.RewriteQuery(ctx, pgConn, query.Query, query.QueryArgs)
 		slog.Debug(prefix + "Execute SQL query:\n" + sql)
 
 		if !real {
 			continue
 		}
 
+		var tag pgconn.CommandTag
 		duration := timer.TimeIt(func() {
-			_, err = pgconn.Exec(ctx, sql)
+			_, err = pgConn.Exec(ctx, sql)
 		})
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
-		slog.Debug("Query terminated.", "duration", duration)
+		slog.Debug("Query terminated.", "duration", duration, "rows", tag.RowsAffected())
 	}
 	return
 }
