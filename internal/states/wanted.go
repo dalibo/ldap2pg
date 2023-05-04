@@ -2,6 +2,8 @@
 package states
 
 import (
+	"errors"
+
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/roles"
@@ -16,6 +18,7 @@ type Wanted struct {
 }
 
 func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
+	var errList []error
 	var ldapConn *ldap3.Conn
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
@@ -39,7 +42,8 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 		for data := range SearchDirectory(ldapConn, timer, item) {
 			err, failed := data.(error)
 			if failed {
-				slog.Error("Search error.", "err", err)
+				slog.Error("Search error. Keep going.", "err", err)
+				errList = append(errList, err)
 				continue
 			}
 
@@ -66,6 +70,9 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 				}
 			}
 		}
+	}
+	if 0 < len(errList) {
+		err = errors.Join(errList...)
 	}
 	return
 }
