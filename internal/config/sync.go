@@ -43,6 +43,9 @@ func (i *SyncItem) InferAttributes() {
 		return
 	}
 	i.LdapSearch.Attributes = attributes.ToSlice()
+	if "" == i.LdapSearch.Filter {
+		i.LdapSearch.Filter = "(objectClass=*)"
+	}
 	i.LdapSearch.Filter = ldap.CleanFilter(i.LdapSearch.Filter)
 }
 
