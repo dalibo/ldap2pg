@@ -36,63 +36,15 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 			slog.Info(item.Description)
 		}
 
-		resultsList := []*ldap.LdapResults{}
-		if item.HasLDAPSearch() {
-			search := ldap3.SearchRequest{
-				BaseDN:     item.LdapSearch.Base,
-				Scope:      ldap3.ScopeWholeSubtree,
-				Filter:     item.LdapSearch.Filter,
-				Attributes: item.LdapSearch.Attributes,
+		for data := range SearchDirectory(ldapConn, timer, item) {
+			err, failed := data.(error)
+			if failed {
+				slog.Error("Search error.", "err", err)
+				continue
 			}
-			slog.Debug("Searching LDAP directory.",
-				"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
 
-			var res *ldap3.SearchResult
-			duration := timer.TimeIt(func() {
-				res, err = ldapConn.Search(&search)
-			})
-			if err != nil {
-				return wanted, err
-			}
-			slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
-
-			subsearchAttr := item.LdapSearch.SubsearchAttribute()
-			for _, entry := range res.Entries {
-				results := ldap.LdapResults{
-					Entry:              entry,
-					SubsearchAttribute: subsearchAttr,
-				}
-				resultsList = append(resultsList, &results)
-				if "" == subsearchAttr {
-					continue
-				}
-				bases := entry.GetAttributeValues(subsearchAttr)
-				for _, base := range bases {
-					search := ldap3.SearchRequest{
-						BaseDN:     base,
-						Scope:      ldap3.ScopeBaseObject,
-						Filter:     item.LdapSearch.Subsearches[subsearchAttr].Filter,
-						Attributes: item.LdapSearch.Subsearches[subsearchAttr].Attributes,
-					}
-					slog.Debug("Recursive LDAP search.",
-						"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
-					duration := timer.TimeIt(func() {
-						res, err = ldapConn.Search(&search)
-					})
-					if err != nil {
-						return wanted, err
-					}
-					slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
-					results.SubsearchEntries = append(results.SubsearchEntries, res.Entries...)
-				}
-			}
-		} else {
-			// Use a dumb empty result.
-			resultsList = append(resultsList, &ldap.LdapResults{})
-		}
-
-		for _, rule := range item.RoleRules {
-			for _, results := range resultsList {
+			results := data.(*ldap.Results)
+			for _, rule := range item.RoleRules {
 				for role := range GenerateRoles(rule, results) {
 					if "" == role.Name {
 						continue
@@ -109,7 +61,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 						slog.Warn("Duplicated wanted role.", "role", role.Name)
 					}
 					slog.Debug("Wants role.",
-						"name", role.Name, "options", role.Options, "parents", role.Parents)
+						"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
 					wanted.Roles[role.Name] = role
 				}
 			}
@@ -118,7 +70,78 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 	return
 }
 
-func GenerateRoles(rule config.RoleRule, results *ldap.LdapResults) <-chan roles.Role {
+// Search directory, returning each entry or error. Sub-searches are done
+// concurrently and returned for each sub-key.
+func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncItem) <-chan interface{} {
+	ch := make(chan interface{})
+	go func() {
+		defer close(ch)
+		if !item.HasLDAPSearch() {
+			// Use a dumb empty result.
+			ch <- &ldap.Results{}
+			return
+		}
+
+		search := ldap3.SearchRequest{
+			BaseDN:     item.LdapSearch.Base,
+			Scope:      ldap3.ScopeWholeSubtree,
+			Filter:     item.LdapSearch.Filter,
+			Attributes: item.LdapSearch.Attributes,
+		}
+		slog.Debug("Searching LDAP directory.",
+			"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
+
+		var res *ldap3.SearchResult
+		var err error
+		duration := timer.TimeIt(func() {
+			res, err = ldapConn.Search(&search)
+		})
+		if err != nil {
+			slog.Debug("LDAP search failed.", "duration", duration, "err", err)
+			ch <- err
+			return
+		}
+		slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
+
+		subsearchAttr := item.LdapSearch.SubsearchAttribute()
+		for _, entry := range res.Entries {
+			results := ldap.Results{
+				Entry:              entry,
+				SubsearchAttribute: subsearchAttr,
+			}
+			if "" == subsearchAttr {
+				ch <- &results
+				continue
+			}
+			bases := entry.GetAttributeValues(subsearchAttr)
+			for _, base := range bases {
+				search := ldap3.SearchRequest{
+					BaseDN:     base,
+					Scope:      ldap3.ScopeBaseObject,
+					Filter:     item.LdapSearch.Subsearches[subsearchAttr].Filter,
+					Attributes: item.LdapSearch.Subsearches[subsearchAttr].Attributes,
+				}
+				slog.Debug("Recursive LDAP search.",
+					"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
+				duration := timer.TimeIt(func() {
+					res, err = ldapConn.Search(&search)
+				})
+				if err != nil {
+					slog.Debug("LDAP search failed.", "duration", duration, "err", err)
+					ch <- err
+					continue
+				}
+				slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
+				// Overwrite previous sub-entries and resend results.
+				results.SubsearchEntries = res.Entries
+				ch <- &results
+			}
+		}
+	}()
+	return ch
+}
+
+func GenerateRoles(rule config.RoleRule, results *ldap.Results) <-chan roles.Role {
 	ch := make(chan roles.Role)
 	go func() {
 		defer close(ch)
