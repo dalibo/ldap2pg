@@ -109,6 +109,7 @@ func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncI
 
 		subsearchAttr := item.LdapSearch.SubsearchAttribute()
 		for _, entry := range res.Entries {
+			slog.Debug("Got LDAP entry.", "dn", entry.DN)
 			results := ldap.Results{
 				Entry:              entry,
 				SubsearchAttribute: subsearchAttr,
@@ -126,7 +127,8 @@ func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncI
 					Attributes: item.LdapSearch.Subsearches[subsearchAttr].Attributes,
 				}
 				slog.Debug("Recursive LDAP search.",
-					"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
+					"attr", subsearchAttr, "base", search.BaseDN,
+					"filter", search.Filter, "attributes", search.Attributes)
 				duration := timer.TimeIt(func() {
 					res, err = ldapConn.Search(&search)
 				})
