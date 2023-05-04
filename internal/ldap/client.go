@@ -12,9 +12,18 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
-	uri := options.GetString("URI")
-	binddn := options.GetString("BINDDN")
+type Client struct {
+	URI         string
+	BindDN      string
+	SaslMech    string
+	SaslAuthCID string
+	Timeout     time.Duration
+	Password    string
+	Conn        *ldap3.Conn
+}
+
+func Connect(options OptionsMap) (client Client, err error) {
+	client.URI = options.GetString("URI")
 
 	t := tls.Config{
 		InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
@@ -22,11 +31,11 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 	d := net.Dialer{
 		Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
 	}
-	slog.Debug("LDAP dial.", "uri", uri)
+	slog.Debug("LDAP dial.", "uri", client.URI)
 	err = retry.Do(
 		func() error {
-			conn, err = ldap3.DialURL(
-				uri,
+			client.Conn, err = ldap3.DialURL(
+				client.URI,
 				ldap3.DialWithTLSDialer(&t, &d),
 			)
 			return err
@@ -40,23 +49,27 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 		return
 	}
 
-	conn.SetTimeout(options.GetSeconds("TIMEOUT"))
+	client.Timeout = options.GetSeconds("TIMEOUT")
+	client.Conn.SetTimeout(client.Timeout)
 
-	switch options.GetString("SASL_MECH") {
+	client.SaslMech = options.GetString("SASL_MECH")
+	switch client.SaslMech {
 	case "":
+		client.BindDN = options.GetString("BINDDN")
 		password := options.GetSecret("PASSWORD")
-		slog.Debug("LDAP simple bind.", "binddn", binddn)
-		err = conn.Bind(binddn, password)
+		client.Password = "*******"
+		slog.Debug("LDAP simple bind.", "binddn", client.BindDN)
+		err = client.Conn.Bind(client.BindDN, password)
 	case "DIGEST-MD5":
-		user := options.GetString("SASL_AUTHCID")
+		client.SaslAuthCID = options.GetString("SASL_AUTHCID")
 		password := options.GetSecret("PASSWORD")
 		var parsedURI *url.URL
-		parsedURI, err = url.Parse(uri)
+		parsedURI, err = url.Parse(client.URI)
 		if err != nil {
-			return nil, err
+			return client, err
 		}
-		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "username", user, "host", parsedURI.Host)
-		err = conn.MD5Bind(parsedURI.Host, user, password)
+		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
+		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
 	}
@@ -64,12 +77,12 @@ func Connect(options OptionsMap) (conn *ldap3.Conn, err error) {
 		return
 	}
 
-	slog.Debug("Running LDAP whoami.")
-	wai, err := conn.WhoAmI(nil)
+	slog.Debug("Running LDAP whoami.", "cmd", client.Command("ldapwhoami"))
+	wai, err := client.Conn.WhoAmI(nil)
 	if err != nil {
 		return
 	}
-	slog.Info("Connected to LDAP directory.", "uri", uri, "authzid", wai.AuthzID)
+	slog.Info("Connected to LDAP directory.", "uri", client.URI, "authzid", wai.AuthzID)
 	return
 }
 

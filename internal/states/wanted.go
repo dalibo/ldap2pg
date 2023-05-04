@@ -19,18 +19,18 @@ type Wanted struct {
 
 func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
 	var errList []error
-	var ldapConn *ldap3.Conn
+	var ldapc ldap.Client
 	if config.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
 		if err != nil {
 			return wanted, err
 		}
 
-		ldapConn, err = ldap.Connect(ldapOptions)
+		ldapc, err = ldap.Connect(ldapOptions)
 		if err != nil {
 			return wanted, err
 		}
-		defer ldapConn.Close()
+		defer ldapc.Conn.Close()
 	}
 
 	wanted.Roles = make(map[string]roles.Role)
@@ -39,7 +39,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 			slog.Info(item.Description)
 		}
 
-		for data := range SearchDirectory(ldapConn, timer, item) {
+		for data := range SearchDirectory(ldapc, timer, item) {
 			err, failed := data.(error)
 			if failed {
 				slog.Error("Search error. Keep going.", "err", err)
@@ -76,7 +76,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncItem) <-chan interface{} {
+func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
 		defer close(ch)
@@ -92,13 +92,14 @@ func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncI
 			Filter:     item.LdapSearch.Filter,
 			Attributes: item.LdapSearch.Attributes,
 		}
-		slog.Debug("Searching LDAP directory.",
-			"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
+		args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
+		args = append(args, search.Attributes...)
+		slog.Debug("Searching LDAP directory.", "cmd", ldapc.Command("ldapsearch", args...))
 
 		var res *ldap3.SearchResult
 		var err error
 		duration := timer.TimeIt(func() {
-			res, err = ldapConn.Search(&search)
+			res, err = ldapc.Conn.Search(&search)
 		})
 		if err != nil {
 			slog.Debug("LDAP search failed.", "duration", duration, "err", err)
@@ -126,11 +127,11 @@ func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncI
 					Filter:     item.LdapSearch.Subsearches[subsearchAttr].Filter,
 					Attributes: item.LdapSearch.Subsearches[subsearchAttr].Attributes,
 				}
-				slog.Debug("Recursive LDAP search.",
-					"attr", subsearchAttr, "base", search.BaseDN,
-					"filter", search.Filter, "attributes", search.Attributes)
+				args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
+				args = append(args, search.Attributes...)
+				slog.Debug("Recursive LDAP search.", "cmd", ldapc.Command("ldapsearch", args...))
 				duration := timer.TimeIt(func() {
-					res, err = ldapConn.Search(&search)
+					res, err = ldapc.Conn.Search(&search)
 				})
 				if err != nil {
 					slog.Debug("LDAP search failed.", "duration", duration, "err", err)
