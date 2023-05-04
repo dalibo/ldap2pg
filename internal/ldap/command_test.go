@@ -19,6 +19,7 @@ func (suite *Suite) TestQuote() {
 	r.Equal(`"'"`, ldap.ShellQuote("'"))
 	r.Equal(`'"'`, ldap.ShellQuote(`"`))
 	r.Equal(`' '`, ldap.ShellQuote(` `))
+	r.Equal("'`'", ldap.ShellQuote("`"))
 	r.Equal(`'*'`, ldap.ShellQuote(`*`))
 	r.Equal(`'!'`, ldap.ShellQuote(`!`))
 	r.Equal(`'(cn=*)'`, ldap.ShellQuote(`(cn=*)`))

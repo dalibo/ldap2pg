@@ -36,7 +36,7 @@ func (c Client) Command(name string, args ...string) string {
 	return strings.Join(cmd, " ")
 }
 
-var specialChars = ` "*!()[]{}`
+var specialChars = ` "*!()[]{}` + "`"
 
 func NeedsQuote(s string) bool {
 	if "" == s {
