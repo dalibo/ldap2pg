@@ -22,6 +22,32 @@ func (suite *Suite) TestProductOneEmptyList() {
 	}
 }
 
+type dumbStruct struct {
+	A string
+}
+
+func (suite *Suite) TestProductAny() {
+	r := suite.Require()
+
+	var combinations [][]any
+	s0 := dumbStruct{A: "s0"}
+	s1 := dumbStruct{A: "s1"}
+	for item := range utils.Product[interface{}](
+		[]interface{}{"1", "2", "3"},
+		[]interface{}{s0, s1},
+	) {
+		combinations = append(combinations, item)
+	}
+
+	r.Equal(3*2, len(combinations))
+	r.Equal([]interface{}{"1", s0}, combinations[0])
+	r.Equal([]interface{}{"1", s1}, combinations[1])
+	r.Equal([]interface{}{"2", s0}, combinations[2])
+	r.Equal([]interface{}{"2", s1}, combinations[3])
+	r.Equal([]interface{}{"3", s0}, combinations[4])
+	r.Equal([]interface{}{"3", s1}, combinations[5])
+}
+
 func (suite *Suite) TestProductString() {
 	r := suite.Require()
 
