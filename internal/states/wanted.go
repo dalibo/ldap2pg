@@ -47,27 +47,24 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 				continue
 			}
 
-			results := data.(*ldap.Results)
-			for _, rule := range item.RoleRules {
-				for role := range GenerateRoles(rule, results) {
-					if "" == role.Name {
-						continue
-					}
-					pattern := blacklist.MatchString(role.Name)
-					if pattern != "" {
-						slog.Debug(
-							"Ignoring blacklisted wanted role.",
-							"role", role.Name, "pattern", pattern)
-						continue
-					}
-					_, exists := wanted.Roles[role.Name]
-					if exists {
-						slog.Warn("Duplicated wanted role.", "role", role.Name)
-					}
-					slog.Debug("Wants role.",
-						"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
-					wanted.Roles[role.Name] = role
+			for role := range GenerateAllRoles(item.RoleRules, data.(*ldap.Results)) {
+				if "" == role.Name {
+					continue
 				}
+				pattern := blacklist.MatchString(role.Name)
+				if pattern != "" {
+					slog.Debug(
+						"Ignoring blacklisted wanted role.",
+						"role", role.Name, "pattern", pattern)
+					continue
+				}
+				_, exists := wanted.Roles[role.Name]
+				if exists {
+					slog.Warn("Duplicated wanted role.", "role", role.Name)
+				}
+				slog.Debug("Wants role.",
+					"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
+				wanted.Roles[role.Name] = role
 			}
 		}
 	}
@@ -142,6 +139,19 @@ func SearchDirectory(ldapConn *ldap3.Conn, timer *utils.Timer, item config.SyncI
 				// Overwrite previous sub-entries and resend results.
 				results.SubsearchEntries = res.Entries
 				ch <- &results
+			}
+		}
+	}()
+	return ch
+}
+
+func GenerateAllRoles(rules []config.RoleRule, results *ldap.Results) <-chan roles.Role {
+	ch := make(chan roles.Role)
+	go func() {
+		defer close(ch)
+		for _, rule := range rules {
+			for role := range GenerateRoles(rule, results) {
+				ch <- role
 			}
 		}
 	}()
