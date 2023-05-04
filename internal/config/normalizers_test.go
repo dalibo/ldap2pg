@@ -6,7 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *ConfigSuite) TestNormalizeList() {
+func (suite *Suite) TestNormalizeList() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -19,7 +19,7 @@ func (suite *ConfigSuite) TestNormalizeList() {
 	r.Equal(1, len(values))
 }
 
-func (suite *ConfigSuite) TestNormalizeStringList() {
+func (suite *Suite) TestNormalizeStringList() {
 	r := suite.Require()
 
 	value := interface{}("alice")
@@ -29,7 +29,7 @@ func (suite *ConfigSuite) TestNormalizeStringList() {
 	r.Equal("alice", values[0])
 }
 
-func (suite *ConfigSuite) TestNormalizeAlias() {
+func (suite *Suite) TestNormalizeAlias() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -47,7 +47,7 @@ func (suite *ConfigSuite) TestNormalizeAlias() {
 	r.True(found)
 }
 
-func (suite *ConfigSuite) TestNormalizeAliasEmpty() {
+func (suite *Suite) TestNormalizeAliasEmpty() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -63,7 +63,7 @@ func (suite *ConfigSuite) TestNormalizeAliasEmpty() {
 	r.False(found)
 }
 
-func (suite *ConfigSuite) TestNormalizeString() {
+func (suite *Suite) TestNormalizeString() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -77,7 +77,7 @@ func (suite *ConfigSuite) TestNormalizeString() {
 	r.Nil(err)
 }
 
-func (suite *ConfigSuite) TestNormalizeAliasConflict() {
+func (suite *Suite) TestNormalizeAliasConflict() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -95,7 +95,7 @@ func (suite *ConfigSuite) TestNormalizeAliasConflict() {
 	r.Equal("role", conflict.Conflict)
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleRulesString() {
+func (suite *Suite) TestNormalizeRoleRulesString() {
 	r := suite.Require()
 
 	value, err := config.NormalizeRoleRules("alice")
@@ -107,7 +107,7 @@ func (suite *ConfigSuite) TestNormalizeRoleRulesString() {
 	r.Equal("alice", names[0])
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleRulesSingle() {
+func (suite *Suite) TestNormalizeRoleRulesSingle() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -127,7 +127,7 @@ func (suite *ConfigSuite) TestNormalizeRoleRulesSingle() {
 	r.Equal("Managed by ldap2pg", value["comment"])
 }
 
-func (suite *ConfigSuite) TestNormalizeRolesComment() {
+func (suite *Suite) TestNormalizeRolesComment() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -143,7 +143,7 @@ func (suite *ConfigSuite) TestNormalizeRolesComment() {
 	r.Equal("au pays des merveilles.", value["comment"])
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {
+func (suite *Suite) TestNormalizeRoleOptionsString() {
 	r := suite.Require()
 
 	raw := interface{}("SUPERUSER LOGIN")
@@ -154,7 +154,7 @@ func (suite *ConfigSuite) TestNormalizeRoleOptionsString() {
 	r.True(value["LOGIN"].(bool))
 }
 
-func (suite *ConfigSuite) TestNormalizeRoleParents() {
+func (suite *Suite) TestNormalizeRoleParents() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -171,7 +171,7 @@ func (suite *ConfigSuite) TestNormalizeRoleParents() {
 	r.Equal("groupe", parents[0])
 }
 
-func (suite *ConfigSuite) TestNormalizeSyncItem() {
+func (suite *Suite) TestNormalizeSyncItem() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -194,7 +194,7 @@ func (suite *ConfigSuite) TestNormalizeSyncItem() {
 	r.Len(roles, 1)
 }
 
-func (suite *ConfigSuite) TestNormalizeSyncMap() {
+func (suite *Suite) TestNormalizeSyncMap() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
@@ -212,7 +212,7 @@ func (suite *ConfigSuite) TestNormalizeSyncMap() {
 	r.Len(value, 2)
 }
 
-func (suite *ConfigSuite) TestNormalizeConfig() {
+func (suite *Suite) TestNormalizeConfig() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`

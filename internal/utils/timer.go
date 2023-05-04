@@ -2,8 +2,6 @@ package utils
 
 import (
 	"time"
-
-	"golang.org/x/exp/slog"
 )
 
 type Timer struct {
@@ -13,14 +11,14 @@ type Timer struct {
 
 type Timeable func()
 
-func (t *Timer) TimeIt(fn Timeable) {
+func (t *Timer) TimeIt(fn Timeable) (duration time.Duration) {
 	start := time.Now()
 	t.Count++
 	defer func() {
-		duration := time.Since(start)
-		slog.Debug("Took.", "duration", duration)
+		duration = time.Since(start)
 		t.Total += duration
 	}()
 
 	fn()
+	return
 }

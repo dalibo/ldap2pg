@@ -82,13 +82,13 @@ func (instance *PostgresInstance) Sync(timer *utils.Timer, real bool, wanted Wan
 			continue
 		}
 
-		timer.TimeIt(func() {
+		duration := timer.TimeIt(func() {
 			_, err = pgconn.Exec(ctx, sql)
 		})
-
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}
+		slog.Debug("Query terminated.", "duration", duration)
 	}
 	return
 }

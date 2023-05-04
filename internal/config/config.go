@@ -92,10 +92,10 @@ func (r RoleRule) IsStatic() bool {
 func New() Config {
 	return Config{
 		Postgres: PostgresConfig{
-			DatabasesQuery: dedent.Dedent(`
+			DatabasesQuery: RowsOrSQL{Value: dedent.Dedent(`
 			SELECT datname FROM pg_catalog.pg_database
-			WHERE datallowconn IS TRUE ORDER BY 1;`),
-			RolesBlacklistQuery: []interface{}{"pg_*", "postgres"},
+			WHERE datallowconn IS TRUE ORDER BY 1;`)},
+			RolesBlacklistQuery: RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
 		},
 	}
 }

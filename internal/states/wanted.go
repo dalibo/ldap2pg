@@ -41,20 +41,21 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 			search := ldap3.SearchRequest{
 				BaseDN:     item.LdapSearch.Base,
 				Scope:      ldap3.ScopeWholeSubtree,
-				Filter:     ldap.CleanFilter(item.LdapSearch.Filter),
+				Filter:     item.LdapSearch.Filter,
 				Attributes: item.LdapSearch.Attributes,
 			}
 			slog.Debug("Searching LDAP directory.",
 				"base", search.BaseDN, "filter", search.Filter, "attributes", search.Attributes)
 
 			var res *ldap3.SearchResult
-			timer.TimeIt(func() {
+			duration := timer.TimeIt(func() {
 				res, err = ldapConn.Search(&search)
 			})
 			if err != nil {
 				return wanted, err
 			}
 			entries = res.Entries
+			slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
 		} else {
 			entries = [](*ldap3.Entry){nil}
 		}

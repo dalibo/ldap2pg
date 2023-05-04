@@ -172,7 +172,7 @@ func (instance *PostgresInstance) InspectRoles(c config.Config, pgconn *pgx.Conn
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-	if nil == c.Postgres.ManagedRolesQuery {
+	if nil == c.Postgres.ManagedRolesQuery.Value {
 		slog.Debug("Managing all roles found.")
 		instance.ManagedRoles = instance.AllRoles
 		return nil
