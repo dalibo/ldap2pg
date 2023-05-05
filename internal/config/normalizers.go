@@ -56,14 +56,6 @@ func NormalizeList(yaml interface{}) (list []interface{}) {
 	return
 }
 
-func NormalizeString(yaml interface{}) error {
-	_, ok := yaml.(string)
-	if !ok && yaml != nil {
-		return fmt.Errorf("bad value %v, must be string", yaml)
-	}
-	return nil
-}
-
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
 	switch yaml.(type) {
 	case nil:
@@ -116,7 +108,7 @@ func NormalizePostgres(yaml interface{}) error {
 		return fmt.Errorf("bad postgres section, must be a map")
 	}
 
-	return NormalizeString(yamlMap["fallback_owner"])
+	return CheckIsString(yamlMap["fallback_owner"])
 }
 
 func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
@@ -142,14 +134,27 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		return
 	}
 
-	descYaml, ok := item["description"]
+	_, ok = item["description"]
 	if ok {
-		_, ok := descYaml.(string)
-		if !ok {
-			err = errors.New("sync item description must be string")
+		err = CheckIsString(item["description"])
+		if err != nil {
 			return
 		}
 	}
+	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	if err != nil {
+		return
+	}
+	iLdapSearch, exists := item["ldapsearch"]
+	if exists {
+		var search map[string]interface{}
+		search, err = NormalizeLdapSearch(iLdapSearch)
+		if err != nil {
+			return
+		}
+		item["ldapsearch"] = search
+	}
+
 	err = NormalizeAlias(&item, "roles", "role")
 	if err != nil {
 		return
@@ -171,19 +176,12 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		item["roles"] = rules
 	}
 
-	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	err = NormalizeAlias(&item, "grants", "grant")
 	if err != nil {
 		return
 	}
-	iLdapSearch, exists := item["ldapsearch"]
-	if exists {
-		var search map[string]interface{}
-		search, err = NormalizeLdapSearch(iLdapSearch)
-		if err != nil {
-			return
-		}
-		item["ldapsearch"] = search
-	}
+
+	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
 	return
 }
 
@@ -207,7 +205,12 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 			return
 		}
 		subsearches[attr] = subsearch
+		err = CheckSpuriousKeys(&subsearch, "filter", "scope")
+		if err != nil {
+			return
+		}
 	}
+	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
 	return
 }
 
@@ -272,7 +275,10 @@ func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err erro
 			Message: "Invalid role rule YAML",
 			Value:   yaml,
 		}
+		return
 	}
+
+	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options")
 	return
 }
 
@@ -306,6 +312,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		"BYPASSRLS":        false,
 		"CONNECTION LIMIT": -1,
 	}
+	knownKeys := maps.Keys(value)
 
 	switch yaml.(type) {
 	case string:
@@ -323,6 +330,9 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 			Message: "invalid role options YAML",
 			Value:   yaml,
 		}
+		return
 	}
+
+	err = CheckSpuriousKeys(&value, knownKeys...)
 	return
 }

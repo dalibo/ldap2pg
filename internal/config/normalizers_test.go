@@ -73,7 +73,7 @@ func (suite *Suite) TestNormalizeString() {
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	mapValue := value.(map[string]interface{})
-	err := config.NormalizeString(mapValue["fallback_owner"])
+	err := config.CheckIsString(mapValue["fallback_owner"])
 	r.Nil(err)
 }
 
