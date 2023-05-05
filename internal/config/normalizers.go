@@ -81,6 +81,140 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 	return
 }
 
+func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
+	config, ok := yaml.(map[string]interface{})
+	if !ok {
+		err = errors.New("Bad configuration format")
+		return
+	}
+
+	section, ok := config["postgres"]
+	if ok {
+		err = NormalizePostgres(section)
+		if err != nil {
+			return
+		}
+	}
+
+	section, ok = config["sync_map"]
+	if !ok {
+		err = errors.New("Missing sync_map")
+		return
+	}
+	syncMap, err := NormalizeSyncMap(section)
+	if err != nil {
+		return
+	}
+	config["sync_map"] = syncMap
+	return
+}
+
+func NormalizePostgres(yaml interface{}) error {
+	yamlMap, ok := yaml.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("bad postgres section, must be a map")
+	}
+
+	return NormalizeString(yamlMap["fallback_owner"])
+}
+
+func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
+	rawItems, ok := yaml.([]interface{})
+	if !ok {
+		err = errors.New("Bad sync_map format")
+	}
+	for _, rawItem := range rawItems {
+		var item interface{}
+		item, err = NormalizeSyncItem(rawItem)
+		if err != nil {
+			return
+		}
+		syncMap = append(syncMap, item)
+	}
+	return
+}
+
+func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
+	item, ok := yaml.(map[string]interface{})
+	if !ok {
+		err = errors.New("invalid sync item type")
+		return
+	}
+
+	descYaml, ok := item["description"]
+	if ok {
+		_, ok := descYaml.(string)
+		if !ok {
+			err = errors.New("sync item description must be string")
+			return
+		}
+	}
+	err = NormalizeAlias(&item, "roles", "role")
+	if err != nil {
+		return
+	}
+	rawList, exists := item["roles"]
+	if exists {
+		list := NormalizeList(rawList)
+		rules := []interface{}{}
+		for _, rawRule := range list {
+			var rule map[string]interface{}
+			rule, err = NormalizeRoleRules(rawRule)
+			if err != nil {
+				return
+			}
+			for _, rule := range DuplicateRoleRules(rule) {
+				rules = append(rules, rule)
+			}
+		}
+		item["roles"] = rules
+	}
+
+	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	if err != nil {
+		return
+	}
+	iLdapSearch, exists := item["ldapsearch"]
+	if exists {
+		ldapSearch, ok := iLdapSearch.(map[string]interface{})
+		if !ok {
+			err = errors.New("invalid ldapsearch type")
+			return
+		}
+		_, ok = ldapSearch["filter"]
+		if !ok {
+			ldapSearch["filter"] = "(objectClass=*)"
+		}
+		ldapSearch["filter"] = ldap.CleanFilter(ldapSearch["filter"].(string))
+		_, ok = ldapSearch["scope"]
+		if !ok {
+			ldapSearch["scope"] = "sub"
+		}
+		err = NormalizeAlias(&ldapSearch, "subsearches", "joins")
+		if err != nil {
+			return
+		}
+		item["ldapsearch"] = ldapSearch
+		joins, ok := ldapSearch["joins"].(map[string]interface{})
+		if !ok {
+			return
+		}
+		for attr := range joins {
+			joinMap := joins[attr].(map[string]interface{})
+			_, ok = joinMap["filter"]
+			if !ok {
+				joinMap["filter"] = "(objectClass=*)"
+			}
+			joinMap["filter"] = ldap.CleanFilter(joinMap["filter"].(string))
+			_, ok = joinMap["scope"]
+			if !ok {
+				joinMap["scope"] = "sub"
+			}
+		}
+	}
+	return
+}
+
 func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
 	var names []string
 	switch yaml.(type) {
@@ -175,138 +309,4 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		}
 	}
 	return
-}
-
-func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
-	item, ok := yaml.(map[string]interface{})
-	if !ok {
-		err = errors.New("invalid sync item type")
-		return
-	}
-
-	descYaml, ok := item["description"]
-	if ok {
-		_, ok := descYaml.(string)
-		if !ok {
-			err = errors.New("sync item description must be string")
-			return
-		}
-	}
-	err = NormalizeAlias(&item, "roles", "role")
-	if err != nil {
-		return
-	}
-	rawList, exists := item["roles"]
-	if exists {
-		list := NormalizeList(rawList)
-		rules := []interface{}{}
-		for _, rawRule := range list {
-			var rule map[string]interface{}
-			rule, err = NormalizeRoleRules(rawRule)
-			if err != nil {
-				return
-			}
-			for _, rule := range DuplicateRoleRules(rule) {
-				rules = append(rules, rule)
-			}
-		}
-		item["roles"] = rules
-	}
-
-	err = NormalizeAlias(&item, "ldapsearch", "ldap")
-	if err != nil {
-		return
-	}
-	iLdapSearch, exists := item["ldapsearch"]
-	if exists {
-		ldapSearch, ok := iLdapSearch.(map[string]interface{})
-		if !ok {
-			err = errors.New("invalid ldapsearch type")
-			return
-		}
-		_, ok = ldapSearch["filter"]
-		if !ok {
-			ldapSearch["filter"] = "(objectClass=*)"
-		}
-		ldapSearch["filter"] = ldap.CleanFilter(ldapSearch["filter"].(string))
-		_, ok = ldapSearch["scope"]
-		if !ok {
-			ldapSearch["scope"] = "sub"
-		}
-		err = NormalizeAlias(&ldapSearch, "subsearches", "joins")
-		if err != nil {
-			return
-		}
-		item["ldapsearch"] = ldapSearch
-		joins, ok := ldapSearch["joins"].(map[string]interface{})
-		if !ok {
-			return
-		}
-		for attr := range joins {
-			joinMap := joins[attr].(map[string]interface{})
-			_, ok = joinMap["filter"]
-			if !ok {
-				joinMap["filter"] = "(objectClass=*)"
-			}
-			joinMap["filter"] = ldap.CleanFilter(joinMap["filter"].(string))
-			_, ok = joinMap["scope"]
-			if !ok {
-				joinMap["scope"] = "sub"
-			}
-		}
-	}
-	return
-}
-
-func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
-	rawItems, ok := yaml.([]interface{})
-	if !ok {
-		err = errors.New("Bad sync_map format")
-	}
-	for _, rawItem := range rawItems {
-		var item interface{}
-		item, err = NormalizeSyncItem(rawItem)
-		if err != nil {
-			return
-		}
-		syncMap = append(syncMap, item)
-	}
-	return
-}
-
-func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
-	config, ok := yaml.(map[string]interface{})
-	if !ok {
-		err = errors.New("Bad configuration format")
-		return
-	}
-
-	section, ok := config["postgres"]
-	if ok {
-		err = NormalizePostgres(section)
-		if err != nil {
-			return
-		}
-	}
-
-	section, ok = config["sync_map"]
-	if !ok {
-		err = errors.New("Missing sync_map")
-		return
-	}
-	syncMap, err := NormalizeSyncMap(section)
-	if err != nil {
-		return
-	}
-	config["sync_map"] = syncMap
-	return
-}
-
-func NormalizePostgres(yaml interface{}) error {
-	yamlMap, ok := yaml.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("bad postgres section, must be a map")
-	}
-
-	return NormalizeString(yamlMap["fallback_owner"])
 }
