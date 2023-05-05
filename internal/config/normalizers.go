@@ -176,41 +176,54 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	}
 	iLdapSearch, exists := item["ldapsearch"]
 	if exists {
-		ldapSearch, ok := iLdapSearch.(map[string]interface{})
-		if !ok {
-			err = errors.New("invalid ldapsearch type")
-			return
-		}
-		_, ok = ldapSearch["filter"]
-		if !ok {
-			ldapSearch["filter"] = "(objectClass=*)"
-		}
-		ldapSearch["filter"] = ldap.CleanFilter(ldapSearch["filter"].(string))
-		_, ok = ldapSearch["scope"]
-		if !ok {
-			ldapSearch["scope"] = "sub"
-		}
-		err = NormalizeAlias(&ldapSearch, "subsearches", "joins")
+		var search map[string]interface{}
+		search, err = NormalizeLdapSearch(iLdapSearch)
 		if err != nil {
 			return
 		}
-		item["ldapsearch"] = ldapSearch
-		joins, ok := ldapSearch["joins"].(map[string]interface{})
-		if !ok {
+		item["ldapsearch"] = search
+	}
+	return
+}
+
+func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
+	search, err = NormalizeCommonLdapSearch(yaml)
+	if err != nil {
+		return
+	}
+	err = NormalizeAlias(&search, "subsearches", "joins")
+	if err != nil {
+		return
+	}
+	subsearches, ok := search["subsearches"].(map[string]interface{})
+	if !ok {
+		return
+	}
+	for attr := range subsearches {
+		var subsearch map[string]interface{}
+		subsearch, err = NormalizeCommonLdapSearch(subsearches[attr])
+		if err != nil {
 			return
 		}
-		for attr := range joins {
-			joinMap := joins[attr].(map[string]interface{})
-			_, ok = joinMap["filter"]
-			if !ok {
-				joinMap["filter"] = "(objectClass=*)"
-			}
-			joinMap["filter"] = ldap.CleanFilter(joinMap["filter"].(string))
-			_, ok = joinMap["scope"]
-			if !ok {
-				joinMap["scope"] = "sub"
-			}
-		}
+		subsearches[attr] = subsearch
+	}
+	return
+}
+
+func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
+	search, ok := yaml.(map[string]interface{})
+	if !ok {
+		err = errors.New("invalid ldapsearch type")
+		return
+	}
+	_, ok = search["filter"]
+	if !ok {
+		search["filter"] = "(objectClass=*)"
+	}
+	search["filter"] = ldap.CleanFilter(search["filter"].(string))
+	_, ok = search["scope"]
+	if !ok {
+		search["scope"] = "sub"
 	}
 	return
 }
