@@ -73,6 +73,7 @@ type LdapSearch struct {
 
 type Subsearch struct {
 	Filter     string
+	Scope      LdapScope
 	Attributes []string
 }
 

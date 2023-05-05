@@ -6,6 +6,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
@@ -83,7 +84,9 @@ func (i *SyncItem) InferAttributes() {
 	for attribute, subAttributes := range subsearchAttributes {
 		subsearch, ok := i.LdapSearch.Subsearches[attribute]
 		if !ok {
-			subsearch = Subsearch{}
+			subsearch = Subsearch{
+				Scope: ldap3.ScopeWholeSubtree,
+			}
 		}
 		subsearch.Attributes = subAttributes.ToSlice()
 		if "" == subsearch.Filter {

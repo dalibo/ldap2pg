@@ -121,11 +121,12 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 			}
 			bases := entry.GetAttributeValues(subsearchAttr)
 			for _, base := range bases {
+				c := item.LdapSearch.Subsearches[subsearchAttr]
 				search := ldap3.SearchRequest{
 					BaseDN:     base,
-					Scope:      ldap3.ScopeBaseObject,
-					Filter:     item.LdapSearch.Subsearches[subsearchAttr].Filter,
-					Attributes: item.LdapSearch.Subsearches[subsearchAttr].Attributes,
+					Scope:      int(c.Scope),
+					Filter:     c.Filter,
+					Attributes: c.Attributes,
 				}
 				args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
 				args = append(args, search.Attributes...)

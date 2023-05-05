@@ -227,6 +227,21 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			ldapSearch["scope"] = "sub"
 		}
 		item["ldapsearch"] = ldapSearch
+		joins, ok := ldapSearch["joins"].(map[string]interface{})
+		if !ok {
+			return
+		}
+		for attr := range joins {
+			joinMap := joins[attr].(map[string]interface{})
+			_, ok = joinMap["filter"]
+			if !ok {
+				joinMap["filter"] = "(objectClass=*)"
+			}
+			_, ok = joinMap["scope"]
+			if !ok {
+				joinMap["scope"] = "sub"
+			}
+		}
 	}
 	return
 }
