@@ -88,7 +88,7 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 
 		search := ldap3.SearchRequest{
 			BaseDN:     item.LdapSearch.Base,
-			Scope:      ldap3.ScopeWholeSubtree,
+			Scope:      int(item.LdapSearch.Scope),
 			Filter:     item.LdapSearch.Filter,
 			Attributes: item.LdapSearch.Attributes,
 		}

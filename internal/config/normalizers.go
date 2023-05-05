@@ -222,6 +222,10 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			err = errors.New("invalid ldapsearch type")
 			return
 		}
+		_, ok = ldapSearch["scope"]
+		if !ok {
+			ldapSearch["scope"] = "sub"
+		}
 		item["ldapsearch"] = ldapSearch
 	}
 	return
