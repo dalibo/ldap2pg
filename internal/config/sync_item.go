@@ -80,7 +80,8 @@ func (i *SyncItem) InferAttributes() {
 		subsearch, ok := i.LdapSearch.Subsearches[attribute]
 		if !ok {
 			subsearch = Subsearch{
-				Scope: ldap3.ScopeWholeSubtree,
+				Filter: "(objectClass=*)",
+				Scope:  ldap3.ScopeWholeSubtree,
 			}
 		}
 		subsearch.Attributes = subAttributes.ToSlice()

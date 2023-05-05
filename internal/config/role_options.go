@@ -65,6 +65,8 @@ func (o *RoleOptions) LoadYaml(yaml map[string]interface{}) {
 			o.Replication = value.(bool)
 		case "BYPASSRLS":
 			o.ByPassRLS = value.(bool)
+		case "CONNECTION LIMIT":
+			o.ConnLimit = value.(int)
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"golang.org/x/exp/maps"
 )
 
 type KeyConflict struct {
@@ -15,7 +16,7 @@ type KeyConflict struct {
 }
 
 func (err *KeyConflict) Error() string {
-	return "YAML alias conflict"
+	return fmt.Sprintf("YAML alias conflict between %s and %s", err.Key, err.Conflict)
 }
 
 type ParseError struct {
@@ -53,14 +54,6 @@ func NormalizeList(yaml interface{}) (list []interface{}) {
 		list = append(list, yaml)
 	}
 	return
-}
-
-func NormalizeString(yaml interface{}) error {
-	_, ok := yaml.(string)
-	if !ok && yaml != nil {
-		return fmt.Errorf("bad value %v, must be string", yaml)
-	}
-	return nil
 }
 
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
@@ -115,7 +108,7 @@ func NormalizePostgres(yaml interface{}) error {
 		return fmt.Errorf("bad postgres section, must be a map")
 	}
 
-	return NormalizeString(yamlMap["fallback_owner"])
+	return CheckIsString(yamlMap["fallback_owner"])
 }
 
 func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
@@ -141,14 +134,27 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		return
 	}
 
-	descYaml, ok := item["description"]
+	_, ok = item["description"]
 	if ok {
-		_, ok := descYaml.(string)
-		if !ok {
-			err = errors.New("sync item description must be string")
+		err = CheckIsString(item["description"])
+		if err != nil {
 			return
 		}
 	}
+	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	if err != nil {
+		return
+	}
+	iLdapSearch, exists := item["ldapsearch"]
+	if exists {
+		var search map[string]interface{}
+		search, err = NormalizeLdapSearch(iLdapSearch)
+		if err != nil {
+			return
+		}
+		item["ldapsearch"] = search
+	}
+
 	err = NormalizeAlias(&item, "roles", "role")
 	if err != nil {
 		return
@@ -170,19 +176,12 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		item["roles"] = rules
 	}
 
-	err = NormalizeAlias(&item, "ldapsearch", "ldap")
+	err = NormalizeAlias(&item, "grants", "grant")
 	if err != nil {
 		return
 	}
-	iLdapSearch, exists := item["ldapsearch"]
-	if exists {
-		var search map[string]interface{}
-		search, err = NormalizeLdapSearch(iLdapSearch)
-		if err != nil {
-			return
-		}
-		item["ldapsearch"] = search
-	}
+
+	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
 	return
 }
 
@@ -206,41 +205,53 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 			return
 		}
 		subsearches[attr] = subsearch
+		err = CheckSpuriousKeys(&subsearch, "filter", "scope")
+		if err != nil {
+			return
+		}
 	}
+	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
 	return
 }
 
 func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
-	search, ok := yaml.(map[string]interface{})
+	search = map[string]interface{}{
+		"filter": "(objectClass=*)",
+		"scope":  "sub",
+	}
+	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
 		err = errors.New("invalid ldapsearch type")
 		return
 	}
-	_, ok = search["filter"]
-	if !ok {
-		search["filter"] = "(objectClass=*)"
-	}
+	maps.Copy(search, yamlMap)
 	search["filter"] = ldap.CleanFilter(search["filter"].(string))
-	_, ok = search["scope"]
-	if !ok {
-		search["scope"] = "sub"
-	}
 	return
 }
 
 func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
-	var names []string
+	rule = map[string]interface{}{
+		"comment": "Managed by ldap2pg",
+		"options": "",
+		"parents": []string{},
+	}
+
 	switch yaml.(type) {
 	case string:
-		rule = make(map[string]interface{})
-		names = append(names, yaml.(string))
-		rule["names"] = names
+		rule["names"] = []string{yaml.(string)}
 	case map[string]interface{}:
-		rule = yaml.(map[string]interface{})
-		err = NormalizeAlias(&rule, "names", "name")
+		yamlMap := yaml.(map[string]interface{})
+		err = NormalizeAlias(&yamlMap, "names", "name")
 		if err != nil {
 			return
 		}
+		err = NormalizeAlias(&yamlMap, "parents", "parent")
+		if err != nil {
+			return
+		}
+
+		maps.Copy(rule, yamlMap)
+
 		names, ok := rule["names"]
 		if ok {
 			rule["names"], err = NormalizeStringList(names)
@@ -251,27 +262,11 @@ func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err erro
 			err = errors.New("Missing name in role rule")
 			return
 		}
-		err = NormalizeAlias(&rule, "parents", "parent")
+		rule["parents"], err = NormalizeStringList(rule["parents"])
 		if err != nil {
 			return
 		}
-		parents, ok := rule["parents"]
-		if ok {
-			rule["parents"], err = NormalizeStringList(parents)
-			if err != nil {
-				return
-			}
-		} else {
-			rule["parents"] = []string{}
-		}
-
-		_, ok = rule["comment"]
-		if !ok {
-			rule["comment"] = "Managed by ldap2pg"
-		}
-
-		options := rule["options"]
-		rule["options"], err = NormalizeRoleOptions(options)
+		rule["options"], err = NormalizeRoleOptions(rule["options"])
 		if err != nil {
 			return
 		}
@@ -280,7 +275,10 @@ func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err erro
 			Message: "Invalid role rule YAML",
 			Value:   yaml,
 		}
+		return
 	}
+
+	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options")
 	return
 }
 
@@ -304,15 +302,30 @@ func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interfa
 func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err error) {
 	// Normal form of role options is a map with SQL token as key and
 	// boolean or int value.
-	value = make(map[string]interface{})
+	value = map[string]interface{}{
+		"SUPERUSER":        false,
+		"INHERIT":          true,
+		"CREATEROLE":       false,
+		"CREATEDB":         false,
+		"LOGIN":            false,
+		"REPLICATION":      false,
+		"BYPASSRLS":        false,
+		"CONNECTION LIMIT": -1,
+	}
+	knownKeys := maps.Keys(value)
 
 	switch yaml.(type) {
 	case string:
 		s := yaml.(string)
 		tokens := strings.Split(s, " ")
 		for _, token := range tokens {
+			if "" == token {
+				continue
+			}
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
+	case map[string]interface{}:
+		maps.Copy(value, yaml.(map[string]interface{}))
 	case nil:
 		return
 	default:
@@ -320,6 +333,9 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 			Message: "invalid role options YAML",
 			Value:   yaml,
 		}
+		return
 	}
+
+	err = CheckSpuriousKeys(&value, knownKeys...)
 	return
 }
