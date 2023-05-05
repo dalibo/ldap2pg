@@ -226,6 +226,10 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		if !ok {
 			ldapSearch["scope"] = "sub"
 		}
+		err = NormalizeAlias(&ldapSearch, "subsearches", "joins")
+		if err != nil {
+			return
+		}
 		item["ldapsearch"] = ldapSearch
 		joins, ok := ldapSearch["joins"].(map[string]interface{})
 		if !ok {
