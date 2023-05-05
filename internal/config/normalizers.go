@@ -319,6 +319,9 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		s := yaml.(string)
 		tokens := strings.Split(s, " ")
 		for _, token := range tokens {
+			if "" == token {
+				continue
+			}
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
 	case map[string]interface{}:
