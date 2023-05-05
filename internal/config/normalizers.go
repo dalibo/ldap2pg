@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/dalibo/ldap2pg/internal/ldap"
 )
 
 type KeyConflict struct {
@@ -222,6 +224,11 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			err = errors.New("invalid ldapsearch type")
 			return
 		}
+		_, ok = ldapSearch["filter"]
+		if !ok {
+			ldapSearch["filter"] = "(objectClass=*)"
+		}
+		ldapSearch["filter"] = ldap.CleanFilter(ldapSearch["filter"].(string))
 		_, ok = ldapSearch["scope"]
 		if !ok {
 			ldapSearch["scope"] = "sub"
@@ -241,6 +248,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			if !ok {
 				joinMap["filter"] = "(objectClass=*)"
 			}
+			joinMap["filter"] = ldap.CleanFilter(joinMap["filter"].(string))
 			_, ok = joinMap["scope"]
 			if !ok {
 				joinMap["scope"] = "sub"
