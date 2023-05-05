@@ -9,7 +9,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/dalibo/ldap2pg/internal/utils"
 	mapset "github.com/deckarep/golang-set/v2"
-	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
 
@@ -86,28 +85,12 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 			return
 		}
 
-		search := ldap3.SearchRequest{
-			BaseDN:     item.LdapSearch.Base,
-			Scope:      int(item.LdapSearch.Scope),
-			Filter:     item.LdapSearch.Filter,
-			Attributes: item.LdapSearch.Attributes,
-		}
-		args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
-		args = append(args, search.Attributes...)
-		slog.Debug("Searching LDAP directory.", "cmd", ldapc.Command("ldapsearch", args...))
-
-		var res *ldap3.SearchResult
-		var err error
-		duration := timer.TimeIt(func() {
-			res, err = ldapc.Conn.Search(&search)
-		})
+		s := item.LdapSearch
+		res, err := ldapc.Search(timer, s.Base, s.Scope, s.Filter, s.Attributes)
 		if err != nil {
-			slog.Debug("LDAP search failed.", "duration", duration, "err", err)
 			ch <- err
 			return
 		}
-		slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
-
 		subsearchAttr := item.LdapSearch.SubsearchAttribute()
 		for _, entry := range res.Entries {
 			slog.Debug("Got LDAP entry.", "dn", entry.DN)
@@ -121,25 +104,14 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 			}
 			bases := entry.GetAttributeValues(subsearchAttr)
 			for _, base := range bases {
-				c := item.LdapSearch.Subsearches[subsearchAttr]
-				search := ldap3.SearchRequest{
-					BaseDN:     base,
-					Scope:      int(c.Scope),
-					Filter:     c.Filter,
-					Attributes: c.Attributes,
-				}
-				args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
-				args = append(args, search.Attributes...)
-				slog.Debug("Recursive LDAP search.", "cmd", ldapc.Command("ldapsearch", args...))
-				duration := timer.TimeIt(func() {
-					res, err = ldapc.Conn.Search(&search)
-				})
+				s := item.LdapSearch.Subsearches[subsearchAttr]
+				res, err = ldapc.Search(timer, base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
-					slog.Debug("LDAP search failed.", "duration", duration, "err", err)
 					ch <- err
 					continue
 				}
-				slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
+				// Copy results in scope.
+				results := results
 				// Overwrite previous sub-entries and resend results.
 				results.SubsearchEntries = res.Entries
 				ch <- &results

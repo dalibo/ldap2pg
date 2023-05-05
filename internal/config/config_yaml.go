@@ -9,8 +9,8 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	ldap3 "github.com/go-ldap/ldap/v3"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
@@ -108,17 +108,12 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 		default:
 			return nil, fmt.Errorf("bad YAML for query")
 		}
-	case reflect.TypeOf(LdapScope(1)):
-		switch from.String() {
-		case "sub":
-			return ldap3.ScopeWholeSubtree, nil
-		case "base":
-			return ldap3.ScopeBaseObject, nil
-		case "one":
-			return ldap3.ScopeSingleLevel, nil
-		default:
-			return from.Interface(), fmt.Errorf("bad scope: %s", from.String())
+	case reflect.TypeOf(ldap.Scope(1)):
+		s, err := ldap.ParseScope(from.String())
+		if err != nil {
+			return from.Interface(), err
 		}
+		return s, nil
 	}
 	return from.Interface(), nil
 }
