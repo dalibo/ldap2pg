@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"golang.org/x/exp/maps"
 )
 
 type KeyConflict struct {
@@ -211,36 +212,43 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 }
 
 func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
-	search, ok := yaml.(map[string]interface{})
+	search = map[string]interface{}{
+		"filter": "(objectClass=*)",
+		"scope":  "sub",
+	}
+	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
 		err = errors.New("invalid ldapsearch type")
 		return
 	}
-	_, ok = search["filter"]
-	if !ok {
-		search["filter"] = "(objectClass=*)"
-	}
+	maps.Copy(search, yamlMap)
 	search["filter"] = ldap.CleanFilter(search["filter"].(string))
-	_, ok = search["scope"]
-	if !ok {
-		search["scope"] = "sub"
-	}
 	return
 }
 
 func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
-	var names []string
+	rule = map[string]interface{}{
+		"comment": "Managed by ldap2pg",
+		"options": "",
+		"parents": []string{},
+	}
+
 	switch yaml.(type) {
 	case string:
-		rule = make(map[string]interface{})
-		names = append(names, yaml.(string))
-		rule["names"] = names
+		rule["names"] = []string{yaml.(string)}
 	case map[string]interface{}:
-		rule = yaml.(map[string]interface{})
-		err = NormalizeAlias(&rule, "names", "name")
+		yamlMap := yaml.(map[string]interface{})
+		err = NormalizeAlias(&yamlMap, "names", "name")
 		if err != nil {
 			return
 		}
+		err = NormalizeAlias(&yamlMap, "parents", "parent")
+		if err != nil {
+			return
+		}
+
+		maps.Copy(rule, yamlMap)
+
 		names, ok := rule["names"]
 		if ok {
 			rule["names"], err = NormalizeStringList(names)
@@ -251,27 +259,11 @@ func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err erro
 			err = errors.New("Missing name in role rule")
 			return
 		}
-		err = NormalizeAlias(&rule, "parents", "parent")
+		rule["parents"], err = NormalizeStringList(rule["parents"])
 		if err != nil {
 			return
 		}
-		parents, ok := rule["parents"]
-		if ok {
-			rule["parents"], err = NormalizeStringList(parents)
-			if err != nil {
-				return
-			}
-		} else {
-			rule["parents"] = []string{}
-		}
-
-		_, ok = rule["comment"]
-		if !ok {
-			rule["comment"] = "Managed by ldap2pg"
-		}
-
-		options := rule["options"]
-		rule["options"], err = NormalizeRoleOptions(options)
+		rule["options"], err = NormalizeRoleOptions(rule["options"])
 		if err != nil {
 			return
 		}
