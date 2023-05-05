@@ -3,8 +3,6 @@ package ldap
 import (
 	"fmt"
 	"strings"
-
-	ldap3 "github.com/go-ldap/ldap/v3"
 )
 
 func (c Client) Command(name string, args ...string) string {
@@ -77,17 +75,4 @@ func ShellQuote(arg string) string {
 
 	}
 	return b.String()
-}
-
-func ScopeArg(scope int) string {
-	switch scope {
-	case ldap3.ScopeBaseObject:
-		return "base"
-	case ldap3.ScopeWholeSubtree:
-		return "sub"
-	case ldap3.ScopeSingleLevel:
-		return "one"
-	default:
-		return "!INVALID"
-	}
 }

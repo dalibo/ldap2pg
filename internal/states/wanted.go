@@ -92,7 +92,7 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 			Filter:     item.LdapSearch.Filter,
 			Attributes: item.LdapSearch.Attributes,
 		}
-		args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
+		args := []string{"-b", search.BaseDN, "-s", item.LdapSearch.Scope.String(), search.Filter}
 		args = append(args, search.Attributes...)
 		slog.Debug("Searching LDAP directory.", "cmd", ldapc.Command("ldapsearch", args...))
 
@@ -128,7 +128,7 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 					Filter:     c.Filter,
 					Attributes: c.Attributes,
 				}
-				args := []string{"-b", search.BaseDN, "-s", ldap.ScopeArg(search.Scope), search.Filter}
+				args := []string{"-b", search.BaseDN, "-s", c.Scope.String(), search.Filter}
 				args = append(args, search.Attributes...)
 				slog.Debug("Recursive LDAP search.", "cmd", ldapc.Command("ldapsearch", args...))
 				duration := timer.TimeIt(func() {
