@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/dalibo/ldap2pg/internal/utils"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
@@ -84,6 +85,29 @@ func Connect(options OptionsMap) (client Client, err error) {
 	}
 	slog.Info("Connected to LDAP directory.", "uri", client.URI, "authzid", wai.AuthzID)
 	return
+}
+
+func (c *Client) Search(timer *utils.Timer, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
+	search := ldap3.SearchRequest{
+		BaseDN:     base,
+		Scope:      int(scope),
+		Filter:     filter,
+		Attributes: attributes,
+	}
+	args := []string{"-b", search.BaseDN, "-s", scope.String(), search.Filter}
+	args = append(args, search.Attributes...)
+	slog.Debug("Searching LDAP directory.", "cmd", c.Command("ldapsearch", args...))
+	var err error
+	var res *ldap3.SearchResult
+	duration := timer.TimeIt(func() {
+		res, err = c.Conn.Search(&search)
+	})
+	if err != nil {
+		slog.Debug("LDAP search failed.", "duration", duration, "err", err)
+		return nil, err
+	}
+	slog.Debug("LDAP search done.", "duration", duration, "entries", len(res.Entries))
+	return res, nil
 }
 
 // Implements retry.RetryIfFunc
