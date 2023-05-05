@@ -304,7 +304,16 @@ func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interfa
 func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err error) {
 	// Normal form of role options is a map with SQL token as key and
 	// boolean or int value.
-	value = make(map[string]interface{})
+	value = map[string]interface{}{
+		"SUPERUSER":        false,
+		"INHERIT":          true,
+		"CREATEROLE":       false,
+		"CREATEDB":         false,
+		"LOGIN":            false,
+		"REPLICATION":      false,
+		"BYPASSRLS":        false,
+		"CONNECTION LIMIT": -1,
+	}
 
 	switch yaml.(type) {
 	case string:
@@ -313,6 +322,8 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		for _, token := range tokens {
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
+	case map[string]interface{}:
+		maps.Copy(value, yaml.(map[string]interface{}))
 	case nil:
 		return
 	default:
