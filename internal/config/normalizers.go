@@ -16,7 +16,7 @@ type KeyConflict struct {
 }
 
 func (err *KeyConflict) Error() string {
-	return "YAML alias conflict"
+	return fmt.Sprintf("YAML alias conflict between %s and %s", err.Key, err.Conflict)
 }
 
 type ParseError struct {
