@@ -3,9 +3,9 @@ package config
 import (
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
@@ -66,10 +66,6 @@ func (i *SyncItem) InferAttributes() {
 	}
 
 	i.LdapSearch.Attributes = attributes.ToSlice()
-	if "" == i.LdapSearch.Filter {
-		i.LdapSearch.Filter = "(objectClass=*)"
-	}
-	i.LdapSearch.Filter = ldap.CleanFilter(i.LdapSearch.Filter)
 	slog.Debug("Collected LDAP search attributes.",
 		"item", i.Description, "base", i.LdapSearch.Base, "attributes", i.LdapSearch.Attributes)
 
@@ -83,13 +79,11 @@ func (i *SyncItem) InferAttributes() {
 	for attribute, subAttributes := range subsearchAttributes {
 		subsearch, ok := i.LdapSearch.Subsearches[attribute]
 		if !ok {
-			subsearch = Subsearch{}
+			subsearch = Subsearch{
+				Scope: ldap3.ScopeWholeSubtree,
+			}
 		}
 		subsearch.Attributes = subAttributes.ToSlice()
-		if "" == subsearch.Filter {
-			subsearch.Filter = "(objectClass=*)"
-		}
-		subsearch.Filter = ldap.CleanFilter(subsearch.Filter)
 		slog.Debug("Collected LDAP sub-search attributes.",
 			"item", i.Description, "base", i.LdapSearch.Base,
 			"fkey", attribute, "attributes", subsearch.Attributes)

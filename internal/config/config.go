@@ -61,8 +61,11 @@ type PostgresConfig struct {
 	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
 }
 
+type LdapScope int
+
 type LdapSearch struct {
 	Base        string
+	Scope       LdapScope
 	Filter      string
 	Attributes  []string
 	Subsearches map[string]Subsearch `mapstructure:"joins"`
@@ -70,6 +73,7 @@ type LdapSearch struct {
 
 type Subsearch struct {
 	Filter     string
+	Scope      LdapScope
 	Attributes []string
 }
 
