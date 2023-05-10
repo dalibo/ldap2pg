@@ -59,6 +59,9 @@ jobs:
         command: |
           mkdir -p build
           go build -o build/go-ldap2pg.amd64 -buildvcs -ldflags -s ./cmd/go-ldap2pg
+    - run:
+        name: Smoke test
+        command: build/go-ldap2pg.amd64 --version
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
@@ -115,6 +118,9 @@ jobs:
         at: *workspace
     - restore_cache:
         keys: [ldap2pg-go-func]
+    - run:
+        name: Smoke test
+        command: build/go-ldap2pg.amd64 --version
     - run:
         name: Install Pytest Requirements
         command: |
