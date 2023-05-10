@@ -132,20 +132,20 @@ def ldap2pg(request):
 def pytest_addoption(parser):
     candidates = [
         "ldap2pg",
-        "build/go-ldap2pg"
+        "build/go-ldap2pg",
     ]
     for candidate in candidates:
         try:
-            default = sh.Command(candidate)
+            default = sh.Command(candidate)._path
             break
         except sh.CommandNotFound:
             continue
     else:
-        raise pytest.UsageError("Can't find ldap2pg binary.")
+        default = None
 
-    default = default._path
     if hasattr(default, 'decode'):
         default = default.decode('utf-8')
+
     parser.addoption(
         "--ldap2pg",
         default=default,
