@@ -278,4 +278,4 @@ information.
 - Review `docs/changelog.md`. `# Unreleased` title will be edited.
 - Increment version in `setup.py`.
 - Generate release commit, tag and changelog with `make release`.
-- Upload source tarball and RPM with `make upload`.
+- Once CircleCI has uploaded artifacts, run `make push-rpm` to build and publish RPM.
