@@ -48,6 +48,7 @@ func ldap2pg() (err error) {
 		"commit", utils.ShortRevision,
 		"version", utils.Version,
 		"runtime", runtime.Version())
+	slog.Warn("go-ldap2pg is alpha software! Use at your own risks!")
 
 	configPath := config.FindConfigFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
