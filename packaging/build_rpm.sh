@@ -24,7 +24,7 @@ rm -rf build/bdist*/rpm
 #       S O U R C E S
 
 rpmdist=$(rpm --eval '%dist')
-version=$(grep -Po "version='\K\d.\d" setup.py)
+version=$(grep -Po "version='\K\d.[^']+" setup.py)
 tarball="dist/ldap2pg-$version.tar.gz"
 spec="packaging/ldap2pg-${rpmdist#.}.spec"
 
