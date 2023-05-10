@@ -38,13 +38,21 @@ release: changelog VERSION
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git
-	@echo Now upload with make upload
+	@echo Now wait for CI and run make push-rpm;
 
-upload:
-	git describe --exact-match --tags
-	python3 setup.py sdist bdist_wheel
-	twine upload dist/$$(python setup.py --fullname)*.*
-	$(MAKE) -C packaging rpm push
+release-notes:  #: Extract changes for current release
+	FINAL_VERSION="$(shell echo $(VERSION) | grep -Po '([^a-z]{3,})')" ; sed -En "/Unreleased/d;/^#+ ldap2pg $$FINAL_VERSION/,/^#/p" CHANGELOG.md  | sed '1d;$$d'
+
+WHL=dist/ldap2pg-$(VERSION)-py2.py3-none-any.whl
+$(WHL):
+	mkdir -p $(dir $@)
+	pip3 download --no-deps --dest $(dir $@) ldap2pg==$(VERSION)
+
+rpm: $(WHL)
+	$(MAKE) -C packaging rpm
+
+push-rpm: rpm
+	$(MAKE) -C packaging push
 
 reset-%:
 	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*

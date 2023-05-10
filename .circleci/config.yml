@@ -6,6 +6,9 @@ workflows:
     jobs:
     - go-build:
         name: "go-stage0-build"
+        filters: &enable-for-tags
+          tags:
+            only: '/v.+/'
     - go-lint:
         name: "go-stage0-lint"
     - go-func:
@@ -38,6 +41,17 @@ workflows:
         requires: [stage0-pkg-centos6]
         dist: centos6
         pgversion: "9.3"
+    - release:
+        name: stage2-release
+        # Send secrets to this jobs from temboard CircleCI context.
+        context: ldap2pg
+        requires:
+        - go-stage0-build
+        filters:
+          <<: *enable-for-tags
+          # Skip on branches!
+          branches:
+            ignore: '/.*/'
 
 
 jobs:
@@ -69,7 +83,7 @@ jobs:
         paths: [build/]
 
   go-lint:
-    working_directory: &workspace /workspace
+    working_directory: *workspace
     docker:
     - image: golangci/golangci-lint:v1.52.2
     steps:
@@ -144,7 +158,7 @@ jobs:
       pgversion:
         description: "Major dotted version of PostgreSQL."
         type: string
-    working_directory: ~/ldap2pg
+    working_directory: *workspace
     docker:
       - image: dalibo/buildpack-python:<< parameters.dist >>
       - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
@@ -159,7 +173,7 @@ jobs:
     steps:
     - checkout
     - attach_workspace:
-        at: ~/ldap2pg
+        at: *workspace
     - restore_cache:
         keys: [ldap2pg-func]
     - run:
@@ -180,15 +194,15 @@ jobs:
         description: "Distribution."
         type: string
     docker: [{image: "dalibo/buildpack-pkg:<< parameters.dist >>"}]
-    working_directory: ~/ldap2pg
+    working_directory: *workspace
     steps:
     - checkout
     - run: ./packaging/build_rpm.sh
     - persist_to_workspace:
-        root: ~/ldap2pg
-        paths: ["dist/"]
+        root: *workspace
+        paths: ["dist/*.noarch.rpm"]
     - store_artifacts:
-        path: ~/ldap2pg/dist/
+        path: /workspace/dist/
     - save_cache:
         key: ldap2pg-{{ epoch }}
         paths:
@@ -202,7 +216,7 @@ jobs:
         description: "Python version"
         type: string
     docker: [{image: "dalibo/buildpack-python:centos7"}]
-    working_directory: ~/ldap2pg
+    working_directory: *workspace
     steps:
     - checkout
     - restore_cache:
@@ -239,3 +253,29 @@ jobs:
           set -x
           python -m pytest tests/unit/
           codecov
+
+  release:
+    # Configure secrets of this job in ldap2pg CircleCI context.
+    docker: [{image: dalibo/buildpack:bullseye}]
+    working_directory: *workspace
+    steps:
+    - checkout
+    - attach_workspace:
+        at: *workspace
+    - run:
+        name: Create GitHub release
+        command: |
+          if [[ "${CIRCLE_TAG#v}" =~ [a-z] ]] ; then
+            args=(--prerelease)
+          else
+            args=()
+          fi
+
+          rm -f dist/*last*
+
+          gh release create \
+            $CIRCLE_TAG \
+            build/go-ldap2pg* \
+            --title "${CIRCLE_TAG#v}" \
+            -F <(make -s release-notes VERSION=${CIRCLE_TAG#v}) \
+            "${args[@]}"
