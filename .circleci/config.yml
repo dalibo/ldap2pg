@@ -58,7 +58,7 @@ jobs:
         name: Build Go Files
         command: |
           mkdir -p build
-          go build -o build/ ./...
+          go build -o build/go-ldap2pg.amd64 ./cmd/go-ldap2pg
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
@@ -124,7 +124,7 @@ jobs:
         command: |
           echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
           ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
-          pytest -k go tests/func/ --ldap2pg=build/go-ldap2pg
+          pytest -k go tests/func/ --ldap2pg=build/go-ldap2pg.amd64
     - save_cache:
         key: ldap2pg-go-func-{{ epoch }}
         paths:
