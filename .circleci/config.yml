@@ -58,7 +58,7 @@ jobs:
         name: Build Go Files
         command: |
           mkdir -p build
-          go build -o build/go-ldap2pg.amd64 ./cmd/go-ldap2pg
+          go build -o build/go-ldap2pg.amd64 -buildvcs -ldflags -s ./cmd/go-ldap2pg
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
