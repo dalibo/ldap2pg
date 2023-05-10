@@ -25,7 +25,7 @@ func SetupViper() {
 
 	viper.SetDefault("real", false)
 	_ = viper.BindEnv("real")
-	pflag.BoolP("real", "N", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
+	pflag.BoolP("real", "R", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
 
 	viper.SetDefault("help", false)
 	pflag.BoolP("help", "?", true, "Show this help message and exit.")
