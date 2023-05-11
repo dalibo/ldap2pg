@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
 )
@@ -18,6 +19,7 @@ type PostgresConfig struct {
 	DatabasesQuery      QueryConfig[string] `mapstructure:"databases_query"`
 	ManagedRolesQuery   QueryConfig[string] `mapstructure:"managed_roles_query"`
 	RolesBlacklistQuery QueryConfig[string] `mapstructure:"roles_blacklist_query"`
+	Privileges          privilege.RefMap    `mapstructure:"omit"`
 }
 
 func (c PostgresConfig) Build() inspect.Config {
