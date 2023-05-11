@@ -77,7 +77,7 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
 	config, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("Bad configuration format")
+		err = errors.New("bad configuration format")
 		return
 	}
 
