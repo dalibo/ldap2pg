@@ -87,7 +87,7 @@ func Connect(options OptionsMap) (client Client, err error) {
 	return
 }
 
-func (c *Client) Search(timer *utils.Timer, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
+func (c *Client) Search(watch *utils.StopWatch, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
 	search := ldap3.SearchRequest{
 		BaseDN:     base,
 		Scope:      int(scope),
@@ -99,7 +99,7 @@ func (c *Client) Search(timer *utils.Timer, base string, scope Scope, filter str
 	slog.Debug("Searching LDAP directory.", "cmd", c.Command("ldapsearch", args...))
 	var err error
 	var res *ldap3.SearchResult
-	duration := timer.TimeIt(func() {
+	duration := watch.TimeIt(func() {
 		res, err = c.Conn.Search(&search)
 	})
 	if err != nil {

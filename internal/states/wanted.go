@@ -16,7 +16,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(watch *utils.StopWatch, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if config.HasLDAPSearches() {
@@ -38,7 +38,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 			slog.Info(item.Description)
 		}
 
-		for data := range SearchDirectory(ldapc, timer, item) {
+		for data := range SearchDirectory(ldapc, watch, item) {
 			err, failed := data.(error)
 			if failed {
 				slog.Error("Search error. Keep going.", "err", err)
@@ -75,7 +75,7 @@ func ComputeWanted(timer *utils.Timer, config config.Config, blacklist utils.Bla
 
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem) <-chan interface{} {
+func SearchDirectory(ldapc ldap.Client, watch *utils.StopWatch, item config.SyncItem) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
 		defer close(ch)
@@ -86,7 +86,7 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 		}
 
 		s := item.LdapSearch
-		res, err := ldapc.Search(timer, s.Base, s.Scope, s.Filter, s.Attributes)
+		res, err := ldapc.Search(watch, s.Base, s.Scope, s.Filter, s.Attributes)
 		if err != nil {
 			ch <- err
 			return
@@ -105,7 +105,7 @@ func SearchDirectory(ldapc ldap.Client, timer *utils.Timer, item config.SyncItem
 			bases := entry.GetAttributeValues(subsearchAttr)
 			for _, base := range bases {
 				s := item.LdapSearch.Subsearches[subsearchAttr]
-				res, err = ldapc.Search(timer, base, s.Scope, s.Filter, s.Attributes)
+				res, err = ldapc.Search(watch, base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
 					ch <- err
 					continue
