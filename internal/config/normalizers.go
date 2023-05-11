@@ -170,7 +170,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	rules := []interface{}{}
 	for _, rawRule := range list {
 		var rule map[string]interface{}
-		rule, err = NormalizeRoleRules(rawRule)
+		rule, err = NormalizeRoleRule(rawRule)
 		if err != nil {
 			return
 		}
@@ -228,7 +228,7 @@ func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{},
 	return
 }
 
-func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
+func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
 	rule = map[string]interface{}{
 		"comment": "Managed by ldap2pg",
 		"options": "",
