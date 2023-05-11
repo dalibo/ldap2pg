@@ -6,10 +6,10 @@ import (
 	"github.com/dalibo/ldap2pg/internal/utils"
 )
 
-func (suite *Suite) TestTimer() {
+func (suite *Suite) TestStopwatch() {
 	r := suite.Require()
 
-	t := utils.Timer{}
+	t := utils.StopWatch{}
 	t.TimeIt(func() {
 		time.Sleep(time.Microsecond)
 	})

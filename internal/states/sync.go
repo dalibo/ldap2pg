@@ -53,7 +53,7 @@ func (instance *PostgresInstance) Diff(wanted Wanted) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (instance *PostgresInstance) Sync(timer *utils.Timer, real bool, wanted Wanted) (count int, err error) {
+func (instance *PostgresInstance) Sync(watch *utils.StopWatch, real bool, wanted Wanted) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
@@ -84,7 +84,7 @@ func (instance *PostgresInstance) Sync(timer *utils.Timer, real bool, wanted Wan
 		}
 
 		var tag pgconn.CommandTag
-		duration := timer.TimeIt(func() {
+		duration := watch.TimeIt(func() {
 			_, err = pgConn.Exec(ctx, sql)
 		})
 		if err != nil {

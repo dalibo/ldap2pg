@@ -77,7 +77,7 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
 	config, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("Bad configuration format")
+		err = errors.New("bad configuration format")
 		return
 	}
 
@@ -128,58 +128,57 @@ func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
 }
 
 func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
-	item, ok := yaml.(map[string]interface{})
+	item = map[string]interface{}{
+		"description": "",
+		"ldapsearch":  map[string]interface{}{},
+		"roles":       []interface{}{},
+		"grants":      []interface{}{},
+	}
+
+	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
 		err = errors.New("invalid sync item type")
 		return
 	}
 
-	_, ok = item["description"]
-	if ok {
-		err = CheckIsString(item["description"])
+	err = NormalizeAlias(&yamlMap, "ldapsearch", "ldap")
+	if err != nil {
+		return
+	}
+	err = NormalizeAlias(&yamlMap, "roles", "role")
+	if err != nil {
+		return
+	}
+	err = NormalizeAlias(&yamlMap, "grants", "grant")
+	if err != nil {
+		return
+	}
+
+	maps.Copy(item, yamlMap)
+
+	err = CheckIsString(item["description"])
+	if err != nil {
+		return
+	}
+	search, err := NormalizeLdapSearch(item["ldapsearch"])
+	if err != nil {
+		return
+	}
+	item["ldapsearch"] = search
+
+	list := NormalizeList(item["roles"])
+	rules := []interface{}{}
+	for _, rawRule := range list {
+		var rule map[string]interface{}
+		rule, err = NormalizeRoleRule(rawRule)
 		if err != nil {
 			return
 		}
-	}
-	err = NormalizeAlias(&item, "ldapsearch", "ldap")
-	if err != nil {
-		return
-	}
-	iLdapSearch, exists := item["ldapsearch"]
-	if exists {
-		var search map[string]interface{}
-		search, err = NormalizeLdapSearch(iLdapSearch)
-		if err != nil {
-			return
+		for _, rule := range DuplicateRoleRules(rule) {
+			rules = append(rules, rule)
 		}
-		item["ldapsearch"] = search
 	}
-
-	err = NormalizeAlias(&item, "roles", "role")
-	if err != nil {
-		return
-	}
-	rawList, exists := item["roles"]
-	if exists {
-		list := NormalizeList(rawList)
-		rules := []interface{}{}
-		for _, rawRule := range list {
-			var rule map[string]interface{}
-			rule, err = NormalizeRoleRules(rawRule)
-			if err != nil {
-				return
-			}
-			for _, rule := range DuplicateRoleRules(rule) {
-				rules = append(rules, rule)
-			}
-		}
-		item["roles"] = rules
-	}
-
-	err = NormalizeAlias(&item, "grants", "grant")
-	if err != nil {
-		return
-	}
+	item["roles"] = rules
 
 	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
 	return
@@ -221,7 +220,7 @@ func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{},
 	}
 	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("invalid ldapsearch type")
+		err = fmt.Errorf("invalid ldapsearch type: %T", yaml)
 		return
 	}
 	maps.Copy(search, yamlMap)
@@ -229,7 +228,7 @@ func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{},
 	return
 }
 
-func NormalizeRoleRules(yaml interface{}) (rule map[string]interface{}, err error) {
+func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
 	rule = map[string]interface{}{
 		"comment": "Managed by ldap2pg",
 		"options": "",

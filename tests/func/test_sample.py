@@ -24,10 +24,10 @@ def test_check_mode(ldap2pg, psql):
 def test_real_mode(ldap2pg, psql):
     assert 'keepme' in psql.tables(dbname='olddb')
 
-    ldap2pg('-N', c='ldap2pg.yml')
+    ldap2pg('--real', c='ldap2pg.yml')
     # Workaround bug in Postgres: execute on functions to public persists
     # revoke.
-    ldap2pg('-N', c='ldap2pg.yml')
+    ldap2pg('--real', c='ldap2pg.yml')
 
     roles = list(psql.roles())
     writers = list(psql.members('writers'))
@@ -57,7 +57,7 @@ def test_re_grant(psql):
     # Ensure database is not sync.
     ldap2pg('-C', c='ldap2pg.yml', _ok_code=1)
     # Synchronize all
-    ldap2pg('-N', c='ldap2pg.yml')
+    ldap2pg('--real', c='ldap2pg.yml')
     ldap2pg('-C', c='ldap2pg.yml')
 
 
@@ -72,7 +72,7 @@ def test_re_revoke(psql):
     # Ensure database is not sync.
     ldap2pg('-C', c=c, _ok_code=1)
     # Synchronize all
-    ldap2pg('-N', c=c)
+    ldap2pg('--real', c=c)
     ldap2pg('-C', c=c)
 
 

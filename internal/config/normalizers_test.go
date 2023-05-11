@@ -98,7 +98,7 @@ func (suite *Suite) TestNormalizeAliasConflict() {
 func (suite *Suite) TestNormalizeRoleRulesString() {
 	r := suite.Require()
 
-	value, err := config.NormalizeRoleRules("alice")
+	value, err := config.NormalizeRoleRule("alice")
 	r.Nil(err)
 
 	names, ok := value["names"].([]string)
@@ -116,7 +116,7 @@ func (suite *Suite) TestNormalizeRoleRulesSingle() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRules(raw)
+	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
 
 	rawNames, ok := value["names"]
@@ -137,7 +137,7 @@ func (suite *Suite) TestNormalizeRolesComment() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRules(raw)
+	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
 	r.Equal([]string{"alice"}, value["names"])
 	r.Equal("au pays des merveilles.", value["comment"])
@@ -164,7 +164,7 @@ func (suite *Suite) TestNormalizeRoleParents() {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeRoleRules(raw)
+	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
 	parents := value["parents"].([]string)
 	r.Equal(1, len(parents))

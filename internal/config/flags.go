@@ -25,7 +25,7 @@ func SetupViper() {
 
 	viper.SetDefault("real", false)
 	_ = viper.BindEnv("real")
-	pflag.BoolP("real", "N", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
+	pflag.BoolP("real", "R", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
 
 	viper.SetDefault("help", false)
 	pflag.BoolP("help", "?", true, "Show this help message and exit.")
@@ -54,8 +54,8 @@ type Controller struct {
 	Verbose       int
 	Verbosity     string
 	LogLevel      slog.Level
-	PostgresTimer utils.Timer
-	LdapTimer     utils.Timer
+	PostgresWatch utils.StopWatch
+	LdapWatch     utils.StopWatch
 }
 
 var levels []slog.Level = []slog.Level{
