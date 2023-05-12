@@ -16,7 +16,7 @@ type KeyConflict struct {
 }
 
 func (err *KeyConflict) Error() string {
-	return fmt.Sprintf("YAML alias conflict between %s and %s", err.Key, err.Conflict)
+	return fmt.Sprintf("key conflict between %s and %s", err.Key, err.Conflict)
 }
 
 type ParseError struct {
@@ -36,11 +36,10 @@ func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error)
 
 	_, hasKey := (*yaml)[key]
 	if hasKey {
-		err = &KeyConflict{
+		return &KeyConflict{
 			Key:      key,
 			Conflict: alias,
 		}
-		return
 	}
 
 	delete(*yaml, alias)
@@ -66,10 +65,14 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 		for _, iItem := range yaml.([]interface{}) {
 			item, ok := iItem.(string)
 			if !ok {
-				err = errors.New("Must be string")
+				return nil, errors.New("must be string")
 			}
 			list = append(list, item)
 		}
+	case []string:
+		list = yaml.([]string)
+	default:
+		return nil, fmt.Errorf("must be string or list of string, got %v", yaml)
 	}
 	return
 }
@@ -77,26 +80,24 @@ func NormalizeStringList(yaml interface{}) (list []string, err error) {
 func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
 	config, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("bad configuration format")
-		return
+		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
 	section, ok := config["postgres"]
 	if ok {
 		err = NormalizePostgres(section)
 		if err != nil {
-			return
+			return config, fmt.Errorf("postgres: %w", err)
 		}
 	}
 
 	section, ok = config["sync_map"]
 	if !ok {
-		err = errors.New("Missing sync_map")
-		return
+		return config, errors.New("missing sync_map")
 	}
 	syncMap, err := NormalizeSyncMap(section)
 	if err != nil {
-		return
+		return config, fmt.Errorf("sync_map: %w", err)
 	}
 	config["sync_map"] = syncMap
 	return
@@ -105,22 +106,26 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 func NormalizePostgres(yaml interface{}) error {
 	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("bad postgres section, must be a map")
+		return fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 
-	return CheckIsString(yamlMap["fallback_owner"])
+	err := CheckIsString(yamlMap["fallback_owner"])
+	if err != nil {
+		return fmt.Errorf("fallback_owner: %w", err)
+	}
+	return nil
 }
 
 func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
 	rawItems, ok := yaml.([]interface{})
 	if !ok {
-		err = errors.New("Bad sync_map format")
+		return nil, fmt.Errorf("bad type: %T, must be a list", yaml)
 	}
-	for _, rawItem := range rawItems {
+	for i, rawItem := range rawItems {
 		var item interface{}
 		item, err = NormalizeSyncItem(rawItem)
 		if err != nil {
-			return
+			return syncMap, fmt.Errorf("item %d: %w", i, err)
 		}
 		syncMap = append(syncMap, item)
 	}
@@ -137,8 +142,7 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 
 	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = errors.New("invalid sync item type")
-		return
+		return nil, fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 
 	err = NormalizeAlias(&yamlMap, "ldapsearch", "ldap")
@@ -162,17 +166,17 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	}
 	search, err := NormalizeLdapSearch(item["ldapsearch"])
 	if err != nil {
-		return
+		return nil, fmt.Errorf("ldapsearch: %w", err)
 	}
 	item["ldapsearch"] = search
 
 	list := NormalizeList(item["roles"])
 	rules := []interface{}{}
-	for _, rawRule := range list {
+	for i, rawRule := range list {
 		var rule map[string]interface{}
 		rule, err = NormalizeRoleRule(rawRule)
 		if err != nil {
-			return
+			return nil, fmt.Errorf("roles[%d]: %w", i, err)
 		}
 		for _, rule := range DuplicateRoleRules(rule) {
 			rules = append(rules, rule)
@@ -193,6 +197,11 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 	if err != nil {
 		return
 	}
+	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
+	if err != nil {
+		return
+	}
+
 	subsearches, ok := search["subsearches"].(map[string]interface{})
 	if !ok {
 		return
@@ -209,7 +218,6 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 			return
 		}
 	}
-	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
 	return
 }
 
@@ -220,8 +228,7 @@ func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{},
 	}
 	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
-		err = fmt.Errorf("invalid ldapsearch type: %T", yaml)
-		return
+		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 	maps.Copy(search, yamlMap)
 	search["filter"] = ldap.CleanFilter(search["filter"].(string))
@@ -258,8 +265,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 				return
 			}
 		} else {
-			err = errors.New("Missing name in role rule")
-			return
+			return nil, errors.New("missing name")
 		}
 		rule["parents"], err = NormalizeStringList(rule["parents"])
 		if err != nil {
@@ -267,14 +273,10 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		}
 		rule["options"], err = NormalizeRoleOptions(rule["options"])
 		if err != nil {
-			return
+			return nil, fmt.Errorf("options: %w", err)
 		}
 	default:
-		err = &ParseError{
-			Message: "Invalid role rule YAML",
-			Value:   yaml,
-		}
-		return
+		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
 	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options")
@@ -328,11 +330,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 	case nil:
 		return
 	default:
-		err = &ParseError{
-			Message: "invalid role options YAML",
-			Value:   yaml,
-		}
-		return
+		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
 	err = CheckSpuriousKeys(&value, knownKeys...)

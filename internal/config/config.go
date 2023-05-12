@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -128,7 +129,7 @@ func (c *Config) Load(path string) (err error) {
 	}
 	root, err := NormalizeConfigRoot(yamlData)
 	if err != nil {
-		return
+		return fmt.Errorf("YAML error: %w", err)
 	}
 	err = c.LoadYaml(root)
 	if err != nil {
