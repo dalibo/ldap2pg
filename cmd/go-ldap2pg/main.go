@@ -18,6 +18,19 @@ import (
 )
 
 func main() {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		slog.Error("Panic!", "err", r)
+		buf := debug.Stack()
+		fmt.Fprintf(os.Stderr, "%s", buf)
+		slog.Error("Aborting ldap2pg.", "err", r)
+		slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with full log.")
+		os.Exit(1)
+	}()
+
 	// Bootstrap logging first to log in setup.
 	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
 	config.SetupViper()
