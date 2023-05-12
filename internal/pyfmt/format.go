@@ -1,6 +1,7 @@
 package pyfmt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -28,9 +29,13 @@ func Parse(f string) (format Format, err error) {
 
 func (f *Format) Parse(s string) (err error) {
 	f.Input = s
-	end := len(s)
-	start := 0
-	inField := false
+	var (
+		end     = len(s)
+		inField = false
+		next    byte
+		start   int
+	)
+
 	for i := 0; i < end; { // Loops sections in s.
 		start = i // Track the start of the section. i will move to the end.
 		if inField {
@@ -56,7 +61,12 @@ func (f *Format) Parse(s string) (err error) {
 				// toto{titi} OR toto{{titi
 				//     ^             ^
 				i += loc // Move before {
-				if i < end && '{' == s[i+1] {
+				if i < end-1 {
+					next = s[i+1]
+				} else {
+					next = 0
+				}
+				if i < end && '{' == next {
 					// To escape {{, send two strings, the one before the second { and the rest after on next iteration.
 					//
 					// toto{{titi
@@ -73,6 +83,9 @@ func (f *Format) Parse(s string) (err error) {
 			//      ^             ^
 			i++ // Move after {, literal or escape.
 		}
+	}
+	if inField {
+		err = errors.New("unexpected end of format")
 	}
 	return
 }
