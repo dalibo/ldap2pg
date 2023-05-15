@@ -56,6 +56,12 @@ func (suite *Suite) TestParseUnterminatedField() {
 	r.Error(err)
 }
 
+func (suite *Suite) TestParseSingleBrace() {
+	r := suite.Require()
+	_, err := pyfmt.Parse("{")
+	r.Error(err)
+}
+
 func (suite *Suite) TestParseConversion() {
 	r := suite.Require()
 	f, err := pyfmt.Parse("{!r}")
