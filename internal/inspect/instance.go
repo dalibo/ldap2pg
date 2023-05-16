@@ -2,6 +2,7 @@ package inspect
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	_ "embed"
@@ -52,9 +53,9 @@ func InstanceState(pc Config) (instance Instance, err error) {
 	if err != nil {
 		return
 	}
-	err = instance.InspectDatabases(pc, pgconn)
+	err = instance.InspectDatabases(pc.DatabasesQuery, pgconn)
 	if err != nil {
-		return
+		return instance, fmt.Errorf("postgres: %w", err)
 	}
 
 	err = instance.InspectRoles(pc, pgconn)
@@ -111,12 +112,15 @@ func (instance *Instance) InspectSession(pc Config, pgconn *pgx.Conn) error {
 	return nil
 }
 
-func (instance *Instance) InspectDatabases(pc Config, pgconn *pgx.Conn) error {
+func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting managed databases.")
-	err := lists.IterateToSet(RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], YamlToString), &instance.ManagedDatabases)
-	if err != nil {
-		return err
+	for q.Query(pgconn); q.Next(); {
+		instance.ManagedDatabases.Add(q.Row())
 	}
+	if err := q.Err(); err != nil {
+		return fmt.Errorf("databases: %w", err)
+	}
+
 	slog.Debug("Inspecting database owners.")
 	for item := range RunQuery(databasesQuery, pgconn, postgres.RowToDatabase, nil) {
 		err, _ := item.(error)

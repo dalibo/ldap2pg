@@ -7,6 +7,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/search"
+	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
@@ -61,9 +62,12 @@ type LdapConfig struct {
 func New() Config {
 	return Config{
 		Postgres: inspect.Config{
-			DatabasesQuery: inspect.RowsOrSQL{Value: dedent.Dedent(`
-			SELECT datname FROM pg_catalog.pg_database
-			WHERE datallowconn IS TRUE ORDER BY 1;`)},
+			DatabasesQuery: &inspect.SQLQuery[string]{
+				SQL: dedent.Dedent(`
+				SELECT datname FROM pg_catalog.pg_database
+				WHERE datallowconn IS TRUE ORDER BY 1;`),
+				RowTo: pgx.RowTo[string],
+			},
 			RolesBlacklistQuery: inspect.RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
 		},
 	}
