@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/exp/slog"
 
+	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/states"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -59,8 +59,8 @@ func ldap2pg() (err error) {
 
 	config.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
-		"commit", utils.ShortRevision,
-		"version", utils.Version,
+		"commit", internal.ShortRevision,
+		"version", internal.Version,
 		"runtime", runtime.Version())
 	slog.Warn("go-ldap2pg is alpha software! Use at your own risks!")
 
@@ -117,7 +117,7 @@ func ldap2pg() (err error) {
 }
 
 func showVersion() {
-	fmt.Printf("go-ldap2pg %s\n", utils.Version)
+	fmt.Printf("go-ldap2pg %s\n", internal.Version)
 
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
