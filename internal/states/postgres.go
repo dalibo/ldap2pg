@@ -7,9 +7,9 @@ import (
 	_ "embed"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
@@ -24,7 +24,7 @@ type PostgresInstance struct {
 	ManagedDatabases mapset.Set[string]
 	ManagedRoles     roles.RoleMap
 	Me               roles.Role
-	RolesBlacklist   utils.Blacklist
+	RolesBlacklist   lists.Blacklist
 }
 
 var (
@@ -114,7 +114,7 @@ func (instance *PostgresInstance) InspectSession(pc config.PostgresConfig, pgcon
 
 func (instance *PostgresInstance) InspectDatabases(pc config.PostgresConfig, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting managed databases.")
-	err := utils.IterateToSet(postgres.RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], config.YamlToString), &instance.ManagedDatabases)
+	err := lists.IterateToSet(postgres.RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], config.YamlToString), &instance.ManagedDatabases)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (instance *PostgresInstance) InspectDatabases(pc config.PostgresConfig, pgc
 func (instance *PostgresInstance) InspectRoles(pc config.PostgresConfig, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
-	err := utils.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
+	err := lists.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
 	if err != nil {
 		return err
 	}

@@ -1,19 +1,19 @@
-package utils_test
+package lists_test
 
 import (
-	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/dalibo/ldap2pg/internal/lists"
 )
 
 func (suite *Suite) TestProductNoLists() {
 	r := suite.Require()
-	for item := range utils.Product[string]() {
+	for item := range lists.Product[string]() {
 		r.Fail("Got item: %s", item)
 	}
 }
 
 func (suite *Suite) TestProductOneEmptyList() {
 	r := suite.Require()
-	for item := range utils.Product(
+	for item := range lists.Product(
 		[]string{"1", "2"},
 		[]string{},
 		[]string{"a", "b"},
@@ -32,7 +32,7 @@ func (suite *Suite) TestProductAny() {
 	var combinations [][]any
 	s0 := dumbStruct{A: "s0"}
 	s1 := dumbStruct{A: "s1"}
-	for item := range utils.Product[interface{}](
+	for item := range lists.Product[interface{}](
 		[]interface{}{"1", "2", "3"},
 		[]interface{}{s0, s1},
 	) {
@@ -52,7 +52,7 @@ func (suite *Suite) TestProductString() {
 	r := suite.Require()
 
 	var combinations [][]string
-	for item := range utils.Product(
+	for item := range lists.Product(
 		[]string{"1", "2", "3"},
 		[]string{"a", "b", "c"},
 		[]string{"A", "B"},
@@ -85,7 +85,7 @@ func (suite *Suite) TestProductInt() {
 	r := suite.Require()
 
 	var combinations [][]int
-	for item := range utils.Product(
+	for item := range lists.Product(
 		[]int{1, 3},
 		[]int{2, 4},
 	) {

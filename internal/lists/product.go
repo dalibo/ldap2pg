@@ -1,4 +1,4 @@
-package utils
+package lists
 
 func Product[T any](lists ...[]T) <-chan []T {
 	ch := make(chan []T)

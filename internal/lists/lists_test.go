@@ -1,5 +1,5 @@
-// Global test suite for utils package.
-package utils_test
+// Global test suite for lists package.
+package lists_test
 
 import (
 	"testing"

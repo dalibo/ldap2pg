@@ -1,5 +1,5 @@
 // fnmatch pattern list
-package utils
+package lists
 
 import (
 	"github.com/tzvetkoff-go/fnmatch"

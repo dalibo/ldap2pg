@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
@@ -91,7 +91,7 @@ func (r *Results) GenerateCombinations(attributes, subKeys []string) <-chan map[
 		defer close(ch)
 		// Generate cartesian product of values and returns a map ready for
 		// formatting.
-		for item := range utils.Product(valuesList...) {
+		for item := range lists.Product(valuesList...) {
 			// Index values by attributes.
 			attrMap := make(map[string]string)
 			for i, attr := range attributes {

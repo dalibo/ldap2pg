@@ -6,9 +6,9 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/roles"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
@@ -17,7 +17,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist lists.Blacklist) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if syncMap.HasLDAPSearches() {
