@@ -56,8 +56,8 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 		return
 	}
 
-	for i := range config.SyncItems {
-		item := &config.SyncItems[i]
+	for i := range config.SyncMap {
+		item := &config.SyncMap[i]
 		item.InferAttributes()
 		// states.ComputeWanted is simplified base on the assumption
 		// there is no more than one sub-search. Fail otherwise.

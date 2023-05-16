@@ -6,8 +6,9 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/lists"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/roles"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
@@ -16,10 +17,10 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(watch *utils.StopWatch, config config.Config, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist lists.Blacklist) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
-	if config.HasLDAPSearches() {
+	if syncMap.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
 		if err != nil {
 			return wanted, err
@@ -33,7 +34,7 @@ func ComputeWanted(watch *utils.StopWatch, config config.Config, blacklist utils
 	}
 
 	wanted.Roles = make(map[string]roles.Role)
-	for _, item := range config.SyncItems {
+	for _, item := range syncMap {
 		if item.Description != "" {
 			slog.Info(item.Description)
 		}
@@ -75,7 +76,7 @@ func ComputeWanted(watch *utils.StopWatch, config config.Config, blacklist utils
 
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func SearchDirectory(ldapc ldap.Client, watch *utils.StopWatch, item config.SyncItem) <-chan interface{} {
+func SearchDirectory(ldapc ldap.Client, watch *perf.StopWatch, item config.SyncItem) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
 		defer close(ch)

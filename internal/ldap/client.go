@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slog"
 )
@@ -87,7 +87,7 @@ func Connect(options OptionsMap) (client Client, err error) {
 	return
 }
 
-func (c *Client) Search(watch *utils.StopWatch, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
+func (c *Client) Search(watch *perf.StopWatch, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
 	search := ldap3.SearchRequest{
 		BaseDN:     base,
 		Scope:      int(scope),

@@ -44,10 +44,10 @@ func FindConfigFile(userValue string) (configpath string) {
 }
 
 type Config struct {
-	Version   int
-	Ldap      LdapConfig
-	Postgres  PostgresConfig
-	SyncItems []SyncItem `mapstructure:"sync_map"`
+	Version  int
+	Ldap     LdapConfig
+	Postgres PostgresConfig
+	SyncMap  SyncMap `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
@@ -140,19 +140,10 @@ func (c *Config) Load(path string) (err error) {
 	return
 }
 
-func (c Config) HasLDAPSearches() bool {
-	for _, item := range c.SyncItems {
-		if item.HasLDAPSearch() {
-			return true
-		}
-	}
-	return false
-}
-
 func (c *Config) SplitStaticRules() {
 	var newList []SyncItem
-	copy(newList, c.SyncItems)
-	for _, item := range c.SyncItems {
+	copy(newList, c.SyncMap)
+	for _, item := range c.SyncMap {
 		newList = append(newList, item.SplitStaticItems()...)
 	}
 }

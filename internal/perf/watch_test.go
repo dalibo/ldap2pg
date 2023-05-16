@@ -1,15 +1,15 @@
-package utils_test
+package perf_test
 
 import (
 	"time"
 
-	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/dalibo/ldap2pg/internal/perf"
 )
 
 func (suite *Suite) TestStopwatch() {
 	r := suite.Require()
 
-	t := utils.StopWatch{}
+	t := perf.StopWatch{}
 	t.TimeIt(func() {
 		time.Sleep(time.Microsecond)
 	})
