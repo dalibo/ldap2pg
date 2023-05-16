@@ -6,6 +6,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/dalibo/ldap2pg/internal/utils"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -16,7 +17,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(watch *utils.StopWatch, syncMap config.SyncMap, blacklist utils.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist utils.Blacklist) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if syncMap.HasLDAPSearches() {
@@ -75,7 +76,7 @@ func ComputeWanted(watch *utils.StopWatch, syncMap config.SyncMap, blacklist uti
 
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func SearchDirectory(ldapc ldap.Client, watch *utils.StopWatch, item config.SyncItem) <-chan interface{} {
+func SearchDirectory(ldapc ldap.Client, watch *perf.StopWatch, item config.SyncItem) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
 		defer close(ch)

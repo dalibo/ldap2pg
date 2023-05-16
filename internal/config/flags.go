@@ -4,7 +4,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/dalibo/ldap2pg/internal/utils"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -54,8 +54,8 @@ type Controller struct {
 	Verbose       int
 	Verbosity     string
 	LogLevel      slog.Level
-	PostgresWatch utils.StopWatch
-	LdapWatch     utils.StopWatch
+	PostgresWatch perf.StopWatch
+	LdapWatch     perf.StopWatch
 }
 
 var levels []slog.Level = []slog.Level{

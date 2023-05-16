@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slog"
 )
@@ -53,7 +53,7 @@ func (instance *PostgresInstance) Diff(wanted Wanted) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (instance *PostgresInstance) Sync(watch *utils.StopWatch, real bool, wanted Wanted) (count int, err error) {
+func (instance *PostgresInstance) Sync(watch *perf.StopWatch, real bool, wanted Wanted) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
