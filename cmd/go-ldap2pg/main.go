@@ -34,7 +34,7 @@ func main() {
 
 	// Bootstrap logging first to log in setup.
 	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
-	config.SetupViper()
+	setupViper()
 	if viper.GetBool("help") {
 		pflag.Usage()
 		return
@@ -52,7 +52,7 @@ func main() {
 func ldap2pg() (err error) {
 	start := time.Now()
 
-	controller, err := config.UnmarshalController()
+	controller, err := unmarshalController()
 	if err != nil {
 		return
 	}

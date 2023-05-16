@@ -1,9 +1,10 @@
-package config
+package main
 
 import (
 	"math"
 	"os"
 
+	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
@@ -11,7 +12,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func SetupViper() {
+func setupViper() {
 	viper.SetDefault("check", false)
 	pflag.Bool("check", viper.GetBool("check"), "Check mode: exits with 1 if Postgres instance is unsynchronized.")
 
@@ -61,12 +62,12 @@ type Controller struct {
 var levels []slog.Level = []slog.Level{
 	slog.LevelDebug,
 	slog.LevelInfo,
-	LevelChange,
+	config.LevelChange,
 	slog.LevelWarn,
 	slog.LevelError,
 }
 
-func UnmarshalController() (controller Controller, err error) {
+func unmarshalController() (controller Controller, err error) {
 	err = viper.Unmarshal(&controller)
 	verbosity := viper.GetString("verbosity")
 	var level slog.LevelVar
@@ -78,7 +79,7 @@ func UnmarshalController() (controller Controller, err error) {
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
 		controller.LogLevel = levels[levelIndex]
 	case "CHANGE":
-		controller.LogLevel = LevelChange
+		controller.LogLevel = config.LevelChange
 	default:
 		err := level.UnmarshalText([]byte(verbosity))
 		if err == nil {
