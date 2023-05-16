@@ -68,7 +68,9 @@ func New() Config {
 				WHERE datallowconn IS TRUE ORDER BY 1;`),
 				RowTo: pgx.RowTo[string],
 			},
-			RolesBlacklistQuery: inspect.RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
+			RolesBlacklistQuery: &inspect.YAMLQuery[string]{
+				Rows: []string{"pg_*", "postgres"},
+			},
 		},
 	}
 }

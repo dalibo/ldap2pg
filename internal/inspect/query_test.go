@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+func (suite *Suite) TestQuerierYAML() {
+	r := suite.Require()
+	var q inspect.Querier[string] = &inspect.YAMLQuery[string]{
+		Rows: []string{"adam", "eve"},
+	}
+
+	names := make([]string, 0)
+	for q.Query(nil); q.Next(); {
+		names = append(names, q.Row())
+	}
+	r.Nil(q.Err())
+	r.Equal(2, len(names))
+	r.Equal("adam", names[0])
+	r.Equal("eve", names[1])
+}
+
 func (suite *Suite) TestQuerierSQL() {
 	r := suite.Require()
 	// Check implementation by using interface as variable type.

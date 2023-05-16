@@ -22,6 +22,29 @@ type Conn interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }
 
+// YAMLQuery holds a static rowset from config file
+type YAMLQuery[T any] struct {
+	Rows         []T
+	currentIndex int
+}
+
+func (q *YAMLQuery[_]) Query(_ Conn) {
+	q.currentIndex = -1
+}
+
+func (q *YAMLQuery[_]) Next() bool {
+	q.currentIndex++
+	return q.currentIndex < len(q.Rows)
+}
+
+func (q *YAMLQuery[_]) Err() error {
+	return nil
+}
+
+func (q *YAMLQuery[T]) Row() T {
+	return q.Rows[q.currentIndex]
+}
+
 // SQLQuery holds a configurable SQL query en handle fetching rows from
 // Postgres.
 // *SQLQuery implements Querier.
@@ -43,7 +66,6 @@ func (q *SQLQuery[_]) Query(pgconn Conn) {
 		return
 	}
 	q.rows = rows
-	return
 }
 
 func (q *SQLQuery[_]) Next() bool {
