@@ -1,4 +1,4 @@
-package config_test
+package search_test
 
 import (
 	"github.com/dalibo/ldap2pg/internal/config"

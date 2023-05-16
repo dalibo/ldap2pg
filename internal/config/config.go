@@ -6,8 +6,7 @@ import (
 	"path"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/search"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
@@ -49,35 +48,13 @@ type Config struct {
 	Version  int
 	Ldap     LdapConfig
 	Postgres inspect.Config
-	SyncMap  SyncMap `mapstructure:"sync_map"`
+	SyncMap  search.SyncMap `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
 	URI      string
 	BindDn   string
 	Password string
-}
-
-type RoleRule struct {
-	Name    pyfmt.Format
-	Options roles.Options
-	Comment pyfmt.Format
-	Parents []pyfmt.Format
-}
-
-func (r RoleRule) IsStatic() bool {
-	if 0 < len(r.Name.Fields) {
-		return false
-	}
-	if 0 < len(r.Comment.Fields) {
-		return false
-	}
-	for _, f := range r.Parents {
-		if 0 < len(f.Fields) {
-			return false
-		}
-	}
-	return true
 }
 
 // New initiate a config structure with defaults.

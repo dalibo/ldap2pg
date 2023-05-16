@@ -4,11 +4,11 @@ package states
 import (
 	"errors"
 
-	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/search"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
@@ -17,7 +17,7 @@ type Wanted struct {
 	Roles roles.RoleMap
 }
 
-func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist lists.Blacklist) (wanted Wanted, err error) {
+func ComputeWanted(watch *perf.StopWatch, syncMap search.SyncMap, blacklist lists.Blacklist) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if syncMap.HasLDAPSearches() {
@@ -78,7 +78,7 @@ func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist list
 
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func SearchDirectory(ldapc ldap.Client, watch *perf.StopWatch, item config.SyncItem) <-chan interface{} {
+func SearchDirectory(ldapc ldap.Client, watch *perf.StopWatch, item search.SyncItem) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
 		defer close(ch)
@@ -124,7 +124,7 @@ func SearchDirectory(ldapc ldap.Client, watch *perf.StopWatch, item config.SyncI
 	return ch
 }
 
-func GenerateAllRoles(rules []config.RoleRule, results *ldap.Results) <-chan roles.Role {
+func GenerateAllRoles(rules []search.RoleRule, results *ldap.Results) <-chan roles.Role {
 	ch := make(chan roles.Role)
 	go func() {
 		defer close(ch)
@@ -137,7 +137,7 @@ func GenerateAllRoles(rules []config.RoleRule, results *ldap.Results) <-chan rol
 	return ch
 }
 
-func GenerateRoles(rule config.RoleRule, results *ldap.Results) <-chan roles.Role {
+func GenerateRoles(rule search.RoleRule, results *ldap.Results) <-chan roles.Role {
 	ch := make(chan roles.Role)
 	go func() {
 		defer close(ch)
