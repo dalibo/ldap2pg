@@ -11,7 +11,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func FindConfigFile(userValue string) (configpath string) {
+func FindFile(userValue string) (configpath string) {
 	if "" != userValue {
 		return userValue
 	}
