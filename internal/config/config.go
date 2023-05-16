@@ -6,7 +6,6 @@ import (
 	"path"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/lithammer/dedent"
@@ -57,20 +56,6 @@ type LdapConfig struct {
 	URI      string
 	BindDn   string
 	Password string
-}
-
-type LdapSearch struct {
-	Base        string
-	Scope       ldap.Scope
-	Filter      string
-	Attributes  []string
-	Subsearches map[string]Subsearch `mapstructure:"joins"`
-}
-
-type Subsearch struct {
-	Filter     string
-	Scope      ldap.Scope
-	Attributes []string
 }
 
 type RoleRule struct {
