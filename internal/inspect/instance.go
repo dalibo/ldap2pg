@@ -1,4 +1,4 @@
-package states
+package inspect
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	_ "embed"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
@@ -16,7 +15,7 @@ import (
 )
 
 // Fourzitou struct holding everything need to synchronize Instance.
-type PostgresInstance struct {
+type Instance struct {
 	AllRoles         roles.RoleMap
 	Databases        []postgres.Database
 	DefaultDatabase  string
@@ -38,8 +37,8 @@ var (
 	sessionQuery string
 )
 
-func PostgresInspect(pc inspect.Config) (instance PostgresInstance, err error) {
-	instance = PostgresInstance{}
+func InstanceState(pc Config) (instance Instance, err error) {
+	instance = Instance{}
 	instance.ManagedDatabases = mapset.NewSet[string]()
 
 	ctx := context.Background()
@@ -65,7 +64,7 @@ func PostgresInspect(pc inspect.Config) (instance PostgresInstance, err error) {
 	return
 }
 
-func (instance *PostgresInstance) InspectSession(pc inspect.Config, pgconn *pgx.Conn) error {
+func (instance *Instance) InspectSession(pc Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
 	rows, err := pgconn.Query(context.Background(), sessionQuery)
@@ -112,14 +111,14 @@ func (instance *PostgresInstance) InspectSession(pc inspect.Config, pgconn *pgx.
 	return nil
 }
 
-func (instance *PostgresInstance) InspectDatabases(pc inspect.Config, pgconn *pgx.Conn) error {
+func (instance *Instance) InspectDatabases(pc Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting managed databases.")
-	err := lists.IterateToSet(postgres.RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], inspect.YamlToString), &instance.ManagedDatabases)
+	err := lists.IterateToSet(RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], YamlToString), &instance.ManagedDatabases)
 	if err != nil {
 		return err
 	}
 	slog.Debug("Inspecting database owners.")
-	for item := range postgres.RunQuery(databasesQuery, pgconn, postgres.RowToDatabase, nil) {
+	for item := range RunQuery(databasesQuery, pgconn, postgres.RowToDatabase, nil) {
 		err, _ := item.(error)
 		if err != nil {
 			return err
@@ -133,10 +132,10 @@ func (instance *PostgresInstance) InspectDatabases(pc inspect.Config, pgconn *pg
 	return nil
 }
 
-func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Conn) error {
+func (instance *Instance) InspectRoles(pc Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
-	err := lists.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
+	err := lists.IterateToSlice(RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
 	if err != nil {
 		return err
 	}
@@ -145,7 +144,7 @@ func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Co
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting roles blacklist.")
-	for item := range postgres.RunQuery(pc.RolesBlacklistQuery, pgconn, pgx.RowTo[string], inspect.YamlToString) {
+	for item := range RunQuery(pc.RolesBlacklistQuery, pgconn, pgx.RowTo[string], YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}
@@ -158,7 +157,7 @@ func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Co
 	sql := "rol." + strings.Join(columns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
-	for item := range postgres.RunQuery(rolesQuery, pgconn, roles.RowToRole, nil) {
+	for item := range RunQuery(rolesQuery, pgconn, roles.RowToRole, nil) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}
@@ -180,7 +179,7 @@ func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Co
 
 	slog.Debug("Inspecting managed roles.")
 	instance.ManagedRoles = make(roles.RoleMap)
-	for item := range postgres.RunQuery(pc.ManagedRolesQuery, pgconn, pgx.RowTo[string], inspect.YamlToString) {
+	for item := range RunQuery(pc.ManagedRolesQuery, pgconn, pgx.RowTo[string], YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}

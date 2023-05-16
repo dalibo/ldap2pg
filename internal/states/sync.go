@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slog"
 )
 
-func (instance *PostgresInstance) Diff(wanted Wanted) <-chan postgres.SyncQuery {
+func Diff(instance inspect.Instance, wanted Wanted) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
@@ -53,7 +54,7 @@ func (instance *PostgresInstance) Diff(wanted Wanted) <-chan postgres.SyncQuery 
 	return ch
 }
 
-func (instance *PostgresInstance) Sync(watch *perf.StopWatch, real bool, wanted Wanted) (count int, err error) {
+func Sync(watch *perf.StopWatch, real bool, instance inspect.Instance, wanted Wanted) (count int, err error) {
 	ctx := context.Background()
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
@@ -64,7 +65,7 @@ func (instance *PostgresInstance) Sync(watch *perf.StopWatch, real bool, wanted 
 		prefix = "Would "
 	}
 
-	for query := range instance.Diff(wanted) {
+	for query := range Diff(instance, wanted) {
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {

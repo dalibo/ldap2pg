@@ -6,55 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
-	"golang.org/x/exp/slog"
 )
-
-// INSPECT
-
-func RunQuery[T any](q interface{}, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun inspect.YamlToFunc[T]) <-chan any {
-	ch := make(chan any)
-	go func() {
-		defer close(ch)
-		var sql string
-		rowsOrSQL, ok := q.(inspect.RowsOrSQL)
-		if ok {
-			if inspect.IsPredefined(rowsOrSQL) {
-				slog.Debug("Reading values from YAML.")
-				for _, value := range rowsOrSQL.Value.([]interface{}) {
-					row, err := yamlFun(value)
-					if err != nil {
-						ch <- err
-					} else {
-						ch <- row
-					}
-				}
-				return
-			}
-			sql = rowsOrSQL.Value.(string)
-		} else {
-			sql = q.(string)
-		}
-
-		ctx := context.Background()
-		rows, err := pgconn.Query(ctx, sql)
-		slog.Debug("Executing SQL query:\n" + sql)
-		if err != nil {
-			ch <- fmt.Errorf("Bad query: %w", err)
-		}
-		for rows.Next() {
-			rowData, err := pgFun(rows)
-			if err != nil {
-				ch <- err
-			} else {
-				ch <- rowData
-			}
-		}
-	}()
-	return ch
-}
 
 // SYNC
 
