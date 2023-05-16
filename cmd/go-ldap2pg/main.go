@@ -10,6 +10,7 @@ import (
 	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/dalibo/ldap2pg/internal/utils"
 	"github.com/mattn/go-isatty"
@@ -88,11 +89,11 @@ func ldap2pg() (err error) {
 
 	count, err := instance.Sync(&controller.PostgresWatch, controller.Real, wanted)
 
-	vmPeak := utils.ReadVMPeak()
+	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
 	logAttrs := []interface{}{
 		"elapsed", elapsed,
-		"mempeak", utils.FormatBytes(vmPeak),
+		"mempeak", perf.FormatBytes(vmPeak),
 		"postgres", controller.PostgresWatch.Total,
 		"queries", count,
 		"ldap", controller.LdapWatch.Total,
