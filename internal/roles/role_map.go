@@ -28,7 +28,7 @@ func (rs RoleMap) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string)
 		for parentName := range r.Parents.Iter() {
 			parent, ok := rs[parentName]
 			if !ok {
-				slog.Debug("Role herits from unknown parent.", "role", r.Name, "parent", parentName)
+				slog.Debug("Role herits unmanaged parent.", "role", r.Name, "parent", parentName)
 				continue
 			}
 			for deepName := range rs.flattenRole(parent, seen) {
