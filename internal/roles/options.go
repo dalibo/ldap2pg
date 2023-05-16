@@ -1,4 +1,4 @@
-package config
+package roles
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type RoleOptions struct {
+type Options struct {
 	Super       bool `column:"rolsuper" token:"SUPERUSER"`
 	CreateDB    bool `column:"rolcreatedb" token:"CREATEDB"`
 	CreateRole  bool `column:"rolcreaterole" token:"CREATEROLE"`
@@ -19,12 +19,12 @@ type RoleOptions struct {
 	ConnLimit   int  `column:"rolconnlimit" token:"CONNECTION LIMIT"`
 }
 
-func (o RoleOptions) String() string {
+func (o Options) String() string {
 	v := reflect.ValueOf(o)
 	t := v.Type()
 	var b strings.Builder
 	for _, f := range reflect.VisibleFields(t) {
-		if !IsRoleColumnEnabled(f.Tag.Get("column")) {
+		if !isColumnEnabled(f.Tag.Get("column")) {
 			continue
 		}
 		if b.Len() > 0 {
@@ -33,7 +33,7 @@ func (o RoleOptions) String() string {
 		fv := v.FieldByName(f.Name)
 		switch f.Type.Kind() {
 		case reflect.Bool:
-			o.WriteBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
+			o.writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
 		case reflect.Int:
 			fmt.Fprintf(&b, "%s %d", f.Tag.Get("token"), fv.Int())
 		}
@@ -41,14 +41,14 @@ func (o RoleOptions) String() string {
 	return b.String()
 }
 
-func (o *RoleOptions) WriteBoolOption(b *strings.Builder, value bool, token string) {
+func (o *Options) writeBoolOption(b *strings.Builder, value bool, token string) {
 	if !value {
 		b.WriteString("NO")
 	}
 	b.WriteString(token)
 }
 
-func (o *RoleOptions) LoadYaml(yaml map[string]interface{}) {
+func (o *Options) LoadYaml(yaml map[string]interface{}) {
 	for option, value := range yaml {
 		switch option {
 		case "SUPERUSER":
@@ -71,9 +71,9 @@ func (o *RoleOptions) LoadYaml(yaml map[string]interface{}) {
 	}
 }
 
-func (o *RoleOptions) LoadRow(row []interface{}) {
+func (o *Options) LoadRow(row []interface{}) {
 	for i, value := range row {
-		colName := GetRoleColumnNameByOrder(i)
+		colName := getColumnNameByOrder(i)
 		switch colName {
 		case "rolbypassrls":
 			o.ByPassRLS = value.(bool)
@@ -96,36 +96,32 @@ func (o *RoleOptions) LoadRow(row []interface{}) {
 }
 
 // Global state of role columns in inspected instance.
-var instanceRoleColumns struct {
+var instanceColumns struct {
 	availability map[string]bool
 	order        []string
 }
 
-func ProcessRoleColumns(columns []string, super bool) {
-	instanceRoleColumns.order = columns
-	instanceRoleColumns.availability = make(map[string]bool)
-	t := reflect.TypeOf(RoleOptions{})
+func ProcessColumns(columns []string, super bool) {
+	instanceColumns.order = columns
+	instanceColumns.availability = make(map[string]bool)
+	t := reflect.TypeOf(Options{})
 	for _, f := range reflect.VisibleFields(t) {
-		instanceRoleColumns.availability[f.Tag.Get("column")] = false
+		instanceColumns.availability[f.Tag.Get("column")] = false
 	}
 	for _, name := range columns {
 		if !super && ("rolsuper" == name || "rolreplication" == name || "rolbypassrls" == name) {
 			slog.Debug("Ignoring privileged role column", "column", name)
 			continue
 		}
-		instanceRoleColumns.availability[name] = true
+		instanceColumns.availability[name] = true
 	}
 }
 
-func GetRoleColumnsOrder() []string {
-	return instanceRoleColumns.order
+func getColumnNameByOrder(order int) string {
+	return instanceColumns.order[order]
 }
 
-func GetRoleColumnNameByOrder(order int) string {
-	return instanceRoleColumns.order[order]
-}
-
-func IsRoleColumnEnabled(name string) bool {
-	available, ok := instanceRoleColumns.availability[name]
+func isColumnEnabled(name string) bool {
+	available, ok := instanceColumns.availability[name]
 	return ok && available
 }

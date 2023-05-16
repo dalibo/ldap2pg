@@ -8,6 +8,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
@@ -74,7 +75,7 @@ type Subsearch struct {
 
 type RoleRule struct {
 	Name    pyfmt.Format
-	Options RoleOptions
+	Options roles.Options
 	Comment pyfmt.Format
 	Parents []pyfmt.Format
 }

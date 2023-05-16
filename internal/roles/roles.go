@@ -1,7 +1,6 @@
 package roles
 
 import (
-	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
@@ -11,7 +10,7 @@ type Role struct {
 	Name    string
 	Comment string
 	Parents mapset.Set[string]
-	Options config.RoleOptions
+	Options Options
 }
 
 func NewRole() Role {

@@ -6,7 +6,6 @@ import (
 
 	_ "embed"
 
-	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -142,7 +141,7 @@ func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Co
 		return err
 	}
 	// Setup global var to configure RoleOptions.String()
-	config.ProcessRoleColumns(columns, instance.Me.Options.Super)
+	roles.ProcessColumns(columns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting roles blacklist.")
