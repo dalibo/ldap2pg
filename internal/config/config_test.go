@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/exp/slog"
 )
@@ -14,9 +14,9 @@ type Suite struct {
 
 func TestConfig(t *testing.T) {
 	if testing.Verbose() {
-		config.SetLoggingHandler(slog.LevelDebug, false)
+		internal.SetLoggingHandler(slog.LevelDebug, false)
 	} else {
-		config.SetLoggingHandler(slog.LevelWarn, false)
+		internal.SetLoggingHandler(slog.LevelWarn, false)
 	}
 	suite.Run(t, new(Suite))
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -65,7 +65,7 @@ func (instance *PostgresInstance) Sync(watch *perf.StopWatch, real bool, wanted 
 	}
 
 	for query := range instance.Diff(wanted) {
-		slog.Log(ctx, config.LevelChange, prefix+query.Description, query.LogArgs...)
+		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		if "" == query.Database {
 			query.Database = instance.DefaultDatabase

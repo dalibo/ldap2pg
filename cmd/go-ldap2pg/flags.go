@@ -4,7 +4,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
@@ -62,7 +62,7 @@ type Controller struct {
 var levels []slog.Level = []slog.Level{
 	slog.LevelDebug,
 	slog.LevelInfo,
-	config.LevelChange,
+	internal.LevelChange,
 	slog.LevelWarn,
 	slog.LevelError,
 }
@@ -79,7 +79,7 @@ func unmarshalController() (controller Controller, err error) {
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
 		controller.LogLevel = levels[levelIndex]
 	case "CHANGE":
-		controller.LogLevel = config.LevelChange
+		controller.LogLevel = internal.LevelChange
 	default:
 		err := level.UnmarshalText([]byte(verbosity))
 		if err == nil {

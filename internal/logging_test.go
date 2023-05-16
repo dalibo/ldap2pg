@@ -1,10 +1,9 @@
-package config_test
+package internal_test
 
 import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal"
-	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lmittmann/tint"
 	"golang.org/x/exp/slog"
 )
@@ -12,7 +11,7 @@ import (
 func ExampleSetLoggingHandler() {
 	colors := []bool{false, true}
 	for _, color := range colors {
-		config.SetLoggingHandler(slog.LevelDebug, color)
+		internal.SetLoggingHandler(slog.LevelDebug, color)
 		slog.Debug("Lorem ipsum dolor sit amet.", "version", internal.Version)
 		slog.Info("Consectetur adipiscing elit.", "vivamus", "ut accumsan elit", "maecenas", 4.23)
 		slog.Debug("Tristique nulla ac nisl dignissim.")
