@@ -37,6 +37,8 @@ func ComputeWanted(watch *perf.StopWatch, syncMap config.SyncMap, blacklist list
 	for _, item := range syncMap {
 		if item.Description != "" {
 			slog.Info(item.Description)
+		} else {
+			slog.Debug("Next sync map item.")
 		}
 
 		for data := range SearchDirectory(ldapc, watch, item) {

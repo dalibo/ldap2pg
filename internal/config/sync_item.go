@@ -22,6 +22,14 @@ func (m SyncMap) HasLDAPSearches() bool {
 	return false
 }
 
+func (m SyncMap) SplitStaticRules() (newMap SyncMap) {
+	newMap = make(SyncMap, 0)
+	for _, item := range m {
+		newMap = append(newMap, item.SplitStaticItems()...)
+	}
+	return
+}
+
 type SyncItem struct {
 	Description string
 	LdapSearch  LdapSearch

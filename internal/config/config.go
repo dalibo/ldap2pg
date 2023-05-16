@@ -43,6 +43,7 @@ func FindConfigFile(userValue string) (configpath string) {
 	return ""
 }
 
+// Config holds the YAML configuration. Not the flags.
 type Config struct {
 	Version  int
 	Ldap     LdapConfig
@@ -99,6 +100,7 @@ func (r RoleRule) IsStatic() bool {
 	return true
 }
 
+// New initiate a config structure with defaults.
 func New() Config {
 	return Config{
 		Postgres: PostgresConfig{
@@ -136,14 +138,6 @@ func (c *Config) Load(path string) (err error) {
 		return
 	}
 
-	c.SplitStaticRules()
+	c.SyncMap = c.SyncMap.SplitStaticRules()
 	return
-}
-
-func (c *Config) SplitStaticRules() {
-	var newList []SyncItem
-	copy(newList, c.SyncMap)
-	for _, item := range c.SyncMap {
-		newList = append(newList, item.SplitStaticItems()...)
-	}
 }
