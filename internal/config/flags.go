@@ -44,7 +44,7 @@ func SetupViper() {
 	_ = viper.BindPFlags(pflag.CommandLine)
 }
 
-// Holds flags/env values to control the execution of ldap2pg.
+// Controller holds flags/env values controlling the execution of ldap2pg.
 type Controller struct {
 	Check         bool
 	Color         bool

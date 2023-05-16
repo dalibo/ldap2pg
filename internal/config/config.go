@@ -43,6 +43,7 @@ func FindConfigFile(userValue string) (configpath string) {
 	return ""
 }
 
+// Config holds the YAML configuration. Not the flags.
 type Config struct {
 	Version  int
 	Ldap     LdapConfig
@@ -99,6 +100,7 @@ func (r RoleRule) IsStatic() bool {
 	return true
 }
 
+// New initiate a config structure with defaults.
 func New() Config {
 	return Config{
 		Postgres: PostgresConfig{
