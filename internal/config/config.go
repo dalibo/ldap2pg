@@ -136,14 +136,6 @@ func (c *Config) Load(path string) (err error) {
 		return
 	}
 
-	c.SplitStaticRules()
+	c.SyncMap = c.SyncMap.SplitStaticRules()
 	return
-}
-
-func (c *Config) SplitStaticRules() {
-	var newList []SyncItem
-	copy(newList, c.SyncMap)
-	for _, item := range c.SyncMap {
-		newList = append(newList, item.SplitStaticItems()...)
-	}
 }
