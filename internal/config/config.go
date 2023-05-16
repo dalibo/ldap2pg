@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/lithammer/dedent"
@@ -47,7 +48,7 @@ func FindConfigFile(userValue string) (configpath string) {
 type Config struct {
 	Version  int
 	Ldap     LdapConfig
-	Postgres PostgresConfig
+	Postgres inspect.Config
 	SyncMap  SyncMap `mapstructure:"sync_map"`
 }
 
@@ -55,13 +56,6 @@ type LdapConfig struct {
 	URI      string
 	BindDn   string
 	Password string
-}
-
-type PostgresConfig struct {
-	FallbackOwner       string    `mapstructure:"fallback_owner"`
-	DatabasesQuery      RowsOrSQL `mapstructure:"databases_query"`
-	ManagedRolesQuery   RowsOrSQL `mapstructure:"managed_roles_query"`
-	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
 }
 
 type LdapSearch struct {
@@ -103,11 +97,11 @@ func (r RoleRule) IsStatic() bool {
 // New initiate a config structure with defaults.
 func New() Config {
 	return Config{
-		Postgres: PostgresConfig{
-			DatabasesQuery: RowsOrSQL{Value: dedent.Dedent(`
+		Postgres: inspect.Config{
+			DatabasesQuery: inspect.RowsOrSQL{Value: dedent.Dedent(`
 			SELECT datname FROM pg_catalog.pg_database
 			WHERE datallowconn IS TRUE ORDER BY 1;`)},
-			RolesBlacklistQuery: RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
+			RolesBlacklistQuery: inspect.RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
 		},
 	}
 }
