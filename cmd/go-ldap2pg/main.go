@@ -75,7 +75,7 @@ func ldap2pg() (err error) {
 		return
 	}
 
-	wanted, err := states.ComputeWanted(&controller.LdapWatch, c, instance.RolesBlacklist)
+	wanted, err := states.ComputeWanted(&controller.LdapWatch, c.SyncMap, instance.RolesBlacklist)
 	if err != nil {
 		return
 	}

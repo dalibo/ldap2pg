@@ -11,6 +11,17 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type SyncMap []SyncItem
+
+func (m SyncMap) HasLDAPSearches() bool {
+	for _, item := range m {
+		if item.HasLDAPSearch() {
+			return true
+		}
+	}
+	return false
+}
+
 type SyncItem struct {
 	Description string
 	LdapSearch  LdapSearch
