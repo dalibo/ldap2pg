@@ -5,13 +5,13 @@ import (
 	"os"
 	"path"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/search"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
 
-func FindConfigFile(userValue string) (configpath string) {
+func FindFile(userValue string) (configpath string) {
 	if "" != userValue {
 		return userValue
 	}
@@ -47,8 +47,8 @@ func FindConfigFile(userValue string) (configpath string) {
 type Config struct {
 	Version  int
 	Ldap     LdapConfig
-	Postgres PostgresConfig
-	SyncMap  SyncMap `mapstructure:"sync_map"`
+	Postgres inspect.Config
+	SyncMap  search.SyncMap `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
@@ -57,57 +57,14 @@ type LdapConfig struct {
 	Password string
 }
 
-type PostgresConfig struct {
-	FallbackOwner       string    `mapstructure:"fallback_owner"`
-	DatabasesQuery      RowsOrSQL `mapstructure:"databases_query"`
-	ManagedRolesQuery   RowsOrSQL `mapstructure:"managed_roles_query"`
-	RolesBlacklistQuery RowsOrSQL `mapstructure:"roles_blacklist_query"`
-}
-
-type LdapSearch struct {
-	Base        string
-	Scope       ldap.Scope
-	Filter      string
-	Attributes  []string
-	Subsearches map[string]Subsearch `mapstructure:"joins"`
-}
-
-type Subsearch struct {
-	Filter     string
-	Scope      ldap.Scope
-	Attributes []string
-}
-
-type RoleRule struct {
-	Name    pyfmt.Format
-	Options RoleOptions
-	Comment pyfmt.Format
-	Parents []pyfmt.Format
-}
-
-func (r RoleRule) IsStatic() bool {
-	if 0 < len(r.Name.Fields) {
-		return false
-	}
-	if 0 < len(r.Comment.Fields) {
-		return false
-	}
-	for _, f := range r.Parents {
-		if 0 < len(f.Fields) {
-			return false
-		}
-	}
-	return true
-}
-
 // New initiate a config structure with defaults.
 func New() Config {
 	return Config{
-		Postgres: PostgresConfig{
-			DatabasesQuery: RowsOrSQL{Value: dedent.Dedent(`
+		Postgres: inspect.Config{
+			DatabasesQuery: inspect.RowsOrSQL{Value: dedent.Dedent(`
 			SELECT datname FROM pg_catalog.pg_database
 			WHERE datallowconn IS TRUE ORDER BY 1;`)},
-			RolesBlacklistQuery: RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
+			RolesBlacklistQuery: inspect.RowsOrSQL{Value: []interface{}{"pg_*", "postgres"}},
 		},
 	}
 }

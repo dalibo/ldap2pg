@@ -6,7 +6,7 @@ import (
 
 	_ "embed"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/roles"
@@ -38,7 +38,7 @@ var (
 	sessionQuery string
 )
 
-func PostgresInspect(pc config.PostgresConfig) (instance PostgresInstance, err error) {
+func PostgresInspect(pc inspect.Config) (instance PostgresInstance, err error) {
 	instance = PostgresInstance{}
 	instance.ManagedDatabases = mapset.NewSet[string]()
 
@@ -65,7 +65,7 @@ func PostgresInspect(pc config.PostgresConfig) (instance PostgresInstance, err e
 	return
 }
 
-func (instance *PostgresInstance) InspectSession(pc config.PostgresConfig, pgconn *pgx.Conn) error {
+func (instance *PostgresInstance) InspectSession(pc inspect.Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
 	rows, err := pgconn.Query(context.Background(), sessionQuery)
@@ -112,9 +112,9 @@ func (instance *PostgresInstance) InspectSession(pc config.PostgresConfig, pgcon
 	return nil
 }
 
-func (instance *PostgresInstance) InspectDatabases(pc config.PostgresConfig, pgconn *pgx.Conn) error {
+func (instance *PostgresInstance) InspectDatabases(pc inspect.Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting managed databases.")
-	err := lists.IterateToSet(postgres.RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], config.YamlToString), &instance.ManagedDatabases)
+	err := lists.IterateToSet(postgres.RunQuery(pc.DatabasesQuery, pgconn, pgx.RowTo[string], inspect.YamlToString), &instance.ManagedDatabases)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (instance *PostgresInstance) InspectDatabases(pc config.PostgresConfig, pgc
 	return nil
 }
 
-func (instance *PostgresInstance) InspectRoles(pc config.PostgresConfig, pgconn *pgx.Conn) error {
+func (instance *PostgresInstance) InspectRoles(pc inspect.Config, pgconn *pgx.Conn) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
 	err := lists.IterateToSlice(postgres.RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
@@ -141,11 +141,11 @@ func (instance *PostgresInstance) InspectRoles(pc config.PostgresConfig, pgconn 
 		return err
 	}
 	// Setup global var to configure RoleOptions.String()
-	config.ProcessRoleColumns(columns, instance.Me.Options.Super)
+	roles.ProcessColumns(columns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting roles blacklist.")
-	for item := range postgres.RunQuery(pc.RolesBlacklistQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
+	for item := range postgres.RunQuery(pc.RolesBlacklistQuery, pgconn, pgx.RowTo[string], inspect.YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}
@@ -180,7 +180,7 @@ func (instance *PostgresInstance) InspectRoles(pc config.PostgresConfig, pgconn 
 
 	slog.Debug("Inspecting managed roles.")
 	instance.ManagedRoles = make(roles.RoleMap)
-	for item := range postgres.RunQuery(pc.ManagedRolesQuery, pgconn, pgx.RowTo[string], config.YamlToString) {
+	for item := range postgres.RunQuery(pc.ManagedRolesQuery, pgconn, pgx.RowTo[string], inspect.YamlToString) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}

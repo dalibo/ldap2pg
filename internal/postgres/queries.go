@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
@@ -14,14 +14,14 @@ import (
 
 // INSPECT
 
-func RunQuery[T any](q interface{}, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun config.YamlToFunc[T]) <-chan any {
+func RunQuery[T any](q interface{}, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T], yamlFun inspect.YamlToFunc[T]) <-chan any {
 	ch := make(chan any)
 	go func() {
 		defer close(ch)
 		var sql string
-		rowsOrSQL, ok := q.(config.RowsOrSQL)
+		rowsOrSQL, ok := q.(inspect.RowsOrSQL)
 		if ok {
-			if config.IsPredefined(rowsOrSQL) {
+			if inspect.IsPredefined(rowsOrSQL) {
 				slog.Debug("Reading values from YAML.")
 				for _, value := range rowsOrSQL.Value.([]interface{}) {
 					row, err := yamlFun(value)

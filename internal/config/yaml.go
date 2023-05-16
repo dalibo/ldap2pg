@@ -9,18 +9,14 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/internal/roles"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
-
-// Implements config.YamlToFunc. Similar to pgx.RowTo.
-func YamlToString(value interface{}) (pattern string, err error) {
-	pattern = value.(string)
-	return
-}
 
 // Marshall YAML from file path or stdin if path is -.
 func ReadYaml(path string) (values interface{}, err error) {
@@ -95,16 +91,16 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 			return nil, err
 		}
 		return f, nil
-	case reflect.TypeOf(RoleOptions{}):
-		r := to.Interface().(RoleOptions)
+	case reflect.TypeOf(roles.Options{}):
+		r := to.Interface().(roles.Options)
 		r.LoadYaml(from.Interface().(map[string]interface{}))
 		return r, nil
-	case reflect.TypeOf(RowsOrSQL{}):
+	case reflect.TypeOf(inspect.RowsOrSQL{}):
 		switch from.Interface().(type) {
 		case string:
-			return RowsOrSQL{Value: from.String()}, nil
+			return inspect.RowsOrSQL{Value: from.String()}, nil
 		case []interface{}:
-			return RowsOrSQL{Value: from.Interface()}, nil
+			return inspect.RowsOrSQL{Value: from.Interface()}, nil
 		default:
 			return nil, fmt.Errorf("bad YAML for query")
 		}

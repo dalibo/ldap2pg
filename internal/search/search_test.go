@@ -1,4 +1,4 @@
-package pyfmt_test
+package search_test
 
 import (
 	"testing"
@@ -8,12 +8,11 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Declare a global suite for the package.
 type Suite struct {
 	suite.Suite
 }
 
-func Test(t *testing.T) {
+func TestConfig(t *testing.T) {
 	if testing.Verbose() {
 		internal.SetLoggingHandler(slog.LevelDebug, false)
 	} else {

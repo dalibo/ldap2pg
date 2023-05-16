@@ -33,7 +33,7 @@ func main() {
 	}()
 
 	// Bootstrap logging first to log in setup.
-	config.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
+	internal.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
 	setupViper()
 	if viper.GetBool("help") {
 		pflag.Usage()
@@ -57,14 +57,14 @@ func ldap2pg() (err error) {
 		return
 	}
 
-	config.SetLoggingHandler(controller.LogLevel, controller.Color)
+	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
 		"commit", internal.ShortRevision,
 		"version", internal.Version,
 		"runtime", runtime.Version())
 	slog.Warn("go-ldap2pg is alpha software! Use at your own risks!")
 
-	configPath := config.FindConfigFile(controller.Config)
+	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
 	if err != nil {

@@ -1,4 +1,4 @@
-package config
+package inspect
 
 // Either an SQL string or a predefined list of YAML rows.
 type RowsOrSQL struct {
@@ -15,4 +15,10 @@ func IsPredefined(q RowsOrSQL) bool {
 	default:
 		return true
 	}
+}
+
+// Implements inspect.YamlToFunc. Similar to pgx.RowTo.
+func YamlToString(value interface{}) (pattern string, err error) {
+	pattern = value.(string)
+	return
 }
