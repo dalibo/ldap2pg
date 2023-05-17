@@ -9,10 +9,10 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
@@ -75,9 +75,10 @@ func DecodeYaml(yaml any, c *Config) (err error) {
 		Metadata:   &mapstructure.Metadata{},
 		Result:     c,
 	})
-	if err == nil {
-		err = d.Decode(yaml)
+	if err != nil {
+		panic(err.Error())
 	}
+	err = d.Decode(yaml)
 	return
 }
 
@@ -95,15 +96,14 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 		r := to.Interface().(roles.Options)
 		r.LoadYaml(from.Interface().(map[string]interface{}))
 		return r, nil
-	case reflect.TypeOf(inspect.RowsOrSQL{}):
-		switch from.Interface().(type) {
-		case string:
-			return inspect.RowsOrSQL{Value: from.String()}, nil
-		case []interface{}:
-			return inspect.RowsOrSQL{Value: from.Interface()}, nil
-		default:
-			return nil, fmt.Errorf("bad YAML for query")
+	case reflect.TypeOf(QueryConfig[string]{}):
+		v := to.Interface().(QueryConfig[string])
+		v.Value = from.Interface()
+		err := v.Instantiate(pgx.RowTo[string], YamlTo[string])
+		if err != nil {
+			return nil, err
 		}
+		return v, nil
 	case reflect.TypeOf(ldap.Scope(1)):
 		s, err := ldap.ParseScope(from.String())
 		if err != nil {
