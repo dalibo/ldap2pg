@@ -13,7 +13,7 @@ type Role struct {
 	Options Options
 }
 
-func NewRole() Role {
+func New() Role {
 	role := Role{}
 	role.Parents = mapset.NewSet[string]()
 	return role
@@ -22,7 +22,7 @@ func NewRole() Role {
 func RowToRole(row pgx.CollectableRow) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
-	role = NewRole()
+	role = New()
 	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
 	if err != nil {
 		return
