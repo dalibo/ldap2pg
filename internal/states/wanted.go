@@ -141,15 +141,15 @@ func GenerateRoles(rule search.RoleRule, results *ldap.Results) <-chan roles.Rol
 	ch := make(chan roles.Role)
 	go func() {
 		defer close(ch)
-		var parents []string
+		parents := mapset.NewSet[string]()
 		for _, f := range rule.Parents {
 			if nil == results.Entry || 0 == len(f.Fields) {
 				// Static case.
-				parents = append(parents, f.String())
+				parents.Add(f.String())
 			} else {
 				// Dynamic case.
 				for values := range results.GenerateValues(f) {
-					parents = append(parents, f.Format(values))
+					parents.Add(f.Format(values))
 				}
 			}
 		}
@@ -160,7 +160,7 @@ func GenerateRoles(rule search.RoleRule, results *ldap.Results) <-chan roles.Rol
 			role.Name = rule.Name.String()
 			role.Comment = rule.Comment.String()
 			role.Options = rule.Options
-			role.Parents = mapset.NewSet[string](parents...)
+			role.Parents = parents
 			ch <- role
 		} else {
 			// Case dynamic roles.
@@ -169,7 +169,7 @@ func GenerateRoles(rule search.RoleRule, results *ldap.Results) <-chan roles.Rol
 				role.Name = rule.Name.Format(values)
 				role.Comment = rule.Comment.Format(values)
 				role.Options = rule.Options
-				role.Parents = mapset.NewSet[string](parents...)
+				role.Parents = parents.Clone()
 				ch <- role
 			}
 		}
