@@ -94,25 +94,3 @@ func (q *SQLQuery[_]) Err() error {
 func (q *SQLQuery[T]) Row() T {
 	return q.row
 }
-
-func RunQuery[T any](sql string, pgconn *pgx.Conn, pgFun pgx.RowToFunc[T]) <-chan any {
-	ch := make(chan any)
-	go func() {
-		defer close(ch)
-		ctx := context.Background()
-		rows, err := pgconn.Query(ctx, sql)
-		slog.Debug("Executing SQL query:\n" + sql)
-		if err != nil {
-			ch <- fmt.Errorf("Bad query: %w", err)
-		}
-		for rows.Next() {
-			rowData, err := pgFun(rows)
-			if err != nil {
-				ch <- err
-			} else {
-				ch <- rowData
-			}
-		}
-	}()
-	return ch
-}

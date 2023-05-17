@@ -122,26 +122,30 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 	}
 
 	slog.Debug("Inspecting database owners.")
-	for item := range RunQuery(databasesQuery, pgconn, postgres.RowToDatabase) {
-		err, _ := item.(error)
-		if err != nil {
-			return err
-		}
-		db := item.(postgres.Database)
+	dbq := &SQLQuery[postgres.Database]{SQL: databasesQuery, RowTo: postgres.RowToDatabase}
+	for dbq.Query(pgconn); dbq.Next(); {
+		db := dbq.Row()
 		if instance.ManagedDatabases.Contains(db.Name) {
 			slog.Debug("Found database.", "name", db.Name)
 			instance.Databases = append(instance.Databases, db)
 		}
 	}
+	if err := dbq.Err(); err != nil {
+		return fmt.Errorf("databases: %w", err)
+	}
+
 	return nil
 }
 
 func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
-	err := lists.IterateToSlice(RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string]), &columns)
-	if err != nil {
-		return err
+	q := &SQLQuery[string]{SQL: roleColumnsQuery, RowTo: pgx.RowTo[string]}
+	for q.Query(pgconn); q.Next(); {
+		columns = append(columns, q.Row())
+	}
+	if err := q.Err(); err != nil {
+		return fmt.Errorf("role columns: %w", err)
 	}
 	// Setup global var to configure RoleOptions.String()
 	roles.ProcessColumns(columns, instance.Me.Options.Super)
@@ -156,15 +160,13 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	}
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
+	slog.Debug("Inspecting all roles.")
 	instance.AllRoles = make(roles.RoleMap)
 	sql := "rol." + strings.Join(columns, ", rol.")
-	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
-	slog.Debug("Inspecting all roles.")
-	for item := range RunQuery(rolesQuery, pgconn, roles.RowToRole) {
-		if err, _ := item.(error); err != nil {
-			return err
-		}
-		role := item.(roles.Role)
+	sql = strings.Replace(rolesQuery, "rol.*", sql, 1)
+	rq := &SQLQuery[roles.Role]{SQL: sql, RowTo: roles.RowToRole}
+	for rq.Query(pgconn); rq.Next(); {
+		role := rq.Row()
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
 			instance.AllRoles[role.Name] = role
@@ -173,6 +175,9 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 		} else {
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
+	}
+	if err := q.Err(); err != nil {
+		return fmt.Errorf("roles options: %w", err)
 	}
 
 	if nil == managedRolesQ {
