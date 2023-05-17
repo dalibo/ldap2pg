@@ -13,7 +13,7 @@ import (
 )
 
 // Holds a consistent set of entry and sub-search entries.
-type Results struct {
+type Result struct {
 	// Is nil for static generation
 	Entry *ldap3.Entry
 	// Is empty if no sub-search.
@@ -21,7 +21,7 @@ type Results struct {
 	SubsearchEntries   []*ldap3.Entry
 }
 
-func (r *Results) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
+func (r *Result) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 	expressions := pyfmt.ListExpressions(fmts...)
 	attributes := pyfmt.ListVariables(expressions...)
 
@@ -47,7 +47,7 @@ func (r *Results) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string 
 }
 
 // Return a list of expression -> values for formatting, indexed by a string key.
-func (r *Results) GenerateSubsearchValues(parentExpressions []string) map[string]map[string]string {
+func (r *Result) GenerateSubsearchValues(parentExpressions []string) map[string]map[string]string {
 	prefix := r.SubsearchAttribute + "."
 	// First, remove sub-attribute from parent expressions. For example :
 	// {member.SAMAccountName} become {SAMAccountname} in the scope of the
@@ -62,7 +62,7 @@ func (r *Results) GenerateSubsearchValues(parentExpressions []string) map[string
 	subMap := make(map[string]map[string]string)
 	for i, subEntry := range r.SubsearchEntries {
 		j := 0
-		subResult := Results{Entry: subEntry}
+		subResult := Result{Entry: subEntry}
 		for values := range subResult.GenerateCombinations(subAttributes, nil) {
 			subKey := fmt.Sprintf("subentry%d-comb%d", i, j)
 			values = subResult.ResolveExpressions(expressions, values, nil)
@@ -73,7 +73,7 @@ func (r *Results) GenerateSubsearchValues(parentExpressions []string) map[string
 	return subMap
 }
 
-func (r *Results) GenerateCombinations(attributes, subKeys []string) <-chan map[string]string {
+func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[string]string {
 	// Extract raw LDAP attributes values from entry.
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
@@ -104,7 +104,7 @@ func (r *Results) GenerateCombinations(attributes, subKeys []string) <-chan map[
 }
 
 // Resolve format expression from entry or pre-resolved expression for sub-entries.
-func (r *Results) ResolveExpressions(expressions []string, attrValues map[string]string, subExprMap map[string]map[string]string) map[string]string {
+func (r *Result) ResolveExpressions(expressions []string, attrValues map[string]string, subExprMap map[string]map[string]string) map[string]string {
 	exprMap := make(map[string]string)
 exprloop:
 	for _, expr := range expressions {

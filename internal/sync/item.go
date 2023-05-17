@@ -154,33 +154,38 @@ func (i Item) SplitStaticItems() (items []Item) {
 	return
 }
 
+type SearchResult struct {
+	result ldap.Result
+	err    error
+}
+
 // Search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan interface{} {
-	ch := make(chan interface{})
+func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResult {
+	ch := make(chan SearchResult)
 	go func() {
 		defer close(ch)
 		if !i.HasLDAPSearch() {
 			// Use a dumb empty result.
-			ch <- &ldap.Results{}
+			ch <- SearchResult{}
 			return
 		}
 
 		s := i.LdapSearch
 		res, err := ldapc.Search(watch, s.Base, s.Scope, s.Filter, s.Attributes)
 		if err != nil {
-			ch <- err
+			ch <- SearchResult{err: err}
 			return
 		}
 		subsearchAttr := i.LdapSearch.SubsearchAttribute()
 		for _, entry := range res.Entries {
 			slog.Debug("Got LDAP entry.", "dn", entry.DN)
-			results := ldap.Results{
+			result := ldap.Result{
 				Entry:              entry,
 				SubsearchAttribute: subsearchAttr,
 			}
 			if "" == subsearchAttr {
-				ch <- &results
+				ch <- SearchResult{result: result}
 				continue
 			}
 			bases := entry.GetAttributeValues(subsearchAttr)
@@ -188,14 +193,14 @@ func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan interface{
 				s := i.LdapSearch.Subsearches[subsearchAttr]
 				res, err = ldapc.Search(watch, base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
-					ch <- err
+					ch <- SearchResult{err: err}
 					continue
 				}
 				// Copy results in scope.
-				results := results
+				result := result
 				// Overwrite previous sub-entries and resend results.
-				results.SubsearchEntries = res.Entries
-				ch <- &results
+				result.SubsearchEntries = res.Entries
+				ch <- SearchResult{result: result}
 			}
 		}
 	}()

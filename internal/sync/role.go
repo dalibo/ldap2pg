@@ -29,7 +29,7 @@ func (r RoleRule) IsStatic() bool {
 	return true
 }
 
-func (r RoleRule) Generate(results *ldap.Results) <-chan role.Role {
+func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 	ch := make(chan role.Role)
 	go func() {
 		defer close(ch)
