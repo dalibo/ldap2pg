@@ -15,7 +15,7 @@ func (suite *Suite) TestQuerierYAML() {
 	}
 
 	names := make([]string, 0)
-	for q.Query(nil); q.Next(); {
+	for q.Query(context.TODO(), nil); q.Next(); {
 		names = append(names, q.Row())
 	}
 	r.Nil(q.Err())
@@ -34,7 +34,7 @@ func (suite *Suite) TestQuerierSQL() {
 
 	c := &MockConn{Rows: []string{"adam", "eve"}}
 	names := make([]string, 0)
-	for q.Query(c); q.Next(); {
+	for q.Query(context.TODO(), c); q.Next(); {
 		names = append(names, q.Row())
 	}
 	r.Nil(q.Err())
