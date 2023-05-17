@@ -1,4 +1,4 @@
-package search_test
+package sync_test
 
 import (
 	"github.com/dalibo/ldap2pg/internal/config"
@@ -17,7 +17,7 @@ func configFromYAML(rawYAML string) (c config.Config) {
 	return
 }
 
-func (suite *Suite) TestSyncItemStatic() {
+func (suite *Suite) TestItemStatic() {
 	r := suite.Require()
 
 	c := configFromYAML(`
@@ -31,7 +31,7 @@ func (suite *Suite) TestSyncItemStatic() {
 	r.False(i.HasSubsearch())
 }
 
-func (suite *Suite) TestSyncItemLdapAnalyze() {
+func (suite *Suite) TestItemLdapAnalyze() {
 	r := suite.Require()
 
 	c := configFromYAML(`

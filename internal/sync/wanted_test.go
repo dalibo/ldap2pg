@@ -1,4 +1,4 @@
-package search_test
+package sync_test
 
 import (
 	"testing"

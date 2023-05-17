@@ -9,7 +9,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
@@ -17,13 +17,13 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type Instance struct {
-	AllRoles         roles.RoleMap
+	AllRoles         role.Map
 	Databases        []postgres.Database
 	DefaultDatabase  string
 	FallbackOwner    string
 	ManagedDatabases mapset.Set[string]
-	ManagedRoles     roles.RoleMap
-	Me               roles.Role
+	ManagedRoles     role.Map
+	Me               role.Role
 	RolesBlacklist   lists.Blacklist
 }
 
@@ -148,7 +148,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 		return fmt.Errorf("role columns: %w", err)
 	}
 	// Setup global var to configure RoleOptions.String()
-	roles.ProcessColumns(columns, instance.Me.Options.Super)
+	role.ProcessColumns(columns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting roles blacklist.")
@@ -161,10 +161,10 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
 	slog.Debug("Inspecting all roles.")
-	instance.AllRoles = make(roles.RoleMap)
+	instance.AllRoles = make(role.Map)
 	sql := "rol." + strings.Join(columns, ", rol.")
 	sql = strings.Replace(rolesQuery, "rol.*", sql, 1)
-	rq := &SQLQuery[roles.Role]{SQL: sql, RowTo: roles.RowToRole}
+	rq := &SQLQuery[role.Role]{SQL: sql, RowTo: role.RowTo}
 	for rq.Query(pgconn); rq.Next(); {
 		role := rq.Row()
 		match := instance.RolesBlacklist.Match(&role)
@@ -187,7 +187,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	}
 
 	slog.Debug("Inspecting managed roles.")
-	instance.ManagedRoles = make(roles.RoleMap)
+	instance.ManagedRoles = make(role.Map)
 	for managedRolesQ.Query(pgconn); managedRolesQ.Next(); {
 		name := managedRolesQ.Row()
 		match := instance.RolesBlacklist.MatchString(name)

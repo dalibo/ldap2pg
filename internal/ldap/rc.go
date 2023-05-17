@@ -4,6 +4,7 @@ package ldap
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -151,46 +152,40 @@ func (m *OptionsMap) LoadFiles(path ...string) (err error) {
 			continue
 		}
 		slog.Debug("Found LDAP configuration file.", "path", candidate)
-		for item := range iterFileOptions(candidate) {
-			err, _ := item.(error)
-			if err != nil {
-				return err
-			}
-			option := item.(RawOption)
+
+		fo, err := os.Open(candidate)
+		if err != nil {
+			return fmt.Errorf("%s: %w", candidate, err)
+		}
+		for option := range iterFileOptions(fo) {
+			option.Origin = candidate
 			(*m)[option.Key] = option
 		}
 	}
 	return
 }
 
-func iterFileOptions(path string) <-chan any {
-	ch := make(chan any)
-	fo, err := os.Open(path)
-	if err != nil {
+func iterFileOptions(r io.Reader) <-chan RawOption {
+	ch := make(chan RawOption)
+	scanner := bufio.NewScanner(r)
+	re := regexp.MustCompile(`\s+`)
+	go func() {
 		defer close(ch)
-		ch <- err
-	} else {
-		go func() {
-			defer close(ch)
-			scanner := bufio.NewScanner(fo)
-			re := regexp.MustCompile(`\s+`)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "#") {
-					continue
-				}
-				line = strings.TrimSpace(line)
-				if "" == line {
-					continue
-				}
-				fields := re.Split(line, 2)
-				var item RawOption
-				item.Key = strings.ToUpper(fields[0])
-				item.Value = fields[1]
-				item.Origin = path
-				ch <- item
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "#") {
+				continue
 			}
-		}()
-	}
+			line = strings.TrimSpace(line)
+			if "" == line {
+				continue
+			}
+			fields := re.Split(line, 2)
+			ch <- RawOption{
+				Key:   strings.ToUpper(fields[0]),
+				Value: fields[1],
+			}
+		}
+	}()
 	return ch
 }

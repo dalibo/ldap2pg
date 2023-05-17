@@ -11,7 +11,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
@@ -92,8 +92,8 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 			return nil, err
 		}
 		return f, nil
-	case reflect.TypeOf(roles.Options{}):
-		r := to.Interface().(roles.Options)
+	case reflect.TypeOf(role.Options{}):
+		r := to.Interface().(role.Options)
 		r.LoadYaml(from.Interface().(map[string]interface{}))
 		return r, nil
 	case reflect.TypeOf(QueryConfig[string]{}):

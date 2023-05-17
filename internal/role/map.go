@@ -1,24 +1,24 @@
-package roles
+package role
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slog"
 )
 
-type RoleMap map[string]Role
+type Map map[string]Role
 
-func (rs RoleMap) Flatten() []string {
+func (m Map) Flatten() []string {
 	var names []string
 	seen := mapset.NewSet[string]()
-	for _, role := range rs {
-		for name := range rs.flattenRole(role, &seen) {
+	for _, role := range m {
+		for name := range m.flattenRole(role, &seen) {
 			names = append(names, name)
 		}
 	}
 	return names
 }
 
-func (rs RoleMap) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
+func (m Map) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
 	ch = make(chan string)
 	go func() {
 		defer close(ch)
@@ -26,12 +26,12 @@ func (rs RoleMap) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string)
 			return
 		}
 		for parentName := range r.Parents.Iter() {
-			parent, ok := rs[parentName]
+			parent, ok := m[parentName]
 			if !ok {
 				slog.Debug("Role herits unmanaged parent.", "role", r.Name, "parent", parentName)
 				continue
 			}
-			for deepName := range rs.flattenRole(parent, seen) {
+			for deepName := range m.flattenRole(parent, seen) {
 				ch <- deepName
 			}
 		}
