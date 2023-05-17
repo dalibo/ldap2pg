@@ -17,12 +17,12 @@ import (
 
 // Fourzitou struct holding everything need to synchronize Instance.
 type Instance struct {
-	AllRoles         roles.RoleMap
+	AllRoles         roles.Map
 	Databases        []postgres.Database
 	DefaultDatabase  string
 	FallbackOwner    string
 	ManagedDatabases mapset.Set[string]
-	ManagedRoles     roles.RoleMap
+	ManagedRoles     roles.Map
 	Me               roles.Role
 	RolesBlacklist   lists.Blacklist
 }
@@ -161,7 +161,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
 	slog.Debug("Inspecting all roles.")
-	instance.AllRoles = make(roles.RoleMap)
+	instance.AllRoles = make(roles.Map)
 	sql := "rol." + strings.Join(columns, ", rol.")
 	sql = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	rq := &SQLQuery[roles.Role]{SQL: sql, RowTo: roles.RowToRole}
@@ -187,7 +187,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	}
 
 	slog.Debug("Inspecting managed roles.")
-	instance.ManagedRoles = make(roles.RoleMap)
+	instance.ManagedRoles = make(roles.Map)
 	for managedRolesQ.Query(pgconn); managedRolesQ.Next(); {
 		name := managedRolesQ.Row()
 		match := instance.RolesBlacklist.MatchString(name)

@@ -18,7 +18,7 @@ import (
 )
 
 type Wanted struct {
-	Roles roles.RoleMap
+	Roles roles.Map
 }
 
 func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wanted Wanted, err error) {
