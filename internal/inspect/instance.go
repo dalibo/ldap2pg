@@ -164,7 +164,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	instance.AllRoles = make(role.Map)
 	sql := "rol." + strings.Join(columns, ", rol.")
 	sql = strings.Replace(rolesQuery, "rol.*", sql, 1)
-	rq := &SQLQuery[role.Role]{SQL: sql, RowTo: role.RowToRole}
+	rq := &SQLQuery[role.Role]{SQL: sql, RowTo: role.RowTo}
 	for rq.Query(pgconn); rq.Next(); {
 		role := rq.Row()
 		match := instance.RolesBlacklist.Match(&role)

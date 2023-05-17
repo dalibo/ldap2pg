@@ -19,7 +19,7 @@ func New() Role {
 	return role
 }
 
-func RowToRole(row pgx.CollectableRow) (role Role, err error) {
+func RowTo(row pgx.CollectableRow) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
 	role = New()
