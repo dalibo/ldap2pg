@@ -7,6 +7,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// DBPool track a single connection per database
 type DBPool map[string]*pgx.Conn
 
 func (p DBPool) Get(database string) (*pgx.Conn, error) {
