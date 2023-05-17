@@ -136,7 +136,7 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 	return nil
 }
 
-func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ Querier[string], managedRolesQ RowsOrSQL) error {
+func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
 	err := lists.IterateToSlice(RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
@@ -174,7 +174,8 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ Querier
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-	if nil == managedRolesQ.Value {
+
+	if nil == managedRolesQ {
 		slog.Debug("Managing all roles found.")
 		instance.ManagedRoles = instance.AllRoles
 		return nil
@@ -182,19 +183,20 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ Querier
 
 	slog.Debug("Inspecting managed roles.")
 	instance.ManagedRoles = make(roles.RoleMap)
-	for item := range RunQuery(managedRolesQ, pgconn, pgx.RowTo[string], YamlToString) {
-		if err, _ := item.(error); err != nil {
-			return err
-		}
-		name := item.(string)
+	for managedRolesQ.Query(pgconn); managedRolesQ.Next(); {
+		name := managedRolesQ.Row()
 		match := instance.RolesBlacklist.MatchString(name)
-		if match == "" {
-			instance.ManagedRoles[name] = instance.AllRoles[name]
-			slog.Debug("Managing role.", "role", name)
-
-		} else {
+		if "" != match {
 			slog.Debug("Ignoring blacklisted role name.", "role", name, "pattern", match)
+			continue
 		}
+		instance.ManagedRoles[name] = instance.AllRoles[name]
+		slog.Debug("Managing role.", "role", name)
+
 	}
+	if err := managedRolesQ.Err(); err != nil {
+		return fmt.Errorf("managed_roles_query: %w", err)
+	}
+
 	return nil
 }

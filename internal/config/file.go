@@ -5,10 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/search"
-	"github.com/jackc/pgx/v5"
-	"github.com/lithammer/dedent"
 	"golang.org/x/exp/slog"
 )
 
@@ -48,7 +45,7 @@ func FindFile(userValue string) (configpath string) {
 type Config struct {
 	Version  int
 	Ldap     LdapConfig
-	Postgres inspect.Config
+	Postgres PostgresConfig
 	SyncMap  search.SyncMap `mapstructure:"sync_map"`
 }
 
@@ -61,16 +58,14 @@ type LdapConfig struct {
 // New initiate a config structure with defaults.
 func New() Config {
 	return Config{
-		Postgres: inspect.Config{
-			DatabasesQuery: &inspect.SQLQuery[string]{
-				SQL: dedent.Dedent(`
+		Postgres: PostgresConfig{
+			DatabasesQuery: NewSQLQuery[string](`
 				SELECT datname FROM pg_catalog.pg_database
 				WHERE datallowconn IS TRUE ORDER BY 1;`),
-				RowTo: pgx.RowTo[string],
-			},
-			RolesBlacklistQuery: &inspect.YAMLQuery[string]{
-				Rows: []string{"pg_*", "postgres"},
-			},
+			RolesBlacklistQuery: NewYAMLQuery[string](
+				"pg_*",
+				"postgres",
+			),
 		},
 	}
 }

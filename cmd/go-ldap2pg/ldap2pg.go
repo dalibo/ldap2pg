@@ -72,7 +72,7 @@ func ldap2pg() (err error) {
 		return
 	}
 
-	instance, err := inspect.InstanceState(c.Postgres)
+	instance, err := inspect.InstanceState(c.Postgres.Build())
 	if err != nil {
 		return
 	}
