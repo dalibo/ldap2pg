@@ -38,37 +38,36 @@ var (
 	sessionQuery string
 )
 
-func InstanceState(pc Config) (instance Instance, err error) {
+func (pc Config) Inspect(ctx context.Context) (instance Instance, err error) {
 	instance = Instance{}
 	instance.ManagedDatabases = mapset.NewSet[string]()
 
-	ctx := context.Background()
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
 		return
 	}
 	defer pgconn.Close(ctx)
 
-	err = instance.InspectSession(pc, pgconn)
+	err = instance.InspectSession(ctx, pgconn, pc)
 	if err != nil {
 		return
 	}
-	err = instance.InspectDatabases(pc.DatabasesQuery, pgconn)
+	err = instance.InspectDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
 		return instance, fmt.Errorf("postgres: %w", err)
 	}
 
-	err = instance.InspectRoles(pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
+	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (instance *Instance) InspectSession(pc Config, pgconn *pgx.Conn) error {
+func (instance *Instance) InspectSession(ctx context.Context, pgconn *pgx.Conn, pc Config) error {
 	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
-	rows, err := pgconn.Query(context.Background(), sessionQuery)
+	rows, err := pgconn.Query(ctx, sessionQuery)
 	if err != nil {
 		return err
 	}
@@ -112,9 +111,9 @@ func (instance *Instance) InspectSession(pc Config, pgconn *pgx.Conn) error {
 	return nil
 }
 
-func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) error {
+func (instance *Instance) InspectDatabases(ctx context.Context, pgconn *pgx.Conn, q Querier[string]) error {
 	slog.Debug("Inspecting managed databases.")
-	for q.Query(pgconn); q.Next(); {
+	for q.Query(ctx, pgconn); q.Next(); {
 		instance.ManagedDatabases.Add(q.Row())
 	}
 	if err := q.Err(); err != nil {
@@ -123,7 +122,7 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 
 	slog.Debug("Inspecting database owners.")
 	dbq := &SQLQuery[postgres.Database]{SQL: databasesQuery, RowTo: postgres.RowToDatabase}
-	for dbq.Query(pgconn); dbq.Next(); {
+	for dbq.Query(ctx, pgconn); dbq.Next(); {
 		db := dbq.Row()
 		if instance.ManagedDatabases.Contains(db.Name) {
 			slog.Debug("Found database.", "name", db.Name)
@@ -137,11 +136,11 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 	return nil
 }
 
-func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
+func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
 	q := &SQLQuery[string]{SQL: roleColumnsQuery, RowTo: pgx.RowTo[string]}
-	for q.Query(pgconn); q.Next(); {
+	for q.Query(ctx, pgconn); q.Next(); {
 		columns = append(columns, q.Row())
 	}
 	if err := q.Err(); err != nil {
@@ -152,7 +151,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting roles blacklist.")
-	for rolesBlackListQ.Query(pgconn); rolesBlackListQ.Next(); {
+	for rolesBlackListQ.Query(ctx, pgconn); rolesBlackListQ.Next(); {
 		instance.RolesBlacklist = append(instance.RolesBlacklist, rolesBlackListQ.Row())
 	}
 	if err := rolesBlackListQ.Err(); err != nil {
@@ -165,7 +164,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	sql := "rol." + strings.Join(columns, ", rol.")
 	sql = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	rq := &SQLQuery[role.Role]{SQL: sql, RowTo: role.RowTo}
-	for rq.Query(pgconn); rq.Next(); {
+	for rq.Query(ctx, pgconn); rq.Next(); {
 		role := rq.Row()
 		match := instance.RolesBlacklist.Match(&role)
 		if match == "" {
@@ -188,7 +187,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 
 	slog.Debug("Inspecting managed roles.")
 	instance.ManagedRoles = make(role.Map)
-	for managedRolesQ.Query(pgconn); managedRolesQ.Next(); {
+	for managedRolesQ.Query(ctx, pgconn); managedRolesQ.Next(); {
 		name := managedRolesQ.Row()
 		match := instance.RolesBlacklist.MatchString(name)
 		if "" != match {

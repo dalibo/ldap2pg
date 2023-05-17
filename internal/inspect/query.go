@@ -11,7 +11,7 @@ import (
 // Querier abstracts the execution of a SQL query or the copy of static rows
 // from YAML.
 type Querier[T any] interface {
-	Query(Conn)
+	Query(context.Context, Conn)
 	Next() bool
 	Err() error
 	Row() T
@@ -28,7 +28,7 @@ type YAMLQuery[T any] struct {
 	currentIndex int
 }
 
-func (q *YAMLQuery[_]) Query(_ Conn) {
+func (q *YAMLQuery[_]) Query(_ context.Context, _ Conn) {
 	q.currentIndex = -1
 }
 
@@ -57,8 +57,7 @@ type SQLQuery[T any] struct {
 	row  T
 }
 
-func (q *SQLQuery[_]) Query(pgconn Conn) {
-	ctx := context.Background()
+func (q *SQLQuery[_]) Query(ctx context.Context, pgconn Conn) {
 	slog.Debug("Executing SQL query:\n" + q.SQL)
 	rows, err := pgconn.Query(ctx, q.SQL)
 	if err != nil {

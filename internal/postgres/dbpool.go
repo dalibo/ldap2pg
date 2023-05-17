@@ -10,7 +10,7 @@ import (
 // DBPool track a single connection per database
 type DBPool map[string]*pgx.Conn
 
-func (p DBPool) Get(database string) (*pgx.Conn, error) {
+func (p DBPool) Get(ctx context.Context, database string) (*pgx.Conn, error) {
 	connp, ok := p[database]
 	if ok {
 		return connp, nil
@@ -21,7 +21,7 @@ func (p DBPool) Get(database string) (*pgx.Conn, error) {
 	}
 	config.Database = database
 	slog.Debug("Opening Postgres connection.", "db", config.Database)
-	connp, err = pgx.ConnectConfig(context.Background(), config)
+	connp, err = pgx.ConnectConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}
@@ -29,11 +29,11 @@ func (p DBPool) Get(database string) (*pgx.Conn, error) {
 	return connp, nil
 }
 
-func (p DBPool) CloseAll() {
+func (p DBPool) CloseAll(ctx context.Context) {
 	var names []string
 	for name, connp := range p {
 		slog.Debug("Closing Postgres connection.", "db", name)
-		connp.Close(context.Background())
+		connp.Close(ctx)
 		names = append(names, name)
 	}
 	for _, name := range names {

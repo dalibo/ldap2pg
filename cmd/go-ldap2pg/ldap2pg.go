@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
@@ -19,6 +19,8 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -42,14 +44,14 @@ func main() {
 		showVersion()
 		return
 	}
-	err := ldap2pg()
+	err := ldap2pg(ctx)
 	if err != nil {
 		slog.Error("Fatal error.", "err", err)
 		os.Exit(1)
 	}
 }
 
-func ldap2pg() (err error) {
+func ldap2pg(ctx context.Context) (err error) {
 	start := time.Now()
 
 	controller, err := unmarshalController()
@@ -67,11 +69,14 @@ func ldap2pg() (err error) {
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		c.Dump()
+	}
 	if err != nil {
 		return
 	}
 
-	instance, err := inspect.InstanceState(c.Postgres.Build())
+	instance, err := c.Postgres.Build().Inspect(ctx)
 	if err != nil {
 		return
 	}
@@ -87,7 +92,7 @@ func ldap2pg() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(&controller.PostgresWatch, controller.Real, instance)
+	count, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, instance)
 
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
