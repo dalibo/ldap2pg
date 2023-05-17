@@ -122,7 +122,7 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 	}
 
 	slog.Debug("Inspecting database owners.")
-	for item := range RunQuery(databasesQuery, pgconn, postgres.RowToDatabase, nil) {
+	for item := range RunQuery(databasesQuery, pgconn, postgres.RowToDatabase) {
 		err, _ := item.(error)
 		if err != nil {
 			return err
@@ -139,7 +139,7 @@ func (instance *Instance) InspectDatabases(q Querier[string], pgconn *pgx.Conn) 
 func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
-	err := lists.IterateToSlice(RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string], nil), &columns)
+	err := lists.IterateToSlice(RunQuery(roleColumnsQuery, pgconn, pgx.RowTo[string]), &columns)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (instance *Instance) InspectRoles(pgconn *pgx.Conn, rolesBlackListQ, manage
 	sql := "rol." + strings.Join(columns, ", rol.")
 	rolesQuery = strings.Replace(rolesQuery, "rol.*", sql, 1)
 	slog.Debug("Inspecting all roles.")
-	for item := range RunQuery(rolesQuery, pgconn, roles.RowToRole, nil) {
+	for item := range RunQuery(rolesQuery, pgconn, roles.RowToRole) {
 		if err, _ := item.(error); err != nil {
 			return err
 		}

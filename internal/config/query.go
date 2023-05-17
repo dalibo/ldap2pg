@@ -51,7 +51,7 @@ func NewYAMLQuery[T any](rows ...T) QueryConfig[T] {
 	}
 }
 
-func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo inspect.YamlToFunc[T]) error {
+func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo YamlToFunc[T]) error {
 	switch qc.Value.(type) {
 	case string: // Plain SQL query case.
 		qc.Querier = &inspect.SQLQuery[T]{
@@ -75,4 +75,10 @@ func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo inspect.Yam
 		return fmt.Errorf("bad query")
 	}
 	return nil
+}
+
+type YamlToFunc[T any] func(row interface{}) (T, error)
+
+func YamlTo[T any](raw interface{}) (T, error) {
+	return raw.(T), nil
 }
