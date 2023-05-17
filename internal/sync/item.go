@@ -6,6 +6,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slices"
@@ -154,33 +155,38 @@ func (i Item) SplitStaticItems() (items []Item) {
 	return
 }
 
-// Search directory, returning each entry or error. Sub-searches are done
+type SearchResult struct {
+	result ldap.Result
+	err    error
+}
+
+// search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan interface{} {
-	ch := make(chan interface{})
+func (i Item) search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResult {
+	ch := make(chan SearchResult)
 	go func() {
 		defer close(ch)
 		if !i.HasLDAPSearch() {
 			// Use a dumb empty result.
-			ch <- &ldap.Results{}
+			ch <- SearchResult{}
 			return
 		}
 
 		s := i.LdapSearch
 		res, err := ldapc.Search(watch, s.Base, s.Scope, s.Filter, s.Attributes)
 		if err != nil {
-			ch <- err
+			ch <- SearchResult{err: err}
 			return
 		}
 		subsearchAttr := i.LdapSearch.SubsearchAttribute()
 		for _, entry := range res.Entries {
 			slog.Debug("Got LDAP entry.", "dn", entry.DN)
-			results := ldap.Results{
+			result := ldap.Result{
 				Entry:              entry,
 				SubsearchAttribute: subsearchAttr,
 			}
 			if "" == subsearchAttr {
-				ch <- &results
+				ch <- SearchResult{result: result}
 				continue
 			}
 			bases := entry.GetAttributeValues(subsearchAttr)
@@ -188,14 +194,27 @@ func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan interface{
 				s := i.LdapSearch.Subsearches[subsearchAttr]
 				res, err = ldapc.Search(watch, base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
-					ch <- err
+					ch <- SearchResult{err: err}
 					continue
 				}
 				// Copy results in scope.
-				results := results
+				result := result
 				// Overwrite previous sub-entries and resend results.
-				results.SubsearchEntries = res.Entries
-				ch <- &results
+				result.SubsearchEntries = res.Entries
+				ch <- SearchResult{result: result}
+			}
+		}
+	}()
+	return ch
+}
+
+func (i Item) generateRoles(results *ldap.Result) <-chan role.Role {
+	ch := make(chan role.Role)
+	go func() {
+		defer close(ch)
+		for _, rule := range i.RoleRules {
+			for role := range rule.Generate(results) {
+				ch <- role
 			}
 		}
 	}()
