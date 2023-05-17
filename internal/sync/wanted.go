@@ -45,14 +45,14 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wan
 			slog.Debug("Next sync map item.")
 		}
 
-		for res := range item.Search(ldapc, watch) {
+		for res := range item.search(ldapc, watch) {
 			if res.err != nil {
 				slog.Error("Search error. Keep going.", "err", res.err)
 				errList = append(errList, res.err)
 				continue
 			}
 
-			for role := range generateAllRoles(item.RoleRules, &res.result) {
+			for role := range item.generateRoles(&res.result) {
 				if "" == role.Name {
 					continue
 				}
@@ -158,19 +158,6 @@ func (wanted Wanted) diff(instance inspect.Instance) <-chan postgres.SyncQuery {
 			}
 
 			role.Drop(instance.Databases, instance.Me, instance.FallbackOwner, ch)
-		}
-	}()
-	return ch
-}
-
-func generateAllRoles(rules []RoleRule, results *ldap.Result) <-chan role.Role {
-	ch := make(chan role.Role)
-	go func() {
-		defer close(ch)
-		for _, rule := range rules {
-			for role := range rule.Generate(results) {
-				ch <- role
-			}
 		}
 	}()
 	return ch

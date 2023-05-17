@@ -6,6 +6,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/slices"
@@ -159,9 +160,9 @@ type SearchResult struct {
 	err    error
 }
 
-// Search directory, returning each entry or error. Sub-searches are done
+// search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResult {
+func (i Item) search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResult {
 	ch := make(chan SearchResult)
 	go func() {
 		defer close(ch)
@@ -201,6 +202,19 @@ func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResu
 				// Overwrite previous sub-entries and resend results.
 				result.SubsearchEntries = res.Entries
 				ch <- SearchResult{result: result}
+			}
+		}
+	}()
+	return ch
+}
+
+func (i Item) generateRoles(results *ldap.Result) <-chan role.Role {
+	ch := make(chan role.Role)
+	go func() {
+		defer close(ch)
+		for _, rule := range i.RoleRules {
+			for role := range rule.Generate(results) {
+				ch <- role
 			}
 		}
 	}()
