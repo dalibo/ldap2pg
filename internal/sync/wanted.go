@@ -12,13 +12,13 @@ import (
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slog"
 )
 
 type Wanted struct {
-	Roles roles.Map
+	Roles role.Map
 }
 
 func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wanted Wanted, err error) {
@@ -37,7 +37,7 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wan
 		defer ldapc.Conn.Close()
 	}
 
-	wanted.Roles = make(map[string]roles.Role)
+	wanted.Roles = make(map[string]role.Role)
 	for _, item := range syncMap {
 		if item.Description != "" {
 			slog.Info(item.Description)
@@ -164,8 +164,8 @@ func (wanted Wanted) diff(instance inspect.Instance) <-chan postgres.SyncQuery {
 	return ch
 }
 
-func generateAllRoles(rules []RoleRule, results *ldap.Results) <-chan roles.Role {
-	ch := make(chan roles.Role)
+func generateAllRoles(rules []RoleRule, results *ldap.Results) <-chan role.Role {
+	ch := make(chan role.Role)
 	go func() {
 		defer close(ch)
 		for _, rule := range rules {

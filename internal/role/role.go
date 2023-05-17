@@ -1,4 +1,4 @@
-package roles
+package role
 
 import (
 	"github.com/dalibo/ldap2pg/internal/postgres"

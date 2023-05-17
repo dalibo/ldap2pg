@@ -3,13 +3,13 @@ package sync
 import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/roles"
+	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type RoleRule struct {
 	Name    pyfmt.Format
-	Options roles.Options
+	Options role.Options
 	Comment pyfmt.Format
 	Parents []pyfmt.Format
 }
@@ -29,8 +29,8 @@ func (r RoleRule) IsStatic() bool {
 	return true
 }
 
-func (r RoleRule) Generate(results *ldap.Results) <-chan roles.Role {
-	ch := make(chan roles.Role)
+func (r RoleRule) Generate(results *ldap.Results) <-chan role.Role {
+	ch := make(chan role.Role)
 	go func() {
 		defer close(ch)
 		parents := mapset.NewSet[string]()
@@ -48,7 +48,7 @@ func (r RoleRule) Generate(results *ldap.Results) <-chan roles.Role {
 
 		if nil == results.Entry {
 			// Case static role.
-			role := roles.Role{}
+			role := role.Role{}
 			role.Name = r.Name.String()
 			role.Comment = r.Comment.String()
 			role.Options = r.Options
@@ -57,7 +57,7 @@ func (r RoleRule) Generate(results *ldap.Results) <-chan roles.Role {
 		} else {
 			// Case dynamic roles.
 			for values := range results.GenerateValues(r.Name, r.Comment) {
-				role := roles.Role{}
+				role := role.Role{}
 				role.Name = r.Name.Format(values)
 				role.Comment = r.Comment.Format(values)
 				role.Options = r.Options
