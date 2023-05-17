@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/dalibo/ldap2pg/internal/search"
+	"github.com/dalibo/ldap2pg/internal/sync"
 	"golang.org/x/exp/slog"
 )
 
@@ -46,7 +46,7 @@ type Config struct {
 	Version  int
 	Ldap     LdapConfig
 	Postgres PostgresConfig
-	SyncMap  search.SyncMap `mapstructure:"sync_map"`
+	SyncMap  sync.Map `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {

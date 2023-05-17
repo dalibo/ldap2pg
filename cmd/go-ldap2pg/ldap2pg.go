@@ -13,7 +13,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/perf"
-	"github.com/dalibo/ldap2pg/internal/states"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -77,7 +76,7 @@ func ldap2pg() (err error) {
 		return
 	}
 
-	wanted, err := states.ComputeWanted(&controller.LdapWatch, c.SyncMap, instance.RolesBlacklist)
+	wanted, err := c.SyncMap.Wanted(&controller.LdapWatch, instance.RolesBlacklist)
 	if err != nil {
 		return
 	}
@@ -88,7 +87,7 @@ func ldap2pg() (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := states.Sync(&controller.PostgresWatch, controller.Real, instance, wanted)
+	count, err := wanted.Sync(&controller.PostgresWatch, controller.Real, instance)
 
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)

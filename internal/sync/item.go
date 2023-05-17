@@ -1,9 +1,10 @@
-package search
+package sync
 
 import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	ldap3 "github.com/go-ldap/ldap/v3"
@@ -11,42 +12,23 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type SyncMap []SyncItem
-
-func (m SyncMap) HasLDAPSearches() bool {
-	for _, item := range m {
-		if item.HasLDAPSearch() {
-			return true
-		}
-	}
-	return false
-}
-
-func (m SyncMap) SplitStaticRules() (newMap SyncMap) {
-	newMap = make(SyncMap, 0)
-	for _, item := range m {
-		newMap = append(newMap, item.SplitStaticItems()...)
-	}
-	return
-}
-
-type SyncItem struct {
+type Item struct {
 	Description string
 	LdapSearch  ldap.Search
 	RoleRules   []RoleRule `mapstructure:"roles"`
 }
 
-func (i SyncItem) HasLDAPSearch() bool {
+func (i Item) HasLDAPSearch() bool {
 	return 0 < len(i.LdapSearch.Attributes)
 }
 
-func (i SyncItem) HasSubsearch() bool {
+func (i Item) HasSubsearch() bool {
 	return 0 < len(i.LdapSearch.Subsearches)
 }
 
 var knownRDN = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}
 
-func (i *SyncItem) InferAttributes() {
+func (i *Item) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	subsearchAttributes := make(map[string]mapset.Set[string])
 
@@ -103,7 +85,7 @@ func (i *SyncItem) InferAttributes() {
 	}
 }
 
-func (i *SyncItem) ReplaceAttributeAsSubentryField() {
+func (i *Item) ReplaceAttributeAsSubentryField() {
 	subsearchAttr := i.LdapSearch.SubsearchAttribute()
 	for field := range i.IterFields() {
 		attribute, _, found := strings.Cut(field.FieldName, ".")
@@ -122,7 +104,7 @@ func (i *SyncItem) ReplaceAttributeAsSubentryField() {
 }
 
 // Yields all {attr} from all formats in item.
-func (i SyncItem) IterFields() <-chan *pyfmt.Field {
+func (i Item) IterFields() <-chan *pyfmt.Field {
 	ch := make(chan *pyfmt.Field)
 	go func() {
 		defer close(ch)
@@ -142,7 +124,7 @@ func (i SyncItem) IterFields() <-chan *pyfmt.Field {
 	return ch
 }
 
-func (i SyncItem) SplitStaticItems() (items []SyncItem) {
+func (i Item) SplitStaticItems() (items []Item) {
 	var staticRules, dynamicRules []RoleRule
 	for _, rule := range i.RoleRules {
 		if rule.IsStatic() {
@@ -157,17 +139,65 @@ func (i SyncItem) SplitStaticItems() (items []SyncItem) {
 		return
 	}
 
-	items = append(items, SyncItem{
+	items = append(items, Item{
 		Description: i.Description,
 		LdapSearch:  i.LdapSearch,
 		RoleRules:   dynamicRules,
 	})
 
-	items = append(items, SyncItem{
+	items = append(items, Item{
 		// Avoid duplicating log message, use a silent item.
 		Description: "",
 		RoleRules:   staticRules,
 	})
 
 	return
+}
+
+// Search directory, returning each entry or error. Sub-searches are done
+// concurrently and returned for each sub-key.
+func (i Item) Search(ldapc ldap.Client, watch *perf.StopWatch) <-chan interface{} {
+	ch := make(chan interface{})
+	go func() {
+		defer close(ch)
+		if !i.HasLDAPSearch() {
+			// Use a dumb empty result.
+			ch <- &ldap.Results{}
+			return
+		}
+
+		s := i.LdapSearch
+		res, err := ldapc.Search(watch, s.Base, s.Scope, s.Filter, s.Attributes)
+		if err != nil {
+			ch <- err
+			return
+		}
+		subsearchAttr := i.LdapSearch.SubsearchAttribute()
+		for _, entry := range res.Entries {
+			slog.Debug("Got LDAP entry.", "dn", entry.DN)
+			results := ldap.Results{
+				Entry:              entry,
+				SubsearchAttribute: subsearchAttr,
+			}
+			if "" == subsearchAttr {
+				ch <- &results
+				continue
+			}
+			bases := entry.GetAttributeValues(subsearchAttr)
+			for _, base := range bases {
+				s := i.LdapSearch.Subsearches[subsearchAttr]
+				res, err = ldapc.Search(watch, base, s.Scope, s.Filter, s.Attributes)
+				if err != nil {
+					ch <- err
+					continue
+				}
+				// Copy results in scope.
+				results := results
+				// Overwrite previous sub-entries and resend results.
+				results.SubsearchEntries = res.Entries
+				ch <- &results
+			}
+		}
+	}()
+	return ch
 }
