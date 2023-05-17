@@ -22,9 +22,9 @@ var levelStrings = map[slog.Level]string{
 func SetLoggingHandler(level slog.Level, color bool) {
 	var h slog.Handler
 	if color {
-		h = BuildTintOptions(level).NewHandler(os.Stderr)
+		h = tint.NewHandler(os.Stderr, BuildTintOptions(level))
 	} else {
-		h = slog.HandlerOptions{
+		h = slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 			Level: level,
 			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 				if slog.LevelKey == a.Key {
@@ -34,13 +34,13 @@ func SetLoggingHandler(level slog.Level, color bool) {
 				}
 				return a
 			},
-		}.NewTextHandler(os.Stderr)
+		})
 	}
 	slog.SetDefault(slog.New(h))
 }
 
-func BuildTintOptions(level slog.Level) tint.Options {
-	return tint.Options{
+func BuildTintOptions(level slog.Level) *tint.Options {
+	return &tint.Options{
 		Level: level,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			switch a.Key {
