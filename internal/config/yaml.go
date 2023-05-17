@@ -37,14 +37,14 @@ func ReadYaml(path string) (values interface{}, err error) {
 }
 
 // Fill configuration from YAML data.
-func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
-	err = DecodeYaml(root, config)
+func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
+	err = DecodeYaml(root, c)
 	if err != nil {
 		return
 	}
 
-	for i := range config.SyncMap {
-		item := &config.SyncMap[i]
+	for i := range c.SyncMap {
+		item := &c.SyncMap[i]
 		item.InferAttributes()
 		// states.ComputeWanted is simplified base on the assumption
 		// there is no more than one sub-search. Fail otherwise.
@@ -55,7 +55,7 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 		item.ReplaceAttributeAsSubentryField()
 	}
 
-	slog.Debug("Loaded configuration file.", "version", config.Version)
+	slog.Debug("Loaded configuration file.", "version", c.Version)
 	return
 }
 
@@ -125,7 +125,7 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 	return from.Interface(), nil
 }
 
-func (config *Config) checkVersion(yaml interface{}) (err error) {
+func (c *Config) checkVersion(yaml interface{}) (err error) {
 	yamlMap, ok := yaml.(map[string]interface{})
 	if !ok {
 		return errors.New("YAML is not a map")
@@ -135,12 +135,12 @@ func (config *Config) checkVersion(yaml interface{}) (err error) {
 		slog.Debug("Fallback to version 5.")
 		version = 5
 	}
-	config.Version, ok = version.(int)
+	c.Version, ok = version.(int)
 	if !ok {
 		return errors.New("Configuration version must be integer")
 	}
-	if config.Version != 5 {
-		slog.Debug("Unsupported configuration version.", "version", config.Version)
+	if c.Version != 5 {
+		slog.Debug("Unsupported configuration version.", "version", c.Version)
 		return errors.New("Unsupported configuration version")
 	}
 	return
