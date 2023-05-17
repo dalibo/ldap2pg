@@ -43,6 +43,7 @@ func FindFile(userValue string) (configpath string) {
 
 // Config holds the YAML configuration. Not the flags.
 type Config struct {
+	yaml     map[string]interface{}
 	Version  int
 	Ldap     LdapConfig
 	Postgres PostgresConfig
@@ -97,5 +98,6 @@ func (c *Config) Load(path string) (err error) {
 	}
 
 	c.SyncMap = c.SyncMap.SplitStaticRules()
+	c.yaml = root
 	return
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/jackc/pgx/v5"
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
@@ -38,15 +38,6 @@ func ReadYaml(path string) (values interface{}, err error) {
 
 // Fill configuration from YAML data.
 func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
-	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
-		var buf bytes.Buffer
-		encoder := yaml.NewEncoder(&buf)
-		encoder.SetIndent(2)
-		_ = encoder.Encode(root)
-		encoder.Close()
-		slog.Debug("Normalized YAML:\n" + buf.String())
-	}
-
 	err = DecodeYaml(root, config)
 	if err != nil {
 		return
@@ -66,6 +57,26 @@ func (config *Config) LoadYaml(root map[string]interface{}) (err error) {
 
 	slog.Debug("Loaded configuration file.", "version", config.Version)
 	return
+}
+
+func (c *Config) Dump() {
+	if c.yaml == nil {
+		return
+	}
+	var buf bytes.Buffer
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+	_ = encoder.Encode(c.yaml)
+	encoder.Close()
+	color := isatty.IsTerminal(os.Stderr.Fd())
+	slog.Debug("Dumping normalized YAML to stderr.")
+	if color {
+		os.Stderr.WriteString("\033[0;2m")
+	}
+	os.Stderr.WriteString(buf.String())
+	if color {
+		os.Stderr.WriteString("\033[0m")
+	}
 }
 
 // Wrap mapstructure for config object

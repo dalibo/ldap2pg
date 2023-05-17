@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -19,6 +20,8 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -42,14 +45,14 @@ func main() {
 		showVersion()
 		return
 	}
-	err := ldap2pg()
+	err := ldap2pg(ctx)
 	if err != nil {
 		slog.Error("Fatal error.", "err", err)
 		os.Exit(1)
 	}
 }
 
-func ldap2pg() (err error) {
+func ldap2pg(ctx context.Context) (err error) {
 	start := time.Now()
 
 	controller, err := unmarshalController()
@@ -67,6 +70,9 @@ func ldap2pg() (err error) {
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		c.Dump()
+	}
 	if err != nil {
 		return
 	}
