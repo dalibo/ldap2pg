@@ -79,11 +79,10 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wan
 	return
 }
 
-func (wanted Wanted) Sync(watch *perf.StopWatch, real bool, instance inspect.Instance) (count int, err error) {
-	ctx := context.Background()
+func (wanted Wanted) Sync(ctx context.Context, watch *perf.StopWatch, real bool, instance inspect.Instance) (count int, err error) {
 	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
-	defer pool.CloseAll()
+	defer pool.CloseAll(ctx)
 
 	prefix := ""
 	if !real {
@@ -96,7 +95,7 @@ func (wanted Wanted) Sync(watch *perf.StopWatch, real bool, instance inspect.Ins
 		if "" == query.Database {
 			query.Database = instance.DefaultDatabase
 		}
-		pgConn, err := pool.Get(query.Database)
+		pgConn, err := pool.Get(ctx, query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

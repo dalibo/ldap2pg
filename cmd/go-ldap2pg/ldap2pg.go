@@ -92,7 +92,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(&controller.PostgresWatch, controller.Real, instance)
+	count, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, instance)
 
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
