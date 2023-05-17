@@ -12,7 +12,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
-	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
@@ -77,7 +76,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 
-	instance, err := inspect.InstanceState(c.Postgres.Build())
+	instance, err := c.Postgres.Build().Inspect(ctx)
 	if err != nil {
 		return
 	}
