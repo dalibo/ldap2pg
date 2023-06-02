@@ -1,16 +1,31 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"os"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/lithammer/dedent"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/slog"
 )
+
+func init() {
+	pflag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage: %s [OPTIONS]\n\n", os.Args[0])
+		pflag.PrintDefaults()
+		os.Stderr.Write([]byte(dedent.Dedent(`
+
+		By default, ldap2pg runs in dry mode.
+		ldap2pg requires a configuration file to describe LDAP searches and mappings.
+		See https://ldap2pg.readthedocs.io/en/latest/ for further details.
+		`)))
+	}
+}
 
 func setupViper() {
 	viper.SetDefault("check", false)
