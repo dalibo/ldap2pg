@@ -5,6 +5,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -16,7 +17,8 @@ import (
 type Item struct {
 	Description string
 	LdapSearch  ldap.Search
-	RoleRules   []RoleRule `mapstructure:"roles"`
+	RoleRules   []RoleRule  `mapstructure:"roles"`
+	GrantRules  []GrantRule `mapstructure:"grants"`
 }
 
 func (i Item) HasLDAPSearch() bool {
@@ -121,6 +123,17 @@ func (i Item) IterFields() <-chan *pyfmt.Field {
 				}
 			}
 		}
+		for _, rule := range i.GrantRules {
+			allFormats := []pyfmt.Format{
+				rule.Privilege, rule.Database, rule.Schema, rule.Object, rule.To,
+			}
+
+			for _, f := range allFormats {
+				for _, field := range f.Fields {
+					ch <- field
+				}
+			}
+		}
 	}()
 	return ch
 }
@@ -215,6 +228,19 @@ func (i Item) generateRoles(results *ldap.Result) <-chan role.Role {
 		for _, rule := range i.RoleRules {
 			for role := range rule.Generate(results) {
 				ch <- role
+			}
+		}
+	}()
+	return ch
+}
+
+func (i Item) generateGrants(results *ldap.Result, privileges privilege.RefMap) <-chan privilege.Grant {
+	ch := make(chan privilege.Grant)
+	go func() {
+		defer close(ch)
+		for _, rule := range i.GrantRules {
+			for grant := range rule.Generate(results, privileges) {
+				ch <- grant
 			}
 		}
 	}()

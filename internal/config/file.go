@@ -102,6 +102,7 @@ func (c *Config) Load(path string) (err error) {
 		return
 	}
 
+	c.Postgres.PrivilegesMap = c.Privileges
 	c.SyncMap = c.SyncMap.SplitStaticRules()
 	return
 }

@@ -14,10 +14,11 @@ import (
 )
 
 type Wanted struct {
-	Roles role.Map
+	Roles  role.Map
+	Grants []privilege.Grant
 }
 
-func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wanted Wanted, err error) {
+func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (wanted Wanted, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if syncMap.HasLDAPSearches() {
@@ -66,6 +67,18 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wan
 				slog.Debug("Wants role.",
 					"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
 				wanted.Roles[role.Name] = role
+			}
+
+			for grant := range item.generateGrants(&res.result, privileges) {
+				pattern := blacklist.MatchString(grant.Grantee)
+				if pattern != "" {
+					slog.Debug(
+						"Ignoring grant to blacklisted role.",
+						"to", grant.Grantee, "pattern", pattern)
+					continue
+				}
+				slog.Debug("Wants grant.", "grant", grant)
+				wanted.Grants = append(wanted.Grants, grant)
 			}
 		}
 	}
