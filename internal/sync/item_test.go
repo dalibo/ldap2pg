@@ -13,7 +13,7 @@ func configFromYAML(rawYAML string) (c config.Config) {
 	rawYAML = dedent.Dedent(rawYAML)
 	var out interface{}
 	_ = yaml.Unmarshal([]byte(rawYAML), &out)
-	_ = config.DecodeYaml(out, &c)
+	_ = c.DecodeYaml(out)
 	return
 }
 
