@@ -47,15 +47,16 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 		}
 
 		if nil == results.Entry {
-			// Case static role.
-			role := role.Role{}
-			role.Name = r.Name.String()
-			role.Comment = r.Comment.String()
-			role.Options = r.Options
-			role.Parents = parents
+			// Case static rule.
+			role := role.Role{
+				Name:    r.Name.String(),
+				Comment: r.Comment.String(),
+				Options: r.Options,
+				Parents: parents,
+			}
 			ch <- role
 		} else {
-			// Case dynamic roles.
+			// Case dynamic rule.
 			for values := range results.GenerateValues(r.Name, r.Comment) {
 				role := role.Role{}
 				role.Name = r.Name.Format(values)
