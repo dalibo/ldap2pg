@@ -87,7 +87,7 @@ func (c *Config) DecodeYaml(yaml any) (err error) {
 		Result:     c,
 	})
 	if err != nil {
-		panic(err.Error())
+		return
 	}
 	err = d.Decode(yaml)
 	return
