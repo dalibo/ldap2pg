@@ -38,7 +38,7 @@ func ReadYaml(path string) (values interface{}, err error) {
 
 // Fill configuration from YAML data.
 func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
-	err = DecodeYaml(root, c)
+	err = c.DecodeYaml(root)
 	if err != nil {
 		return
 	}
@@ -80,14 +80,14 @@ func (c *Config) Dump() {
 }
 
 // Wrap mapstructure for config object
-func DecodeYaml(yaml any, c *Config) (err error) {
+func (c *Config) DecodeYaml(yaml any) (err error) {
 	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		DecodeHook: decodeMapHook,
 		Metadata:   &mapstructure.Metadata{},
 		Result:     c,
 	})
 	if err != nil {
-		panic(err.Error())
+		return
 	}
 	err = d.Decode(yaml)
 	return
