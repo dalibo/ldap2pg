@@ -2,6 +2,7 @@ package sync
 
 import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -15,18 +16,9 @@ type RoleRule struct {
 }
 
 func (r RoleRule) IsStatic() bool {
-	if 0 < len(r.Name.Fields) {
-		return false
-	}
-	if 0 < len(r.Comment.Fields) {
-		return false
-	}
-	for _, f := range r.Parents {
-		if 0 < len(f.Fields) {
-			return false
-		}
-	}
-	return true
+	return r.Name.IsStatic() &&
+		r.Comment.IsStatic() &&
+		lists.And(r.Parents, func(f pyfmt.Format) bool { return f.IsStatic() })
 }
 
 func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
