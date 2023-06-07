@@ -74,6 +74,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	pc := c.Postgres.Build()
+	// Describe instance, running user, find databases objects, roles, etc.
 	instance, err := pc.InspectStage1(ctx)
 	if err != nil {
 		return
@@ -90,7 +91,22 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	count, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, wanted.DiffRoles(instance))
+	roleCount, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, wanted.DiffRoles(instance))
+	if err != nil {
+		return
+	}
+
+	// Inspect grants, owners, etc.
+	err = instance.InspectStage2(ctx, pc)
+	if err != nil {
+		return
+	}
+	privCount, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, wanted.DiffPrivileges(instance.Grants, instance.DefaultDatabase))
+	if err != nil {
+		return
+	}
+
+	count := roleCount + privCount
 
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
@@ -106,10 +122,6 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Info("Comparison complete.", logAttrs...)
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
-	}
-
-	if err != nil {
-		return
 	}
 
 	if controller.Check && count > 0 {
