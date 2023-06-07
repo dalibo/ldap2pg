@@ -19,15 +19,6 @@ func (err *KeyConflict) Error() string {
 	return fmt.Sprintf("key conflict between %s and %s", err.Key, err.Conflict)
 }
 
-type ParseError struct {
-	Message string
-	Value   interface{}
-}
-
-func (err *ParseError) Error() string {
-	return err.Message
-}
-
 func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error) {
 	value, hasAlias := (*yaml)[alias]
 	if !hasAlias {
