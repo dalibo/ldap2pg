@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -43,7 +44,6 @@ func FindFile(userValue string) (configpath string) {
 
 // Config holds the YAML configuration. Not the flags.
 type Config struct {
-	yaml     map[string]interface{}
 	Version  int
 	Ldap     LdapConfig
 	Postgres PostgresConfig
@@ -92,12 +92,14 @@ func (c *Config) Load(path string) (err error) {
 	if err != nil {
 		return fmt.Errorf("YAML error: %w", err)
 	}
+	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		Dump(root)
+	}
 	err = c.LoadYaml(root)
 	if err != nil {
 		return
 	}
 
 	c.SyncMap = c.SyncMap.SplitStaticRules()
-	c.yaml = root
 	return
 }

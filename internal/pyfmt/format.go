@@ -15,6 +15,10 @@ type Format struct {
 	Fields   []*Field
 }
 
+func (f Format) IsStatic() bool {
+	return 0 < len(f.Fields)
+}
+
 type Field struct {
 	FieldName  string
 	FormatSpec string

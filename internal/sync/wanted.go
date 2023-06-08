@@ -38,11 +38,11 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist) (wan
 	}
 
 	wanted.Roles = make(map[string]role.Role)
-	for _, item := range syncMap {
+	for i, item := range syncMap {
 		if item.Description != "" {
 			slog.Info(item.Description)
 		} else {
-			slog.Debug("Next sync map item.")
+			slog.Debug(fmt.Sprintf("Processing sync map item %d.", i))
 		}
 
 		for res := range item.search(ldapc, watch) {

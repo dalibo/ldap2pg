@@ -69,9 +69,6 @@ func ldap2pg(ctx context.Context) (err error) {
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
-	if slog.Default().Enabled(ctx, slog.LevelDebug) {
-		c.Dump()
-	}
 	if err != nil {
 		return
 	}

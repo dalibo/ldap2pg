@@ -59,14 +59,11 @@ func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
 	return
 }
 
-func (c *Config) Dump() {
-	if c.yaml == nil {
-		return
-	}
+func Dump(root interface{}) {
 	var buf bytes.Buffer
 	encoder := yaml.NewEncoder(&buf)
 	encoder.SetIndent(2)
-	_ = encoder.Encode(c.yaml)
+	_ = encoder.Encode(root)
 	encoder.Close()
 	color := isatty.IsTerminal(os.Stderr.Fd())
 	slog.Debug("Dumping normalized YAML to stderr.")
