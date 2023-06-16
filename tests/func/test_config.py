@@ -85,7 +85,11 @@ def test_stdin(capsys):
 def test_sasl(ldap2pg, capsys):
     env = dict(
         os.environ,
-        LDAPSASL_AUTHCID='testsasl', LDAPUSER='testsasl',
+        # py-ldap2pg reads non-standard var USER.
+        LDAPUSER='testsasl',
+        # go-ldap2pg requires explicit SASL_MECH, and standard SASL_AUTHID.
+        LDAPSASL_MECH='DIGEST-MD5',
+        LDAPSASL_AUTHCID='testsasl',
         LDAPPASSWORD='voyage',
     )
     ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
