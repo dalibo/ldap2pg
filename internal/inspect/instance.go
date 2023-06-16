@@ -38,9 +38,10 @@ var (
 	sessionQuery string
 )
 
-func (pc Config) Inspect(ctx context.Context) (instance Instance, err error) {
-	instance = Instance{}
-	instance.ManagedDatabases = mapset.NewSet[string]()
+func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err error) {
+	instance = Instance{
+		ManagedDatabases: mapset.NewSet[string](),
+	}
 
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
