@@ -6,8 +6,8 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/deckarep/golang-set/v2 v2.3.0
-	github.com/go-ldap/ldap/v3 v3.4.4
-	github.com/jackc/pgx/v5 v5.3.1
+	github.com/go-ldap/ldap/v3 v3.4.5
+	github.com/jackc/pgx/v5 v5.4.0
 	github.com/lithammer/dedent v1.1.0
 	github.com/lmittmann/tint v0.3.4
 	github.com/mattn/go-isatty v0.0.19
@@ -35,8 +35,8 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

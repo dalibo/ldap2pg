@@ -1,37 +1,39 @@
-#!/bin/bash -eux
+#!/bin/bash
+set -eux
 
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
 # synchronization. See openldap-data.ldif for details.
 
-psql="psql -v ON_ERROR_STOP=1 --echo-all"
+psql=(psql -v ON_ERROR_STOP=1 --no-psqlrc)
 
 # RESET DATA AND PRIVILEGES
 
-$psql <<EOSQL
+"${psql[@]}" <<EOSQL
 DROP DATABASE IF EXISTS olddb;
 DROP DATABASE IF EXISTS appdb;
 DROP DATABASE IF EXISTS nonsuperdb;
 EOSQL
 
-roles=($(psql -tc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');"))
+mapfile -t roles < <("${psql[@]}" -Atc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');")
 printf -v quoted_roles '"%s", ' "${roles[@]+${roles[@]}}"
 quoted_roles="${quoted_roles%, }"
 
+psql=("${psql[@]}" --echo-all)
 for d in template1 postgres ; do
 	for role in "${roles[@]+${roles[@]}}" ; do
-		$psql "$d" <<-EOF
+		"${psql[@]}" "$d" <<-EOF
 		DROP OWNED BY "${role}" CASCADE;
 		EOF
 	done
 
-	$psql "$d" <<-EOSQL
+	"${psql[@]}" "$d" <<-EOSQL
 	GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
 	GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
 	GRANT USAGE ON LANGUAGE plpgsql TO PUBLIC;
 	EOSQL
 
 	# Reset default privileges.
-	$psql -At "$d" <<-EOF | $psql "$d"
+	"${psql[@]}" -At "$d" <<-EOF | "${psql[@]}" "$d"
 	WITH type_map (typechar, typename) AS (
 		VALUES
 		('T', 'TYPES'),
@@ -54,7 +56,7 @@ for d in template1 postgres ; do
 done
 
 if [ -n "${roles[*]-}" ] ; then
-	$psql <<-EOSQL
+	"${psql[@]}" <<-EOSQL
 	DROP ROLE IF EXISTS ${quoted_roles};
 	EOSQL
 fi
@@ -62,7 +64,7 @@ fi
 
 # CREATE OBJECTS
 
-$psql <<'EOSQL'
+"${psql[@]}" <<'EOSQL'
 -- For non-superuser case
 CREATE ROLE "nonsuper" LOGIN CREATEDB CREATEROLE;
 CREATE DATABASE nonsuperdb WITH OWNER nonsuper;
@@ -107,13 +109,13 @@ EOSQL
 
 # Create a legacy table owned by a legacy user. For reassign before drop
 # cascade.
-PGDATABASE=olddb $psql <<EOSQL
+PGDATABASE=olddb "${psql[@]}" <<EOSQL
 CREATE TABLE keepme (id serial PRIMARY KEY);
 ALTER TABLE keepme OWNER TO "oscar";
 EOSQL
 
 # grant some privileges to daniel, to be revoked.
-PGDATABASE=olddb $psql <<EOSQL
+PGDATABASE=olddb "${psql[@]}" <<EOSQL
 CREATE SCHEMA oldns;
 CREATE TABLE oldns.table1 (id SERIAL);
 GRANT SELECT ON ALL TABLES IN SCHEMA oldns TO "daniel";
@@ -124,7 +126,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA oldns GRANT SELECT ON TABLES TO "daniel";
 EOSQL
 
 # Ensure daniel has no privileges on appdb, for grant.
-PGDATABASE=appdb $psql <<'EOSQL'
+PGDATABASE=appdb "${psql[@]}" <<'EOSQL'
 CREATE TABLE public.table1 (id SERIAL);
 CREATE VIEW public.view1 AS SELECT 'row0';
 
@@ -155,7 +157,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA appns TO "david";
 EOSQL
 
 # Setup non-super fixture, independant from usual case.
-PGDATABASE=nonsuperdb $psql <<'EOSQL'
+PGDATABASE=nonsuperdb "${psql[@]}" <<'EOSQL'
 REVOKE ALL ON SCHEMA public FROM public;
 ALTER SCHEMA public OWNER TO "nonsuper";
 ALTER SCHEMA pg_catalog OWNER TO "nonsuper";
@@ -169,6 +171,6 @@ CREATE TABLE table1 (id SERIAL);
 ALTER TABLE table1 OWNER TO "nonsuper";
 EOSQL
 
-PGDATABASE=nonsuperdb PGUSER=nonsuper $psql <<'EOSQL'
+PGDATABASE=nonsuperdb PGUSER=nonsuper "${psql[@]}" <<'EOSQL'
 GRANT SELECT ON table1 TO "kevin";
 EOSQL
