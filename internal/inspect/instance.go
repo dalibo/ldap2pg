@@ -9,6 +9,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
@@ -25,6 +26,7 @@ type Instance struct {
 	ManagedRoles     role.Map
 	Me               role.Role
 	RolesBlacklist   lists.Blacklist
+	Grants           []privilege.Grant
 }
 
 var (
@@ -38,9 +40,10 @@ var (
 	sessionQuery string
 )
 
-func (pc Config) Inspect(ctx context.Context) (instance Instance, err error) {
-	instance = Instance{}
-	instance.ManagedDatabases = mapset.NewSet[string]()
+func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err error) {
+	instance = Instance{
+		ManagedDatabases: mapset.NewSet[string](),
+	}
 
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {

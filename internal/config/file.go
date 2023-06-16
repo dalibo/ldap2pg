@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/sync"
 	"golang.org/x/exp/slog"
 )
@@ -44,10 +45,11 @@ func FindFile(userValue string) (configpath string) {
 
 // Config holds the YAML configuration. Not the flags.
 type Config struct {
-	Version  int
-	Ldap     LdapConfig
-	Postgres PostgresConfig
-	SyncMap  sync.Map `mapstructure:"sync_map"`
+	Version    int
+	Ldap       LdapConfig
+	Postgres   PostgresConfig
+	Privileges privilege.RefMap
+	SyncMap    sync.Map `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {
@@ -100,6 +102,7 @@ func (c *Config) Load(path string) (err error) {
 		return
 	}
 
+	c.Postgres.PrivilegesMap = c.Privileges
 	c.SyncMap = c.SyncMap.SplitStaticRules()
 	return
 }

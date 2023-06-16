@@ -42,13 +42,13 @@ func (r *Role) BlacklistKey() string {
 
 // Generate queries to update current role configuration to match wanted role
 // configuration.
-func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
+func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	optionsString := r.Options.String()
 	wantedOptionsString := wanted.Options.String()
 	if wantedOptionsString != optionsString {
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Alter options.",
 			LogArgs: []interface{}{
 				"role", r.Name,
@@ -57,7 +57,7 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 			},
 			Query:     `ALTER ROLE %s WITH ` + wanted.Options.String() + `;`,
 			QueryArgs: []interface{}{identifier},
-		}
+		})
 	}
 
 	missingParents := wanted.Parents.Difference(r.Parents)
@@ -66,7 +66,7 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 		for parent := range missingParents.Iter() {
 			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
 		}
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Grant missing parents.",
 			LogArgs: []interface{}{
 				"role", r.Name,
@@ -74,7 +74,7 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 			},
 			Query:     `GRANT %s TO %s;`,
 			QueryArgs: []interface{}{parentIdentifiers, identifier},
-		}
+		})
 	}
 	spuriousParents := r.Parents.Difference(wanted.Parents)
 	if spuriousParents.Cardinality() > 0 {
@@ -82,7 +82,7 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 		for parent := range spuriousParents.Iter() {
 			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
 		}
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Revoke spurious parents.",
 			LogArgs: []interface{}{
 				"role", r.Name,
@@ -90,11 +90,11 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 			},
 			Query:     `REVOKE %s FROM %s;`,
 			QueryArgs: []interface{}{parentIdentifiers, identifier},
-		}
+		})
 	}
 
 	if wanted.Comment != r.Comment {
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Set role comment.",
 			LogArgs: []interface{}{
 				"role", r.Name,
@@ -103,11 +103,12 @@ func (r *Role) Alter(wanted Role, ch chan postgres.SyncQuery) {
 			},
 			Query:     `COMMENT ON ROLE %s IS %s;`,
 			QueryArgs: []interface{}{identifier, wanted.Comment},
-		}
+		})
 	}
+	return
 }
 
-func (r *Role) Create(ch chan postgres.SyncQuery) {
+func (r *Role) Create() (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	if 0 < r.Parents.Cardinality() {
@@ -115,7 +116,7 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 		for parent := range r.Parents.Iter() {
 			parents = append(parents, pgx.Identifier{parent})
 		}
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Create role.",
 			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
 			Query: `
@@ -123,26 +124,27 @@ func (r *Role) Create(ch chan postgres.SyncQuery) {
 			WITH ` + r.Options.String() + `
 			IN ROLE %s;`,
 			QueryArgs: []interface{}{identifier, parents},
-		}
+		})
 	} else {
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Create role.",
 			LogArgs:     []interface{}{"role", r.Name},
 			Query:       `CREATE ROLE %s WITH ` + r.Options.String() + `;`,
 			QueryArgs:   []interface{}{identifier},
-		}
+		})
 	}
-	ch <- postgres.SyncQuery{
+	out = append(out, postgres.SyncQuery{
 		Description: "Set role comment.",
 		LogArgs:     []interface{}{"role", r.Name},
 		Query:       `COMMENT ON ROLE %s IS %s;`,
 		QueryArgs:   []interface{}{identifier, r.Comment},
-	}
+	})
+	return
 }
 
-func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwner string, ch chan postgres.SyncQuery) {
+func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
-	ch <- postgres.SyncQuery{
+	out = append(out, postgres.SyncQuery{
 		Description: "Terminate running sessions.",
 		LogArgs:     []interface{}{"role", r.Name},
 		Query: `
@@ -150,12 +152,13 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwn
 		FROM pg_catalog.pg_stat_activity
 		WHERE usename = %s;`,
 		QueryArgs: []interface{}{r.Name},
-	}
+	})
+
 	if !currentUser.Options.Super {
 		// Non-super user needs to inherit to-be-dropped role to reassign objects.
 		if r.Parents.Contains(currentUser.Name) {
 			// First, avoid membership loop.
-			ch <- postgres.SyncQuery{
+			out = append(out, postgres.SyncQuery{
 				Description: "Revoke membership on current user.",
 				LogArgs: []interface{}{
 					"role", r.Name, "parent", currentUser.Name,
@@ -165,9 +168,9 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwn
 					pgx.Identifier{currentUser.Name},
 					identifier,
 				},
-			}
+			})
 		}
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Allow current user to reassign objects.",
 			LogArgs: []interface{}{
 				"role", r.Name, "parent", currentUser.Name,
@@ -177,11 +180,11 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwn
 				identifier,
 				pgx.Identifier{currentUser.Name},
 			},
-		}
+		})
 	}
 	for i, database := range databases {
 		if database.Owner == r.Name {
-			ch <- postgres.SyncQuery{
+			out = append(out, postgres.SyncQuery{
 				Description: "Reassign database.",
 				LogArgs: []interface{}{
 					"role", r.Name,
@@ -193,11 +196,11 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwn
 					pgx.Identifier{database.Name},
 					pgx.Identifier{fallbackOwner},
 				},
-			}
+			})
 			// Update model to generate propery queries next.
 			databases[i].Owner = fallbackOwner
 		}
-		ch <- postgres.SyncQuery{
+		out = append(out, postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",
 			LogArgs: []interface{}{
 				"role", r.Name, "db", database.Name, "owner", database.Owner,
@@ -209,12 +212,13 @@ func (r *Role) Drop(databases []postgres.Database, currentUser Role, fallbackOwn
 			QueryArgs: []interface{}{
 				identifier, pgx.Identifier{database.Owner}, identifier,
 			},
-		}
+		})
 	}
-	ch <- postgres.SyncQuery{
+	out = append(out, postgres.SyncQuery{
 		Description: "Drop role.",
 		LogArgs:     []interface{}{"role", r.Name},
 		Query:       `DROP ROLE %s;`,
 		QueryArgs:   []interface{}{identifier},
-	}
+	})
+	return
 }

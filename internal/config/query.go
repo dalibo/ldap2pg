@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
+	"golang.org/x/exp/slog"
 )
 
 // PostgresConfig holds the configuration of an inspect.Config.
@@ -18,15 +20,26 @@ type PostgresConfig struct {
 	DatabasesQuery      QueryConfig[string] `mapstructure:"databases_query"`
 	ManagedRolesQuery   QueryConfig[string] `mapstructure:"managed_roles_query"`
 	RolesBlacklistQuery QueryConfig[string] `mapstructure:"roles_blacklist_query"`
+	PrivilegesMap       privilege.RefMap    `mapstructure:"omit"`
 }
 
 func (c PostgresConfig) Build() inspect.Config {
-	return inspect.Config{
+	ic := inspect.Config{
 		FallbackOwner:       c.FallbackOwner,
 		DatabasesQuery:      c.DatabasesQuery.Querier,
 		ManagedRolesQuery:   c.ManagedRolesQuery.Querier,
 		RolesBlacklistQuery: c.RolesBlacklistQuery.Querier,
+		ManagedPrivileges:   make(map[string][]string),
 	}
+
+	// Index managed privileges.
+	for _, privList := range c.PrivilegesMap {
+		for _, priv := range privList {
+			slog.Debug("Managing privilege.", "type", priv.Type, "on", priv.On)
+			ic.ManagedPrivileges[priv.On] = append(ic.ManagedPrivileges[priv.On], priv.Type)
+		}
+	}
+	return ic
 }
 
 type QueryConfig[T any] struct {
