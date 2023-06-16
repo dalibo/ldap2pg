@@ -7,7 +7,7 @@ import (
 	"path"
 
 	"github.com/dalibo/ldap2pg/internal/privilege"
-	"github.com/dalibo/ldap2pg/internal/sync"
+	"github.com/dalibo/ldap2pg/internal/wanted"
 	"golang.org/x/exp/slog"
 )
 
@@ -49,7 +49,7 @@ type Config struct {
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
 	Privileges privilege.RefMap
-	SyncMap    sync.Map `mapstructure:"sync_map"`
+	SyncMap    wanted.Map `mapstructure:"sync_map"`
 }
 
 type LdapConfig struct {

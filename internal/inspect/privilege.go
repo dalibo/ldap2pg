@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func (instance Instance) InspectStage2(ctx context.Context, pc Config) (err error) {
+func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err error) {
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
 		return

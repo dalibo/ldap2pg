@@ -1,4 +1,4 @@
-package sync_test
+package wanted_test
 
 import (
 	"github.com/dalibo/ldap2pg/internal/config"
