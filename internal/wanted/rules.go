@@ -14,7 +14,7 @@ type GrantRule struct {
 	Database  pyfmt.Format
 	Schema    pyfmt.Format
 	Object    pyfmt.Format
-	To        pyfmt.Format
+	To        pyfmt.Format `mapstructure:"role"`
 }
 
 func (r GrantRule) IsStatic() bool {
