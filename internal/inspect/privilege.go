@@ -54,6 +54,8 @@ func (instance *Instance) InspectGrants(ctx context.Context, pgconn *pgx.Conn, m
 			}
 
 			grant.Target = p.Object
+			grant.Normalize()
+
 			slog.Debug("Grant found.", "grant", grant)
 			instance.Grants = append(instance.Grants, grant)
 		}

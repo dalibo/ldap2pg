@@ -7,6 +7,9 @@ import (
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
+//
+// Not to confuse with Privilege. A Grant references a privilege, an object and
+// roles. It's more like aclitem object in PostgreSQL.
 type Grant struct {
 	Target   string // Name of the target object: DATABASE, TABLES, etc.
 	Grantor  string
@@ -21,6 +24,32 @@ type Grant struct {
 func RowTo(row pgx.CollectableRow) (g Grant, err error) {
 	err = row.Scan(&g.Grantor, &g.Grantee, &g.Type, &g.Database, &g.Schema, &g.Object, &g.Partial)
 	return
+}
+
+// Normalize ensures grant fields are consistent with privilege scope.
+//
+// This way grants from wanted state and from inspect are comparables.
+func (g *Grant) Normalize() {
+	p := g.Privilege()
+
+	// For now, drop grantor, to remove Grantor from comparison with wanted grant.
+	g.Grantor = ""
+
+	if "instance" == p.Scope {
+		// Allow to use Database as object name for database.
+		if "" == g.Object {
+			g.Object = g.Database
+			g.Database = ""
+		}
+	}
+
+	// For now, drop schema. We'll need it only for schema objects in the
+	// future.
+	g.Schema = ""
+}
+
+func (g Grant) Privilege() Privilege {
+	return Map[g.Target]
 }
 
 func (g Grant) String() string {

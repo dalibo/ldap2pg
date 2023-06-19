@@ -91,7 +91,6 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 						"to", grant.Grantee, "pattern", pattern)
 					continue
 				}
-				slog.Debug("Wants grant.", "grant", grant)
 				grants = append(grants, grant)
 			}
 		}

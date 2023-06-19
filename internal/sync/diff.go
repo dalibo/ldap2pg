@@ -9,35 +9,33 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func DiffPrivileges(current, wanted []privilege.Grant, defaultDatabase string) <-chan postgres.SyncQuery {
+func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
 		wantedSet := mapset.NewSet(wanted...)
 		// Revoke spurious grants.
-		for _, grant := range current {
-			// Drop Grantor from inspected.
-			grant.Grantor = ""
+		for _, grant := range instance.Grants {
 			if wantedSet.Contains(grant) {
 				continue
 			}
 
-			p := privilege.Map[grant.Target]
-			slog.Debug("Revoke grant.", "target", grant.Target)
-			sql, args := p.BuildRevoke(grant)
-			q := postgres.SyncQuery{
-				Description: "Revoke grant.",
-				LogArgs: []interface{}{
-					"grant", grant.Grantee,
-				},
-				Database:  grant.Database,
-				Query:     sql,
-				QueryArgs: args,
-			}
-			if "" == q.Database {
-				q.Database = defaultDatabase
-			}
+			p := grant.Privilege()
+			q := p.BuildRevoke(grant, instance.DefaultDatabase)
+			q.Description = "Revoke privilege."
 			ch <- q
+		}
+
+		currentSet := mapset.NewSet(instance.Grants...)
+		for _, grant := range wanted {
+			if currentSet.Contains(grant) {
+				continue
+			}
+			p := grant.Privilege()
+			for _, q := range p.BuildGrants(grant, instance.Databases, instance.DefaultDatabase) {
+				q.Description = "Grant privilege."
+				ch <- q
+			}
 		}
 	}()
 	return ch
