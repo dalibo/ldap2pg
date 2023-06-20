@@ -2,6 +2,7 @@ package privilege
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
@@ -23,6 +24,7 @@ type Privilege struct {
 
 // Expand handles grants with __all__ databases.
 func (p Privilege) Expand(g Grant, databases []postgres.Database) (grants []Grant) {
+	g.Normalize()
 	switch p.Scope {
 	case "instance":
 		if "" == g.Object || "__all__" == g.Object {
@@ -36,6 +38,34 @@ func (p Privilege) Expand(g Grant, databases []postgres.Database) (grants []Gran
 			}
 		} else {
 			grants = append(grants, g)
+		}
+	case "database":
+		var dbGrants []Grant
+		dbMap := make(map[string]postgres.Database)
+		expandDatabases := "" == g.Database || "__all__" == g.Database
+		for _, database := range databases {
+			dbMap[database.Name] = database
+			if expandDatabases {
+				expansion := g // Copy
+				expansion.Database = database.Name
+				dbGrants = append(dbGrants, expansion)
+			}
+		}
+
+		if !expandDatabases {
+			dbGrants = append(dbGrants, g)
+		}
+
+		for _, g := range dbGrants {
+			if "" == g.Object || "__all__" == g.Object {
+				for _, schema := range dbMap[g.Database].Schemas {
+					expansion := g // Copy
+					expansion.Object = schema.Name
+					grants = append(grants, expansion)
+				}
+			} else {
+				grants = append(grants, g)
+			}
 		}
 	default:
 		slog.Debug("Expanding privilege.", "scope", p.Scope)
@@ -53,11 +83,12 @@ func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.Sync
 	} else {
 		q.Database = g.Database
 	}
-	q.LogArgs = p.BuildLogArgs(g, q.Database)
+	q.LogArgs = p.BuildLogArgs(g)
 	return
 }
 
 func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDatabase string) (queries []postgres.SyncQuery) {
+	dbMap := make(map[string]postgres.Database)
 	sql := fmt.Sprintf(p.Grant, g.Type)
 	grantee := pgx.Identifier{g.Grantee}
 
@@ -74,14 +105,51 @@ func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDa
 		}
 		for _, object := range objects {
 			q := postgres.SyncQuery{
-				LogArgs: p.BuildLogArgs(g, defaultDatabase),
+				LogArgs: p.BuildLogArgs(g),
 				// GRANT ... ON ... {object} TO {grantee}
 				Query:     sql,
 				QueryArgs: []interface{}{pgx.Identifier{object}, grantee},
 				Database:  defaultDatabase,
 			}
 			queries = append(queries, q)
+		}
+	case "database":
+		var dbGrants []Grant
+		expandDatabases := "" == g.Database || "__all__" == g.Database
+		for _, db := range databases {
+			dbMap[db.Name] = db
+			if expandDatabases {
+				expansion := g // copy
+				expansion.Database = db.Name
+				dbGrants = append(dbGrants, expansion)
+			}
+		}
+		if !expandDatabases {
+			dbGrants = append(dbGrants, g)
+		}
 
+		for _, g := range dbGrants {
+			var objects []string
+			if "" == g.Object || "__all__" == g.Object {
+				// Loop all schema
+				db := dbMap[g.Database]
+				for _, s := range db.Schemas {
+					objects = append(objects, s.Name)
+				}
+			} else {
+				objects = append(objects, g.Object)
+			}
+
+			for _, object := range objects {
+				q := postgres.SyncQuery{
+					LogArgs: p.BuildLogArgs(g),
+					// GRANT ... ON ... {object} TO {grantee}
+					Query:     sql,
+					QueryArgs: []interface{}{pgx.Identifier{object}, grantee},
+					Database:  g.Database,
+				}
+				queries = append(queries, q)
+			}
 		}
 	default:
 		slog.Debug("Generating grant.", "scope", p.Scope)
@@ -90,16 +158,14 @@ func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDa
 	return
 }
 
-func (p Privilege) BuildLogArgs(g Grant, dbname string) (args []interface{}) {
+func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
 	args = append(args, "type", g.Type)
-	switch p.Scope {
-	case "instance":
-		if "" == g.Object {
-			args = append(args, "database", dbname)
-		} else {
-			args = append(args, "object", g.Object)
-		}
+	if "instance" != p.Scope {
+		args = append(args, "database", g.Database)
 	}
-	args = append(args, "role", g.Grantee)
+	args = append(args,
+		strings.ToLower(g.Target), g.Object,
+		"role", g.Grantee,
+	)
 	return
 }

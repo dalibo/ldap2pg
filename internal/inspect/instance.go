@@ -60,6 +60,11 @@ func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err erro
 		return instance, fmt.Errorf("postgres: %w", err)
 	}
 
+	err = instance.InspectSchemas(ctx, pc.SchemasQuery)
+	if err != nil {
+		return
+	}
+
 	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
 	if err != nil {
 		return

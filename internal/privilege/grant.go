@@ -48,17 +48,24 @@ func (g *Grant) Normalize() {
 	// For now, drop grantor, to remove Grantor from comparison with wanted grant.
 	g.Grantor = ""
 
-	if "instance" == p.Scope {
+	switch p.Scope {
+	case "instance":
 		// Allow to use Database as object name for database.
 		if "" == g.Object {
 			g.Object = g.Database
-			g.Database = ""
 		}
-	}
 
-	// For now, drop schema. We'll need it only for schema objects in the
-	// future.
-	g.Schema = ""
+		g.Database = ""
+		g.Schema = ""
+	case "database":
+		if "" == g.Object {
+			g.Object = g.Schema
+		}
+		g.Schema = ""
+	default:
+		slog.Debug("Normalizing grant.", "scope", p.Scope)
+		panic("unhandled privilege scope")
+	}
 }
 
 func (g Grant) Privilege() Privilege {
