@@ -1,2 +1,2 @@
-// Package wanted builds wanted state from LDAP and YAML.
+// Package sync compute and apply diff from inspected instance and wanted state.
 package sync

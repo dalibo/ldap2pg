@@ -1,5 +1,4 @@
-// Logic to describe wanted state from YAML and LDAP
-package sync
+package wanted
 
 import (
 	"errors"
@@ -13,29 +12,44 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type Wanted struct {
-	Roles  role.Map
-	Grants []privilege.Grant
+// Map holds a set of rules to generate wanted state.
+type Map []Item
+
+func (m Map) HasLDAPSearches() bool {
+	for _, item := range m {
+		if item.HasLDAPSearch() {
+			return true
+		}
+	}
+	return false
 }
 
-func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (wanted Wanted, err error) {
+func (m Map) SplitStaticRules() (newMap Map) {
+	newMap = make(Map, 0)
+	for _, item := range m {
+		newMap = append(newMap, item.SplitStaticItems()...)
+	}
+	return
+}
+
+func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
-	if syncMap.HasLDAPSearches() {
+	if m.HasLDAPSearches() {
 		ldapOptions, err := ldap.Initialize()
 		if err != nil {
-			return wanted, err
+			return nil, nil, err
 		}
 
 		ldapc, err = ldap.Connect(ldapOptions)
 		if err != nil {
-			return wanted, err
+			return nil, nil, err
 		}
 		defer ldapc.Conn.Close()
 	}
 
-	wanted.Roles = make(map[string]role.Role)
-	for i, item := range syncMap {
+	roles = make(map[string]role.Role)
+	for i, item := range m {
 		if item.Description != "" {
 			slog.Info(item.Description)
 		} else {
@@ -60,13 +74,13 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist, priv
 						"role", role.Name, "pattern", pattern)
 					continue
 				}
-				_, exists := wanted.Roles[role.Name]
+				_, exists := roles[role.Name]
 				if exists {
 					slog.Warn("Duplicated wanted role.", "role", role.Name)
 				}
 				slog.Debug("Wants role.",
 					"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
-				wanted.Roles[role.Name] = role
+				roles[role.Name] = role
 			}
 
 			for grant := range item.generateGrants(&res.result, privileges) {
@@ -77,8 +91,7 @@ func (syncMap Map) Wanted(watch *perf.StopWatch, blacklist lists.Blacklist, priv
 						"to", grant.Grantee, "pattern", pattern)
 					continue
 				}
-				slog.Debug("Wants grant.", "grant", grant)
-				wanted.Grants = append(wanted.Grants, grant)
+				grants = append(grants, grant)
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package sync
+package wanted
 
 import (
 	"strings"
@@ -139,16 +139,25 @@ func (i Item) IterFields() <-chan *pyfmt.Field {
 }
 
 func (i Item) SplitStaticItems() (items []Item) {
-	var staticRules, dynamicRules []RoleRule
+	var staticRoles, dynamicRoles []RoleRule
 	for _, rule := range i.RoleRules {
 		if rule.IsStatic() {
-			staticRules = append(staticRules, rule)
+			staticRoles = append(staticRoles, rule)
 		} else {
-			dynamicRules = append(dynamicRules, rule)
+			dynamicRoles = append(dynamicRoles, rule)
+		}
+	}
+	var staticGrants, dynamicGrants []GrantRule
+	for _, rule := range i.GrantRules {
+		if rule.IsStatic() {
+			staticGrants = append(staticGrants, rule)
+		} else {
+			dynamicGrants = append(dynamicGrants, rule)
 		}
 	}
 
-	if len(staticRules) == 0 || len(dynamicRules) == 0 {
+	if (0 == len(staticRoles) && 0 == len(staticGrants)) ||
+		(0 == len(dynamicRoles) && 0 == len(dynamicGrants)) {
 		items = append(items, i)
 		return
 	}
@@ -156,13 +165,15 @@ func (i Item) SplitStaticItems() (items []Item) {
 	items = append(items, Item{
 		Description: i.Description,
 		LdapSearch:  i.LdapSearch,
-		RoleRules:   dynamicRules,
+		RoleRules:   dynamicRoles,
+		GrantRules:  dynamicGrants,
 	})
 
 	items = append(items, Item{
 		// Avoid duplicating log message, use a silent item.
 		Description: "",
-		RoleRules:   staticRules,
+		RoleRules:   staticRoles,
+		GrantRules:  staticGrants,
 	})
 
 	return

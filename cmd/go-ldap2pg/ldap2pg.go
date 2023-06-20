@@ -13,6 +13,8 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/internal/sync"
+	"github.com/dalibo/ldap2pg/internal/wanted"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -80,10 +82,11 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 
-	wanted, err := c.SyncMap.Wanted(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
+	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return
 	}
+	wantedGrants = wanted.ExpandGrants(wantedGrants, instance.Databases)
 
 	if controller.Real {
 		slog.Info("Real mode. Postgres instance will modified.")
@@ -91,9 +94,12 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	roleCount, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, wanted.DiffRoles(instance))
+	roleCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffRoles(instance, wantedRoles), controller.Real)
 	if err != nil {
 		return
+	}
+	if 0 == roleCount {
+		slog.Info("All roles synchronized.")
 	}
 
 	// Inspect grants, owners, etc.
@@ -101,9 +107,12 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	privCount, err := wanted.Sync(ctx, &controller.PostgresWatch, controller.Real, wanted.DiffPrivileges(instance.Grants, instance.DefaultDatabase))
+	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffPrivileges(instance, wantedGrants), controller.Real)
 	if err != nil {
 		return
+	}
+	if 0 == privCount {
+		slog.Info("All privileges synchronized.")
 	}
 
 	count := roleCount + privCount
