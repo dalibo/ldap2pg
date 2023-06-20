@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/wanted"
 	"github.com/jackc/pgx/v5"
@@ -71,6 +72,15 @@ func New() Config {
 				"pg_*",
 				"postgres",
 			),
+			SchemasQuery: NewSQLQuery[postgres.Schema](`
+				SELECT nspname, rolname
+				FROM pg_catalog.pg_namespace
+				JOIN pg_catalog.pg_roles ON pg_catalog.pg_roles.oid = nspowner
+				-- Ensure ldap2pg can use.
+				WHERE has_schema_privilege(CURRENT_USER, nspname, 'USAGE')
+					AND nspname NOT LIKE 'pg_%'
+					AND nspname <> 'information_schema'
+				ORDER BY 1;`, postgres.RowToSchema),
 		},
 	}
 }

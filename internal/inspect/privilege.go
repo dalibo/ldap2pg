@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slices"
@@ -17,10 +18,16 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err err
 	}
 	defer pgconn.Close(ctx)
 
+	err = instance.InspectSchemas(ctx, pc.SchemasQuery)
+	if err != nil {
+		return
+	}
+
 	err = instance.InspectGrants(ctx, pgconn, pc.ManagedPrivileges)
 	if err != nil {
 		return
 	}
+
 	return
 }
 
@@ -63,5 +70,26 @@ func (instance *Instance) InspectGrants(ctx context.Context, pgconn *pgx.Conn, m
 			return fmt.Errorf("%s: %w", p, err)
 		}
 	}
+	return nil
+}
+
+func (instance *Instance) InspectSchemas(ctx context.Context, query Querier[postgres.Schema]) error {
+	for i, database := range instance.Databases {
+		conn, err := postgres.DBPool.Get(ctx, database.Name)
+		if err != nil {
+			return err
+		}
+		for query.Query(ctx, conn); query.Next(); {
+			s := query.Row()
+			database.Schemas = append(database.Schemas, s)
+			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
+		}
+		instance.Databases[i] = database
+		err = query.Err()
+		if err != nil {
+			return fmt.Errorf("schemas: %w", err)
+		}
+	}
+
 	return nil
 }
