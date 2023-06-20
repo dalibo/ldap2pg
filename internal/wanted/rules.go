@@ -42,7 +42,6 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 					Object:   r.Object.Input,
 				}
 				ch <- grant
-
 			}
 		} else {
 			// Case dynamic rule.

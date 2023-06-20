@@ -3,7 +3,9 @@ package privilege
 import (
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
@@ -23,6 +25,17 @@ type Grant struct {
 
 func RowTo(row pgx.CollectableRow) (g Grant, err error) {
 	err = row.Scan(&g.Grantor, &g.Grantee, &g.Type, &g.Database, &g.Schema, &g.Object, &g.Partial)
+	return
+}
+
+// Expand wanted grants.
+func (g Grant) Expand(databases []postgres.Database) (out []Grant) {
+	p := g.Privilege()
+	for _, expansion := range p.Expand(g, databases) {
+		expansion.Normalize()
+		slog.Debug("Wants grant.", "grant", expansion)
+		out = append(out, expansion)
+	}
 	return
 }
 
