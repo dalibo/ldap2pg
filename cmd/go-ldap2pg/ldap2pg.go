@@ -13,6 +13,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/sync"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
@@ -53,6 +54,8 @@ func main() {
 }
 
 func ldap2pg(ctx context.Context) (err error) {
+	defer postgres.DBPool.CloseAll(ctx)
+
 	start := time.Now()
 
 	controller, err := unmarshalController()

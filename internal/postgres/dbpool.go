@@ -7,10 +7,17 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// DBPool track a single connection per database
-type DBPool map[string]*pgx.Conn
+// DBPoolMap track a single connection per database
+type DBPoolMap map[string]*pgx.Conn
 
-func (p DBPool) Get(ctx context.Context, database string) (*pgx.Conn, error) {
+// Global DBPool.
+var DBPool DBPoolMap
+
+func init() {
+	DBPool = make(DBPoolMap)
+}
+
+func (p DBPoolMap) Get(ctx context.Context, database string) (*pgx.Conn, error) {
 	connp, ok := p[database]
 	if ok {
 		return connp, nil
@@ -29,7 +36,7 @@ func (p DBPool) Get(ctx context.Context, database string) (*pgx.Conn, error) {
 	return connp, nil
 }
 
-func (p DBPool) CloseAll(ctx context.Context) {
+func (p DBPoolMap) CloseAll(ctx context.Context) {
 	var names []string
 	for name, connp := range p {
 		slog.Debug("Closing Postgres connection.", "db", name)
