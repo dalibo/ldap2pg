@@ -5,6 +5,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 // Privilege holds queries and metadata to manage a set of privilege type.
@@ -36,6 +37,9 @@ func (p Privilege) Expand(g Grant, databases []postgres.Database) (grants []Gran
 		} else {
 			grants = append(grants, g)
 		}
+	default:
+		slog.Debug("Expanding privilege.", "scope", p.Scope)
+		panic("unhandled privilege scope")
 	}
 	return
 }
@@ -79,6 +83,9 @@ func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDa
 			queries = append(queries, q)
 
 		}
+	default:
+		slog.Debug("Generating grant.", "scope", p.Scope)
+		panic("unhandled privilege scope")
 	}
 	return
 }
