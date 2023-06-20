@@ -30,7 +30,7 @@ type Instance struct {
 }
 
 var (
-	//go:embed sql/inspect-databases.sql
+	//go:embed sql/databases.sql
 	databasesQuery string
 	//go:embed sql/role-columns.sql
 	roleColumnsQuery string
