@@ -8,6 +8,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/wanted"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
@@ -64,7 +65,8 @@ func New() Config {
 		Postgres: PostgresConfig{
 			DatabasesQuery: NewSQLQuery[string](`
 				SELECT datname FROM pg_catalog.pg_database
-				WHERE datallowconn IS TRUE ORDER BY 1;`),
+				WHERE datallowconn IS TRUE
+				ORDER BY 1;`, pgx.RowTo[string]),
 			RolesBlacklistQuery: NewYAMLQuery[string](
 				"pg_*",
 				"postgres",
