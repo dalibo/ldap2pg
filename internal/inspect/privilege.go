@@ -17,11 +17,6 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err err
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
-	dbMap := make(map[string]postgres.Database)
-	for _, database := range instance.Databases {
-		dbMap[database.Name] = database
-	}
-
 	for _, p := range privilege.Map {
 		managedTypes := managedPrivileges[p.Object]
 		if 0 == len(managedTypes) {
@@ -31,7 +26,7 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 		if "instance" == p.Scope {
 			databases = []string{instance.DefaultDatabase}
 		} else {
-			databases = maps.Keys(dbMap)
+			databases = maps.Keys(instance.Databases)
 		}
 
 		for _, database := range databases {
@@ -53,7 +48,7 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				}
 				grant.Target = p.Object
 
-				database, known := dbMap[grant.Database]
+				database, known := instance.Databases[grant.Database]
 				if !known {
 					continue
 				}

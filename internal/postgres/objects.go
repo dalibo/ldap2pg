@@ -11,6 +11,7 @@ type Database struct {
 	Owner   string
 	Schemas []Schema
 }
+type DBMap map[string]Database
 
 func RowToDatabase(row pgx.CollectableRow) (database Database, err error) {
 	err = row.Scan(&database.Name, &database.Owner)

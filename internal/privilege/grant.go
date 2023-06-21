@@ -29,7 +29,7 @@ func RowTo(row pgx.CollectableRow) (g Grant, err error) {
 }
 
 // Expand wanted grants.
-func (g Grant) Expand(databases []postgres.Database) (out []Grant) {
+func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
 	p := g.Privilege()
 	for _, expansion := range p.Expand(g, databases) {
 		expansion.Normalize()

@@ -33,7 +33,7 @@ func (m Map) SplitStaticRules() (newMap Map) {
 	return
 }
 
-func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap, databases []postgres.Database) (roles role.Map, grants []privilege.Grant, err error) {
+func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap, databases postgres.DBMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
