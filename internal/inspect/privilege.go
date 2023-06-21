@@ -56,7 +56,7 @@ func (instance *Instance) InspectGrants(ctx context.Context, pgconn *pgx.Conn, m
 			grant.Target = p.Object
 			grant.Normalize()
 
-			slog.Debug("Grant found.", "grant", grant)
+			slog.Debug("Found grant in Postgres instance.", "grant", grant)
 			instance.Grants = append(instance.Grants, grant)
 		}
 		if err := rows.Err(); err != nil {

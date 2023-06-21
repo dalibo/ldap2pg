@@ -12,9 +12,7 @@ import (
 )
 
 func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.SyncQuery, real bool) (count int, err error) {
-	pool := postgres.DBPool{}
 	formatter := postgres.FmtQueryRewriter{}
-	defer pool.CloseAll(ctx)
 
 	prefix := ""
 	if !real {
@@ -24,7 +22,7 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.Sync
 	for query := range diff {
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
-		pgConn, err := pool.Get(ctx, query.Database)
+		pgConn, err := postgres.DBPool.Get(ctx, query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

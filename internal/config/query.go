@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/privilege"
@@ -47,11 +48,11 @@ type QueryConfig[T any] struct {
 	Querier inspect.Querier[T]
 }
 
-func NewSQLQuery[T any](sql string) QueryConfig[T] {
+func NewSQLQuery[T any](sql string, rowto pgx.RowToFunc[T]) QueryConfig[T] {
 	return QueryConfig[T]{
 		Querier: &inspect.SQLQuery[T]{
-			SQL:   dedent.Dedent(sql),
-			RowTo: pgx.RowTo[T],
+			SQL:   strings.TrimSpace(dedent.Dedent(sql)),
+			RowTo: rowto,
 		},
 	}
 }
@@ -68,7 +69,7 @@ func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo YamlToFunc[
 	switch qc.Value.(type) {
 	case string: // Plain SQL query case.
 		qc.Querier = &inspect.SQLQuery[T]{
-			SQL:   qc.Value.(string),
+			SQL:   strings.TrimSpace(qc.Value.(string)),
 			RowTo: rowTo,
 		}
 	case []interface{}: // YAML values case.
