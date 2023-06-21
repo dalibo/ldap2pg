@@ -30,6 +30,14 @@ var wellknown = map[string]interface{}{
 		"type": "TEMPORARY",
 		"on":   "DATABASE",
 	},
+	"__create_on_schemas__": map[string]string{
+		"type": "CREATE",
+		"on":   "SCHEMA",
+	},
+	"__usage_on_schemas__": map[string]string{
+		"type": "USAGE",
+		"on":   "SCHEMA",
+	},
 }
 
 func NormalizePrivilegeRefs(value interface{}) []interface{} {

@@ -9,6 +9,7 @@ import (
 	"reflect"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/jackc/pgx/v5"
@@ -108,6 +109,14 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 		v := to.Interface().(QueryConfig[string])
 		v.Value = from.Interface()
 		err := v.Instantiate(pgx.RowTo[string], YamlTo[string])
+		if err != nil {
+			return nil, err
+		}
+		return v, nil
+	case reflect.TypeOf(QueryConfig[postgres.Schema]{}):
+		v := to.Interface().(QueryConfig[postgres.Schema])
+		v.Value = from.Interface()
+		err := v.Instantiate(postgres.RowToSchema, YamlTo[postgres.Schema])
 		if err != nil {
 			return nil, err
 		}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
@@ -17,11 +18,12 @@ import (
 // Querier object is instanciated early. Use Build() method to produce the
 // final inspect.Config object.
 type PostgresConfig struct {
-	FallbackOwner       string              `mapstructure:"fallback_owner"`
-	DatabasesQuery      QueryConfig[string] `mapstructure:"databases_query"`
-	ManagedRolesQuery   QueryConfig[string] `mapstructure:"managed_roles_query"`
-	RolesBlacklistQuery QueryConfig[string] `mapstructure:"roles_blacklist_query"`
-	PrivilegesMap       privilege.RefMap    `mapstructure:"omit"`
+	FallbackOwner       string                       `mapstructure:"fallback_owner"`
+	DatabasesQuery      QueryConfig[string]          `mapstructure:"databases_query"`
+	ManagedRolesQuery   QueryConfig[string]          `mapstructure:"managed_roles_query"`
+	RolesBlacklistQuery QueryConfig[string]          `mapstructure:"roles_blacklist_query"`
+	SchemasQuery        QueryConfig[postgres.Schema] `mapstructure:"schemas_query"`
+	PrivilegesMap       privilege.RefMap             `mapstructure:"omit"`
 }
 
 func (c PostgresConfig) Build() inspect.Config {
@@ -30,6 +32,7 @@ func (c PostgresConfig) Build() inspect.Config {
 		DatabasesQuery:      c.DatabasesQuery.Querier,
 		ManagedRolesQuery:   c.ManagedRolesQuery.Querier,
 		RolesBlacklistQuery: c.RolesBlacklistQuery.Querier,
+		SchemasQuery:        c.SchemasQuery.Querier,
 		ManagedPrivileges:   make(map[string][]string),
 	}
 

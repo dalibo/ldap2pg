@@ -19,7 +19,7 @@ import (
 // Fourzitou struct holding everything need to synchronize Instance.
 type Instance struct {
 	AllRoles         role.Map
-	Databases        []postgres.Database
+	Databases        postgres.DBMap
 	DefaultDatabase  string
 	FallbackOwner    string
 	ManagedDatabases mapset.Set[string]
@@ -43,6 +43,7 @@ var (
 func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err error) {
 	instance = Instance{
 		ManagedDatabases: mapset.NewSet[string](),
+		Databases:        make(postgres.DBMap),
 	}
 
 	pgconn, err := pgx.Connect(ctx, "")
@@ -58,6 +59,11 @@ func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err erro
 	err = instance.InspectDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
 		return instance, fmt.Errorf("postgres: %w", err)
+	}
+
+	err = instance.InspectSchemas(ctx, pc.SchemasQuery)
+	if err != nil {
+		return
 	}
 
 	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
@@ -129,7 +135,7 @@ func (instance *Instance) InspectDatabases(ctx context.Context, pgconn *pgx.Conn
 		db := dbq.Row()
 		if instance.ManagedDatabases.Contains(db.Name) {
 			slog.Debug("Found database.", "name", db.Name)
-			instance.Databases = append(instance.Databases, db)
+			instance.Databases[db.Name] = db
 		}
 	}
 	if err := dbq.Err(); err != nil {

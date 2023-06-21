@@ -2,6 +2,7 @@ package privilege
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
@@ -22,20 +23,44 @@ type Privilege struct {
 }
 
 // Expand handles grants with __all__ databases.
-func (p Privilege) Expand(g Grant, databases []postgres.Database) (grants []Grant) {
+func (p Privilege) Expand(g Grant, databases postgres.DBMap) (grants []Grant) {
+	g.Normalize()
 	switch p.Scope {
 	case "instance":
 		if "" == g.Object || "__all__" == g.Object {
 			// One time, we may improve this to handle all
 			// languages, all foreign data wrapper, etc. For now,
 			// we consider __all__ only for databases.
-			for _, database := range databases {
+			for dbname := range databases {
 				expansion := g // Copy
-				expansion.Object = database.Name
+				expansion.Object = dbname
 				grants = append(grants, expansion)
 			}
 		} else {
 			grants = append(grants, g)
+		}
+	case "database":
+		var dbGrants []Grant
+		if "" == g.Database || "__all__" == g.Database {
+			for dbname := range databases {
+				expansion := g // Copy
+				expansion.Database = dbname
+				dbGrants = append(dbGrants, expansion)
+			}
+		} else {
+			dbGrants = append(dbGrants, g)
+		}
+
+		for _, g := range dbGrants {
+			if "" == g.Object || "__all__" == g.Object {
+				for _, schema := range databases[g.Database].Schemas {
+					expansion := g // Copy
+					expansion.Object = schema.Name
+					grants = append(grants, expansion)
+				}
+			} else {
+				grants = append(grants, g)
+			}
 		}
 	default:
 		slog.Debug("Expanding privilege.", "scope", p.Scope)
@@ -53,35 +78,41 @@ func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.Sync
 	} else {
 		q.Database = g.Database
 	}
-	q.LogArgs = p.BuildLogArgs(g, q.Database)
+	q.LogArgs = p.BuildLogArgs(g)
 	return
 }
 
-func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDatabase string) (queries []postgres.SyncQuery) {
+func (p Privilege) BuildGrants(g Grant, databases postgres.DBMap, defaultDatabase string) (queries []postgres.SyncQuery) {
 	sql := fmt.Sprintf(p.Grant, g.Type)
 	grantee := pgx.Identifier{g.Grantee}
 
 	switch p.Scope {
 	case "instance":
-		var objects []string
-		if "" == g.Object || "__all__" == g.Object {
-			// Loop on all databases.
-			for _, db := range databases {
-				objects = append(objects, db.Name)
-			}
-		} else {
-			objects = append(objects, g.Object)
-		}
-		for _, object := range objects {
+		grants := p.expandDatabases(g, databases)
+		for _, g := range grants {
 			q := postgres.SyncQuery{
-				LogArgs: p.BuildLogArgs(g, defaultDatabase),
+				LogArgs: p.BuildLogArgs(g),
 				// GRANT ... ON ... {object} TO {grantee}
 				Query:     sql,
-				QueryArgs: []interface{}{pgx.Identifier{object}, grantee},
+				QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
 				Database:  defaultDatabase,
 			}
 			queries = append(queries, q)
-
+		}
+	case "database":
+		grants := p.expandDatabases(g, databases)
+		for _, g := range grants {
+			grants := p.expandSchemas(g, databases)
+			for _, g := range grants {
+				q := postgres.SyncQuery{
+					LogArgs: p.BuildLogArgs(g),
+					// GRANT ... ON ... {object} TO {grantee}
+					Query:     sql,
+					QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
+					Database:  g.Database,
+				}
+				queries = append(queries, q)
+			}
 		}
 	default:
 		slog.Debug("Generating grant.", "scope", p.Scope)
@@ -90,16 +121,64 @@ func (p Privilege) BuildGrants(g Grant, databases []postgres.Database, defaultDa
 	return
 }
 
-func (p Privilege) BuildLogArgs(g Grant, dbname string) (args []interface{}) {
-	args = append(args, "type", g.Type)
-	switch p.Scope {
-	case "instance":
-		if "" == g.Object {
-			args = append(args, "database", dbname)
-		} else {
-			args = append(args, "object", g.Object)
-		}
+func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Grant) {
+	var input string
+	// Use object field if expanding databases in instance scope.
+	if "instance" == p.Scope {
+		input = g.Object
+	} else {
+		input = g.Database
 	}
-	args = append(args, "role", g.Grantee)
+
+	if "" == input || "__all__" == input {
+		for dbname := range databases {
+			g := g // copy
+			if "instance" == p.Scope {
+				g.Object = dbname
+			} else {
+				g.Database = dbname
+			}
+			out = append(out, g)
+		}
+	} else {
+		out = append(out, g)
+	}
+	return
+}
+
+func (p Privilege) expandSchemas(g Grant, databases postgres.DBMap) (out []Grant) {
+	var input string
+	// Use object field if expanding databases in database scope.
+	if "database" == p.Scope {
+		input = g.Object
+	} else {
+		input = g.Schema
+	}
+
+	if "" == input || "__all__" == input {
+		for _, s := range databases[g.Database].Schemas {
+			g := g // copy
+			if "database" == p.Scope {
+				g.Object = s.Name
+			} else {
+				g.Schema = s.Name
+			}
+			out = append(out, g)
+		}
+	} else {
+		out = append(out, g)
+	}
+	return
+}
+
+func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
+	args = append(args, "type", g.Type)
+	if "instance" != p.Scope {
+		args = append(args, "database", g.Database)
+	}
+	args = append(args,
+		strings.ToLower(g.Target), g.Object,
+		"role", g.Grantee,
+	)
 	return
 }

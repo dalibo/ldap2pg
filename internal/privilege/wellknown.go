@@ -10,6 +10,8 @@ var (
 	inspectDatabase string
 	//go:embed sql/grant-language.sql
 	inspectLanguage string
+	//go:embed sql/schema.sql
+	inspectSchema string
 )
 
 func init() {
@@ -17,6 +19,8 @@ func init() {
 
 	register("instance", "DATABASE", inspectDatabase)
 	register("instance", "LANGUAGE", inspectLanguage)
+
+	register("database", "SCHEMA", inspectSchema)
 }
 
 // queries are grant and revoke queries in order.

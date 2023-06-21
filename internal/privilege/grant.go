@@ -29,7 +29,7 @@ func RowTo(row pgx.CollectableRow) (g Grant, err error) {
 }
 
 // Expand wanted grants.
-func (g Grant) Expand(databases []postgres.Database) (out []Grant) {
+func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
 	p := g.Privilege()
 	for _, expansion := range p.Expand(g, databases) {
 		expansion.Normalize()
@@ -48,17 +48,24 @@ func (g *Grant) Normalize() {
 	// For now, drop grantor, to remove Grantor from comparison with wanted grant.
 	g.Grantor = ""
 
-	if "instance" == p.Scope {
+	switch p.Scope {
+	case "instance":
 		// Allow to use Database as object name for database.
 		if "" == g.Object {
 			g.Object = g.Database
-			g.Database = ""
 		}
-	}
 
-	// For now, drop schema. We'll need it only for schema objects in the
-	// future.
-	g.Schema = ""
+		g.Database = ""
+		g.Schema = ""
+	case "database":
+		if "" == g.Object {
+			g.Object = g.Schema
+		}
+		g.Schema = ""
+	default:
+		slog.Debug("Normalizing grant.", "scope", p.Scope)
+		panic("unhandled privilege scope")
+	}
 }
 
 func (g Grant) Privilege() Privilege {
