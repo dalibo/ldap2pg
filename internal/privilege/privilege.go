@@ -6,7 +6,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
 )
 
@@ -89,53 +88,27 @@ func (p Privilege) BuildGrants(g Grant, databases postgres.DBMap, defaultDatabas
 
 	switch p.Scope {
 	case "instance":
-		var objects []string
-		if "" == g.Object || "__all__" == g.Object {
-			// Loop on all databases.
-			objects = append(objects, maps.Keys(databases)...)
-		} else {
-			objects = append(objects, g.Object)
-		}
-		for _, object := range objects {
+		grants := p.expandDatabases(g, databases)
+		for _, g := range grants {
 			q := postgres.SyncQuery{
 				LogArgs: p.BuildLogArgs(g),
 				// GRANT ... ON ... {object} TO {grantee}
 				Query:     sql,
-				QueryArgs: []interface{}{pgx.Identifier{object}, grantee},
+				QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
 				Database:  defaultDatabase,
 			}
 			queries = append(queries, q)
 		}
 	case "database":
-		var dbGrants []Grant
-		if "" == g.Database || "__all__" == g.Database {
-			for dbname := range databases {
-				expansion := g // copy
-				expansion.Database = dbname
-				dbGrants = append(dbGrants, expansion)
-			}
-		} else {
-			dbGrants = append(dbGrants, g)
-		}
-
-		for _, g := range dbGrants {
-			var objects []string
-			if "" == g.Object || "__all__" == g.Object {
-				// Loop all schema
-				db := databases[g.Database]
-				for _, s := range db.Schemas {
-					objects = append(objects, s.Name)
-				}
-			} else {
-				objects = append(objects, g.Object)
-			}
-
-			for _, object := range objects {
+		grants := p.expandDatabases(g, databases)
+		for _, g := range grants {
+			grants := p.expandSchemas(g, databases)
+			for _, g := range grants {
 				q := postgres.SyncQuery{
 					LogArgs: p.BuildLogArgs(g),
 					// GRANT ... ON ... {object} TO {grantee}
 					Query:     sql,
-					QueryArgs: []interface{}{pgx.Identifier{object}, grantee},
+					QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
 					Database:  g.Database,
 				}
 				queries = append(queries, q)
@@ -144,6 +117,56 @@ func (p Privilege) BuildGrants(g Grant, databases postgres.DBMap, defaultDatabas
 	default:
 		slog.Debug("Generating grant.", "scope", p.Scope)
 		panic("unhandled privilege scope")
+	}
+	return
+}
+
+func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Grant) {
+	var input string
+	// Use object field if expanding databases in instance scope.
+	if "instance" == p.Scope {
+		input = g.Object
+	} else {
+		input = g.Database
+	}
+
+	if "" == input || "__all__" == input {
+		for dbname := range databases {
+			g := g // copy
+			if "instance" == p.Scope {
+				g.Object = dbname
+			} else {
+				g.Database = dbname
+			}
+			out = append(out, g)
+		}
+	} else {
+		out = append(out, g)
+	}
+	return
+}
+
+func (p Privilege) expandSchemas(g Grant, databases postgres.DBMap) (out []Grant) {
+	var input string
+	// Use object field if expanding databases in database scope.
+	if "database" == p.Scope {
+		input = g.Object
+	} else {
+		input = g.Schema
+	}
+
+	if "" == input || "__all__" == input {
+		for _, s := range databases[g.Database].Schemas {
+			g := g // copy
+			if "database" == p.Scope {
+				g.Object = s.Name
+			} else {
+				g.Schema = s.Name
+			}
+			out = append(out, g)
+		}
+	} else {
+		out = append(out, g)
 	}
 	return
 }
