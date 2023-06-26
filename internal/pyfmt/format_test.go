@@ -1,6 +1,13 @@
 package pyfmt_test
 
-import "github.com/dalibo/ldap2pg/internal/pyfmt"
+import (
+	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/stretchr/testify/suite"
+)
+
+type Suite struct {
+	suite.Suite
+}
 
 func (suite *Suite) TestParseLiteralOnly() {
 	r := suite.Require()
