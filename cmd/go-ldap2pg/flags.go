@@ -50,7 +50,7 @@ func setupViper() {
 	pflag.BoolP("version", "V", true, "Show version and exit.")
 
 	viper.SetDefault("quiet", 0)
-	pflag.CountP("quiet", "q", "Increase log verbosity.")
+	pflag.CountP("quiet", "q", "Decrease log verbosity.")
 	viper.SetDefault("verbose", 0)
 	pflag.CountP("verbose", "v", "Increase log verbosity.")
 	viper.SetDefault("verbosity", "")
