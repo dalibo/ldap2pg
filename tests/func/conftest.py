@@ -61,6 +61,19 @@ class PSQL(object):
             *a, **kw
         )
 
+    def config(self, role):
+        """ Get a dictionary of configuration settings for a role. """
+        config_lines = self.select1("""
+            SELECT unnest(rolconfig)
+              FROM pg_roles
+             WHERE rolname='{rolname}'
+        """.format(rolname=role,))
+        c = {}
+        for config_line in config_lines:
+            kv = config_line.split('=')
+            c[kv[0]] = kv[1]
+        return c
+
 
 @pytest.fixture(scope='session')
 def psql():

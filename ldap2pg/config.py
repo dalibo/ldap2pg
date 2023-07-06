@@ -387,12 +387,13 @@ class Configuration(dict):
             SELECT
               role.rolname, array_agg(members.rolname) AS members,
               {options},
-              pg_catalog.shobj_description(role.oid, 'pg_authid') as comment
+              pg_catalog.shobj_description(role.oid, 'pg_authid') as comment,
+              role.rolconfig AS config
             FROM
               pg_catalog.pg_roles AS role
             LEFT JOIN pg_catalog.pg_auth_members ON roleid = role.oid
             LEFT JOIN pg_catalog.pg_roles AS members ON members.oid = member
-            GROUP BY role.rolname, {options}, comment
+            GROUP BY role.rolname, {options}, comment, role.rolconfig
             ORDER BY 1;
             """),
             'owners_query': dedent("""\

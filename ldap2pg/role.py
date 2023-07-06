@@ -20,10 +20,11 @@ class Role(object):
         'name',
         'options',
         'parents',
+        'config',
     )
 
     def __init__(self, name, options=None, members=None, parents=None,
-                 comment=None):
+                 comment=None, config=None):
         self.name = name
         self.lname = name.lower()
         self.uname = name.upper()
@@ -31,6 +32,12 @@ class Role(object):
         self.options = RoleOptions(options or {})
         self.parents = parents or []
         self.comment = comment
+        if config is None:
+            self.config = None
+        else:
+            self.config = {}
+            for key, value in (config or {}).items():
+                self.config[key] = str(config[key])
 
     def __eq__(self, other):
         return self.name == unicode(other)
@@ -57,6 +64,17 @@ class Role(object):
         if comment:
             self.comment = comment[0]
         self.options.fill_with_defaults()
+
+        # Extract the configuration options as key=value pairs and turn them
+        # into a dictionary
+        self.config = {}
+        config = row[options_num + 1:]
+        if config and config[0]:
+            for config_entry in config[0]:
+                kv = config_entry.split('=')
+                if len(kv) == 2:
+                    self.config[kv[0]] = kv[1]
+
         return self
 
     def create(self):
@@ -79,6 +97,15 @@ class Role(object):
                     role=self.name,
                 ),
             )
+        if self.config:
+            for key, value in self.config.items():
+                yield Query(
+                    'Set %s configuration %s=%s.' % (self.name, key, value),
+                    None,
+                    'ALTER ROLE "{role}" SET {key} TO {value}'.format(
+                        role=self.name, key=key, value=value
+                    )
+                )
 
     def rename(self, other):
         if self.name != other.name:
@@ -100,6 +127,30 @@ class Role(object):
                 """ALTER ROLE "{role}" WITH {options};""".format(
                     role=other.name, options=other.options)
             )
+
+        if other.config is not None and self.config != other.config:
+            for key, value in other.config.items():
+                if other.config[key] != self.config.get(key):
+                    yield Query(
+                        'Set configuration %s=%s of %s.' % (
+                            key, value, other.name,
+                        ),
+                        None,
+                        'ALTER ROLE "%(role)s" SET %(key)s TO %(value)s' %
+                        dict(role=other.name, key=key, value=value)
+                    )
+
+            missing_keys = set(self.config.keys()) - set(other.config.keys())
+            for missing_key in missing_keys:
+                yield Query(
+                    'Reset configuration %s of %s.' % (
+                        missing_key, other.name
+                    ),
+                    None,
+                    'ALTER ROLE "%(role)s" SET %(key)s TO DEFAULT' % dict(
+                        role=other.name, key=missing_key
+                    )
+                )
 
         if self.members != other.members:
             renamed = set([
@@ -183,6 +234,10 @@ class Role(object):
         self.options.update(other.options)
         self.members += other.members
         self.parents += other.parents
+        self.config = dict(
+            list((self.config or {}).items()) +
+            list((other.config or {}).items())
+        )
         return self
 
     def rename_members(self, renamed):
@@ -477,7 +532,7 @@ class RoleSet(set):
 
 class RoleRule(object):
     def __init__(self, names, parents=None, members=None, options=None,
-                 comment=None):
+                 comment=None, config=None):
         self.comment = FormatList.factory([
             comment if comment else 'Managed by ldap2pg',
         ])
@@ -485,6 +540,7 @@ class RoleRule(object):
         self.names = FormatList.factory(names or [])
         self.options = options or {}
         self.parents = FormatList.factory(parents or [])
+        self.config = config
         self.all_fields = collect_fields(
             self.comment, self.members, self.names, self.parents,
         )
@@ -524,6 +580,7 @@ class RoleRule(object):
                 options=self.options,
                 parents=parents[:],
                 comment=comment,
+                config=self.config,
             )
 
         # Check comment inconsistency, for generated comments.
@@ -541,6 +598,7 @@ class RoleRule(object):
         dict_ = {
             'comment': self.comment.formats[0] if self.comment else None,
             'options': self.options,
+            'config': self.config,
         }
         for k in "names", "members", "parents":
             dict_[k] = getattr(self, k).formats
