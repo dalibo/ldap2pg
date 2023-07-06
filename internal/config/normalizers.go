@@ -183,6 +183,20 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 	}
 	item["roles"] = rules
 
+	list = NormalizeList(item["grants"])
+	rules = []interface{}{}
+	for i, rawRule := range list {
+		var rule map[string]interface{}
+		rule, err = NormalizeGrantRule(rawRule)
+		if err != nil {
+			return nil, fmt.Errorf("grants[%d]: %w", i, err)
+		}
+		for _, rule := range DuplicateGrantRules(rule) {
+			rules = append(rules, rule)
+		}
+	}
+	item["grants"] = rules
+
 	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
 	return
 }
