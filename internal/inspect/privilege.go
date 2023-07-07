@@ -17,6 +17,7 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err err
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
+	slog.Info("Inspecting privileges.")
 	for _, p := range privilege.Map {
 		managedTypes := managedPrivileges[p.Object]
 		if 0 == len(managedTypes) {
