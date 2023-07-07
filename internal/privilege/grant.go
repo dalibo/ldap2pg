@@ -63,7 +63,7 @@ func (g *Grant) Normalize() {
 		}
 		g.Schema = ""
 	default:
-		slog.Debug("Normalizing grant.", "scope", p.Scope)
+		slog.Debug("Normalizing grant.", "scope", p.Scope, "grant", g)
 		panic("unhandled privilege scope")
 	}
 }
