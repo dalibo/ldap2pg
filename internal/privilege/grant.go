@@ -41,7 +41,6 @@ func (g Grant) IsDefault() bool {
 func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
 	p := g.Privilege()
 	for _, expansion := range p.Expand(g, databases) {
-		expansion.Normalize()
 		slog.Debug("Wants grant.", "grant", expansion)
 		out = append(out, expansion)
 	}
@@ -52,8 +51,19 @@ func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
 //
 // This way grants from wanted state and from inspect are comparables.
 func (g *Grant) Normalize() {
-	p := g.Privilege()
+	if g.IsDefault() {
+		g.Object = ""
+		// Default grant rule schema is __all__. But default privilege
+		// on all schemas is handled globally at database scope. Just
+		// handle all schema as a single database privilege. Prevent
+		// expanding the grant on all schema.
+		if "__all__" == g.Schema {
+			g.Schema = ""
+		}
+		return
+	}
 
+	p := g.Privilege()
 	switch p.Scope {
 	case "instance":
 		// Allow to use Database as object name for database.
@@ -74,8 +84,17 @@ func (g *Grant) Normalize() {
 	}
 }
 
-func (g Grant) Privilege() Privilege {
-	return Map[g.Target]
+func (g Grant) Privilege() (p Privilege) {
+	if !g.IsDefault() {
+		p = Map[g.Target]
+	} else if "" == g.Schema {
+		p = Map["GLOBAL DEFAULT"]
+	}
+	if p.IsZero() {
+		slog.Debug("Resolving privilege for grant.", "grant", g)
+		panic("unhandled privilege")
+	}
+	return
 }
 
 func (g Grant) String() string {
@@ -108,6 +127,9 @@ func (g Grant) String() string {
 			o.WriteString(g.Object)
 		}
 		b.WriteString(o.String())
+	} else if "" != g.Schema {
+		b.WriteString(" IN SCHEMA ")
+		b.WriteString(g.Schema)
 	}
 
 	if "" != g.Grantee {

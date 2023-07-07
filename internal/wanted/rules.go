@@ -43,6 +43,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 					Schema:   r.Schema.Input,
 					Object:   r.Object.Input,
 				}
+				if priv.IsDefault() {
+					grant.Owner = r.Owner.Input
+				}
 				ch <- grant
 			}
 		} else {
@@ -57,6 +60,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 						Database: r.Database.Format(values),
 						Schema:   r.Schema.Format(values),
 						Object:   r.Object.Format(values),
+					}
+					if priv.IsDefault() {
+						grant.Owner = r.Owner.Input
 					}
 					ch <- grant
 				}

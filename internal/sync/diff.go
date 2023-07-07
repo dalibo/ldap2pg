@@ -22,7 +22,11 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 
 			p := grant.Privilege()
 			q := p.BuildRevoke(grant, instance.DefaultDatabase)
-			q.Description = "Revoke privilege."
+			if p.IsDefault() {
+				q.Description = "Revoke default privilege."
+			} else {
+				q.Description = "Revoke privilege."
+			}
 			ch <- q
 		}
 
@@ -32,10 +36,13 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 				continue
 			}
 			p := grant.Privilege()
-			for _, q := range p.BuildGrants(grant, instance.Databases, instance.DefaultDatabase) {
+			q := p.BuildGrant(grant, instance.DefaultDatabase)
+			if p.IsDefault() {
+				q.Description = "Grant default privilege."
+			} else {
 				q.Description = "Grant privilege."
-				ch <- q
 			}
+			ch <- q
 		}
 	}()
 	return ch

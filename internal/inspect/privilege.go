@@ -19,10 +19,12 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err err
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
 	slog.Info("Inspecting privileges.")
 	for _, p := range privilege.Map {
-		managedTypes := managedPrivileges[p.Object]
-		if 0 == len(managedTypes) {
+		arg, ok := managedPrivileges[p.Object]
+		if !ok {
+			slog.Debug("Skipping privilege.", "object", p.Object)
 			continue
 		}
+
 		var databases []string
 		if "instance" == p.Scope {
 			databases = []string{instance.DefaultDatabase}
@@ -31,14 +33,18 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 		}
 
 		for _, database := range databases {
-			slog.Debug("Inspecting grants.", "scope", p.Scope, "database", database, "object", p.Object, "types", managedTypes)
+			if p.IsDefault() {
+				slog.Debug("Inspecting default grants.", "database", database, "scope", p.Object)
+			} else {
+				slog.Debug("Inspecting grants.", "scope", p.Scope, "database", database, "object", p.Object)
+			}
 			pgconn, err := postgres.DBPool.Get(ctx, database)
 			if err != nil {
 				return err
 			}
 
-			slog.Debug("Executing SQL query:\n"+p.Inspect, "arg", managedTypes)
-			rows, err := pgconn.Query(ctx, p.Inspect, managedTypes)
+			slog.Debug("Executing SQL query:\n"+p.Inspect, "arg", arg)
+			rows, err := pgconn.Query(ctx, p.Inspect, arg)
 			if err != nil {
 				return fmt.Errorf("bad query: %w", err)
 			}
@@ -47,7 +53,11 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				if err != nil {
 					return fmt.Errorf("bad row: %w", err)
 				}
-				grant.Target = p.Object
+				if p.IsDefault() {
+					grant.Target = grant.Object
+				} else {
+					grant.Target = p.Object
+				}
 
 				database, known := instance.Databases[grant.Database]
 				if !known {
@@ -62,6 +72,14 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				if pattern != "" {
 					slog.Debug(
 						"Ignoring grant to blacklisted role.",
+						"grant", grant, "pattern", pattern)
+					continue
+				}
+
+				pattern = instance.RolesBlacklist.MatchString(grant.Owner)
+				if pattern != "" {
+					slog.Debug(
+						"Ignoring default grant for blacklisted role.",
 						"grant", grant, "pattern", pattern)
 					continue
 				}
