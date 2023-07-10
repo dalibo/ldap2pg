@@ -80,7 +80,7 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 					slog.Warn("Duplicated wanted role.", "role", role.Name)
 				}
 				slog.Debug("Wants role.",
-					"name", role.Name, "options", role.Options, "parents", role.Parents, "comment", role.Comment)
+					"name", role.Name, "options", role.Options, "parents", role.Parents.ToSlice(), "comment", role.Comment)
 				roles[role.Name] = role
 			}
 

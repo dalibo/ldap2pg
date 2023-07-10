@@ -118,7 +118,7 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Create role.",
-			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
+			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents.ToSlice()},
 			Query: `
 			CREATE ROLE %s
 			WITH ` + r.Options.String() + `
