@@ -142,7 +142,7 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Drop(databases postgres.DBMap, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
+func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	out = append(out, postgres.SyncQuery{
 		Description: "Terminate running sessions.",
@@ -182,7 +182,7 @@ func (r *Role) Drop(databases postgres.DBMap, currentUser Role, fallbackOwner st
 			},
 		})
 	}
-	for dbname, database := range databases {
+	for dbname, database := range *databases {
 		if database.Owner == r.Name {
 			out = append(out, postgres.SyncQuery{
 				Description: "Reassign database.",
@@ -199,7 +199,7 @@ func (r *Role) Drop(databases postgres.DBMap, currentUser Role, fallbackOwner st
 			})
 			// Update model to generate propery queries next.
 			database.Owner = fallbackOwner
-			databases[dbname] = database
+			(*databases)[dbname] = database
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",

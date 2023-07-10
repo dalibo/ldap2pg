@@ -7,7 +7,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
-	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
 	"golang.org/x/exp/slog"
@@ -33,7 +32,7 @@ func (m Map) SplitStaticRules() (newMap Map) {
 	return
 }
 
-func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap, databases postgres.DBMap) (roles role.Map, grants []privilege.Grant, err error) {
+func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
@@ -92,7 +91,8 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 						"to", grant.Grantee, "pattern", pattern)
 					continue
 				}
-				grants = append(grants, grant.Expand(databases)...)
+				slog.Debug("Wants grant.", "grant", grant)
+				grants = append(grants, grant)
 			}
 		}
 	}

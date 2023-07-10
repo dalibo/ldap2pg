@@ -32,8 +32,6 @@ type Instance struct {
 var (
 	//go:embed sql/databases.sql
 	databasesQuery string
-	//go:embed sql/schemas.sql
-	schemasQuery string
 	//go:embed sql/role-columns.sql
 	roleColumnsQuery string
 	//go:embed sql/roles.sql
@@ -45,7 +43,6 @@ var (
 func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err error) {
 	instance = Instance{
 		ManagedDatabases: mapset.NewSet[string](),
-		Databases:        make(postgres.DBMap),
 	}
 
 	pgconn, err := pgx.Connect(ctx, "")
@@ -58,14 +55,9 @@ func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err erro
 	if err != nil {
 		return
 	}
-	err = instance.InspectDatabases(ctx, pgconn, pc.DatabasesQuery)
+	err = instance.InspectManagedDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
 		return instance, fmt.Errorf("postgres: %w", err)
-	}
-
-	err = instance.InspectSchemas(ctx, pc.SchemasQuery)
-	if err != nil {
-		return
 	}
 
 	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
@@ -122,7 +114,7 @@ func (instance *Instance) InspectSession(ctx context.Context, pgconn *pgx.Conn, 
 	return nil
 }
 
-func (instance *Instance) InspectDatabases(ctx context.Context, pgconn *pgx.Conn, q Querier[string]) error {
+func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *pgx.Conn, q Querier[string]) error {
 	slog.Debug("Inspecting managed databases.")
 	for q.Query(ctx, pgconn); q.Next(); {
 		instance.ManagedDatabases.Add(q.Row())
@@ -132,6 +124,7 @@ func (instance *Instance) InspectDatabases(ctx context.Context, pgconn *pgx.Conn
 	}
 
 	slog.Debug("Inspecting database owners.")
+	instance.Databases = make(postgres.DBMap)
 	dbq := &SQLQuery[postgres.Database]{SQL: databasesQuery, RowTo: postgres.RowToDatabase}
 	for dbq.Query(ctx, pgconn); dbq.Next(); {
 		db := dbq.Row()

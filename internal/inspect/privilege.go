@@ -2,6 +2,7 @@ package inspect
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -11,9 +12,21 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err error) {
+//go:embed sql/schemas.sql
+var schemasQuery string
+
+func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
+	err := instance.InspectSchemas(ctx, pc.SchemasQuery)
+	if err != nil {
+		return fmt.Errorf("schemas: %w", err)
+	}
+
 	err = instance.InspectGrants(ctx, pc.ManagedPrivileges)
-	return
+	if err != nil {
+		return fmt.Errorf("privileges: %w", err)
+	}
+
+	return nil
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
@@ -100,6 +113,7 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 
 func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Querier[postgres.Schema]) error {
 	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
+
 	for i, database := range instance.Databases {
 		var managedSchemas []string
 		slog.Debug("Inspecting managed schemas.", "database", database.Name)
@@ -113,7 +127,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Queri
 		}
 		err = managedQuery.Err()
 		if err != nil {
-			return fmt.Errorf("schemas: %w", err)
+			return err
 		}
 
 		for sq.Query(ctx, conn); sq.Next(); {
@@ -126,7 +140,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Queri
 		}
 		err = sq.Err()
 		if err != nil {
-			return fmt.Errorf("schemas: %w", err)
+			return err
 		}
 
 		instance.Databases[i] = database

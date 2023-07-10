@@ -41,7 +41,7 @@ func (g Grant) IsDefault() bool {
 func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
 	p := g.Privilege()
 	for _, expansion := range p.Expand(g, databases) {
-		slog.Debug("Wants grant.", "grant", expansion)
+		slog.Debug("Expand grant.", "grant", expansion)
 		out = append(out, expansion)
 	}
 	return

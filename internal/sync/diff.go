@@ -84,7 +84,7 @@ func DiffRoles(instance inspect.Instance, wanted role.Map) <-chan postgres.SyncQ
 				continue
 			}
 
-			sendQueries(role.Drop(instance.Databases, instance.Me, instance.FallbackOwner), ch, instance.DefaultDatabase)
+			sendQueries(role.Drop(&instance.Databases, instance.Me, instance.FallbackOwner), ch, instance.DefaultDatabase)
 		}
 	}()
 	return ch
