@@ -32,6 +32,8 @@ type Instance struct {
 var (
 	//go:embed sql/databases.sql
 	databasesQuery string
+	//go:embed sql/schemas.sql
+	schemasQuery string
 	//go:embed sql/role-columns.sql
 	roleColumnsQuery string
 	//go:embed sql/roles.sql
@@ -137,7 +139,9 @@ func (instance *Instance) InspectDatabases(ctx context.Context, pgconn *pgx.Conn
 			slog.Debug("Found database.", "name", db.Name)
 			instance.Databases[db.Name] = db
 		}
+
 	}
+
 	if err := dbq.Err(); err != nil {
 		return fmt.Errorf("databases: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -79,22 +80,38 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 	return nil
 }
 
-func (instance *Instance) InspectSchemas(ctx context.Context, query Querier[postgres.Schema]) error {
+func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Querier[postgres.Schema]) error {
+	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
 	for i, database := range instance.Databases {
+		var managedSchemas []string
+		slog.Debug("Inspecting managed schemas.", "database", database.Name)
 		conn, err := postgres.DBPool.Get(ctx, database.Name)
 		if err != nil {
 			return err
 		}
-		for query.Query(ctx, conn); query.Next(); {
-			s := query.Row()
-			database.Schemas[s.Name] = s
-			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
+		for managedQuery.Query(ctx, conn); managedQuery.Next(); {
+			s := managedQuery.Row()
+			managedSchemas = append(managedSchemas, s.Name)
 		}
-		instance.Databases[i] = database
-		err = query.Err()
+		err = managedQuery.Err()
 		if err != nil {
 			return fmt.Errorf("schemas: %w", err)
 		}
+
+		for sq.Query(ctx, conn); sq.Next(); {
+			s := sq.Row()
+			if !slices.Contains(managedSchemas, s.Name) {
+				continue
+			}
+			database.Schemas[s.Name] = s
+			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
+		}
+		err = sq.Err()
+		if err != nil {
+			return fmt.Errorf("schemas: %w", err)
+		}
+
+		instance.Databases[i] = database
 	}
 
 	return nil
