@@ -7,7 +7,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -53,9 +52,8 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				if !known {
 					continue
 				}
-				if "" != grant.Schema && !slices.ContainsFunc(database.Schemas, func(s postgres.Schema) bool {
-					return s.Name == grant.Schema
-				}) {
+				_, known = database.Schemas[grant.Schema]
+				if !known {
 					continue
 				}
 
@@ -89,7 +87,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, query Querier[post
 		}
 		for query.Query(ctx, conn); query.Next(); {
 			s := query.Row()
-			database.Schemas = append(database.Schemas, s)
+			database.Schemas[s.Name] = s
 			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
 		}
 		instance.Databases[i] = database
