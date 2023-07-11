@@ -109,7 +109,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedGrants = wanted.ExpandGrants(wantedGrants, instance.Databases)
+	wantedGrants = wanted.ExpandGrants(wantedGrants, instance.Databases, instance.RolesBlacklist)
 	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffPrivileges(instance, wantedGrants), controller.Real)
 	if err != nil {
 		return
