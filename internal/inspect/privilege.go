@@ -74,11 +74,16 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 
 				database, known := instance.Databases[grant.Database]
 				if !known {
+					slog.Debug("Ignoring grant on unmanaged database.", "database", grant.Database)
 					continue
 				}
-				_, known = database.Schemas[grant.Schema]
-				if !known {
-					continue
+
+				if "" != grant.Schema {
+					_, known = database.Schemas[grant.Schema]
+					if !known {
+						slog.Debug("Ignoring grant on unmanaged schema.", "database", grant.Database, "schema", grant.Schema)
+						continue
+					}
 				}
 
 				pattern := instance.RolesBlacklist.MatchString(grant.Grantee)
