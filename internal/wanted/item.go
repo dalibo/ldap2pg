@@ -251,6 +251,7 @@ func (i Item) generateGrants(results *ldap.Result, privileges privilege.RefMap) 
 		defer close(ch)
 		for _, rule := range i.GrantRules {
 			for grant := range rule.Generate(results, privileges) {
+				grant.Normalize()
 				ch <- grant
 			}
 		}

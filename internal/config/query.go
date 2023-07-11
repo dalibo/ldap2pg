@@ -39,8 +39,17 @@ func (c PostgresConfig) Build() inspect.Config {
 	// Index managed privileges.
 	for _, privList := range c.PrivilegesMap {
 		for _, priv := range privList {
+			var k, t string
+			if "" != priv.Default {
+				k = strings.ToUpper(priv.Default) + " DEFAULT"
+				t = priv.On + "--" + priv.Type
+			} else {
+				k = priv.On
+				t = priv.Type
+			}
+
 			slog.Debug("Managing privilege.", "type", priv.Type, "on", priv.On)
-			ic.ManagedPrivileges[priv.On] = append(ic.ManagedPrivileges[priv.On], priv.Type)
+			ic.ManagedPrivileges[k] = append(ic.ManagedPrivileges[k], t)
 		}
 	}
 	return ic

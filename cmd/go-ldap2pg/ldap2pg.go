@@ -15,6 +15,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/sync"
+	"github.com/dalibo/ldap2pg/internal/wanted"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -84,7 +85,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 
-	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges, instance.Databases)
+	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return
 	}
@@ -108,6 +109,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+	wantedGrants = wanted.ExpandGrants(wantedGrants, instance.Databases, instance.RolesBlacklist)
 	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffPrivileges(instance, wantedGrants), controller.Real)
 	if err != nil {
 		return

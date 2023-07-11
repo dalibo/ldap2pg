@@ -8,6 +8,8 @@ var (
 	Map map[string]Privilege
 	//go:embed sql/grant-database.sql
 	inspectDatabase string
+	//go:embed sql/grant-global-default.sql
+	inspectGlobalDefault string
 	//go:embed sql/grant-language.sql
 	inspectLanguage string
 	//go:embed sql/schema.sql
@@ -21,6 +23,11 @@ func init() {
 	register("instance", "LANGUAGE", inspectLanguage)
 
 	register("database", "SCHEMA", inspectSchema)
+	register(
+		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
+		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
+		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
+	)
 }
 
 // queries are grant and revoke queries in order.

@@ -18,48 +18,33 @@ type Privilege struct {
 	Scope   string
 	Object  string
 	Inspect string
-	Grant   string
-	Revoke  string
+	// Grant and revoke queries are double format string. The first
+	// formatting is for object (TABLE, SCHEMA, etc.) and type (SELECT,
+	// INSERT, etc.). The second formating is for grant parameters, usually
+	// SQL identifiers: schema, object name, grantee, etc..
+	Grant  string
+	Revoke string
+}
+
+func (p Privilege) IsZero() bool {
+	return "" == p.Inspect
+}
+
+func (p Privilege) IsDefault() bool {
+	return strings.HasSuffix(p.Object, "DEFAULT")
 }
 
 // Expand handles grants with __all__ databases.
 func (p Privilege) Expand(g Grant, databases postgres.DBMap) (grants []Grant) {
-	g.Normalize()
 	switch p.Scope {
 	case "instance":
-		if "" == g.Object || "__all__" == g.Object {
-			// One time, we may improve this to handle all
-			// languages, all foreign data wrapper, etc. For now,
-			// we consider __all__ only for databases.
-			for dbname := range databases {
-				expansion := g // Copy
-				expansion.Object = dbname
-				grants = append(grants, expansion)
-			}
-		} else {
-			grants = append(grants, g)
-		}
+		grants = p.expandDatabases(g, databases)
 	case "database":
-		var dbGrants []Grant
-		if "" == g.Database || "__all__" == g.Database {
-			for dbname := range databases {
-				expansion := g // Copy
-				expansion.Database = dbname
-				dbGrants = append(dbGrants, expansion)
-			}
-		} else {
-			dbGrants = append(dbGrants, g)
-		}
-
+		dbGrants := p.expandDatabases(g, databases)
 		for _, g := range dbGrants {
-			if "" == g.Object || "__all__" == g.Object {
-				for _, schema := range databases[g.Database].Schemas {
-					expansion := g // Copy
-					expansion.Object = schema.Name
-					grants = append(grants, expansion)
-				}
-			} else {
-				grants = append(grants, g)
+			schemaGrants := p.expandSchemas(g, databases)
+			for _, g := range schemaGrants {
+				grants = append(grants, p.expandOwners(g, databases)...)
 			}
 		}
 	default:
@@ -70,9 +55,21 @@ func (p Privilege) Expand(g Grant, databases postgres.DBMap) (grants []Grant) {
 }
 
 func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.SyncQuery) {
-	q.Query = fmt.Sprintf(p.Revoke, g.Type)
-	// REVOKE ... ON ... {object} FROM {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
+	if p.IsDefault() {
+		// ALTER DEFAULT PRIVILEGES ... REVOKE {type} ON {object} ...
+		// Unlike regular privileges, object is a keyword parameterized by grant.
+		q.Query = fmt.Sprintf(p.Revoke, g.Type, g.Target)
+		// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ... REVOKE ...
+		q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner})
+	} else {
+		// REVOKE {type} ON ...
+		q.Query = fmt.Sprintf(p.Revoke, g.Type)
+		// REVOKE ... ON ... {object} FROM ...
+		q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object})
+	}
+
+	// REVOKE ... FROM {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Grantee})
 	if "instance" == p.Scope {
 		q.Database = defaultDatabase
 	} else {
@@ -82,43 +79,45 @@ func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.Sync
 	return
 }
 
-func (p Privilege) BuildGrants(g Grant, databases postgres.DBMap, defaultDatabase string) (queries []postgres.SyncQuery) {
-	sql := fmt.Sprintf(p.Grant, g.Type)
+func (p Privilege) BuildGrant(g Grant, defaultDatabase string) postgres.SyncQuery {
+	var sql string
+	if g.IsDefault() {
+		// ALTER DEFAULT PRIVILEGES ... GRANT {type} on {object} ...
+		sql = fmt.Sprintf(p.Grant, g.Type, g.Target)
+	} else {
+		// GRANT {type} ON ...
+		sql = fmt.Sprintf(p.Grant, g.Type)
+	}
+
 	grantee := pgx.Identifier{g.Grantee}
 
 	switch p.Scope {
 	case "instance":
-		grants := p.expandDatabases(g, databases)
-		for _, g := range grants {
-			q := postgres.SyncQuery{
-				LogArgs: p.BuildLogArgs(g),
-				// GRANT ... ON ... {object} TO {grantee}
-				Query:     sql,
-				QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
-				Database:  defaultDatabase,
-			}
-			queries = append(queries, q)
+		return postgres.SyncQuery{
+			LogArgs: p.BuildLogArgs(g),
+			// GRANT ... ON ... {object} TO {grantee}
+			Query:     sql,
+			QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
+			Database:  defaultDatabase,
 		}
 	case "database":
-		grants := p.expandDatabases(g, databases)
-		for _, g := range grants {
-			grants := p.expandSchemas(g, databases)
-			for _, g := range grants {
-				q := postgres.SyncQuery{
-					LogArgs: p.BuildLogArgs(g),
-					// GRANT ... ON ... {object} TO {grantee}
-					Query:     sql,
-					QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
-					Database:  g.Database,
-				}
-				queries = append(queries, q)
-			}
+		q := postgres.SyncQuery{
+			LogArgs:  p.BuildLogArgs(g),
+			Query:    sql,
+			Database: g.Database,
 		}
+		if g.IsDefault() {
+			// ALTER DEFAULT PRIVILEGES FOR {owner} GRANT ... ON ... TO {grantee}
+			q.QueryArgs = []interface{}{pgx.Identifier{g.Owner}, grantee}
+		} else {
+			// GRANT ... ON ... {object} TO {grantee}
+			q.QueryArgs = []interface{}{pgx.Identifier{g.Object}, grantee}
+		}
+		return q
 	default:
 		slog.Debug("Generating grant.", "scope", p.Scope)
 		panic("unhandled privilege scope")
 	}
-	return
 }
 
 func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Grant) {
@@ -146,18 +145,48 @@ func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Gra
 	return
 }
 
+func (p Privilege) expandOwners(g Grant, databases postgres.DBMap) (out []Grant) {
+	defer func() {
+		out = append(out, g)
+	}()
+
+	if !p.IsDefault() {
+		g.Owner = ""
+		return
+	}
+
+	if "__auto__" != g.Owner {
+		return
+	}
+
+	database := databases[g.Database]
+	if "" == g.Schema {
+		g.Owner = database.Owner
+	} else {
+		g.Owner = database.Schemas[g.Schema].Owner
+	}
+
+	if "" == g.Owner {
+		slog.Debug("Expand owners.", "grant", g, "database", database)
+		panic("no owner")
+	}
+
+	return
+}
+
 func (p Privilege) expandSchemas(g Grant, databases postgres.DBMap) (out []Grant) {
 	var input string
 	// Use object field if expanding databases in database scope.
-	if "database" == p.Scope {
+	if "database" == p.Scope && !p.IsDefault() {
 		input = g.Object
 	} else {
 		input = g.Schema
 	}
 
-	if "" == input || "__all__" == input {
+	if "__all__" == input {
 		for _, s := range databases[g.Database].Schemas {
 			g := g // copy
+			// Should never happen for default privilege. See Normalize.
 			if "database" == p.Scope {
 				g.Object = s.Name
 			} else {
@@ -176,9 +205,14 @@ func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
 	if "instance" != p.Scope {
 		args = append(args, "database", g.Database)
 	}
-	args = append(args,
-		strings.ToLower(g.Target), g.Object,
-		"role", g.Grantee,
-	)
+	if g.IsDefault() {
+		args = append(args,
+			"owner", g.Owner,
+			"class", g.Target,
+		)
+	} else {
+		args = append(args, strings.ToLower(g.Target), g.Object)
+	}
+	args = append(args, "role", g.Grantee)
 	return
 }

@@ -10,5 +10,5 @@ type Config struct {
 	ManagedRolesQuery   Querier[string]
 	RolesBlacklistQuery Querier[string]
 	SchemasQuery        Querier[postgres.Schema]
-	ManagedPrivileges   map[string][]string
+	ManagedPrivileges   map[string][]string // SCHEMAS -> [USAGE, CREATE], ...
 }

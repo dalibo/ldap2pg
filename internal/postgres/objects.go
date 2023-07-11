@@ -9,12 +9,13 @@ import (
 type Database struct {
 	Name    string
 	Owner   string
-	Schemas []Schema
+	Schemas map[string]Schema
 }
 type DBMap map[string]Database
 
 func RowToDatabase(row pgx.CollectableRow) (database Database, err error) {
 	err = row.Scan(&database.Name, &database.Owner)
+	database.Schemas = make(map[string]Schema)
 	return
 }
 

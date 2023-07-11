@@ -2,6 +2,7 @@ package inspect
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -11,18 +12,32 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func (instance *Instance) InspectStage2(ctx context.Context, pc Config) (err error) {
+//go:embed sql/schemas.sql
+var schemasQuery string
+
+func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
+	err := instance.InspectSchemas(ctx, pc.SchemasQuery)
+	if err != nil {
+		return fmt.Errorf("schemas: %w", err)
+	}
+
 	err = instance.InspectGrants(ctx, pc.ManagedPrivileges)
-	return
+	if err != nil {
+		return fmt.Errorf("privileges: %w", err)
+	}
+
+	return nil
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
 	slog.Info("Inspecting privileges.")
 	for _, p := range privilege.Map {
-		managedTypes := managedPrivileges[p.Object]
-		if 0 == len(managedTypes) {
+		arg, ok := managedPrivileges[p.Object]
+		if !ok {
+			slog.Debug("Skipping privilege.", "object", p.Object)
 			continue
 		}
+
 		var databases []string
 		if "instance" == p.Scope {
 			databases = []string{instance.DefaultDatabase}
@@ -31,14 +46,18 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 		}
 
 		for _, database := range databases {
-			slog.Debug("Inspecting grants.", "scope", p.Scope, "database", database, "object", p.Object, "types", managedTypes)
+			if p.IsDefault() {
+				slog.Debug("Inspecting default grants.", "database", database, "scope", p.Object)
+			} else {
+				slog.Debug("Inspecting grants.", "scope", p.Scope, "database", database, "object", p.Object)
+			}
 			pgconn, err := postgres.DBPool.Get(ctx, database)
 			if err != nil {
 				return err
 			}
 
-			slog.Debug("Executing SQL query:\n"+p.Inspect, "arg", managedTypes)
-			rows, err := pgconn.Query(ctx, p.Inspect, managedTypes)
+			slog.Debug("Executing SQL query:\n"+p.Inspect, "arg", arg)
+			rows, err := pgconn.Query(ctx, p.Inspect, arg)
 			if err != nil {
 				return fmt.Errorf("bad query: %w", err)
 			}
@@ -47,22 +66,38 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				if err != nil {
 					return fmt.Errorf("bad row: %w", err)
 				}
-				grant.Target = p.Object
+				if p.IsDefault() {
+					grant.Target = grant.Object
+				} else {
+					grant.Target = p.Object
+				}
 
 				database, known := instance.Databases[grant.Database]
 				if !known {
+					slog.Debug("Ignoring grant on unmanaged database.", "database", grant.Database)
 					continue
 				}
-				if "" != grant.Schema && !slices.ContainsFunc(database.Schemas, func(s postgres.Schema) bool {
-					return s.Name == grant.Schema
-				}) {
-					continue
+
+				if "" != grant.Schema {
+					_, known = database.Schemas[grant.Schema]
+					if !known {
+						slog.Debug("Ignoring grant on unmanaged schema.", "database", grant.Database, "schema", grant.Schema)
+						continue
+					}
 				}
 
 				pattern := instance.RolesBlacklist.MatchString(grant.Grantee)
 				if pattern != "" {
 					slog.Debug(
 						"Ignoring grant to blacklisted role.",
+						"grant", grant, "pattern", pattern)
+					continue
+				}
+
+				pattern = instance.RolesBlacklist.MatchString(grant.Owner)
+				if pattern != "" {
+					slog.Debug(
+						"Ignoring default grant for blacklisted role.",
 						"grant", grant, "pattern", pattern)
 					continue
 				}
@@ -81,22 +116,39 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 	return nil
 }
 
-func (instance *Instance) InspectSchemas(ctx context.Context, query Querier[postgres.Schema]) error {
+func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Querier[postgres.Schema]) error {
+	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
+
 	for i, database := range instance.Databases {
+		var managedSchemas []string
+		slog.Debug("Inspecting managed schemas.", "database", database.Name)
 		conn, err := postgres.DBPool.Get(ctx, database.Name)
 		if err != nil {
 			return err
 		}
-		for query.Query(ctx, conn); query.Next(); {
-			s := query.Row()
-			database.Schemas = append(database.Schemas, s)
+		for managedQuery.Query(ctx, conn); managedQuery.Next(); {
+			s := managedQuery.Row()
+			managedSchemas = append(managedSchemas, s.Name)
+		}
+		err = managedQuery.Err()
+		if err != nil {
+			return err
+		}
+
+		for sq.Query(ctx, conn); sq.Next(); {
+			s := sq.Row()
+			if !slices.Contains(managedSchemas, s.Name) {
+				continue
+			}
+			database.Schemas[s.Name] = s
 			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
 		}
-		instance.Databases[i] = database
-		err = query.Err()
+		err = sq.Err()
 		if err != nil {
-			return fmt.Errorf("schemas: %w", err)
+			return err
 		}
+
+		instance.Databases[i] = database
 	}
 
 	return nil

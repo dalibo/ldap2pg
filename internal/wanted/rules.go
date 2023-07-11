@@ -10,6 +10,7 @@ import (
 )
 
 type GrantRule struct {
+	Owner     pyfmt.Format
 	Privilege pyfmt.Format
 	Database  pyfmt.Format
 	Schema    pyfmt.Format
@@ -18,11 +19,12 @@ type GrantRule struct {
 }
 
 func (r GrantRule) IsStatic() bool {
-	return r.Privilege.IsStatic() &&
-		r.Database.IsStatic() &&
-		r.Schema.IsStatic() &&
+	return r.Database.IsStatic() &&
 		r.Object.IsStatic() &&
-		r.To.IsStatic()
+		r.Owner.IsStatic() &&
+		r.Schema.IsStatic() &&
+		r.To.IsStatic() &&
+		r.Privilege.IsStatic()
 }
 
 func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <-chan privilege.Grant {
@@ -41,6 +43,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 					Schema:   r.Schema.Input,
 					Object:   r.Object.Input,
 				}
+				if priv.IsDefault() {
+					grant.Owner = r.Owner.Input
+				}
 				ch <- grant
 			}
 		} else {
@@ -55,6 +60,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 						Database: r.Database.Format(values),
 						Schema:   r.Schema.Format(values),
 						Object:   r.Object.Format(values),
+					}
+					if priv.IsDefault() {
+						grant.Owner = r.Owner.Input
 					}
 					ch <- grant
 				}
