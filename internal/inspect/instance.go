@@ -53,16 +53,16 @@ func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err erro
 
 	err = instance.InspectSession(ctx, pgconn, pc)
 	if err != nil {
-		return
+		return instance, fmt.Errorf("session: %w", err)
 	}
 	err = instance.InspectManagedDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
-		return instance, fmt.Errorf("postgres: %w", err)
+		return instance, fmt.Errorf("databases: %w", err)
 	}
 
 	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
 	if err != nil {
-		return
+		return instance, fmt.Errorf("roles: %w", err)
 	}
 	return
 }
@@ -120,7 +120,7 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 		instance.ManagedDatabases.Add(q.Row())
 	}
 	if err := q.Err(); err != nil {
-		return fmt.Errorf("databases: %w", err)
+		return err
 	}
 
 	slog.Debug("Inspecting database owners.")
@@ -132,14 +132,9 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 			slog.Debug("Found database.", "name", db.Name)
 			instance.Databases[db.Name] = db
 		}
-
 	}
 
-	if err := dbq.Err(); err != nil {
-		return fmt.Errorf("databases: %w", err)
-	}
-
-	return nil
+	return dbq.Err()
 }
 
 func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
@@ -150,7 +145,7 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ro
 		columns = append(columns, q.Row())
 	}
 	if err := q.Err(); err != nil {
-		return fmt.Errorf("role columns: %w", err)
+		return fmt.Errorf("columns: %w", err)
 	}
 	// Setup global var to configure RoleOptions.String()
 	role.ProcessColumns(columns, instance.Me.Options.Super)
@@ -182,7 +177,7 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ro
 		}
 	}
 	if err := q.Err(); err != nil {
-		return fmt.Errorf("roles options: %w", err)
+		return fmt.Errorf("options: %w", err)
 	}
 
 	if nil == managedRolesQ {
