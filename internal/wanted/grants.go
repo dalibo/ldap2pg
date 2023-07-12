@@ -15,6 +15,11 @@ func ExpandGrants(in []privilege.Grant, databases postgres.DBMap, rolesBlacklist
 				slog.Debug("Ignoring blacklisted owner.", "grant", g, "pattern", pattern)
 				continue
 			}
+			logAttrs := []interface{}{"grant", g}
+			if "" != g.Database {
+				logAttrs = append(logAttrs, "database", g.Database)
+			}
+			slog.Debug("Expand grant.", logAttrs...)
 			out = append(out, g)
 		}
 	}
