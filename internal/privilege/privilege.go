@@ -146,22 +146,27 @@ func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Gra
 }
 
 func (p Privilege) expandOwners(g Grant, databases postgres.DBMap) (out []Grant) {
-	defer func() {
-		out = append(out, g)
-	}()
-
 	if !p.IsDefault() {
 		g.Owner = ""
+		out = append(out, g)
 		return
 	}
 
 	if "__auto__" != g.Owner {
+		out = append(out, g)
 		return
 	}
 
 	database := databases[g.Database]
+	g.Owner = database.Owner
+	out = append(out, g)
+
 	if "" == g.Schema {
-		g.Owner = database.Owner
+		for _, s := range database.Schemas {
+			g := g // copy
+			g.Owner = s.Owner
+			out = append(out, g)
+		}
 	} else {
 		g.Owner = database.Schemas[g.Schema].Owner
 	}
