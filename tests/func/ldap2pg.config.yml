@@ -1,0 +1,22 @@
+# Very simple file to test configuration settings
+postgres:
+  databases_query: [nonsuperdb]
+  managed_roles_query: [config_test_create, config_test_update, config_test_reset, config_test_unmodified]
+
+sync_map:
+- description: "Setup static test role."
+  roles:
+    - name: config_test_create
+      config:
+        log_statement: ddl
+        application_name: config_test_create_application_name
+
+    - name: config_test_update
+      config:
+        log_statement: mod
+        application_name: config_test_update_application_name
+
+    - name: config_test_reset
+      config: {}
+
+    - name: config_test_unmodified

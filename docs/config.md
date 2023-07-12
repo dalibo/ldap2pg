@@ -647,6 +647,35 @@ of the target PostgreSQL cluster.
       INHERIT: yes
 ```
 
+#### `config`  { #role-config }
+
+Defines PostgreSQL configuration parameters that will be set for the role.
+Must be a YAML dictionary. Available configuration parameters varies following
+the version of the target PostgreSQL cluster.
+
+``` yaml
+- roles:
+  - name: my-db-writer
+    config:
+      log_statement: mod
+      log_min_duration_sample: 100
+```
+
+If no block is specified, then ldap2pg will ignore any existing configuration
+parameters. Otherwise, any existing configuration parameters that do not match
+those listed in the `config` block will be reset to their default values.
+
+You can specify that all configuration parameters are reset to default with
+an empty config block, e.g.
+
+``` yaml
+- roles:
+  - name: reset-my-configuration
+    config: {}
+```
+
+Note that LDAP attributes are not expanded in config values.
+
 #### `parent`  { #role-parent }
 
 Name of a parent role. A list of names is accepted. The plural form `parents`

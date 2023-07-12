@@ -95,6 +95,19 @@ CREATE ROLE "keepme";
 -- kevin is out of ldap, for drop by nonsuper
 CREATE ROLE "kevin";
 
+
+CREATE ROLE "config_test_update";
+ALTER ROLE "config_test_update" SET log_statement TO 'all';
+ALTER ROLE "config_test_update" SET application_name TO 'config_test_role_update_old_application_name';
+
+CREATE ROLE "config_test_reset";
+ALTER ROLE "config_test_reset" SET log_statement TO 'none';
+ALTER ROLE "config_test_reset" SET application_name TO 'config_test_role_reset_old_application_name';
+
+CREATE ROLE "config_test_unmodified";
+ALTER ROLE "config_test_unmodified" SET log_statement TO 'mod';
+ALTER ROLE "config_test_unmodified" SET application_name TO 'config_test_role_unmodified_old_application_name';
+
 -- Create databases
 CREATE DATABASE olddb;
 CREATE DATABASE appdb WITH OWNER "œdipe";

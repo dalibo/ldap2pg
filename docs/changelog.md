@@ -11,6 +11,10 @@ Here is a highlight of changes in each versions. If you need further details,
 follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
+# Unreleased
+
+- Add support for config in roles.
+
 # ldap2pg 5.9
 
 Released 2023-04-11.
