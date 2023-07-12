@@ -47,33 +47,32 @@ def test_real_mode(ldap2pg, psql):
     assert 'keepme' in roles
 
 
-def test_re_grant(psql):
-    from sh import ldap2pg
-
+@pytest.mark.go
+def test_re_grant(ldap2pg, psql):
     # Ensure db is sync
-    ldap2pg('-C', c='ldap2pg.yml')
+    ldap2pg('--check', c='ldap2pg.yml')
     # Revoke on one table. This must trigger a re-GRANT
-    psql(d=b'appdb', c=b'REVOKE SELECT ON appns.table2 FROM readers;')
+    psql(d='appdb', c='REVOKE SELECT ON appns.table2 FROM readers;')
     # Ensure database is not sync.
-    ldap2pg('-C', c='ldap2pg.yml', _ok_code=1)
+    ldap2pg('--check', c='ldap2pg.yml', _ok_code=1)
     # Synchronize all
     ldap2pg('--real', c='ldap2pg.yml')
-    ldap2pg('-C', c='ldap2pg.yml')
+    ldap2pg('--check', c='ldap2pg.yml')
 
 
-def test_re_revoke(psql):
-    from sh import ldap2pg
+@pytest.mark.go
+def test_re_revoke(ldap2pg, psql):
     c = 'ldap2pg.yml'
 
     # Ensure db is sync
-    ldap2pg('-C', c=c)
+    ldap2pg('--check', c=c)
     # Partial GRANT to oscar. This must trigger a re-REVOKE
-    psql(d=b'appdb', c=b'GRANT INSERT ON appns.table1 TO readers;')
+    psql(d='appdb', c='GRANT INSERT ON appns.table1 TO readers;')
     # Ensure database is not sync.
-    ldap2pg('-C', c=c, _ok_code=1)
+    ldap2pg('--check', c=c, _ok_code=1)
     # Synchronize all
     ldap2pg('--real', c=c)
-    ldap2pg('-C', c=c)
+    ldap2pg('--check', c=c)
 
 
 @pytest.mark.go
