@@ -42,8 +42,10 @@ var builtins = map[string]interface{}{
 		"type": "USAGE",
 		"on":   "SCHEMA",
 	}},
+	// ALL TABLES
 	"__select_on_tables__": []interface{}{
 		"__default_select_on_tables__",
+		"__select_on_all_tables__",
 	},
 	"__default_select_on_tables__": []interface{}{map[string]string{
 		"default": "global",
@@ -54,10 +56,16 @@ var builtins = map[string]interface{}{
 		"type":    "SELECT",
 		"on":      "TABLES",
 	}},
+	"__select_on_all_tables__": []interface{}{map[string]string{
+		"type": "SELECT",
+		"on":   "ALL TABLES IN SCHEMA",
+	}},
 	"__select_on_sequences__": []interface{}{},
 	"__usage_on_types__":      []interface{}{},
-	"__all_on_tables__":       []interface{}{},
 	"__all_on_sequences__":    []interface{}{},
+	"__all_on_tables__": []interface{}{
+		"__select_on_tables__",
+	},
 }
 
 func NormalizePrivilegeRefs(value interface{}) []interface{} {

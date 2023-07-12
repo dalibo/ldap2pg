@@ -103,7 +103,11 @@ func (g Grant) String() string {
 		}
 		b.WriteByte(' ')
 	}
-	b.WriteString(g.Type)
+	if "" == g.Type {
+		b.WriteString("N/A")
+	} else {
+		b.WriteString(g.Type)
+	}
 	b.WriteString(" ON ")
 	b.WriteString(g.Target)
 	if !g.IsDefault() {

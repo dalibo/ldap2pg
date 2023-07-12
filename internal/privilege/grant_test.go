@@ -68,4 +68,12 @@ func TestGrantString(t *testing.T) {
 		Object:  "plpgsql",
 	}
 	require.Equal(t, `USAGE ON LANGUAGE plpgsql TO public`, g.String())
+
+	g = privilege.Grant{
+		Target:  "ALL TABLES IN SCHEMA",
+		Grantee: "dave",
+		Schema:  "public",
+		Type:    "",
+	}
+	require.Equal(t, `N/A ON ALL TABLES IN SCHEMA public TO dave`, g.String())
 }

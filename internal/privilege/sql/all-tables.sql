@@ -1,0 +1,38 @@
+WITH
+namespace_rels AS (
+	SELECT
+		nsp.oid,
+		nsp.nspname,
+		array_remove(array_agg(rel.relname ORDER BY rel.relname), NULL) AS rels
+	FROM pg_catalog.pg_namespace nsp
+	LEFT OUTER JOIN pg_catalog.pg_class AS rel
+		ON rel.relnamespace = nsp.oid AND relkind = 'r'
+	WHERE nspname NOT LIKE 'pg\\_%temp\\_%'
+		AND nspname <> 'pg_toast'
+	GROUP BY 1, 2
+),
+grants AS (
+	SELECT
+		relnamespace,
+		(aclexplode(relacl)).privilege_type,
+		(aclexplode(relacl)).grantee,
+		array_agg(relname ORDER BY relname) AS rels
+	FROM pg_catalog.pg_class
+	WHERE relkind = 'r'
+	GROUP BY 1, 2, 3
+)
+SELECT
+	'' AS owner,
+	COALESCE(rolname, 'public') AS grantee,
+	COALESCE(privilege_type, '') AS "privilege",
+	current_database() AS "database",
+	nspname AS "schema",
+	'' AS "object",
+	nsp.rels <> COALESCE(grants.rels, ARRAY[]::name[]) AS "partial"
+FROM namespace_rels AS nsp
+LEFT OUTER JOIN grants AS grants
+	ON relnamespace = nsp.oid
+			AND privilege_type = ANY($1)
+LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
+WHERE NOT (array_length(nsp.rels, 1) IS NOT NULL AND grants.rels IS NULL)
+ORDER BY 1, 2

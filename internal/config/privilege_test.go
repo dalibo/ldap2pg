@@ -54,5 +54,5 @@ func (suite *Suite) TestBuiltinPrivilege() {
 	r.Len(value, 1)
 	r.Contains(value, "ro")
 	ro := value["ro"]
-	r.Len(ro, 2)
+	r.Len(ro, 3)
 }
