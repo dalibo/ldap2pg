@@ -1,21 +1,24 @@
 # Test order matters.
 
 from __future__ import unicode_literals
+
+import pytest
+
 from conftest import PSQL
 
 
-def test_run(psql):
+@pytest.mark.go
+def test_run(ldap2pg, psql):
     # type: (PSQL) -> None
 
-    from sh import ldap2pg
     c = 'tests/func/ldap2pg.full.yml'
 
     # Ensure database is not sync.
-    ldap2pg('-C', c=c, _ok_code=1)
+    ldap2pg('--check', c=c, _ok_code=1)
 
     # Synchronize all
-    ldap2pg('-N', c=c)
-    ldap2pg('-C', c=c)
+    ldap2pg('--real', c=c)
+    ldap2pg('--check', c=c)
 
     roles = list(psql.roles())
 

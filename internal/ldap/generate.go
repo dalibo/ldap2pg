@@ -9,8 +9,11 @@ import (
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
+
+var KnownRDNs = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}
 
 // Holds a consistent set of entry and sub-search entries.
 type Result struct {
@@ -79,6 +82,15 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 	for i, attr := range attributes {
 		if "dn" == attr {
 			valuesList[i] = []string{r.Entry.DN}
+		} else if slices.Contains(KnownRDNs, attr) {
+			dn, _ := ldap3.ParseDN(r.Entry.DN)
+			for _, rdn := range dn.RDNs {
+				attr0 := rdn.Attributes[0]
+				if attr == attr0.Type {
+					valuesList[i] = []string{attr0.Value}
+					break
+				}
+			}
 		} else if r.SubsearchAttribute == attr {
 			valuesList[i] = subKeys
 		} else {
