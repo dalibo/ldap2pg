@@ -16,7 +16,17 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 		wantedSet := mapset.NewSet(wanted...)
 		// Revoke spurious grants.
 		for _, grant := range instance.Grants {
-			if wantedSet.Contains(grant) {
+			wantedGrant := grant
+			// Always search a full grant in wanted. If we have a
+			// partial grant in instance, it will be regranted in
+			// grant loop.
+			wantedGrant.Partial = false
+			if wantedSet.Contains(wantedGrant) {
+				continue
+			}
+
+			if "" == grant.Type {
+				// Don't revoke irrelevant ALL ... IN SCHEMA
 				continue
 			}
 
@@ -35,6 +45,17 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 			if currentSet.Contains(grant) {
 				continue
 			}
+
+			// Test if a GRANT ON ALL ... IN SCHEMA is irrelevant.
+			// To avoid regranting each run.
+			irrelevantGrant := grant
+			irrelevantGrant.Grantee = "public"
+			irrelevantGrant.Type = ""
+			if currentSet.Contains(irrelevantGrant) {
+				slog.Debug("Skipping irrelevant grant.", "grant", grant)
+				continue
+			}
+
 			p := grant.Privilege()
 			q := p.BuildGrant(grant, instance.DefaultDatabase)
 			if p.IsDefault() {
