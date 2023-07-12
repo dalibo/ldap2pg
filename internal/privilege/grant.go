@@ -3,7 +3,6 @@ package privilege
 import (
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
@@ -35,15 +34,6 @@ func RowTo(row pgx.CollectableRow) (g Grant, err error) {
 
 func (g Grant) IsDefault() bool {
 	return "" != g.Owner
-}
-
-// Expand wanted grants.
-func (g Grant) Expand(databases postgres.DBMap) (out []Grant) {
-	p := g.Privilege()
-	for _, expansion := range p.Expand(g, databases) {
-		out = append(out, expansion)
-	}
-	return
 }
 
 // Normalize ensures grant fields are consistent with privilege scope.

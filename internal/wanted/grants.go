@@ -9,7 +9,8 @@ import (
 
 func ExpandGrants(in []privilege.Grant, databases postgres.DBMap, rolesBlacklist lists.Blacklist) (out []privilege.Grant) {
 	for _, grant := range in {
-		for _, g := range grant.Expand(databases) {
+		p := grant.Privilege()
+		for _, g := range p.Expand(grant, databases) {
 			pattern := rolesBlacklist.MatchString(g.Owner)
 			if "" != pattern {
 				slog.Debug("Ignoring blacklisted owner.", "grant", g, "pattern", pattern)
