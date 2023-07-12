@@ -52,6 +52,7 @@ var builtins = map[string]interface{}{
 func init() {
 	registerRelationBuiltins("sequences", "select", "update", "usage")
 	registerRelationBuiltins("tables", "delete", "insert", "select", "truncate", "update", "references", "trigger")
+	registerRelationBuiltins("functions", "execute")
 }
 
 // registerRelationBuiltins generates dunder privileges and privilege groups.

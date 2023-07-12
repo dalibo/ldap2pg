@@ -20,6 +20,8 @@ var (
 	inspectAllTables string
 	//go:embed sql/all-sequences.sql
 	inspectAllSequences string
+	//go:embed sql/all-functions.sql
+	inspectAllFunctions string
 )
 
 func init() {
@@ -41,6 +43,7 @@ func init() {
 	)
 	register("database", "ALL TABLES IN SCHEMA", inspectAllTables)
 	register("database", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
+	register("database", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
 }
 
 // queries are grant and revoke queries in order.
