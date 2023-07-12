@@ -107,6 +107,10 @@ func (g Grant) String() string {
 	if g.IsDefault() {
 		b.WriteString("DEFAULT FOR ")
 		b.WriteString(g.Owner)
+		if "" != g.Schema {
+			b.WriteString(" IN SCHEMA ")
+			b.WriteString(g.Schema)
+		}
 		b.WriteByte(' ')
 	}
 	b.WriteString(g.Type)
@@ -129,9 +133,6 @@ func (g Grant) String() string {
 			o.WriteString(g.Object)
 		}
 		b.WriteString(o.String())
-	} else if "" != g.Schema {
-		b.WriteString(" IN SCHEMA ")
-		b.WriteString(g.Schema)
 	}
 
 	if "" != g.Grantee {
