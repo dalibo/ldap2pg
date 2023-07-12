@@ -88,7 +88,10 @@ func (g Grant) Privilege() (p Privilege) {
 		p = Map[g.Target]
 	} else if "" == g.Schema {
 		p = Map["GLOBAL DEFAULT"]
+	} else {
+		p = Map["SCHEMA DEFAULT"]
 	}
+
 	if p.IsZero() {
 		slog.Debug("Resolving privilege for grant.", "grant", g)
 		panic("unhandled privilege")

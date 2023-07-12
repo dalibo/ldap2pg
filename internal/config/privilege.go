@@ -49,6 +49,10 @@ var builtins = map[string]interface{}{
 		"default": "global",
 		"type":    "SELECT",
 		"on":      "TABLES",
+	}, map[string]string{
+		"default": "schema",
+		"type":    "SELECT",
+		"on":      "TABLES",
 	}},
 	"__select_on_sequences__": []interface{}{},
 	"__usage_on_types__":      []interface{}{},

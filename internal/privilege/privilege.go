@@ -54,21 +54,33 @@ func (p Privilege) Expand(g Grant, databases postgres.DBMap) (grants []Grant) {
 	return
 }
 
-func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.SyncQuery) {
+func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) postgres.SyncQuery {
+	return p.BuildQuery(g, p.Revoke, defaultDatabase)
+}
+
+func (p Privilege) BuildGrant(g Grant, defaultDatabase string) postgres.SyncQuery {
+	return p.BuildQuery(g, p.Grant, defaultDatabase)
+}
+
+func (p Privilege) BuildQuery(g Grant, format, defaultDatabase string) (q postgres.SyncQuery) {
 	if p.IsDefault() {
-		// ALTER DEFAULT PRIVILEGES ... REVOKE {type} ON {object} ...
+		// ALTER DEFAULT PRIVILEGES ... [GRANT|REVOKE] {type} ON {object} ...
 		// Unlike regular privileges, object is a keyword parameterized by grant.
-		q.Query = fmt.Sprintf(p.Revoke, g.Type, g.Target)
-		// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ... REVOKE ...
+		q.Query = fmt.Sprintf(format, g.Type, g.Target)
+		// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ...
 		q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner})
+		if "" != g.Schema {
+			// ALTER DEFAULT PRIVILEGES FOR {owner} IN SCHEMA {schema} ...
+			q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema})
+		}
 	} else {
-		// REVOKE {type} ON ...
-		q.Query = fmt.Sprintf(p.Revoke, g.Type)
-		// REVOKE ... ON ... {object} FROM ...
+		// [GRANT|REVOKE] {type} ON ...
+		q.Query = fmt.Sprintf(format, g.Type)
+		// [GRANT|REVOKE] ... ON ... {object} ...
 		q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object})
 	}
 
-	// REVOKE ... FROM {grantee}
+	// ... [FROM|TO] {grantee}
 	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Grantee})
 	if "instance" == p.Scope {
 		q.Database = defaultDatabase
@@ -77,47 +89,6 @@ func (p Privilege) BuildRevoke(g Grant, defaultDatabase string) (q postgres.Sync
 	}
 	q.LogArgs = p.BuildLogArgs(g)
 	return
-}
-
-func (p Privilege) BuildGrant(g Grant, defaultDatabase string) postgres.SyncQuery {
-	var sql string
-	if g.IsDefault() {
-		// ALTER DEFAULT PRIVILEGES ... GRANT {type} on {object} ...
-		sql = fmt.Sprintf(p.Grant, g.Type, g.Target)
-	} else {
-		// GRANT {type} ON ...
-		sql = fmt.Sprintf(p.Grant, g.Type)
-	}
-
-	grantee := pgx.Identifier{g.Grantee}
-
-	switch p.Scope {
-	case "instance":
-		return postgres.SyncQuery{
-			LogArgs: p.BuildLogArgs(g),
-			// GRANT ... ON ... {object} TO {grantee}
-			Query:     sql,
-			QueryArgs: []interface{}{pgx.Identifier{g.Object}, grantee},
-			Database:  defaultDatabase,
-		}
-	case "database":
-		q := postgres.SyncQuery{
-			LogArgs:  p.BuildLogArgs(g),
-			Query:    sql,
-			Database: g.Database,
-		}
-		if g.IsDefault() {
-			// ALTER DEFAULT PRIVILEGES FOR {owner} GRANT ... ON ... TO {grantee}
-			q.QueryArgs = []interface{}{pgx.Identifier{g.Owner}, grantee}
-		} else {
-			// GRANT ... ON ... {object} TO {grantee}
-			q.QueryArgs = []interface{}{pgx.Identifier{g.Object}, grantee}
-		}
-		return q
-	default:
-		slog.Debug("Generating grant.", "scope", p.Scope)
-		panic("unhandled privilege scope")
-	}
 }
 
 func (p Privilege) expandDatabases(g Grant, databases postgres.DBMap) (out []Grant) {

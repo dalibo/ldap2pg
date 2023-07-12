@@ -10,6 +10,8 @@ var (
 	inspectDatabase string
 	//go:embed sql/grant-global-default.sql
 	inspectGlobalDefault string
+	//go:embed sql/grant-schema-default.sql
+	inspectSchemaDefault string
 	//go:embed sql/grant-language.sql
 	inspectLanguage string
 	//go:embed sql/schema.sql
@@ -27,6 +29,11 @@ func init() {
 		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
+	)
+	register(
+		"database", "SCHEMA DEFAULT", inspectSchemaDefault,
+		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
+		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
 }
 
