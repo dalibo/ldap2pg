@@ -43,6 +43,14 @@ func TestGrantString(t *testing.T) {
 	require.Equal(t, `DEFAULT FOR postgres SELECT ON TABLES`, g.String())
 
 	g = privilege.Grant{
+		Target: "TABLES",
+		Owner:  "postgres",
+		Type:   "SELECT",
+		Schema: "public",
+	}
+	require.Equal(t, `DEFAULT FOR postgres IN SCHEMA public SELECT ON TABLES`, g.String())
+
+	g = privilege.Grant{
 		Target:   "TABLE",
 		Grantee:  "public",
 		Type:     "SELECT",
