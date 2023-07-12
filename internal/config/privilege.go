@@ -42,30 +42,41 @@ var builtins = map[string]interface{}{
 		"type": "USAGE",
 		"on":   "SCHEMA",
 	}},
-	// ALL TABLES
-	"__select_on_tables__": []interface{}{
-		"__default_select_on_tables__",
-		"__select_on_all_tables__",
+	"__all_on_schemas__": []interface{}{
+		"__create_on_schemas__",
+		"__usage_on_schema__",
 	},
-	"__default_select_on_tables__": []interface{}{map[string]string{
-		"default": "global",
-		"type":    "SELECT",
-		"on":      "TABLES",
-	}, map[string]string{
-		"default": "schema",
-		"type":    "SELECT",
-		"on":      "TABLES",
-	}},
-	"__select_on_all_tables__": []interface{}{map[string]string{
-		"type": "SELECT",
-		"on":   "ALL TABLES IN SCHEMA",
-	}},
 	"__select_on_sequences__": []interface{}{},
 	"__usage_on_types__":      []interface{}{},
 	"__all_on_sequences__":    []interface{}{},
-	"__all_on_tables__": []interface{}{
-		"__select_on_tables__",
-	},
+}
+
+func init() {
+	// TABLES
+	all := []interface{}{}
+	types := []string{"delete", "insert", "select", "truncate", "update", "references", "trigger"}
+	for _, type_ := range types {
+		TYPE := strings.ToUpper(type_)
+		builtins["__default_"+type_+"_on_tables__"] = []interface{}{map[string]string{
+			"default": "global",
+			"type":    TYPE,
+			"on":      "TABLES",
+		}, map[string]string{
+			"default": "schema",
+			"type":    TYPE,
+			"on":      "TABLES",
+		}}
+		builtins["__"+type_+"_on_all_tables__"] = []interface{}{map[string]string{
+			"type": TYPE,
+			"on":   "ALL TABLES IN SCHEMA",
+		}}
+		builtins["__"+type_+"_on_tables__"] = []interface{}{
+			"__default_" + type_ + "_on_tables__",
+			"__" + type_ + "_on_all_tables__",
+		}
+		all = append(all, "__"+type_+"_on_tables__")
+	}
+	builtins["__all_on_tables__"] = all
 }
 
 func NormalizePrivilegeRefs(value interface{}) []interface{} {
