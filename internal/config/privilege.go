@@ -154,6 +154,14 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 	if err != nil {
 		return
 	}
+	err = NormalizeAlias(&yamlMap, "roles", "to")
+	if err != nil {
+		return
+	}
+	err = NormalizeAlias(&yamlMap, "roles", "grantee")
+	if err != nil {
+		return
+	}
 	err = NormalizeAlias(&yamlMap, "roles", "role")
 	if err != nil {
 		return
