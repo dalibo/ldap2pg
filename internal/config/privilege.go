@@ -46,37 +46,42 @@ var builtins = map[string]interface{}{
 		"__create_on_schemas__",
 		"__usage_on_schema__",
 	},
-	"__select_on_sequences__": []interface{}{},
-	"__usage_on_types__":      []interface{}{},
-	"__all_on_sequences__":    []interface{}{},
+	"__usage_on_types__": []interface{}{},
 }
 
 func init() {
-	// TABLES
+	registerRelationBuiltins("sequences", "select", "update", "usage")
+	registerRelationBuiltins("tables", "delete", "insert", "select", "truncate", "update", "references", "trigger")
+}
+
+// registerRelationBuiltins generates dunder privileges and privilege groups.
+//
+// example: __all_on_tables__, __select_on_tables_, etc.
+func registerRelationBuiltins(class string, types ...string) {
+	CLASS := strings.ToUpper(class)
 	all := []interface{}{}
-	types := []string{"delete", "insert", "select", "truncate", "update", "references", "trigger"}
-	for _, type_ := range types {
-		TYPE := strings.ToUpper(type_)
-		builtins["__default_"+type_+"_on_tables__"] = []interface{}{map[string]string{
+	for _, privType := range types {
+		TYPE := strings.ToUpper(privType)
+		builtins["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]string{
 			"default": "global",
 			"type":    TYPE,
-			"on":      "TABLES",
+			"on":      CLASS,
 		}, map[string]string{
 			"default": "schema",
 			"type":    TYPE,
-			"on":      "TABLES",
+			"on":      CLASS,
 		}}
-		builtins["__"+type_+"_on_all_tables__"] = []interface{}{map[string]string{
+		builtins["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]string{
 			"type": TYPE,
-			"on":   "ALL TABLES IN SCHEMA",
+			"on":   "ALL " + CLASS + " IN SCHEMA",
 		}}
-		builtins["__"+type_+"_on_tables__"] = []interface{}{
-			"__default_" + type_ + "_on_tables__",
-			"__" + type_ + "_on_all_tables__",
+		builtins["__"+privType+"_on_"+class+"__"] = []interface{}{
+			"__default_" + privType + "_on_" + class + "__",
+			"__" + privType + "_on_all_" + class + "__",
 		}
-		all = append(all, "__"+type_+"_on_tables__")
+		all = append(all, "__"+privType+"_on_"+class+"__")
 	}
-	builtins["__all_on_tables__"] = all
+	builtins["__all_on_"+class+"__"] = all
 }
 
 func NormalizePrivilegeRefs(value interface{}) []interface{} {

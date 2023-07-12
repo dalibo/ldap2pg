@@ -18,6 +18,8 @@ var (
 	inspectSchema string
 	//go:embed sql/all-tables.sql
 	inspectAllTables string
+	//go:embed sql/all-sequences.sql
+	inspectAllSequences string
 )
 
 func init() {
@@ -38,6 +40,7 @@ func init() {
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
 	register("database", "ALL TABLES IN SCHEMA", inspectAllTables)
+	register("database", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
 }
 
 // queries are grant and revoke queries in order.
