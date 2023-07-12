@@ -4,6 +4,8 @@ WITH grants AS (
 		defaclrole AS owner,
 		CASE defaclobjtype
 		WHEN 'r' THEN 'TABLES'
+		WHEN 'S' THEN 'SEQUENCES'
+		WHEN 'f' THEN 'FUNCTIONS'
 		END AS "object",
 		defaclobjtype AS objtype,
 		(aclexplode(defaclacl)).grantee AS grantee,
