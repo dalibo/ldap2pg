@@ -29,8 +29,6 @@ func (i Item) HasSubsearch() bool {
 	return 0 < len(i.LdapSearch.Subsearches)
 }
 
-var knownRDN = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}
-
 func (i *Item) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	subsearchAttributes := make(map[string]mapset.Set[string])
@@ -44,7 +42,7 @@ func (i *Item) InferAttributes() {
 		attributes.Add(attribute)
 
 		// Case {member} or {member.cn}
-		if !found || slices.Contains[string](knownRDN, field) {
+		if !found || slices.Contains[string](ldap.KnownRDNs, field) {
 			continue
 		}
 
