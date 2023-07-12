@@ -6,7 +6,7 @@ namespace_rels AS (
 		array_remove(array_agg(rel.relname ORDER BY rel.relname), NULL) AS rels
 	FROM pg_catalog.pg_namespace nsp
 	LEFT OUTER JOIN pg_catalog.pg_class AS rel
-		ON rel.relnamespace = nsp.oid AND relkind = 'r'
+		ON rel.relnamespace = nsp.oid AND relkind IN ('r', 'v', 'f')
 	WHERE nspname NOT LIKE 'pg\\_%temp\\_%'
 		AND nspname <> 'pg_toast'
 	GROUP BY 1, 2
@@ -18,7 +18,7 @@ grants AS (
 		(aclexplode(relacl)).grantee,
 		array_agg(relname ORDER BY relname) AS rels
 	FROM pg_catalog.pg_class
-	WHERE relkind = 'r'
+	WHERE relkind IN ('r', 'v', 'f')
 	GROUP BY 1, 2, 3
 )
 SELECT
