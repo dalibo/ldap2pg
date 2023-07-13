@@ -34,7 +34,6 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 	for _, p := range privilege.Builtins {
 		arg, ok := managedPrivileges[p.Object]
 		if !ok {
-			slog.Debug("Skipping privilege.", "object", p.Object)
 			continue
 		}
 
@@ -75,31 +74,23 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 
 				database, known := instance.Databases[grant.Database]
 				if !known {
-					slog.Debug("Ignoring grant on unmanaged database.", "database", grant.Database)
 					continue
 				}
 
 				if "" != grant.Schema {
 					_, known = database.Schemas[grant.Schema]
 					if !known {
-						slog.Debug("Ignoring grant on unmanaged schema.", "database", grant.Database, "schema", grant.Schema)
 						continue
 					}
 				}
 
 				pattern := instance.RolesBlacklist.MatchString(grant.Grantee)
 				if pattern != "" {
-					slog.Debug(
-						"Ignoring grant to blacklisted role.",
-						"grant", grant, "pattern", pattern)
 					continue
 				}
 
 				pattern = instance.RolesBlacklist.MatchString(grant.Owner)
 				if pattern != "" {
-					slog.Debug(
-						"Ignoring default grant for blacklisted role.",
-						"grant", grant, "pattern", pattern)
 					continue
 				}
 

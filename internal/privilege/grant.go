@@ -104,7 +104,7 @@ func (g Grant) String() string {
 		b.WriteByte(' ')
 	}
 	if "" == g.Type {
-		b.WriteString("N/A")
+		b.WriteString("ANY")
 	} else {
 		b.WriteString(g.Type)
 	}
