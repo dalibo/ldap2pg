@@ -3,7 +3,6 @@ package privilege
 import (
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
@@ -25,11 +24,6 @@ type Grant struct {
 	Schema   string // "" for database grant.
 	Object   string // "" for both schema and database grants.
 	Partial  bool   // Used for ALL TABLES permissions.
-}
-
-func RowTo(row pgx.CollectableRow) (g Grant, err error) {
-	err = row.Scan(&g.Owner, &g.Grantee, &g.Type, &g.Schema, &g.Object, &g.Partial)
-	return
 }
 
 func (g Grant) IsDefault() bool {

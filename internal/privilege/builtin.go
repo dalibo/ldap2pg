@@ -6,13 +6,13 @@ import (
 
 var (
 	Builtins map[string]Privilege
-	//go:embed sql/grant-database.sql
+	//go:embed sql/database.sql
 	inspectDatabase string
-	//go:embed sql/grant-global-default.sql
+	//go:embed sql/global-default.sql
 	inspectGlobalDefault string
-	//go:embed sql/grant-schema-default.sql
+	//go:embed sql/schema-default.sql
 	inspectSchemaDefault string
-	//go:embed sql/grant-language.sql
+	//go:embed sql/language.sql
 	inspectLanguage string
 	//go:embed sql/schema.sql
 	inspectSchema string

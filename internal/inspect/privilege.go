@@ -4,16 +4,49 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
-	"golang.org/x/exp/maps"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
+type PrivilegeInspecter interface {
+	Databases(m postgres.DBMap, defaultDatabase string) []string
+	Inspect() string
+	RowTo(pgx.CollectableRow) (privilege.Grant, error)
+}
+
+var privilegeMap map[string]PrivilegeInspecter
+
 //go:embed sql/schemas.sql
 var schemasQuery string
+
+func init() {
+	// Glue code to instantiate concrete inspector from generic
+	// implementation.
+	privilegeMap = make(map[string]PrivilegeInspecter)
+	for k, p := range privilege.Builtins {
+		var i PrivilegeInspecter
+
+		if "GLOBAL DEFAULT" == p.Object {
+			i = privilege.NewGlobalDefault(p.Object, p.Inspect)
+		} else if "SCHEMA DEFAULT" == p.Object {
+			i = privilege.NewSchemaDefault(p.Object, p.Inspect)
+		} else if strings.HasPrefix(p.Object, "ALL ") {
+			i = privilege.NewAll(p.Object, p.Inspect)
+		} else if "instance" == p.Scope {
+			i = privilege.NewInstance(p.Object, p.Inspect)
+		} else if "database" == p.Scope {
+			i = privilege.NewDatabase(p.Object, p.Inspect)
+		} else {
+			continue
+		}
+		privilegeMap[k] = i
+	}
+}
 
 func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
 	err := instance.InspectSchemas(ctx, pc.SchemasQuery)
@@ -31,46 +64,31 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
 	slog.Info("Inspecting privileges.")
-	for _, p := range privilege.Builtins {
-		arg, ok := managedPrivileges[p.Object]
+	for object, p := range privilegeMap {
+		arg, ok := managedPrivileges[object]
 		if !ok {
 			continue
 		}
 
-		var databases []string
-		if "instance" == p.Scope {
-			databases = []string{instance.DefaultDatabase}
-		} else {
-			databases = maps.Keys(instance.Databases)
-		}
-
-		for _, database := range databases {
-			if p.IsDefault() {
-				slog.Debug("Inspecting default grants.", "database", database, "scope", p.Object)
-			} else {
-				slog.Debug("Inspecting grants.", "scope", p.Scope, "database", database, "object", p.Object)
-			}
+		for _, database := range p.Databases(instance.Databases, instance.DefaultDatabase) {
+			slog.Debug("Inspecting grants.", "database", database, "object", p)
 			pgconn, err := postgres.DBPool.Get(ctx, database)
 			if err != nil {
 				return err
 			}
 
-			slog.Debug("Executing SQL query:\n"+p.Inspect, "arg", arg)
-			rows, err := pgconn.Query(ctx, p.Inspect, arg)
+			sql := p.Inspect()
+			slog.Debug("Executing SQL query:\n"+sql, "arg", arg)
+			rows, err := pgconn.Query(ctx, sql, arg)
 			if err != nil {
 				return fmt.Errorf("bad query: %w", err)
 			}
 			for rows.Next() {
-				grant, err := privilege.RowTo(rows)
+				grant, err := p.RowTo(rows)
 				if err != nil {
 					return fmt.Errorf("bad row: %w", err)
 				}
 				grant.Database = database
-				if p.IsDefault() {
-					grant.Target = grant.Object
-				} else {
-					grant.Target = p.Object
-				}
 
 				database, known := instance.Databases[grant.Database]
 				if !known {

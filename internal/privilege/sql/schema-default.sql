@@ -14,15 +14,14 @@ WITH grants AS (
 )
 SELECT
 	COALESCE(owner.rolname, 'public') AS owner,
-	COALESCE(grantee.rolname, 'public') AS grantee,
 	grants.priv AS "privilege",
-	'' AS "schema",
 	grants."object" AS "object",
-	FALSE AS "partial"
+	"nspname" AS "schema",
+	COALESCE(grantee.rolname, 'public') AS grantee
 FROM grants
 LEFT OUTER JOIN pg_catalog.pg_roles AS owner ON owner.oid = grants.owner
 LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
 LEFT OUTER JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = grants.nsp
-WHERE "nspname" IS NULL			-- Handle global default privileges only.
+WHERE "nspname" IS NOT NULL			-- Handle schema default privileges only.
 	AND grants."object" || '--' || "priv" = ANY ($1)
-ORDER BY 1, 2, 4, 3
+ORDER BY 1, 4, 3, 2, 5

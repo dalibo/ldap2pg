@@ -23,11 +23,9 @@ namespaces AS (
 	GROUP BY 1, 2
 )
 SELECT
-	'' AS owner,
-	COALESCE(rolname, 'public') AS grantee,
 	COALESCE(priv, '') AS "privilege",
 	nspname AS "schema",
-	'' AS "object",
+	COALESCE(rolname, 'public') AS grantee,
 	nsp.procs <> COALESCE(grants.procs, ARRAY[]::name[]) AS "partial"
 FROM namespaces AS nsp
 LEFT OUTER JOIN grants
