@@ -75,11 +75,11 @@ func (g *Grant) Normalize() {
 
 func (g Grant) Privilege() (p Privilege) {
 	if !g.IsDefault() {
-		p = Map[g.Target]
+		p = Builtins[g.Target]
 	} else if "" == g.Schema {
-		p = Map["GLOBAL DEFAULT"]
+		p = Builtins["GLOBAL DEFAULT"]
 	} else {
-		p = Map["SCHEMA DEFAULT"]
+		p = Builtins["SCHEMA DEFAULT"]
 	}
 
 	if p.IsZero() {

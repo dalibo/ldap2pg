@@ -31,7 +31,7 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
 	slog.Info("Inspecting privileges.")
-	for _, p := range privilege.Map {
+	for _, p := range privilege.Builtins {
 		arg, ok := managedPrivileges[p.Object]
 		if !ok {
 			slog.Debug("Skipping privilege.", "object", p.Object)
