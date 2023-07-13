@@ -26,7 +26,6 @@ SELECT
 	'' AS owner,
 	COALESCE(rolname, 'public') AS grantee,
 	COALESCE(priv, '') AS "privilege",
-	current_database() AS "database",
 	nspname AS "schema",
 	'' AS "object",
 	nsp.procs <> COALESCE(grants.procs, ARRAY[]::name[]) AS "partial"

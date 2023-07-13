@@ -10,9 +10,8 @@ SELECT
 	'' AS owner,
 	COALESCE(grantee.rolname, 'public') AS grantee,
 	grants.priv AS "privilege",
-	grants.datname AS "database",
 	'' AS "schema",
-	'' AS "object",
+	grants.datname AS "object",
 	FALSE AS "partial"
 FROM grants
 LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee

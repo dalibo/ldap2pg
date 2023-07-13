@@ -28,7 +28,7 @@ type Grant struct {
 }
 
 func RowTo(row pgx.CollectableRow) (g Grant, err error) {
-	err = row.Scan(&g.Owner, &g.Grantee, &g.Type, &g.Database, &g.Schema, &g.Object, &g.Partial)
+	err = row.Scan(&g.Owner, &g.Grantee, &g.Type, &g.Schema, &g.Object, &g.Partial)
 	return
 }
 

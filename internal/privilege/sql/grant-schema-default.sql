@@ -16,7 +16,6 @@ SELECT
 	COALESCE(owner.rolname, 'public') AS owner,
 	COALESCE(grantee.rolname, 'public') AS grantee,
 	grants.priv AS "privilege",
-	current_database() AS "database",
 	"nspname" AS "schema",
 	grants."object" AS "object",
 	FALSE AS "partial"

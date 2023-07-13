@@ -66,6 +66,7 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 				if err != nil {
 					return fmt.Errorf("bad row: %w", err)
 				}
+				grant.Database = database
 				if p.IsDefault() {
 					grant.Target = grant.Object
 				} else {
