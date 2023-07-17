@@ -13,17 +13,16 @@ WITH grants AS (
 	FROM pg_catalog.pg_default_acl
 )
 SELECT
+  -- column order comes from statement:
+	-- ALTER DEFAULT PRIVILEGES FOR $owner GRANT $privilege ON $object TO $grantee;
 	COALESCE(owner.rolname, 'public') AS owner,
-	COALESCE(grantee.rolname, 'public') AS grantee,
 	grants.priv AS "privilege",
-	current_database() AS "database",
-	'' AS "schema",
 	grants."object" AS "object",
-	FALSE AS "partial"
+	COALESCE(grantee.rolname, 'public') AS grantee
 FROM grants
 LEFT OUTER JOIN pg_catalog.pg_roles AS owner ON owner.oid = grants.owner
 LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
 LEFT OUTER JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = grants.nsp
 WHERE "nspname" IS NULL			-- Handle global default privileges only.
 	AND grants."object" || '--' || "priv" = ANY ($1)
-ORDER BY 1, 2, 4, 3
+ORDER BY 1, 3, 4, 2

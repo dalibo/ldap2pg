@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	Map map[string]Privilege
-	//go:embed sql/grant-database.sql
+	Builtins map[string]Privilege
+	//go:embed sql/database.sql
 	inspectDatabase string
-	//go:embed sql/grant-global-default.sql
+	//go:embed sql/global-default.sql
 	inspectGlobalDefault string
-	//go:embed sql/grant-schema-default.sql
+	//go:embed sql/schema-default.sql
 	inspectSchemaDefault string
-	//go:embed sql/grant-language.sql
+	//go:embed sql/language.sql
 	inspectLanguage string
 	//go:embed sql/schema.sql
 	inspectSchema string
@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	Map = make(map[string]Privilege)
+	Builtins = make(map[string]Privilege)
 
 	register("instance", "DATABASE", inspectDatabase)
 	register("instance", "LANGUAGE", inspectLanguage)
@@ -68,7 +68,7 @@ func register(scope, object, inspect string, queries ...string) {
 		panic("too many queries")
 	}
 
-	Map[object] = Privilege{
+	Builtins[object] = Privilege{
 		Scope:   scope,
 		Object:  object,
 		Inspect: inspect,

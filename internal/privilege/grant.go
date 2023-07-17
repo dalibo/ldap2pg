@@ -3,7 +3,6 @@ package privilege
 import (
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
@@ -25,11 +24,6 @@ type Grant struct {
 	Schema   string // "" for database grant.
 	Object   string // "" for both schema and database grants.
 	Partial  bool   // Used for ALL TABLES permissions.
-}
-
-func RowTo(row pgx.CollectableRow) (g Grant, err error) {
-	err = row.Scan(&g.Owner, &g.Grantee, &g.Type, &g.Database, &g.Schema, &g.Object, &g.Partial)
-	return
 }
 
 func (g Grant) IsDefault() bool {
@@ -75,11 +69,11 @@ func (g *Grant) Normalize() {
 
 func (g Grant) Privilege() (p Privilege) {
 	if !g.IsDefault() {
-		p = Map[g.Target]
+		p = Builtins[g.Target]
 	} else if "" == g.Schema {
-		p = Map["GLOBAL DEFAULT"]
+		p = Builtins["GLOBAL DEFAULT"]
 	} else {
-		p = Map["SCHEMA DEFAULT"]
+		p = Builtins["SCHEMA DEFAULT"]
 	}
 
 	if p.IsZero() {
@@ -104,7 +98,7 @@ func (g Grant) String() string {
 		b.WriteByte(' ')
 	}
 	if "" == g.Type {
-		b.WriteString("N/A")
+		b.WriteString("ANY")
 	} else {
 		b.WriteString(g.Type)
 	}

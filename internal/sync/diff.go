@@ -52,7 +52,6 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 			irrelevantGrant.Grantee = "public"
 			irrelevantGrant.Type = ""
 			if currentSet.Contains(irrelevantGrant) {
-				slog.Debug("Skipping irrelevant grant.", "grant", grant)
 				continue
 			}
 

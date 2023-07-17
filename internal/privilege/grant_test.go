@@ -75,5 +75,5 @@ func TestGrantString(t *testing.T) {
 		Schema:  "public",
 		Type:    "",
 	}
-	require.Equal(t, `N/A ON ALL TABLES IN SCHEMA public TO dave`, g.String())
+	require.Equal(t, `ANY ON ALL TABLES IN SCHEMA public TO dave`, g.String())
 }

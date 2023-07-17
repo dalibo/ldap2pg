@@ -13,7 +13,6 @@ func ExpandGrants(in []privilege.Grant, databases postgres.DBMap, rolesBlacklist
 		for _, g := range p.Expand(grant, databases) {
 			pattern := rolesBlacklist.MatchString(g.Owner)
 			if "" != pattern {
-				slog.Debug("Ignoring blacklisted owner.", "grant", g, "pattern", pattern)
 				continue
 			}
 			logAttrs := []interface{}{"grant", g}

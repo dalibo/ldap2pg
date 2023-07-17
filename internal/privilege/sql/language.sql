@@ -7,14 +7,10 @@ WITH grants AS (
 	FROM pg_catalog.pg_language
 )
 SELECT
-	'' AS owner,
-	COALESCE(grantee.rolname, 'public') AS grantee,
 	grants.priv AS "privilege",
-	'' AS "database",
-	'' AS "schema",
 	grants.lanname AS "object",
-	FALSE AS "partial"
+	COALESCE(grantee.rolname, 'public') AS grantee
 FROM grants
 LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
 WHERE "priv" = ANY ($1)
-ORDER BY 1, 2, 4, 3
+ORDER BY 2, 3, 1

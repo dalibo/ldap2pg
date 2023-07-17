@@ -22,12 +22,9 @@ grants AS (
 	GROUP BY 1, 2, 3
 )
 SELECT
-	'' AS owner,
-	COALESCE(rolname, 'public') AS grantee,
 	COALESCE(privilege_type, '') AS "privilege",
-	current_database() AS "database",
 	nspname AS "schema",
-	'' AS "object",
+	COALESCE(rolname, 'public') AS grantee,
 	nsp.rels <> COALESCE(grants.rels, ARRAY[]::name[]) AS "partial"
 FROM namespace_rels AS nsp
 LEFT OUTER JOIN grants AS grants
