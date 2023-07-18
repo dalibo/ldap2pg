@@ -94,3 +94,20 @@ func TestExpandDatabase(t *testing.T) {
 	r.Equal(t, "db0", grants[0].Database)
 	r.Equal(t, "db1", grants[1].Database)
 }
+
+func TestExpandSchema(t *testing.T) {
+	g := privilege.Grant{
+		Schema: "nsp0",
+	}
+	grants := g.ExpandSchemas([]string{"nsp0", "nsp1"})
+	r.Len(t, grants, 1)
+	r.Equal(t, "nsp0", grants[0].Schema)
+
+	g = privilege.Grant{
+		Schema: "__all__",
+	}
+	grants = g.ExpandSchemas([]string{"nsp0", "nsp1"})
+	r.Len(t, grants, 2)
+	r.Equal(t, "nsp0", grants[0].Schema)
+	r.Equal(t, "nsp1", grants[1].Schema)
+}

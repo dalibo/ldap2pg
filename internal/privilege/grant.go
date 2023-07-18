@@ -146,3 +146,18 @@ func (g Grant) ExpandDatabases(databases []string) (out []Grant) {
 
 	return
 }
+
+func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
+	if "__all__" != g.Schema {
+		out = append(out, g)
+		return
+	}
+
+	for _, name := range schemas {
+		g := g // copy
+		g.Schema = name
+		out = append(out, g)
+	}
+
+	return
+}
