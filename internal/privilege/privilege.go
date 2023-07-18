@@ -76,8 +76,13 @@ func (p Privilege) BuildQuery(g Grant, format, defaultDatabase string) (q postgr
 	} else {
 		// [GRANT|REVOKE] {type} ON ...
 		q.Query = fmt.Sprintf(format, g.Type)
-		// [GRANT|REVOKE] ... ON ... {object} ...
-		q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object})
+		if "schema" == p.Scope {
+			// [GRANT|REVOKE] ... IN SCHEMA {schema} ...
+			q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema})
+		} else {
+			// [GRANT|REVOKE] ... ON ... {object} ...
+			q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object})
+		}
 	}
 
 	// ... [FROM|TO] {grantee}
@@ -177,14 +182,20 @@ func (p Privilege) expandSchemas(g Grant, databases postgres.DBMap) (out []Grant
 }
 
 func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
-	args = append(args, "type", g.Type)
 	if g.IsDefault() {
 		args = append(args,
 			"owner", g.Owner,
 			"class", g.Target,
 		)
 	} else {
-		args = append(args, strings.ToLower(g.Target), g.Object)
+		if "" == g.Object {
+			args = append(args, "object", g.Target)
+		} else {
+			args = append(args, strings.ToLower(g.Target), g.Object)
+		}
+		if "schema" == p.Scope {
+			args = append(args, "schema", g.Schema)
+		}
 	}
 	args = append(args, "role", g.Grantee)
 	if "instance" != p.Scope {

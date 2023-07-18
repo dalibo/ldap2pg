@@ -61,6 +61,7 @@ func (g *Grant) Normalize() {
 			g.Object = g.Schema
 		}
 		g.Schema = ""
+	case "schema":
 	default:
 		slog.Debug("Normalizing grant.", "scope", p.Scope, "grant", g)
 		panic("unhandled privilege scope")
