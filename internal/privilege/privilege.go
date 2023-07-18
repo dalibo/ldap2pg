@@ -178,9 +178,6 @@ func (p Privilege) expandSchemas(g Grant, databases postgres.DBMap) (out []Grant
 
 func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
 	args = append(args, "type", g.Type)
-	if "instance" != p.Scope {
-		args = append(args, "database", g.Database)
-	}
 	if g.IsDefault() {
 		args = append(args,
 			"owner", g.Owner,
@@ -190,5 +187,8 @@ func (p Privilege) BuildLogArgs(g Grant) (args []interface{}) {
 		args = append(args, strings.ToLower(g.Target), g.Object)
 	}
 	args = append(args, "role", g.Grantee)
+	if "instance" != p.Scope {
+		args = append(args, "database", g.Database)
+	}
 	return
 }
