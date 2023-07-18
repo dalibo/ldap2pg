@@ -3,6 +3,7 @@ package privilege_test
 import (
 	"testing"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	r "github.com/stretchr/testify/require"
 )
@@ -93,6 +94,28 @@ func TestExpandDatabase(t *testing.T) {
 	r.Len(t, grants, 2)
 	r.Equal(t, "db0", grants[0].Database)
 	r.Equal(t, "db1", grants[1].Database)
+}
+
+func TestExpandOwners(t *testing.T) {
+	g := privilege.Grant{
+		Database: "db0",
+		Schema:   "nsp0",
+		Owner:    "__auto__",
+	}
+	dbs := postgres.DBMap{
+		"db0": postgres.Database{
+			Owner: "o0",
+			Schemas: map[string]postgres.Schema{
+				"nsp0": {
+					Owner: "o1",
+				},
+			},
+		},
+	}
+	grants := g.ExpandOwners(dbs)
+	r.Len(t, grants, 2)
+	r.Equal(t, "o0", grants[0].Owner)
+	r.Equal(t, "o1", grants[1].Owner)
 }
 
 func TestExpandSchema(t *testing.T) {

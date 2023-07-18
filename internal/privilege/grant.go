@@ -3,6 +3,7 @@ package privilege
 import (
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"golang.org/x/exp/slog"
 )
 
@@ -143,6 +144,28 @@ func (g Grant) ExpandDatabases(databases []string) (out []Grant) {
 		g.Database = name
 		out = append(out, g)
 	}
+
+	return
+}
+
+func (g Grant) ExpandOwners(databases postgres.DBMap) (out []Grant) {
+	if "__auto__" != g.Owner {
+		out = append(out, g)
+		return
+	}
+
+	// Yield default privilege for database owner.
+	database := databases[g.Database]
+	g.Owner = database.Owner
+	out = append(out, g)
+
+	if "" == g.Schema {
+		return
+	}
+
+	// Yield default privilege for schema owner.
+	g.Owner = database.Schemas[g.Schema].Owner
+	out = append(out, g)
 
 	return
 }
