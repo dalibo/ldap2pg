@@ -131,3 +131,18 @@ func (g Grant) String() string {
 
 	return b.String()
 }
+
+func (g Grant) ExpandDatabases(databases []string) (out []Grant) {
+	if "__all__" != g.Database {
+		out = append(out, g)
+		return
+	}
+
+	for _, name := range databases {
+		g := g // copy
+		g.Database = name
+		out = append(out, g)
+	}
+
+	return
+}

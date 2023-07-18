@@ -77,3 +77,20 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `ANY ON ALL TABLES IN SCHEMA public TO dave`, g.String())
 }
+
+func TestExpandDatabase(t *testing.T) {
+	g := privilege.Grant{
+		Database: "db0",
+	}
+	grants := g.ExpandDatabases([]string{"db0", "db1"})
+	r.Len(t, grants, 1)
+	r.Equal(t, "db0", grants[0].Database)
+
+	g = privilege.Grant{
+		Database: "__all__",
+	}
+	grants = g.ExpandDatabases([]string{"db0", "db1"})
+	r.Len(t, grants, 2)
+	r.Equal(t, "db0", grants[0].Database)
+	r.Equal(t, "db1", grants[1].Database)
+}
