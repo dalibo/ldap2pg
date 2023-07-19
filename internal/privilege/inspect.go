@@ -3,12 +3,9 @@ package privilege
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -17,11 +14,10 @@ type Inspector struct {
 	defaultDatabase   string
 	managedPrivileges map[string][]string
 
-	ctx        context.Context
-	inspecters map[string]Inspecter
-	grantChan  chan Grant
-	err        error
-	grant      Grant
+	ctx       context.Context
+	grantChan chan Grant
+	err       error
+	grant     Grant
 }
 
 func NewInspector(databases postgres.DBMap, defaultDatabase string, managedPrivileges map[string][]string) Inspector {
@@ -34,7 +30,6 @@ func NewInspector(databases postgres.DBMap, defaultDatabase string, managedPrivi
 
 func (i *Inspector) Run(ctx context.Context) {
 	i.ctx = ctx
-	i.inspecters = mapInspecters(maps.Keys(i.managedPrivileges))
 	i.grantChan = i.iterGrants()
 }
 
@@ -71,7 +66,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		for object, p := range i.inspecters {
+		for object, p := range Builtins {
 			arg, ok := i.managedPrivileges[object]
 			if !ok {
 				continue
@@ -112,8 +107,6 @@ func (i *Inspector) iterGrants() chan Grant {
 						}
 					}
 
-					grant.Normalize()
-
 					ch <- grant
 				}
 
@@ -121,29 +114,4 @@ func (i *Inspector) iterGrants() chan Grant {
 		}
 	}()
 	return ch
-}
-
-func mapInspecters(managedPrivileges []string) (out map[string]Inspecter) {
-	out = make(map[string]Inspecter)
-	var i Inspecter
-	for k, p := range Builtins {
-		if !slices.Contains(managedPrivileges, k) {
-			continue
-		}
-		if "GLOBAL DEFAULT" == p.Object {
-			i = NewGlobalDefault(p.Object, p.Inspect)
-		} else if "SCHEMA DEFAULT" == p.Object {
-			i = NewSchemaDefault(p.Object, p.Inspect)
-		} else if strings.HasPrefix(p.Object, "ALL ") {
-			i = NewAll(p.Object, p.Inspect)
-		} else if "instance" == p.Scope {
-			i = NewInstance(p.Object, p.Inspect)
-		} else if "database" == p.Scope {
-			i = NewDatabase(p.Object, p.Inspect)
-		} else {
-			continue
-		}
-		out[k] = i
-	}
-	return
 }

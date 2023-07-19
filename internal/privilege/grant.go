@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"golang.org/x/exp/slog"
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
@@ -31,42 +30,15 @@ func (g Grant) IsDefault() bool {
 	return "" != g.Owner
 }
 
+type Normalizer interface {
+	Normalize(g *Grant)
+}
+
 // Normalize ensures grant fields are consistent with privilege scope.
 //
 // This way grants from wanted state and from inspect are comparables.
 func (g *Grant) Normalize() {
-	if g.IsDefault() {
-		g.Object = ""
-		// Default grant rule schema is __all__. But default privilege
-		// on all schemas is handled globally at database scope. Just
-		// handle all schema as a single database privilege. Prevent
-		// expanding the grant on all schema.
-		if "__all__" == g.Schema {
-			g.Schema = ""
-		}
-		return
-	}
-
-	p := g.Privilege()
-	switch p.Scope {
-	case "instance":
-		// Allow to use Database as object name for database.
-		if "" == g.Object {
-			g.Object = g.Database
-		}
-
-		g.Database = ""
-		g.Schema = ""
-	case "database":
-		if "" == g.Object {
-			g.Object = g.Schema
-		}
-		g.Schema = ""
-	case "schema":
-	default:
-		slog.Debug("Normalizing grant.", "scope", p.Scope, "grant", g)
-		panic("unhandled privilege scope")
-	}
+	g.Privilege().Normalize(g)
 }
 
 func (g Grant) Privilege() (p Privilege) {
@@ -76,11 +48,6 @@ func (g Grant) Privilege() (p Privilege) {
 		p = Builtins["GLOBAL DEFAULT"]
 	} else {
 		p = Builtins["SCHEMA DEFAULT"]
-	}
-
-	if p.IsZero() {
-		slog.Debug("Resolving privilege for grant.", "grant", g)
-		panic("unhandled privilege")
 	}
 	return
 }

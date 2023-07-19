@@ -43,6 +43,8 @@ func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges m
 			continue
 		}
 
+		grant.Normalize()
+
 		slog.Debug("Found grant in Postgres instance.", "grant", grant)
 		instance.Grants = append(instance.Grants, grant)
 	}

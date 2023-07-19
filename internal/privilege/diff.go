@@ -5,6 +5,18 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+type Granter interface {
+	Grant(Grant) postgres.SyncQuery
+}
+
+type Revoker interface {
+	Revoke(Grant) postgres.SyncQuery
+}
+
+type Logger interface {
+	LogArgs(Grant) []any
+}
+
 func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
@@ -27,12 +39,14 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			}
 
 			p := grant.Privilege()
-			q := p.BuildRevoke(grant, "")
-			if p.IsDefault() {
+			q := p.Revoke(grant)
+			if grant.IsDefault() {
 				q.Description = "Revoke default privilege."
 			} else {
 				q.Description = "Revoke privilege."
 			}
+			q.Database = grant.Database
+			q.LogArgs = p.LogArgs(grant)
 			ch <- q
 		}
 
@@ -52,12 +66,14 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			}
 
 			p := grant.Privilege()
-			q := p.BuildGrant(grant, "")
-			if p.IsDefault() {
+			q := p.Grant(grant)
+			if grant.IsDefault() {
 				q.Description = "Grant default privilege."
 			} else {
 				q.Description = "Grant privilege."
 			}
+			q.Database = grant.Database
+			q.LogArgs = p.LogArgs(grant)
 			ch <- q
 		}
 	}()
