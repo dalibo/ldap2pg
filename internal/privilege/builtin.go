@@ -37,13 +37,13 @@ func init() {
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
 	)
 	register(
-		"database", "SCHEMA DEFAULT", inspectSchemaDefault,
+		"schema", "SCHEMA DEFAULT", inspectSchemaDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	register("database", "ALL TABLES IN SCHEMA", inspectAllTables)
-	register("database", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
-	register("database", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
+	register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
+	register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
+	register("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
 }
 
 // queries are grant and revoke queries in order.

@@ -26,7 +26,7 @@ func DiffPrivileges(instance inspect.Instance, wanted []privilege.Grant) <-chan 
 			}
 
 			if "" == grant.Type {
-				// Don't revoke irrelevant ALL ... IN SCHEMA
+				// Don't revoke irrelevant ANY ... IN SCHEMA
 				continue
 			}
 

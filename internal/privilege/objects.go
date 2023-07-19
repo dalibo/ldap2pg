@@ -39,6 +39,19 @@ func (p Instance) Inspect() string {
 	return p.inspect
 }
 
+func (p Instance) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
+	if "__all__" == g.Object {
+		for dbname := range databases {
+			g := g // copy
+			g.Object = dbname
+			out = append(out, g)
+		}
+	} else {
+		out = append(out, g)
+	}
+	return
+}
+
 // All holds privileges on all objects in a schema.
 type All struct {
 	object  string
@@ -70,6 +83,13 @@ func (p All) Inspect() string {
 	return p.inspect
 }
 
+func (p All) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
+	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
+		out = append(out, g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas))...)
+	}
+	return
+}
+
 // Database handles privileges on database-wide objects.
 type Database struct {
 	object  string
@@ -99,4 +119,19 @@ func (p Database) String() string {
 
 func (p Database) Inspect() string {
 	return p.inspect
+}
+
+func (p Database) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
+	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
+		if "__all__" == g.Object {
+			for _, s := range databases[g.Database].Schemas {
+				g := g // copy
+				g.Object = s.Name
+				out = append(out, g)
+			}
+		} else {
+			out = append(out, g)
+		}
+	}
+	return
 }
