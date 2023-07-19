@@ -11,7 +11,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.SyncQuery, real bool) (count int, err error) {
+func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.SyncQuery, defaultDatabase string, real bool) (count int, err error) {
 	formatter := postgres.FmtQueryRewriter{}
 
 	prefix := ""
@@ -20,6 +20,10 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.Sync
 	}
 
 	for query := range diff {
+		if "" == query.Database {
+			query.Database = defaultDatabase
+		}
+
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		pgConn, err := postgres.DBPool.Get(ctx, query.Database)

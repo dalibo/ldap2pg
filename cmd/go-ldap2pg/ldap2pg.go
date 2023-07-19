@@ -96,7 +96,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	roleCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffRoles(instance, wantedRoles), controller.Real)
+	queries := sync.DiffRoles(instance, wantedRoles)
+	roleCount, err := sync.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
@@ -110,7 +111,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 	wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
-	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffPrivileges(instance, wantedGrants), controller.Real)
+	queries = privilege.Diff(instance.Grants, wantedGrants)
+	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
