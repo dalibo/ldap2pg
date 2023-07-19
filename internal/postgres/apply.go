@@ -1,4 +1,4 @@
-package sync
+package postgres
 
 import (
 	"context"
@@ -6,13 +6,12 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
-	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slog"
 )
 
-func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.SyncQuery, defaultDatabase string, real bool) (count int, err error) {
-	formatter := postgres.FmtQueryRewriter{}
+func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, defaultDatabase string, real bool) (count int, err error) {
+	formatter := FmtQueryRewriter{}
 
 	prefix := ""
 	if !real {
@@ -26,7 +25,7 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan postgres.Sync
 
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
-		pgConn, err := postgres.DBPool.Get(ctx, query.Database)
+		pgConn, err := DBPool.Get(ctx, query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

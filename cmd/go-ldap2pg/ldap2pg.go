@@ -16,7 +16,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
-	"github.com/dalibo/ldap2pg/internal/sync"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -98,7 +97,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
-	roleCount, err := sync.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+	roleCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
@@ -113,7 +112,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 	wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
 	queries = privilege.Diff(instance.Grants, wantedGrants)
-	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+	privCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
