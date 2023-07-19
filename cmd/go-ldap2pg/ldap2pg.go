@@ -14,8 +14,8 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/sync"
-	"github.com/dalibo/ldap2pg/internal/wanted"
+	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -96,7 +96,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	roleCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffRoles(instance, wantedRoles), controller.Real)
+	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
+	roleCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
@@ -109,8 +110,9 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedGrants = wanted.ExpandGrants(wantedGrants, instance.Databases, instance.RolesBlacklist)
-	privCount, err := sync.Apply(ctx, &controller.PostgresWatch, sync.DiffPrivileges(instance, wantedGrants), controller.Real)
+	wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
+	queries = privilege.Diff(instance.Grants, wantedGrants)
+	privCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}

@@ -2,7 +2,17 @@ package privilege
 
 import (
 	_ "embed"
+	"strings"
 )
+
+type Privilege interface {
+	Inspecter
+	Normalizer
+	Expander
+	Revoker
+	Granter
+	Logger
+}
 
 var (
 	Builtins map[string]Privilege
@@ -68,11 +78,20 @@ func register(scope, object, inspect string, queries ...string) {
 		panic("too many queries")
 	}
 
-	Builtins[object] = Privilege{
-		Scope:   scope,
-		Object:  object,
-		Inspect: inspect,
-		Grant:   grant,
-		Revoke:  revoke,
+	var p Privilege
+
+	if "GLOBAL DEFAULT" == object {
+		p = NewGlobalDefault(object, inspect, grant, revoke)
+	} else if "SCHEMA DEFAULT" == object {
+		p = NewSchemaDefault(object, inspect, grant, revoke)
+	} else if strings.HasPrefix(object, "ALL ") {
+		p = NewAll(object, inspect, grant, revoke)
+	} else if "instance" == scope {
+		p = NewInstance(object, inspect, grant, revoke)
+	} else if "database" == scope {
+		p = NewDatabase(object, inspect, grant, revoke)
+	} else {
+		panic("unsupported privilege")
 	}
+	Builtins[object] = p
 }

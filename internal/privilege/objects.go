@@ -1,20 +1,27 @@
 package privilege
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
 )
 
 // Instance handle privilege on instance-wide objects.
+//
+// like databases, roles, parameters, languages, etc.
 type Instance struct {
-	object, inspect string
+	object, inspect, grant, revoke string
 }
 
-func NewInstance(object, inspect string) Instance {
+func NewInstance(object, inspect, grant, revoke string) Instance {
 	return Instance{
 		object:  object,
 		inspect: inspect,
+		grant:   grant,
+		revoke:  revoke,
 	}
 }
 
@@ -52,54 +59,53 @@ func (p Instance) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 	return
 }
 
-// All holds privileges on all objects in a schema.
-type All struct {
-	object  string
-	inspect string
-}
-
-func NewAll(object, inspect string) All {
-	return All{
-		object:  object,
-		inspect: inspect,
+func (p Instance) Normalize(g *Grant) {
+	// Grant rule sets Database instead of Object.
+	if "" == g.Object {
+		g.Object = g.Database
 	}
+	g.Owner = ""
+	g.Database = ""
+	g.Schema = ""
 }
 
-func (p All) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
-}
-
-func (p All) RowTo(r pgx.CollectableRow) (g Grant, err error) {
-	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
-	g.Target = p.object
+func (p Instance) Grant(g Grant) (q postgres.SyncQuery) {
+	// GRANT {type} ON ...
+	q.Query = fmt.Sprintf(p.grant, g.Type)
+	// GRANT ... ON ... {object} ... TO {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
 	return
 }
 
-func (p All) String() string {
-	return p.object
-}
-
-func (p All) Inspect() string {
-	return p.inspect
-}
-
-func (p All) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		out = append(out, g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas))...)
-	}
+func (p Instance) Revoke(g Grant) (q postgres.SyncQuery) {
+	// REVOKE {type} ON ...
+	q.Query = fmt.Sprintf(p.revoke, g.Type)
+	// REVOKE ... ON ... {object} ... FROM {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
 	return
+}
+
+func (p Instance) LogArgs(g Grant) []interface{} {
+	return []interface{}{
+		"type", g.Type,
+		strings.ToLower(p.object), g.Object,
+		"role", g.Grantee,
+	}
 }
 
 // Database handles privileges on database-wide objects.
+//
+// Like schema.
 type Database struct {
-	object  string
-	inspect string
+	object, inspect, grant, revoke string
 }
 
-func NewDatabase(object, inspect string) Database {
+func NewDatabase(object, inspect, grant, revoke string) Database {
 	return Database{
 		object:  object,
 		inspect: inspect,
+		grant:   grant,
+		revoke:  revoke,
 	}
 }
 
@@ -121,6 +127,14 @@ func (p Database) Inspect() string {
 	return p.inspect
 }
 
+func (p Database) Normalize(g *Grant) {
+	// Grant rule sets Schema instead of Object.
+	if "" == g.Object {
+		g.Object = g.Schema
+	}
+	g.Schema = ""
+}
+
 func (p Database) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
 		if "__all__" == g.Object {
@@ -134,4 +148,99 @@ func (p Database) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 		}
 	}
 	return
+}
+
+func (p Database) Grant(g Grant) (q postgres.SyncQuery) {
+	// GRANT {type} ON ...
+	q.Query = fmt.Sprintf(p.grant, g.Type)
+	// GRANT ... ON ... {object} ... TO {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
+	return
+}
+
+func (p Database) Revoke(g Grant) (q postgres.SyncQuery) {
+	// REVOKE {type} ON ALL ...
+	q.Query = fmt.Sprintf(p.revoke, g.Type)
+	// REVOKE ... ON ... {object} ... FROM {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
+	return
+}
+
+func (p Database) LogArgs(g Grant) []interface{} {
+	return []interface{}{
+		"database", g.Database,
+		"type", g.Type,
+		strings.ToLower(g.Target), g.Object,
+		"role", g.Grantee,
+	}
+}
+
+// All holds privileges on all objects in a schema.
+//
+// Like tables, sequences, etc.
+type All struct {
+	object, inspect, grant, revoke string
+}
+
+func NewAll(object, inspect, grant, revoke string) All {
+	return All{
+		object:  object,
+		inspect: inspect,
+		grant:   grant,
+		revoke:  revoke,
+	}
+}
+
+func (p All) Databases(m postgres.DBMap, _ string) []string {
+	return maps.Keys(m)
+}
+
+func (p All) RowTo(r pgx.CollectableRow) (g Grant, err error) {
+	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
+	g.Target = p.object
+	return
+}
+
+func (p All) String() string {
+	return p.object
+}
+
+func (p All) Inspect() string {
+	return p.inspect
+}
+
+func (p All) Normalize(_ *Grant) {
+}
+
+func (p All) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
+	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
+		out = append(out, g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas))...)
+	}
+	return
+}
+
+func (p All) Grant(g Grant) (q postgres.SyncQuery) {
+	// GRANT {type} ON ALL ...
+	q.Query = fmt.Sprintf(p.grant, g.Type)
+	// GRANT ... ON ALL ... IN SCHEMA {schema} ... TO {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
+	return
+}
+
+func (p All) Revoke(g Grant) (q postgres.SyncQuery) {
+	// REVOKE {type} ON ALL ...
+	q.Query = fmt.Sprintf(p.revoke, g.Type)
+	// REVOKE ... ON ... IN SCHEMA {schema} ... FROM {grantee}
+	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
+	return
+}
+
+func (p All) LogArgs(g Grant) []interface{} {
+	return []interface{}{
+		"database", g.Database,
+		"type", g.Type,
+		"class", g.Target,
+		"schema", g.Schema,
+		"role", g.Grantee,
+	}
 }
