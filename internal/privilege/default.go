@@ -48,9 +48,7 @@ func (p GlobalDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 	return
 }
 
-func (p GlobalDefault) Normalize(g *Grant) {
-	g.Object = ""
-	g.Schema = ""
+func (p GlobalDefault) Normalize(_ *Grant) {
 }
 
 func (p GlobalDefault) Grant(g Grant) (q postgres.SyncQuery) {

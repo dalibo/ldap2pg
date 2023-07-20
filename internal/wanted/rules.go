@@ -45,6 +45,10 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 				}
 				if priv.IsDefault() {
 					grant.Owner = r.Owner.Input
+					grant.Object = ""
+					if "global" == priv.Default {
+						grant.Schema = ""
+					}
 				}
 				ch <- grant
 			}
@@ -63,6 +67,10 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 					}
 					if priv.IsDefault() {
 						grant.Owner = r.Owner.Input
+						grant.Object = ""
+						if "global" == priv.Default {
+							grant.Schema = ""
+						}
 					}
 					ch <- grant
 				}
