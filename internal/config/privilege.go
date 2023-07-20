@@ -10,6 +10,16 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+func (c *Config) DropPrivileges() {
+	slog.Debug("Dropping privilege configuration.")
+	maps.Clear(c.Privileges)
+	c.SyncMap = c.SyncMap.DropGrants()
+}
+
+func (c Config) ArePrivilegesManaged() bool {
+	return 0 < len(c.Privileges)
+}
+
 func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err error) {
 	rawMap, ok := value.(map[string]interface{})
 	if !ok {

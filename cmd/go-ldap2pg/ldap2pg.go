@@ -77,6 +77,9 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+	if controller.SkipPrivileges {
+		c.DropPrivileges()
+	}
 
 	pc := c.Postgres.Build()
 	// Describe instance, running user, find databases objects, roles, etc.
@@ -97,30 +100,35 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
-	roleCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 	if err != nil {
 		return
 	}
-	if 0 == roleCount {
+	if 0 == stageCount {
 		slog.Info("All roles synchronized.")
 	}
+	queryCount := stageCount
 
-	// Inspect grants, owners, etc.
-	err = instance.InspectStage2(ctx, pc)
-	if err != nil {
-		return
-	}
-	wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
-	queries = privilege.Diff(instance.Grants, wantedGrants)
-	privCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
-	if err != nil {
-		return
-	}
-	if 0 == privCount {
-		slog.Info("All privileges synchronized.")
-	}
+	if c.ArePrivilegesManaged() {
+		// Inspect grants, owners, etc.
+		err = instance.InspectStage2(ctx, pc)
+		if err != nil {
+			return
+		}
+		wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
+		queries = privilege.Diff(instance.Grants, wantedGrants)
+		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		if err != nil {
+			return
+		}
+		if 0 == stageCount {
+			slog.Info("All privileges synchronized.")
+		}
 
-	count := roleCount + privCount
+		queryCount = queryCount + stageCount
+	} else {
+		slog.Info("Not synchronizing privileges.")
+	}
 
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
@@ -128,17 +136,17 @@ func ldap2pg(ctx context.Context) (err error) {
 		"elapsed", elapsed,
 		"mempeak", perf.FormatBytes(vmPeak),
 		"postgres", controller.PostgresWatch.Total,
-		"queries", count,
+		"queries", queryCount,
 		"ldap", controller.LdapWatch.Total,
 		"searches", controller.LdapWatch.Count,
 	}
-	if count > 0 {
+	if queryCount > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
 	}
 
-	if controller.Check && count > 0 {
+	if controller.Check && queryCount > 0 {
 		os.Exit(1)
 	}
 

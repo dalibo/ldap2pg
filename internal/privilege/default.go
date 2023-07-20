@@ -3,12 +3,10 @@ package privilege
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slog"
 )
 
 type GlobalDefault struct {
@@ -34,7 +32,7 @@ func (p GlobalDefault) Databases(m postgres.DBMap, _ string) []string {
 
 func (p GlobalDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
-	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $object TO $grantee;
+	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $target TO $grantee;
 	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Grantee)
 	return
 }
@@ -50,9 +48,7 @@ func (p GlobalDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 	return
 }
 
-func (p GlobalDefault) Normalize(g *Grant) {
-	g.Object = ""
-	g.Schema = ""
+func (p GlobalDefault) Normalize(_ *Grant) {
 }
 
 func (p GlobalDefault) Grant(g Grant) (q postgres.SyncQuery) {
@@ -123,11 +119,7 @@ func (p SchemaDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
 	return
 }
 
-func (p SchemaDefault) Normalize(g *Grant) {
-	slog.Debug("norm", "p", p, "g", g)
-	if strings.Contains(g.String(), "SCHEMA DEFAULT") {
-		panic("nsp")
-	}
+func (p SchemaDefault) Normalize(_ *Grant) {
 }
 
 func (p SchemaDefault) Grant(g Grant) (q postgres.SyncQuery) {
