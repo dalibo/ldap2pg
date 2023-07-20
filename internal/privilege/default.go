@@ -69,15 +69,6 @@ func (p GlobalDefault) Revoke(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-func (p GlobalDefault) LogArgs(g Grant) []interface{} {
-	return []interface{}{
-		"owner", g.Owner,
-		"class", g.Target,
-		"role", g.Grantee,
-		"database", g.Database,
-	}
-}
-
 type SchemaDefault struct {
 	object, inspect, grant, revoke string
 }
@@ -138,13 +129,4 @@ func (p SchemaDefault) Revoke(g Grant) (q postgres.SyncQuery) {
 	// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} ... FROM {grantee}
 	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner}, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
 	return
-}
-
-func (p SchemaDefault) LogArgs(g Grant) []interface{} {
-	return []interface{}{
-		"owner", g.Owner,
-		"class", g.Target,
-		"role", g.Grantee,
-		"database", g.Database,
-	}
 }

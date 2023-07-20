@@ -7,6 +7,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/jackc/pgx/v5/pgconn"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -23,6 +24,11 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, de
 			query.Database = defaultDatabase
 		}
 
+		if !slices.ContainsFunc(query.LogArgs, func(i interface{}) bool {
+			return i == "database"
+		}) {
+			query.LogArgs = append(query.LogArgs, "database", query.Database)
+		}
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
 		pgConn, err := DBPool.Get(ctx, query.Database)

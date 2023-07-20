@@ -99,7 +99,7 @@ func (instance *Instance) InspectSession(ctx context.Context, pgconn *pgx.Conn, 
 		"super", instance.Me.Options.Super,
 		"version", serverVersion,
 		"cluster", clusterName,
-		"db", instance.DefaultDatabase,
+		"database", instance.DefaultDatabase,
 	)
 	if rows.Next() {
 		panic("Multiple row returned.")

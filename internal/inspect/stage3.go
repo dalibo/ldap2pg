@@ -34,7 +34,7 @@ func RowToCreators(rows pgx.CollectableRow) (c Creators, err error) {
 }
 
 func (instance *Instance) InspectCreators(ctx context.Context, managedRoles []string) error {
-	slog.Info("Inspecting object creators.")
+	slog.Debug("Inspecting object creators.")
 	cq := &SQLQuery[Creators]{SQL: creatorsQuery, RowTo: RowToCreators}
 
 	for i, database := range instance.Databases {

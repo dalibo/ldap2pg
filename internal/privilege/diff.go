@@ -13,10 +13,6 @@ type Revoker interface {
 	Revoke(Grant) postgres.SyncQuery
 }
 
-type Logger interface {
-	LogArgs(Grant) []any
-}
-
 func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
@@ -46,7 +42,7 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			q := p.Revoke(grant)
 			q.Description = "Revoke privilege."
 			q.Database = grant.Database
-			q.LogArgs = p.LogArgs(grant)
+			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q
 		}
 
@@ -73,7 +69,7 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			q := p.Grant(grant)
 			q.Description = "Grant privilege."
 			q.Database = grant.Database
-			q.LogArgs = p.LogArgs(grant)
+			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q
 		}
 	}()
@@ -99,7 +95,7 @@ func DiffDefault(current, wanted []Grant) <-chan postgres.SyncQuery {
 			q := p.Revoke(grant)
 			q.Description = "Revoke default privilege."
 			q.Database = grant.Database
-			q.LogArgs = p.LogArgs(grant)
+			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q
 		}
 
@@ -117,7 +113,7 @@ func DiffDefault(current, wanted []Grant) <-chan postgres.SyncQuery {
 			q := p.Grant(grant)
 			q.Description = "Grant default privilege."
 			q.Database = grant.Database
-			q.LogArgs = p.LogArgs(grant)
+			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q
 		}
 	}()

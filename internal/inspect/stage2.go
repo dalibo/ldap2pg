@@ -30,7 +30,7 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config, roles []
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string, roles []string) error {
-	slog.Info("Inspecting privileges.")
+	slog.Debug("Inspecting privileges.")
 	rolesSet := mapset.NewSet(roles...)
 	inspecter := privilege.NewInspector(instance.Databases, instance.DefaultDatabase, managedPrivileges)
 	for inspecter.Run(ctx); inspecter.Next(); {
@@ -76,7 +76,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Queri
 				continue
 			}
 			database.Schemas[s.Name] = s
-			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
+			slog.Debug("Found schema.", "database", database.Name, "schema", s.Name, "owner", s.Owner)
 		}
 		err = sq.Err()
 		if err != nil {
