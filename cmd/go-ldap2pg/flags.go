@@ -43,6 +43,10 @@ func setupViper() {
 	_ = viper.BindEnv("real")
 	pflag.BoolP("real", "R", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
 
+	viper.SetDefault("skip-privileges", false)
+	_ = viper.BindEnv("skip-privileges")
+	pflag.BoolP("skip-privileges", "P", viper.GetBool("skip-privileges"), "Turn off privilege synchronisation.")
+
 	viper.SetDefault("help", false)
 	pflag.BoolP("help", "?", true, "Show this help message and exit.")
 
@@ -62,16 +66,17 @@ func setupViper() {
 
 // Controller holds flags/env values controlling the execution of ldap2pg.
 type Controller struct {
-	Check         bool
-	Color         bool
-	Config        string
-	Real          bool
-	Quiet         int
-	Verbose       int
-	Verbosity     string
-	LogLevel      slog.Level
-	PostgresWatch perf.StopWatch
-	LdapWatch     perf.StopWatch
+	Check          bool
+	Color          bool
+	Config         string
+	Real           bool
+	SkipPrivileges bool `mapstructure:"skip-privileges"`
+	Quiet          int
+	Verbose        int
+	Verbosity      string
+	LogLevel       slog.Level
+	PostgresWatch  perf.StopWatch
+	LdapWatch      perf.StopWatch
 }
 
 var levels []slog.Level = []slog.Level{

@@ -32,6 +32,19 @@ func (m Map) SplitStaticRules() (newMap Map) {
 	return
 }
 
+func (m Map) DropGrants() (out Map) {
+	out = make(Map, 0)
+	for _, item := range m {
+		item.GrantRules = nil
+		if 0 < len(item.RoleRules) {
+			out = append(out, item)
+		} else {
+			slog.Debug("Dropping sync map item with grants.", "item", item)
+		}
+	}
+	return
+}
+
 func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
