@@ -4,6 +4,9 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
@@ -28,6 +31,10 @@ type Grant struct {
 
 func (g Grant) IsDefault() bool {
 	return "" != g.Owner
+}
+
+func (g Grant) IsRelevant() bool {
+	return "" != g.Type
 }
 
 type Normalizer interface {
@@ -58,6 +65,9 @@ func (g Grant) String() string {
 		b.WriteString("PARTIAL ")
 	}
 	if g.IsDefault() {
+		if "" == g.Schema {
+			b.WriteString("GLOBAL ")
+		}
 		b.WriteString("DEFAULT FOR ")
 		b.WriteString(g.Owner)
 		if "" != g.Schema {
@@ -123,16 +133,29 @@ func (g Grant) ExpandOwners(databases postgres.DBMap) (out []Grant) {
 
 	// Yield default privilege for database owner.
 	database := databases[g.Database]
-	g.Owner = database.Owner
-	out = append(out, g)
 
+	var schemas []postgres.Schema
 	if "" == g.Schema {
-		return
+		schemas = maps.Values(database.Schemas)
+	} else {
+		schemas = []postgres.Schema{database.Schemas[g.Schema]}
 	}
 
-	// Yield default privilege for schema owner.
-	g.Owner = database.Schemas[g.Schema].Owner
-	out = append(out, g)
+	creators := mapset.NewSet[string]()
+	for _, s := range schemas {
+		creators.Append(s.Creators...)
+	}
+	creatorsList := creators.ToSlice()
+	slices.Sort(creatorsList)
+
+	for _, role := range creatorsList {
+		g := g // copy
+		g.Owner = role
+		out = append(out, g)
+		// Match Postgres implicit grant to self on revoke.
+		g.Grantee = g.Owner
+		out = append(out, g)
+	}
 
 	return
 }

@@ -8,6 +8,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
@@ -110,13 +112,18 @@ func ldap2pg(ctx context.Context) (err error) {
 	queryCount := stageCount
 
 	if c.ArePrivilegesManaged() {
+		// Get the effective list of managed roles.
+		managedRoles := maps.Keys(wantedRoles)
+		if slices.Contains(maps.Keys(instance.ManagedRoles), "public") {
+			managedRoles = append(managedRoles, "public")
+		}
 		// Inspect grants, owners, etc.
-		err = instance.InspectStage2(ctx, pc)
+		err = instance.InspectStage2(ctx, pc, managedRoles)
 		if err != nil {
 			return
 		}
-		wantedGrants = privilege.Expand(wantedGrants, instance.Databases, instance.RolesBlacklist)
-		queries = privilege.Diff(instance.Grants, wantedGrants)
+		grants := privilege.Expand(wantedGrants, instance.Databases)
+		queries = privilege.Diff(instance.Grants, grants)
 		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
 		if err != nil {
 			return
@@ -124,8 +131,22 @@ func ldap2pg(ctx context.Context) (err error) {
 		if 0 == stageCount {
 			slog.Info("All privileges synchronized.")
 		}
+		queryCount += stageCount
 
-		queryCount = queryCount + stageCount
+		err = instance.InspectStage3(ctx, managedRoles)
+		if err != nil {
+			return
+		}
+		grants = privilege.ExpandDefault(wantedGrants, instance.Databases)
+		queries = privilege.DiffDefault(instance.Grants, grants)
+		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		if err != nil {
+			return
+		}
+		if 0 == stageCount {
+			slog.Info("All default privileges configured.")
+		}
+		queryCount += stageCount
 	} else {
 		slog.Info("Not synchronizing privileges.")
 	}

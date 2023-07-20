@@ -20,8 +20,9 @@ func RowToDatabase(row pgx.CollectableRow) (database Database, err error) {
 }
 
 type Schema struct {
-	Name  string
-	Owner string
+	Name     string
+	Owner    string
+	Creators []string
 }
 
 func RowToSchema(row pgx.CollectableRow) (s Schema, err error) {

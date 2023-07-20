@@ -64,7 +64,6 @@ func (p Instance) Normalize(g *Grant) {
 	if "" == g.Object {
 		g.Object = g.Database
 	}
-	g.Owner = ""
 	g.Database = ""
 	g.Schema = ""
 }
