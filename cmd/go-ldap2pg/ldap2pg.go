@@ -58,6 +58,7 @@ func main() {
 
 func ldap2pg(ctx context.Context) (err error) {
 	defer postgres.DBPool.CloseAll(ctx)
+	defer postgres.CloseConn(ctx)
 
 	start := time.Now()
 
@@ -84,7 +85,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	pc := c.Postgres.Build()
-	instance, err := inspect.Stage0(ctx, pc.RolesBlacklistQuery)
+	instance, err := inspect.Stage0(ctx, pc)
 	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return

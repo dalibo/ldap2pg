@@ -35,10 +35,6 @@ func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err err
 	}
 	defer pgconn.Close(ctx)
 
-	err = instance.InspectSession(ctx, pgconn, pc)
-	if err != nil {
-		return fmt.Errorf("session: %w", err)
-	}
 	err = instance.InspectManagedDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
 		return fmt.Errorf("databases: %w", err)
@@ -49,53 +45,6 @@ func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err err
 		return fmt.Errorf("roles: %w", err)
 	}
 	return
-}
-
-func (instance *Instance) InspectSession(ctx context.Context, pgconn *pgx.Conn, pc Config) error {
-	slog.Debug("Inspecting PostgreSQL server and session.")
-	slog.Debug("Executing SQL query:\n" + sessionQuery)
-	rows, err := pgconn.Query(ctx, sessionQuery)
-	if err != nil {
-		return err
-	}
-	if !rows.Next() {
-		panic("No data returned.")
-	}
-	var clusterName, serverVersion string
-	var serverVersionNum int
-	err = rows.Scan(
-		&serverVersion, &serverVersionNum,
-		&clusterName, &instance.DefaultDatabase,
-		&instance.Me.Name, &instance.Me.Options.Super,
-	)
-	if err != nil {
-		return err
-	}
-	var msg string
-	if instance.Me.Options.Super {
-		msg = "Running as superuser."
-	} else {
-		msg = "Running as unprivileged user."
-	}
-	slog.Info(
-		msg,
-		"user", instance.Me.Name,
-		"super", instance.Me.Options.Super,
-		"version", serverVersion,
-		"cluster", clusterName,
-		"database", instance.DefaultDatabase,
-	)
-	if rows.Next() {
-		panic("Multiple row returned.")
-	}
-	if "" == pc.FallbackOwner {
-		instance.FallbackOwner = instance.Me.Name
-	} else {
-		instance.FallbackOwner = pc.FallbackOwner
-	}
-	slog.Debug("Fallback owner configured.", "role", instance.FallbackOwner)
-
-	return nil
 }
 
 func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *pgx.Conn, q Querier[string]) error {
