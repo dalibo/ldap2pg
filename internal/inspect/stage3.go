@@ -15,6 +15,7 @@ import (
 var creatorsQuery string
 
 func (instance *Instance) InspectStage3(ctx context.Context, roles []string) error {
+	slog.Debug("Stage 3: default privileges.")
 	err := instance.InspectCreators(ctx, roles)
 	if err != nil {
 		return fmt.Errorf("creators: %w", err)
