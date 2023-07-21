@@ -7,27 +7,12 @@ import (
 
 	_ "embed"
 
-	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
-
-// Fourzitou struct holding everything need to synchronize Instance.
-type Instance struct {
-	AllRoles         role.Map
-	Databases        postgres.DBMap
-	DefaultDatabase  string
-	FallbackOwner    string
-	ManagedDatabases mapset.Set[string]
-	ManagedRoles     role.Map
-	Me               role.Role
-	RolesBlacklist   lists.Blacklist
-	Grants           []privilege.Grant
-}
 
 var (
 	//go:embed sql/databases.sql
@@ -40,10 +25,8 @@ var (
 	sessionQuery string
 )
 
-func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err error) {
-	instance = Instance{
-		ManagedDatabases: mapset.NewSet[string](),
-	}
+func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err error) {
+	instance.ManagedDatabases = mapset.NewSet[string]()
 
 	pgconn, err := pgx.Connect(ctx, "")
 	if err != nil {
@@ -53,16 +36,16 @@ func (pc Config) InspectStage1(ctx context.Context) (instance Instance, err erro
 
 	err = instance.InspectSession(ctx, pgconn, pc)
 	if err != nil {
-		return instance, fmt.Errorf("session: %w", err)
+		return fmt.Errorf("session: %w", err)
 	}
 	err = instance.InspectManagedDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
-		return instance, fmt.Errorf("databases: %w", err)
+		return fmt.Errorf("databases: %w", err)
 	}
 
-	err = instance.InspectRoles(ctx, pgconn, pc.RolesBlacklistQuery, pc.ManagedRolesQuery)
+	err = instance.InspectRoles(ctx, pgconn, pc.ManagedRolesQuery)
 	if err != nil {
-		return instance, fmt.Errorf("roles: %w", err)
+		return fmt.Errorf("roles: %w", err)
 	}
 	return
 }
@@ -137,7 +120,7 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 	return dbq.Err()
 }
 
-func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, rolesBlackListQ, managedRolesQ Querier[string]) error {
+func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, managedRolesQ Querier[string]) error {
 	slog.Debug("Inspecting roles options.")
 	var columns []string
 	q := &SQLQuery[string]{SQL: roleColumnsQuery, RowTo: pgx.RowTo[string]}
@@ -150,15 +133,6 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ro
 	// Setup global var to configure RoleOptions.String()
 	role.ProcessColumns(columns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
-
-	slog.Debug("Inspecting roles blacklist.")
-	for rolesBlackListQ.Query(ctx, pgconn); rolesBlackListQ.Next(); {
-		instance.RolesBlacklist = append(instance.RolesBlacklist, rolesBlackListQ.Row())
-	}
-	if err := rolesBlackListQ.Err(); err != nil {
-		return fmt.Errorf("roles_blacklist_query: %w", err)
-	}
-	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
 	slog.Debug("Inspecting all roles.")
 	instance.AllRoles = make(role.Map)

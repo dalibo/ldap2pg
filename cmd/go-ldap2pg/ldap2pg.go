@@ -14,6 +14,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
@@ -84,13 +85,14 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	pc := c.Postgres.Build()
-	// Describe instance, running user, find databases objects, roles, etc.
-	instance, err := pc.InspectStage1(ctx)
+	instance, err := inspect.Stage0(ctx, pc.RolesBlacklistQuery)
+	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return
 	}
 
-	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
+	// Describe instance, running user, find databases objects, roles, etc.
+	err = instance.InspectStage1(ctx, pc)
 	if err != nil {
 		return
 	}
