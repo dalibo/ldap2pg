@@ -1,5 +1,13 @@
 package privilege
 
+import (
+	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/slices"
+	"golang.org/x/exp/slog"
+)
+
 // Ref references a privilege type
 //
 // Example: {Type: "CONNECT", To: "DATABASE"}
@@ -26,5 +34,40 @@ func (rm RefMap) BuildDefaultArg(def string) (out [][]string) {
 			out = append(out, []string{ref.On, ref.Type})
 		}
 	}
+	return
+}
+
+func (rm RefMap) BuildTypeMaps() (other, defaults TypeMap) {
+	all := make(TypeMap)
+	other = make(TypeMap)
+	defaults = make(TypeMap)
+
+	for _, privList := range rm {
+		for _, priv := range privList {
+			var k, t string
+			if "" != priv.Default {
+				k = strings.ToUpper(priv.Default) + " DEFAULT"
+				t = priv.On + "--" + priv.Type
+			} else {
+				k = priv.On
+				t = priv.Type
+			}
+
+			all[k] = append(all[k], t)
+		}
+	}
+
+	for target, types := range all {
+		set := mapset.NewSet(types...)
+		types := set.ToSlice()
+		slices.Sort(types)
+		if strings.HasSuffix(target, " DEFAULT") {
+			defaults[target] = types
+		} else {
+			other[target] = types
+		}
+		slog.Debug("Managing privilege.", "types", types, "on", target)
+	}
+
 	return
 }

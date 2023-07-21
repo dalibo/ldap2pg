@@ -15,15 +15,22 @@ type Database struct {
 }
 type DBMap map[string]Database
 
-func (m DBMap) SyncOrder(defaultName string) (out []string) {
+func (m DBMap) SyncOrder(defaultName string, defaultFirst bool) (out []string) {
 	names := maps.Keys(m)
 	slices.Sort(names)
+	_, ok := m[defaultName]
+	if defaultFirst && ok {
+		out = append(out, defaultName)
+	}
 	for _, name := range names {
 		if defaultName != name {
 			out = append(out, name)
 		}
 	}
-	out = append(out, defaultName)
+
+	if !defaultFirst && ok {
+		out = append(out, defaultName)
+	}
 	return
 }
 

@@ -7,11 +7,8 @@ import (
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 // PostgresConfig holds the configuration of an inspect.Config.
@@ -35,31 +32,6 @@ func (c PostgresConfig) Build() inspect.Config {
 		ManagedRolesQuery:   c.ManagedRolesQuery.Querier,
 		RolesBlacklistQuery: c.RolesBlacklistQuery.Querier,
 		SchemasQuery:        c.SchemasQuery.Querier,
-		ManagedPrivileges:   make(map[string][]string),
-	}
-
-	// Index managed privileges.
-	for _, privList := range c.PrivilegesMap {
-		for _, priv := range privList {
-			var k, t string
-			if "" != priv.Default {
-				k = strings.ToUpper(priv.Default) + " DEFAULT"
-				t = priv.On + "--" + priv.Type
-			} else {
-				k = priv.On
-				t = priv.Type
-			}
-
-			ic.ManagedPrivileges[k] = append(ic.ManagedPrivileges[k], t)
-		}
-	}
-
-	for target, types := range ic.ManagedPrivileges {
-		set := mapset.NewSet(types...)
-		types := set.ToSlice()
-		slices.Sort(types)
-		ic.ManagedPrivileges[target] = types
-		slog.Debug("Managing privilege.", "types", types, "on", target)
 	}
 	return ic
 }

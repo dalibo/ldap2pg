@@ -11,15 +11,18 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, real bool) (count int, err error) {
-	formatter := FmtQueryRewriter{}
+var formatter = FmtQueryRewriter{}
 
+func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, defaultDatabase string, real bool) (count int, err error) {
 	prefix := ""
 	if !real {
 		prefix = "Would "
 	}
 
 	for query := range diff {
+		if "" == query.Database {
+			query.Database = defaultDatabase
+		}
 		if !slices.ContainsFunc(query.LogArgs, func(i interface{}) bool {
 			return i == "database"
 		}) {
