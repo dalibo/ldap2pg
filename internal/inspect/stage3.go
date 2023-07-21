@@ -40,7 +40,7 @@ func (instance *Instance) InspectCreators(ctx context.Context, managedRoles []st
 
 	for i, database := range instance.Databases {
 		slog.Debug("Inspecting schemas creators.", "database", database.Name)
-		conn, err := postgres.DBPool.Get(ctx, database.Name)
+		conn, err := postgres.GetConn(ctx, database.Name)
 		if err != nil {
 			return err
 		}

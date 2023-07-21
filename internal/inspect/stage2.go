@@ -58,7 +58,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Queri
 	for i, database := range instance.Databases {
 		var managedSchemas []string
 		slog.Debug("Inspecting managed schemas.", "database", database.Name)
-		conn, err := postgres.DBPool.Get(ctx, database.Name)
+		conn, err := postgres.GetConn(ctx, database.Name)
 		if err != nil {
 			return err
 		}
