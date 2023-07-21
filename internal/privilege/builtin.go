@@ -11,7 +11,6 @@ type Privilege interface {
 	Expander
 	Revoker
 	Granter
-	Logger
 }
 
 var (

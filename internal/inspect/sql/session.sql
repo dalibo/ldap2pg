@@ -7,7 +7,7 @@ WITH me AS (
 ),
 postgres AS (
 	SELECT
-		version() AS server_version,
+		array_to_string(regexp_matches(version(), '(^([^,]+))'), '') AS server_version,
 		svn.setting::BIGINT AS server_version_num,
 		cn.setting AS cluster_name,
 		current_database() AS current_database

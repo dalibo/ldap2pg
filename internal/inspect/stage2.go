@@ -7,6 +7,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
@@ -14,13 +15,13 @@ import (
 //go:embed sql/schemas.sql
 var schemasQuery string
 
-func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
+func (instance *Instance) InspectStage2(ctx context.Context, pc Config, roles []string) error {
 	err := instance.InspectSchemas(ctx, pc.SchemasQuery)
 	if err != nil {
 		return fmt.Errorf("schemas: %w", err)
 	}
 
-	err = instance.InspectGrants(ctx, pc.ManagedPrivileges)
+	err = instance.InspectGrants(ctx, pc.ManagedPrivileges, roles)
 	if err != nil {
 		return fmt.Errorf("privileges: %w", err)
 	}
@@ -28,18 +29,16 @@ func (instance *Instance) InspectStage2(ctx context.Context, pc Config) error {
 	return nil
 }
 
-func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string) error {
-	slog.Info("Inspecting privileges.")
+func (instance *Instance) InspectGrants(ctx context.Context, managedPrivileges map[string][]string, roles []string) error {
+	slog.Debug("Inspecting privileges.")
+	rolesSet := mapset.NewSet(roles...)
 	inspecter := privilege.NewInspector(instance.Databases, instance.DefaultDatabase, managedPrivileges)
 	for inspecter.Run(ctx); inspecter.Next(); {
 		grant := inspecter.Grant()
-		pattern := instance.RolesBlacklist.MatchString(grant.Grantee)
-		if pattern != "" {
+		if grant.IsRelevant() && !rolesSet.Contains(grant.Grantee) {
 			continue
 		}
-
-		pattern = instance.RolesBlacklist.MatchString(grant.Owner)
-		if pattern != "" {
+		if grant.IsDefault() && !rolesSet.Contains(grant.Owner) {
 			continue
 		}
 
@@ -77,7 +76,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, managedQuery Queri
 				continue
 			}
 			database.Schemas[s.Name] = s
-			slog.Debug("Found schema.", "db", database.Name, "schema", s.Name, "owner", s.Owner)
+			slog.Debug("Found schema.", "database", database.Name, "schema", s.Name, "owner", s.Owner)
 		}
 		err = sq.Err()
 		if err != nil {

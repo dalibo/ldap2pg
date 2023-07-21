@@ -2,7 +2,6 @@ package privilege
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
@@ -64,7 +63,6 @@ func (p Instance) Normalize(g *Grant) {
 	if "" == g.Object {
 		g.Object = g.Database
 	}
-	g.Owner = ""
 	g.Database = ""
 	g.Schema = ""
 }
@@ -83,14 +81,6 @@ func (p Instance) Revoke(g Grant) (q postgres.SyncQuery) {
 	// REVOKE ... ON ... {object} ... FROM {grantee}
 	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
 	return
-}
-
-func (p Instance) LogArgs(g Grant) []interface{} {
-	return []interface{}{
-		"type", g.Type,
-		strings.ToLower(p.object), g.Object,
-		"role", g.Grantee,
-	}
 }
 
 // Database handles privileges on database-wide objects.
@@ -166,15 +156,6 @@ func (p Database) Revoke(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-func (p Database) LogArgs(g Grant) []interface{} {
-	return []interface{}{
-		"database", g.Database,
-		"type", g.Type,
-		strings.ToLower(g.Target), g.Object,
-		"role", g.Grantee,
-	}
-}
-
 // All holds privileges on all objects in a schema.
 //
 // Like tables, sequences, etc.
@@ -233,14 +214,4 @@ func (p All) Revoke(g Grant) (q postgres.SyncQuery) {
 	// REVOKE ... ON ... IN SCHEMA {schema} ... FROM {grantee}
 	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
 	return
-}
-
-func (p All) LogArgs(g Grant) []interface{} {
-	return []interface{}{
-		"database", g.Database,
-		"type", g.Type,
-		"class", g.Target,
-		"schema", g.Schema,
-		"role", g.Grantee,
-	}
 }

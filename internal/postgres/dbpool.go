@@ -27,7 +27,7 @@ func (p DBPoolMap) Get(ctx context.Context, database string) (*pgx.Conn, error) 
 		return nil, err
 	}
 	config.Database = database
-	slog.Debug("Opening Postgres connection.", "db", config.Database)
+	slog.Debug("Opening Postgres connection.", "database", config.Database)
 	connp, err = pgx.ConnectConfig(ctx, config)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (p DBPoolMap) Get(ctx context.Context, database string) (*pgx.Conn, error) 
 func (p DBPoolMap) CloseAll(ctx context.Context) {
 	var names []string
 	for name, connp := range p {
-		slog.Debug("Closing Postgres connection.", "db", name)
+		slog.Debug("Closing Postgres connection.", "database", name)
 		connp.Close(ctx)
 		names = append(names, name)
 	}

@@ -41,7 +41,7 @@ func TestGrantString(t *testing.T) {
 		Owner:  "postgres",
 		Type:   "SELECT",
 	}
-	r.Equal(t, `DEFAULT FOR postgres SELECT ON TABLES`, g.String())
+	r.Equal(t, `GLOBAL DEFAULT FOR postgres SELECT ON TABLES`, g.String())
 
 	g = privilege.Grant{
 		Target: "TABLES",
@@ -101,6 +101,7 @@ func TestExpandOwners(t *testing.T) {
 		Database: "db0",
 		Schema:   "nsp0",
 		Owner:    "__auto__",
+		Grantee:  "toto",
 	}
 	dbs := postgres.DBMap{
 		"db0": postgres.Database{
@@ -108,14 +109,25 @@ func TestExpandOwners(t *testing.T) {
 			Schemas: map[string]postgres.Schema{
 				"nsp0": {
 					Owner: "o1",
+					Creators: []string{
+						"o0",
+						"o1",
+						"o2",
+					},
 				},
 			},
 		},
 	}
 	grants := g.ExpandOwners(dbs)
-	r.Len(t, grants, 2)
+	r.Len(t, grants, 6)
 	r.Equal(t, "o0", grants[0].Owner)
-	r.Equal(t, "o1", grants[1].Owner)
+	r.Equal(t, "toto", grants[0].Grantee)
+	r.Equal(t, "o0", grants[1].Owner)
+	r.Equal(t, "o0", grants[1].Grantee)
+	r.Equal(t, "o1", grants[2].Owner)
+	r.Equal(t, "o1", grants[3].Owner)
+	r.Equal(t, "o2", grants[4].Owner)
+	r.Equal(t, "o2", grants[5].Owner)
 }
 
 func TestExpandSchema(t *testing.T) {

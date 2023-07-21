@@ -48,6 +48,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 					grant.Object = ""
 					if "global" == priv.Default {
 						grant.Schema = ""
+					} else if "__all__" == grant.Schema {
+						// Use global default instead
+						continue
 					}
 				}
 				ch <- grant
@@ -70,6 +73,9 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 						grant.Object = ""
 						if "global" == priv.Default {
 							grant.Schema = ""
+						} else if "__all__" == grant.Schema {
+							// Use global default instead
+							continue
 						}
 					}
 					ch <- grant
