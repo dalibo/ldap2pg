@@ -7,8 +7,10 @@ import (
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -48,9 +50,16 @@ func (c PostgresConfig) Build() inspect.Config {
 				t = priv.Type
 			}
 
-			slog.Debug("Managing privilege.", "type", priv.Type, "on", priv.On)
 			ic.ManagedPrivileges[k] = append(ic.ManagedPrivileges[k], t)
 		}
+	}
+
+	for target, types := range ic.ManagedPrivileges {
+		set := mapset.NewSet(types...)
+		types := set.ToSlice()
+		slices.Sort(types)
+		ic.ManagedPrivileges[target] = types
+		slog.Debug("Managing privilege.", "types", types, "on", target)
 	}
 	return ic
 }

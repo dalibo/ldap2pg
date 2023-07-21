@@ -16,6 +16,7 @@ import (
 var schemasQuery string
 
 func (instance *Instance) InspectStage2(ctx context.Context, pc Config, roles []string) error {
+	slog.Debug("Stage 2: privileges.")
 	err := instance.InspectSchemas(ctx, pc.SchemasQuery)
 	if err != nil {
 		return fmt.Errorf("schemas: %w", err)

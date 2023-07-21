@@ -26,6 +26,7 @@ var (
 )
 
 func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err error) {
+	slog.Debug("Stage 1: roles.")
 	instance.ManagedDatabases = mapset.NewSet[string]()
 
 	pgconn, err := pgx.Connect(ctx, "")

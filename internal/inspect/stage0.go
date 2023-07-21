@@ -27,6 +27,7 @@ type Instance struct {
 }
 
 func Stage0(ctx context.Context, rolesBlackListQ Querier[string]) (instance Instance, err error) {
+	slog.Debug("Stage 0: role blacklist.")
 	instance = Instance{}
 
 	pgconn, err := pgx.Connect(ctx, "")
