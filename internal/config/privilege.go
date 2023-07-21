@@ -153,8 +153,6 @@ func ResolvePrivilegeRefs(value map[string]interface{}) map[string][]interface{}
 	for key := range refMap {
 		if strings.HasPrefix(key, "__") {
 			delete(refMap, key)
-		} else {
-			slog.Debug("refmap", "key", key)
 		}
 	}
 
