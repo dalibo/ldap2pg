@@ -29,11 +29,10 @@ func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err err
 	slog.Debug("Stage 1: roles.")
 	instance.ManagedDatabases = mapset.NewSet[string]()
 
-	pgconn, err := pgx.Connect(ctx, "")
+	pgconn, err := postgres.GetConn(ctx, "")
 	if err != nil {
 		return
 	}
-	defer pgconn.Close(ctx)
 
 	err = instance.InspectManagedDatabases(ctx, pgconn, pc.DatabasesQuery)
 	if err != nil {
