@@ -104,7 +104,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
-	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
+	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 	if err != nil {
 		return
 	}
@@ -128,7 +129,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		}
 		grants := privilege.Expand(wantedGrants, instance.Databases)
 		queries = privilege.Diff(instance.Grants, grants)
-		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
+		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 		if err != nil {
 			return
 		}
@@ -143,7 +145,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		}
 		grants = privilege.ExpandDefault(wantedGrants, instance.Databases)
 		queries = privilege.DiffDefault(instance.Grants, grants)
-		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
+		stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 		if err != nil {
 			return
 		}
