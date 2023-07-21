@@ -6,6 +6,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -66,15 +67,21 @@ func (i *Inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		for object, p := range Builtins {
-			arg, ok := i.managedPrivileges[object]
-			if !ok {
-				continue
-			}
+		databases := i.dbmap.SyncOrder(i.defaultDatabase)
+		for _, database := range databases {
+			for object, p := range Builtins {
+				arg, ok := i.managedPrivileges[object]
+				if !ok {
+					continue
+				}
 
-			for _, database := range p.Databases(i.dbmap, i.defaultDatabase) {
+				if !slices.Contains(p.Databases(i.dbmap, i.defaultDatabase), database) {
+					continue
+				}
+
 				slog.Debug("Inspecting grants.", "database", database, "object", p)
-				pgconn, err := postgres.DBPool.Get(i.ctx, database)
+
+				pgconn, err := postgres.GetConn(i.ctx, database)
 				if err != nil {
 					i.err = err
 					return
@@ -109,7 +116,6 @@ func (i *Inspector) iterGrants() chan Grant {
 
 					ch <- grant
 				}
-
 			}
 		}
 	}()
