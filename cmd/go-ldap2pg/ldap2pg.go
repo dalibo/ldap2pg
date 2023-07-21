@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
@@ -116,9 +115,11 @@ func ldap2pg(ctx context.Context) (err error) {
 	if c.ArePrivilegesManaged() {
 		// Get the effective list of managed roles.
 		managedRoles := maps.Keys(wantedRoles)
-		if slices.Contains(maps.Keys(instance.ManagedRoles), "public") {
+		_, ok := instance.ManagedRoles["public"]
+		if ok {
 			managedRoles = append(managedRoles, "public")
 		}
+
 		// Inspect grants, owners, etc.
 		err = instance.InspectStage2(ctx, pc, managedRoles)
 		if err != nil {
