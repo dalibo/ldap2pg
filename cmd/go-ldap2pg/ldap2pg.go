@@ -57,7 +57,6 @@ func main() {
 }
 
 func ldap2pg(ctx context.Context) (err error) {
-	defer postgres.DBPool.CloseAll(ctx)
 	defer postgres.CloseConn(ctx)
 
 	start := time.Now()
