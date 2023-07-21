@@ -117,8 +117,15 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 			instance.Databases[db.Name] = db
 		}
 	}
+	if err := dbq.Err(); err != nil {
+		return err
+	}
 
-	return dbq.Err()
+	_, ok := instance.Databases[instance.DefaultDatabase]
+	if !ok {
+		return fmt.Errorf("default database not listed")
+	}
+	return nil
 }
 
 func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, managedRolesQ Querier[string]) error {
