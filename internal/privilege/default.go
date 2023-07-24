@@ -26,8 +26,8 @@ func (p GlobalDefault) String() string {
 	return p.object
 }
 
-func (p GlobalDefault) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p GlobalDefault) IsGlobal() bool {
+	return false
 }
 
 func (p GlobalDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -82,8 +82,8 @@ func NewSchemaDefault(object, inspect, grant, revoke string) SchemaDefault {
 	}
 }
 
-func (p SchemaDefault) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p SchemaDefault) IsGlobal() bool {
+	return false
 }
 
 func (p SchemaDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {

@@ -61,7 +61,7 @@ func (i Inspector) Err() error {
 }
 
 type Inspecter interface {
-	Databases(m postgres.DBMap, defaultDatabase string) []string
+	IsGlobal() bool
 	Inspect() string
 	RowTo(pgx.CollectableRow) (Grant, error)
 }
@@ -72,6 +72,7 @@ func (i *Inspector) iterGrants() chan Grant {
 		defer close(ch)
 		databases := i.dbmap.SyncOrder(i.defaultDatabase, false)
 		for _, database := range databases {
+			runGlobal := database == i.defaultDatabase
 			names := maps.Keys(Builtins)
 			slices.Sort(names)
 			for _, object := range names {
@@ -81,7 +82,7 @@ func (i *Inspector) iterGrants() chan Grant {
 				}
 
 				p := Builtins[object]
-				if !slices.Contains(p.Databases(i.dbmap, i.defaultDatabase), database) {
+				if p.IsGlobal() && !runGlobal {
 					continue
 				}
 

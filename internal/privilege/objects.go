@@ -24,9 +24,8 @@ func NewInstance(object, inspect, grant, revoke string) Instance {
 	}
 }
 
-func (p Instance) Databases(_ postgres.DBMap, defaultDatabase string) (out []string) {
-	out = append(out, defaultDatabase)
-	return
+func (p Instance) IsGlobal() bool {
+	return true
 }
 
 func (p Instance) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -99,8 +98,8 @@ func NewDatabase(object, inspect, grant, revoke string) Database {
 	}
 }
 
-func (p Database) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p Database) IsGlobal() bool {
+	return false
 }
 
 func (p Database) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -172,8 +171,8 @@ func NewAll(object, inspect, grant, revoke string) All {
 	}
 }
 
-func (p All) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p All) IsGlobal() bool {
+	return false
 }
 
 func (p All) RowTo(r pgx.CollectableRow) (g Grant, err error) {
