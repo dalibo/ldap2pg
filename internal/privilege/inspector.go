@@ -14,7 +14,7 @@ import (
 type TypeMap map[string][]string
 
 type Inspector struct {
-	dbmap             postgres.DBMap
+	database          postgres.Database
 	defaultDatabase   string
 	managedPrivileges map[string][]string
 
@@ -24,9 +24,9 @@ type Inspector struct {
 	grant     Grant
 }
 
-func NewInspector(databases postgres.DBMap, defaultDatabase string, managedPrivileges map[string][]string) Inspector {
+func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges map[string][]string) Inspector {
 	return Inspector{
-		dbmap:             databases,
+		database:          database,
 		defaultDatabase:   defaultDatabase,
 		managedPrivileges: managedPrivileges,
 	}
@@ -70,32 +70,29 @@ func (i *Inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		databases := i.dbmap.SyncOrder(i.defaultDatabase, false)
-		for _, database := range databases {
-			runGlobal := database == i.defaultDatabase
-			names := maps.Keys(Builtins)
-			slices.Sort(names)
-			for _, object := range names {
-				arg, ok := i.managedPrivileges[object]
-				if !ok {
-					continue
-				}
-
-				p := Builtins[object]
-				if p.IsGlobal() && !runGlobal {
-					continue
-				}
-
-				slog.Debug("Inspecting grants.", "object", p, "database", database)
-				i.inspect1(database, object, p, arg, ch)
+		runGlobal := i.database.Name == i.defaultDatabase
+		names := maps.Keys(Builtins)
+		slices.Sort(names)
+		for _, object := range names {
+			arg, ok := i.managedPrivileges[object]
+			if !ok {
+				continue
 			}
+
+			p := Builtins[object]
+			if p.IsGlobal() && !runGlobal {
+				continue
+			}
+
+			slog.Debug("Inspecting grants.", "object", p, "database", i.database.Name)
+			i.inspect1(object, p, arg, ch)
 		}
 	}()
 	return ch
 }
 
-func (i *Inspector) inspect1(database, object string, p Privilege, types []string, ch chan Grant) {
-	pgconn, err := postgres.GetConn(i.ctx, database)
+func (i *Inspector) inspect1(object string, p Privilege, types []string, ch chan Grant) {
+	pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 	if err != nil {
 		i.err = err
 		return
@@ -114,11 +111,10 @@ func (i *Inspector) inspect1(database, object string, p Privilege, types []strin
 			i.err = fmt.Errorf("bad row: %w", err)
 			return
 		}
-		grant.Database = database
+		grant.Database = i.database.Name
 
-		database := i.dbmap[grant.Database]
 		if "" != grant.Schema {
-			_, known := database.Schemas[grant.Schema]
+			_, known := i.database.Schemas[grant.Schema]
 			if !known {
 				continue
 			}

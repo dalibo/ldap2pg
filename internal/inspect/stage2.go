@@ -24,8 +24,7 @@ func (instance *Instance) InspectStage2(ctx context.Context, dbname string, quer
 }
 
 func (instance *Instance) InspectGrants(ctx context.Context, dbname string, privileges privilege.TypeMap, roles mapset.Set[string]) (out []privilege.Grant, err error) {
-	dbm := postgres.DBMap{dbname: instance.Databases[dbname]}
-	inspector := privilege.NewInspector(dbm, instance.DefaultDatabase, privileges)
+	inspector := privilege.NewInspector(instance.Databases[dbname], instance.DefaultDatabase, privileges)
 	for inspector.Run(ctx); inspector.Next(); {
 		grant := inspector.Grant()
 		if grant.IsRelevant() && !roles.Contains(grant.Grantee) {
