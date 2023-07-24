@@ -5,33 +5,19 @@ import (
 )
 
 type Expander interface {
-	Expand(Grant, postgres.DBMap) []Grant
+	Expand(Grant, postgres.Database, []string) []Grant
 }
 
-func Expand(in []Grant, databases postgres.DBMap) (out []Grant) {
+func Expand(in []Grant, privileges TypeMap, database postgres.Database, databases []string) (out []Grant) {
 	for _, grant := range in {
-		if grant.IsDefault() {
+		k := grant.PrivilegeKey()
+		_, ok := privileges[k]
+		if !ok {
 			continue
 		}
 
-		e := Builtins[grant.Target]
-		out = append(out, e.Expand(grant, databases)...)
-	}
-	return
-}
-
-func ExpandDefault(in []Grant, databases postgres.DBMap) (out []Grant) {
-	for _, grant := range in {
-		var e Expander
-		if !grant.IsDefault() {
-			continue
-		} else if "" == grant.Schema {
-			e = Builtins["GLOBAL DEFAULT"]
-		} else {
-			e = Builtins["SCHEMA DEFAULT"]
-		}
-
-		out = append(out, e.Expand(grant, databases)...)
+		e := Builtins[k]
+		out = append(out, e.Expand(grant, database, databases)...)
 	}
 	return
 }

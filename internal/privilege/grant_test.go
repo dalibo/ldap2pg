@@ -83,17 +83,19 @@ func TestExpandDatabase(t *testing.T) {
 	g := privilege.Grant{
 		Database: "db0",
 	}
-	grants := g.ExpandDatabases([]string{"db0", "db1"})
+	grants := g.ExpandDatabase("db0")
 	r.Len(t, grants, 1)
 	r.Equal(t, "db0", grants[0].Database)
+
+	grants = g.ExpandDatabase("db1")
+	r.Len(t, grants, 0)
 
 	g = privilege.Grant{
 		Database: "__all__",
 	}
-	grants = g.ExpandDatabases([]string{"db0", "db1"})
-	r.Len(t, grants, 2)
+	grants = g.ExpandDatabase("db0")
+	r.Len(t, grants, 1)
 	r.Equal(t, "db0", grants[0].Database)
-	r.Equal(t, "db1", grants[1].Database)
 }
 
 func TestExpandOwners(t *testing.T) {
@@ -103,22 +105,21 @@ func TestExpandOwners(t *testing.T) {
 		Owner:    "__auto__",
 		Grantee:  "toto",
 	}
-	dbs := postgres.DBMap{
-		"db0": postgres.Database{
-			Owner: "o0",
-			Schemas: map[string]postgres.Schema{
-				"nsp0": {
-					Owner: "o1",
-					Creators: []string{
-						"o0",
-						"o1",
-						"o2",
-					},
+	db := postgres.Database{
+		Name:  "db0",
+		Owner: "o0",
+		Schemas: map[string]postgres.Schema{
+			"nsp0": {
+				Owner: "o1",
+				Creators: []string{
+					"o0",
+					"o1",
+					"o2",
 				},
 			},
 		},
 	}
-	grants := g.ExpandOwners(dbs)
+	grants := g.ExpandOwners(db)
 	r.Len(t, grants, 6)
 	r.Equal(t, "o0", grants[0].Owner)
 	r.Equal(t, "toto", grants[0].Grantee)

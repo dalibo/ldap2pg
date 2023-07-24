@@ -41,9 +41,9 @@ func (p GlobalDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p GlobalDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		out = append(out, g.ExpandOwners(databases)...)
+func (p GlobalDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
+		out = append(out, g.ExpandOwners(database)...)
 	}
 	return
 }
@@ -101,10 +101,10 @@ func (p SchemaDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p SchemaDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		for _, g := range g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas)) {
-			out = append(out, g.ExpandOwners(databases)...)
+func (p SchemaDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
+		for _, g := range g.ExpandSchemas(maps.Keys(database.Schemas)) {
+			out = append(out, g.ExpandOwners(database)...)
 		}
 	}
 	return

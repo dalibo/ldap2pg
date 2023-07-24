@@ -123,7 +123,8 @@ func ldap2pg(ctx context.Context) (err error) {
 			managedRoles.Add("public")
 		}
 
-		objectPrivileges, defaultPrivileges := c.Postgres.PrivilegesMap.BuildTypeMaps()
+		instancePrivileges, objectPrivileges, defaultPrivileges := c.Postgres.PrivilegesMap.BuildTypeMaps()
+		allDatabases := maps.Keys(instance.Databases)
 
 		// Start by default database. This allow to reuse the last
 		// openned connexion when synchronizing roles.
@@ -133,8 +134,17 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			expandedGrants := privilege.Expand(wantedGrants, postgres.DBMap{dbname: instance.Databases[dbname]})
-			currentGrants, err := instance.InspectGrants(ctx, dbname, objectPrivileges, managedRoles)
+			var privileges privilege.TypeMap
+			if dbname == instance.DefaultDatabase {
+				slog.Debug("Managing instance wide privileges.", "database", dbname)
+				privileges = make(privilege.TypeMap)
+				maps.Copy(privileges, instancePrivileges)
+				maps.Copy(privileges, objectPrivileges)
+			} else {
+				privileges = objectPrivileges
+			}
+			expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
+			currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, managedRoles)
 			if err != nil {
 				return fmt.Errorf("privileges: %w", err)
 			}
@@ -153,7 +163,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			expandedGrants = privilege.ExpandDefault(wantedGrants, postgres.DBMap{dbname: instance.Databases[dbname]})
+			expandedGrants = privilege.Expand(wantedGrants, defaultPrivileges, instance.Databases[dbname], nil)
 			currentGrants, err = instance.InspectGrants(ctx, dbname, defaultPrivileges, managedRoles)
 			if err != nil {
 				return fmt.Errorf("privileges: %w", err)

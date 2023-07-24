@@ -37,10 +37,11 @@ func (rm RefMap) BuildDefaultArg(def string) (out [][]string) {
 	return
 }
 
-func (rm RefMap) BuildTypeMaps() (other, defaults TypeMap) {
+func (rm RefMap) BuildTypeMaps() (instance, other, defaults TypeMap) {
 	all := make(TypeMap)
 	other = make(TypeMap)
 	defaults = make(TypeMap)
+	instance = make(TypeMap)
 
 	for _, privList := range rm {
 		for _, priv := range privList {
@@ -63,6 +64,8 @@ func (rm RefMap) BuildTypeMaps() (other, defaults TypeMap) {
 		slices.Sort(types)
 		if strings.HasSuffix(target, " DEFAULT") {
 			defaults[target] = types
+		} else if Builtins[target].IsGlobal() {
+			instance[target] = types
 		} else {
 			other[target] = types
 		}
