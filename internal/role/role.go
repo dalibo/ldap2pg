@@ -11,24 +11,28 @@ type Role struct {
 	Comment string
 	Parents mapset.Set[string]
 	Options Options
+	Config  *Config
 }
 
 func New() Role {
-	role := Role{}
-	role.Parents = mapset.NewSet[string]()
-	return role
+	r := Role{}
+	r.Parents = mapset.NewSet[string]()
+	r.Config = &Config{}
+	return r
 }
 
 func RowTo(row pgx.CollectableRow) (role Role, err error) {
 	var variableRow interface{}
 	var parents []string
+	var config []string
 	role = New()
-	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents)
+	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents, &config)
 	if err != nil {
 		return
 	}
 	role.Parents.Append(parents...)
 	role.Options.LoadRow(variableRow.([]interface{}))
+	(*role.Config).Parse(config)
 	return
 }
 
@@ -105,6 +109,60 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 			QueryArgs: []interface{}{identifier, wanted.Comment},
 		})
 	}
+
+	if wanted.Config != nil {
+		currentKeys := mapset.NewSetFromMapKeys(*r.Config)
+		wantedKeys := mapset.NewSetFromMapKeys(*wanted.Config)
+		missingKeys := wantedKeys.Clone()
+		for k := range currentKeys.Iter() {
+			if !wantedKeys.Contains(k) {
+				out = append(out, postgres.SyncQuery{
+					Description: "Reset role config.",
+					LogArgs: []interface{}{
+						"role", r.Name,
+						"config", k,
+					},
+					Query:     `ALTER ROLE %s RESET %s;`,
+					QueryArgs: []interface{}{identifier, pgx.Identifier{k}},
+				})
+				continue
+			}
+
+			missingKeys.Remove(k)
+
+			currentValue := (*r.Config)[k]
+			wantedValue := (*wanted.Config)[k]
+			if wantedValue == currentValue {
+				continue
+			}
+			out = append(out, postgres.SyncQuery{
+				Description: "Update role config.",
+				LogArgs: []interface{}{
+					"role", r.Name,
+					"config", k,
+					"current", currentValue,
+					"wanted", wantedValue,
+				},
+				Query:     `ALTER ROLE %s SET %s TO %s;`,
+				QueryArgs: []interface{}{identifier, pgx.Identifier{k}, wantedValue},
+			})
+		}
+
+		for k := range missingKeys.Iter() {
+			v := (*wanted.Config)[k]
+			out = append(out, postgres.SyncQuery{
+				Description: "Set role config.",
+				LogArgs: []interface{}{
+					"role", r.Name,
+					"config", k,
+					"value", v,
+				},
+				Query:     `ALTER ROLE %s SET %s TO %s;`,
+				QueryArgs: []interface{}{identifier, pgx.Identifier{k}, v},
+			})
+		}
+	}
+
 	return
 }
 
@@ -139,6 +197,19 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 		Query:       `COMMENT ON ROLE %s IS %s;`,
 		QueryArgs:   []interface{}{identifier, r.Comment},
 	})
+
+	if nil == r.Config {
+		return
+	}
+
+	for k, v := range *r.Config {
+		out = append(out, postgres.SyncQuery{
+			Description: "Set role config.",
+			LogArgs:     []interface{}{"role", r.Name, "config", k, "value", v},
+			Query:       `ALTER ROLE %s SET %s TO %s`,
+			QueryArgs:   []interface{}{identifier, pgx.Identifier{k}, v},
+		})
+	}
 	return
 }
 

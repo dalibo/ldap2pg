@@ -1,6 +1,6 @@
 # Very simple file to test configuration settings
 postgres:
-  databases_query: [nonsuperdb]
+  databases_query: [postgres]
   managed_roles_query: [config_test_create, config_test_update, config_test_reset, config_test_unmodified]
 
 sync_map:

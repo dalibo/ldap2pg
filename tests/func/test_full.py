@@ -42,10 +42,10 @@ def test_run(ldap2pg, psql):
     assert comment
 
 
-def test_role_config(psql):
+@pytest.mark.go
+def test_role_config(ldap2pg, psql):
     # type: (PSQL) -> None
 
-    from sh import ldap2pg
     c = 'tests/func/ldap2pg.config.yml'
 
     roles = list(psql.roles())
@@ -78,7 +78,7 @@ def test_role_config(psql):
     assert expected_unmodified_config == unmodified_config
 
     # Synchronize all
-    ldap2pg('-N', c=c)
+    ldap2pg('--real', c=c)
 
     roles = list(psql.roles())
 

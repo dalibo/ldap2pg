@@ -91,6 +91,7 @@ type RoleRule struct {
 	Options role.Options
 	Comment pyfmt.Format
 	Parents []pyfmt.Format
+	Config  *role.Config
 }
 
 func (r RoleRule) IsStatic() bool {
@@ -123,6 +124,7 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 				Comment: r.Comment.String(),
 				Options: r.Options,
 				Parents: parents,
+				Config:  r.Config,
 			}
 			ch <- role
 		} else {
