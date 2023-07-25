@@ -42,7 +42,7 @@ func (i *Item) InferAttributes() {
 		attributes.Add(attribute)
 
 		// Case {member} or {member.cn}
-		if !found || slices.Contains[string](ldap.KnownRDNs, field) {
+		if !found || slices.Contains(ldap.KnownRDNs, field) {
 			continue
 		}
 
