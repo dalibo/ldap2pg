@@ -14,5 +14,5 @@ privileges:
 sync_map:
 - role: manuel
   grant:
-    acl: ro
+    privilege: ro
     role: manuel

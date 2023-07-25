@@ -11,7 +11,7 @@ import (
 func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
 	rule = map[string]interface{}{
 		"comment": "Managed by ldap2pg",
-		"options": "",
+		"options": map[string]interface{}{},
 		"parents": []string{},
 	}
 

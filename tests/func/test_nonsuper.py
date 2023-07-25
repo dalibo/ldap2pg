@@ -2,9 +2,11 @@
 
 import os
 
+import pytest
 
-def test_sync(psql):
-    from sh import ldap2pg
+
+@pytest.mark.go
+def test_sync(ldap2pg, psql):
     c = 'tests/func/ldap2pg.nonsuper.yml'
     db = 'nonsuperdb'
     env = dict(
@@ -18,11 +20,11 @@ def test_sync(psql):
     # Create a table owned by manager
 
     # Ensure db is not sync
-    myldap2pg('-C', _ok_code=1, _env=env)
+    myldap2pg('--check', _ok_code=1, _env=env)
 
-    myldap2pg('-N', _env=env)
+    myldap2pg('--real', _env=env)
     roles = list(psql.roles())
     assert 'manuel' in roles
     assert 'kevin' not in roles
 
-    myldap2pg('-C', _env=env)
+    myldap2pg('--check', _env=env)
