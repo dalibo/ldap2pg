@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
@@ -216,16 +217,24 @@ func showVersion() {
 }
 
 func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privilege.Grant, dbname string, privileges privilege.TypeMap) (int, error) {
+	stageCount := 0
 	allDatabases := maps.Keys(instance.Databases)
-	expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
-	currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
-	if err != nil {
-		return 0, fmt.Errorf("privileges: %w", err)
-	}
-	queries := privilege.Diff(currentGrants, expandedGrants)
-	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
-	if err != nil {
-		return 0, fmt.Errorf("apply: %w", err)
+	privKeys := maps.Keys(privileges)
+	slices.Sort(privKeys)
+	for _, priv := range privKeys {
+		privileges := privilege.TypeMap{priv: privileges[priv]}
+		expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
+		currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
+		if err != nil {
+			return 0, fmt.Errorf("privileges: %w", err)
+		}
+		queries := privilege.Diff(currentGrants, expandedGrants)
+		count, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		if err != nil {
+			return 0, fmt.Errorf("apply: %w", err)
+		}
+		slog.Debug("Privilege synchronized.", "privilege", priv, "database", dbname)
+		stageCount += count
 	}
 	return stageCount, nil
 }
