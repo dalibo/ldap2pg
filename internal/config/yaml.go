@@ -116,7 +116,7 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 	case reflect.TypeOf(QueryConfig[postgres.Schema]{}):
 		v := to.Interface().(QueryConfig[postgres.Schema])
 		v.Value = from.Interface()
-		err := v.Instantiate(postgres.RowToSchema, YamlTo[postgres.Schema])
+		err := v.Instantiate(postgres.RowToSchema, postgres.YamlToSchema)
 		if err != nil {
 			return nil, err
 		}
