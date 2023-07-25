@@ -2,54 +2,22 @@ package privilege
 
 import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"golang.org/x/exp/slog"
 )
 
 type Expander interface {
-	Expand(Grant, postgres.DBMap) []Grant
+	Expand(Grant, postgres.Database, []string) []Grant
 }
 
-func Expand(in []Grant, databases postgres.DBMap) (out []Grant) {
-	slog.Debug("Expanding wanted grants.")
+func Expand(in []Grant, privileges TypeMap, database postgres.Database, databases []string) (out []Grant) {
 	for _, grant := range in {
-		if grant.IsDefault() {
+		k := grant.PrivilegeKey()
+		_, ok := privileges[k]
+		if !ok {
 			continue
 		}
 
-		e := Builtins[grant.Target]
-
-		for _, g := range e.Expand(grant, databases) {
-			logAttrs := []interface{}{"grant", g}
-			if "" != g.Database {
-				logAttrs = append(logAttrs, "database", g.Database)
-			}
-			slog.Debug("Expand grant.", logAttrs...)
-			out = append(out, g)
-		}
-	}
-	return
-}
-
-func ExpandDefault(in []Grant, databases postgres.DBMap) (out []Grant) {
-	slog.Debug("Expanding wanted wanted privileges.")
-	for _, grant := range in {
-		var e Expander
-		if !grant.IsDefault() {
-			continue
-		} else if "" == grant.Schema {
-			e = Builtins["GLOBAL DEFAULT"]
-		} else {
-			e = Builtins["SCHEMA DEFAULT"]
-		}
-
-		for _, g := range e.Expand(grant, databases) {
-			logAttrs := []interface{}{"grant", g}
-			if "" != g.Database {
-				logAttrs = append(logAttrs, "database", g.Database)
-			}
-			slog.Debug("Expand default privilege.", logAttrs...)
-			out = append(out, g)
-		}
+		e := Builtins[k]
+		out = append(out, e.Expand(grant, database, databases)...)
 	}
 	return
 }

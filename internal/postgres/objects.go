@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 type Database struct {
@@ -12,6 +14,25 @@ type Database struct {
 	Schemas map[string]Schema
 }
 type DBMap map[string]Database
+
+func (m DBMap) SyncOrder(defaultName string, defaultFirst bool) (out []string) {
+	names := maps.Keys(m)
+	slices.Sort(names)
+	_, ok := m[defaultName]
+	if defaultFirst && ok {
+		out = append(out, defaultName)
+	}
+	for _, name := range names {
+		if defaultName != name {
+			out = append(out, name)
+		}
+	}
+
+	if !defaultFirst && ok {
+		out = append(out, defaultName)
+	}
+	return
+}
 
 func RowToDatabase(row pgx.CollectableRow) (database Database, err error) {
 	err = row.Scan(&database.Name, &database.Owner)

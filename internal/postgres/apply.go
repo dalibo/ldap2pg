@@ -11,9 +11,9 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, defaultDatabase string, real bool) (count int, err error) {
-	formatter := FmtQueryRewriter{}
+var formatter = FmtQueryRewriter{}
 
+func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, defaultDatabase string, real bool) (count int, err error) {
 	prefix := ""
 	if !real {
 		prefix = "Would "
@@ -23,7 +23,6 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, de
 		if "" == query.Database {
 			query.Database = defaultDatabase
 		}
-
 		if !slices.ContainsFunc(query.LogArgs, func(i interface{}) bool {
 			return i == "database"
 		}) {
@@ -31,7 +30,7 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, de
 		}
 		slog.Log(ctx, internal.LevelChange, prefix+query.Description, query.LogArgs...)
 		count++
-		pgConn, err := DBPool.Get(ctx, query.Database)
+		pgConn, err := GetConn(ctx, query.Database)
 		if err != nil {
 			return count, fmt.Errorf("PostgreSQL error: %w", err)
 		}

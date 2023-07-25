@@ -48,15 +48,18 @@ func (g *Grant) Normalize() {
 	g.Privilege().Normalize(g)
 }
 
-func (g Grant) Privilege() (p Privilege) {
+func (g Grant) PrivilegeKey() string {
 	if !g.IsDefault() {
-		p = Builtins[g.Target]
+		return g.Target
 	} else if "" == g.Schema {
-		p = Builtins["GLOBAL DEFAULT"]
+		return "GLOBAL DEFAULT"
 	} else {
-		p = Builtins["SCHEMA DEFAULT"]
+		return "SCHEMA DEFAULT"
 	}
-	return
+}
+
+func (g Grant) Privilege() Privilege {
+	return Builtins[g.PrivilegeKey()]
 }
 
 func (g Grant) String() string {
@@ -110,30 +113,33 @@ func (g Grant) String() string {
 	return b.String()
 }
 
-func (g Grant) ExpandDatabases(databases []string) (out []Grant) {
-	if "__all__" != g.Database {
+func (g Grant) ExpandDatabase(database string) (out []Grant) {
+	if database == g.Database {
 		out = append(out, g)
 		return
 	}
 
-	for _, name := range databases {
-		g := g // copy
-		g.Database = name
-		out = append(out, g)
+	if "__all__" != g.Database {
+		return
 	}
+
+	g.Database = database
+	out = append(out, g)
 
 	return
 }
 
-func (g Grant) ExpandOwners(databases postgres.DBMap) (out []Grant) {
+func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
 	if "__auto__" != g.Owner {
 		out = append(out, g)
 		return
 	}
 
-	// Yield default privilege for database owner.
-	database := databases[g.Database]
+	if database.Name != g.Database {
+		return
+	}
 
+	// Yield default privilege for database owner.
 	var schemas []postgres.Schema
 	if "" == g.Schema {
 		schemas = maps.Values(database.Schemas)

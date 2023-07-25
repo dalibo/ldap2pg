@@ -24,9 +24,8 @@ func NewInstance(object, inspect, grant, revoke string) Instance {
 	}
 }
 
-func (p Instance) Databases(_ postgres.DBMap, defaultDatabase string) (out []string) {
-	out = append(out, defaultDatabase)
-	return
+func (p Instance) IsGlobal() bool {
+	return true
 }
 
 func (p Instance) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -45,9 +44,9 @@ func (p Instance) Inspect() string {
 	return p.inspect
 }
 
-func (p Instance) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
+func (p Instance) Expand(g Grant, _ postgres.Database, databases []string) (out []Grant) {
 	if "__all__" == g.Object {
-		for dbname := range databases {
+		for _, dbname := range databases {
 			g := g // copy
 			g.Object = dbname
 			out = append(out, g)
@@ -99,8 +98,8 @@ func NewDatabase(object, inspect, grant, revoke string) Database {
 	}
 }
 
-func (p Database) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p Database) IsGlobal() bool {
+	return false
 }
 
 func (p Database) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -125,10 +124,10 @@ func (p Database) Normalize(g *Grant) {
 	g.Schema = ""
 }
 
-func (p Database) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
+func (p Database) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
 		if "__all__" == g.Object {
-			for _, s := range databases[g.Database].Schemas {
+			for _, s := range database.Schemas {
 				g := g // copy
 				g.Object = s.Name
 				out = append(out, g)
@@ -172,8 +171,8 @@ func NewAll(object, inspect, grant, revoke string) All {
 	}
 }
 
-func (p All) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p All) IsGlobal() bool {
+	return false
 }
 
 func (p All) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -193,9 +192,9 @@ func (p All) Inspect() string {
 func (p All) Normalize(_ *Grant) {
 }
 
-func (p All) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		out = append(out, g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas))...)
+func (p All) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
+		out = append(out, g.ExpandSchemas(maps.Keys(database.Schemas))...)
 	}
 	return
 }

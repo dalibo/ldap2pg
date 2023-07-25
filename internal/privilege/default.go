@@ -26,8 +26,8 @@ func (p GlobalDefault) String() string {
 	return p.object
 }
 
-func (p GlobalDefault) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p GlobalDefault) IsGlobal() bool {
+	return false
 }
 
 func (p GlobalDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -41,9 +41,9 @@ func (p GlobalDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p GlobalDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		out = append(out, g.ExpandOwners(databases)...)
+func (p GlobalDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
+		out = append(out, g.ExpandOwners(database)...)
 	}
 	return
 }
@@ -82,8 +82,8 @@ func NewSchemaDefault(object, inspect, grant, revoke string) SchemaDefault {
 	}
 }
 
-func (p SchemaDefault) Databases(m postgres.DBMap, _ string) []string {
-	return maps.Keys(m)
+func (p SchemaDefault) IsGlobal() bool {
+	return false
 }
 
 func (p SchemaDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -101,10 +101,10 @@ func (p SchemaDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p SchemaDefault) Expand(g Grant, databases postgres.DBMap) (out []Grant) {
-	for _, g := range g.ExpandDatabases(maps.Keys(databases)) {
-		for _, g := range g.ExpandSchemas(maps.Keys(databases[g.Database].Schemas)) {
-			out = append(out, g.ExpandOwners(databases)...)
+func (p SchemaDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+	for _, g := range g.ExpandDatabase(database.Name) {
+		for _, g := range g.ExpandSchemas(maps.Keys(database.Schemas)) {
+			out = append(out, g.ExpandOwners(database)...)
 		}
 	}
 	return
