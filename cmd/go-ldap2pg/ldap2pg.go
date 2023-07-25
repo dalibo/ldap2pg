@@ -124,7 +124,6 @@ func ldap2pg(ctx context.Context) (err error) {
 		}
 
 		instancePrivileges, objectPrivileges, defaultPrivileges := c.Postgres.PrivilegesMap.BuildTypeMaps()
-		allDatabases := maps.Keys(instance.Databases)
 
 		// Start by default database. This allow to reuse the last
 		// openned connexion when synchronizing roles.
@@ -143,15 +142,9 @@ func ldap2pg(ctx context.Context) (err error) {
 			} else {
 				privileges = objectPrivileges
 			}
-			expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
-			currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, managedRoles)
+			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, privileges)
 			if err != nil {
-				return fmt.Errorf("privileges: %w", err)
-			}
-			queries := privilege.Diff(currentGrants, expandedGrants)
-			stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
-			if err != nil {
-				return fmt.Errorf("apply: %w", err)
+				return fmt.Errorf("stage 2: %w", err)
 			}
 			if 0 == stageCount {
 				slog.Info("All privileges configured.", "database", dbname)
@@ -163,15 +156,9 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			expandedGrants = privilege.Expand(wantedGrants, defaultPrivileges, instance.Databases[dbname], nil)
-			currentGrants, err = instance.InspectGrants(ctx, dbname, defaultPrivileges, managedRoles)
+			stageCount, err = syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, defaultPrivileges)
 			if err != nil {
-				return fmt.Errorf("privileges: %w", err)
-			}
-			queries = privilege.Diff(currentGrants, expandedGrants)
-			stageCount, err = postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
-			if err != nil {
-				return fmt.Errorf("apply: %w", err)
+				return fmt.Errorf("stage 3: %w", err)
 			}
 			if 0 == stageCount {
 				slog.Info("All default privileges configured.", "database", dbname)
@@ -226,4 +213,19 @@ func showVersion() {
 	}
 
 	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
+}
+
+func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privilege.Grant, dbname string, privileges privilege.TypeMap) (int, error) {
+	allDatabases := maps.Keys(instance.Databases)
+	expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
+	currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
+	if err != nil {
+		return 0, fmt.Errorf("privileges: %w", err)
+	}
+	queries := privilege.Diff(currentGrants, expandedGrants)
+	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+	if err != nil {
+		return 0, fmt.Errorf("apply: %w", err)
+	}
+	return stageCount, nil
 }
