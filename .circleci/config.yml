@@ -57,7 +57,7 @@ jobs:
     - run:
         name: Unit Test
         command: |
-          go test ./...
+          go test -v ./...
     - run:
         name: Build Go Files
         command: |
