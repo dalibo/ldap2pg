@@ -28,18 +28,7 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-		slog.Error("Panic!", "err", r)
-		buf := debug.Stack()
-		fmt.Fprintf(os.Stderr, "%s", buf)
-		slog.Error("Aborting ldap2pg.", "err", r)
-		slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with full log.")
-		os.Exit(1)
-	}()
+	defer logPanic()
 
 	// Bootstrap logging first to log in setup.
 	internal.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
@@ -240,4 +229,17 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		stageCount += count
 	}
 	return stageCount, nil
+}
+
+func logPanic() {
+	r := recover()
+	if r == nil {
+		return
+	}
+	slog.Error("Panic!", "err", r)
+	buf := debug.Stack()
+	fmt.Fprintf(os.Stderr, "%s", buf)
+	slog.Error("Aborting ldap2pg.", "err", r)
+	slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with full log.")
+	os.Exit(1)
 }
