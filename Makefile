@@ -1,4 +1,5 @@
 VERSION=$(shell cat internal/VERSION)
+YUM_LABS?=$(wildcard ../yum-labs)
 
 default:
 
@@ -38,11 +39,14 @@ release: changelog VERSION
 release-notes:  #: Extract changes for current release
 	FINAL_VERSION="$(shell echo $(VERSION) | grep -Po '([^a-z]{3,})')" ; sed -En "/Unreleased/d;/^#+ ldap2pg $$FINAL_VERSION/,/^#/p" CHANGELOG.md  | sed '1d;$$d'
 
-rpm: $(WHL)
-	$(MAKE) -C packaging rpm
+rpm deb:
+	VERSION=$(VERSION) nfpm package --packager $@
 
-push-rpm: rpm
-	$(MAKE) -C packaging push
+publish-rpm: rpm
+	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
+	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
+	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
+	@make -C $(YUM_LABS) push createrepos clean
 
 reset-%:
 	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*

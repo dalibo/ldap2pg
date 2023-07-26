@@ -157,7 +157,7 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8.
+On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and
 [sh](https://amoffat.github.io/sh/) projects. `conftest.py` provides various
@@ -186,4 +186,4 @@ information.
 - Review `docs/changelog.md`. `# Unreleased` title will be edited.
 - Increment version in `setup.py`.
 - Generate release commit, tag and changelog with `make release`.
-- Once CircleCI has uploaded artifacts, run `make push-rpm` to build and publish RPM.
+- Once CircleCI has uploaded artifacts, run `make publish-rpm` to build and publish RPM.
