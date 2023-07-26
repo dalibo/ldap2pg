@@ -1,10 +1,4 @@
-*.egg-info/
-*.pyc
-.coverage
-.pytest_cache/
 # Delve binary.
 __debug_bin
-__pycache__/
 build/
-dist/
 docker-compose.override.yml
