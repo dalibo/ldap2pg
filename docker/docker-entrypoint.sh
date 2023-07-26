@@ -20,7 +20,7 @@ main() {
 	echo "$0: ldap2pg init process complete; ready to start up."
 	echo
 
-	exec ldap2pg "$@"
+	exec go-ldap2pg "$@"
 }
 
 # usage: docker_process_init_files [file [file [...]]]

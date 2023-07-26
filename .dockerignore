@@ -1,0 +1,11 @@
+.*
+.circleci/
+build/
+docker-compose*
+docs/
+fixtures/
+mon-*
+my-*
+nfpm.yaml
+packaging/
+tests/
