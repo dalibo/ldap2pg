@@ -4,18 +4,6 @@ workflows:
   version: 2
   default:
     jobs:
-    - go-build:
-        name: "go-stage0-build"
-        filters: &enable-for-tags
-          tags:
-            only: '/v.+/'
-    - go-lint:
-        name: "go-stage0-lint"
-    - go-func:
-        name: "go-stage1-func-rockylinux8-pg14"
-        requires: [go-stage0-build]
-        dist: rockylinux8
-        pgversion: "14"
     - unit:
         name: "stage0-unit-py<< matrix.python >>"
         matrix:
@@ -45,10 +33,9 @@ workflows:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
         context: ldap2pg
-        requires:
-        - go-stage0-build
         filters:
-          <<: *enable-for-tags
+          tags:
+            only: '/v.+/'
           # Skip on branches!
           branches:
             ignore: '/.*/'
