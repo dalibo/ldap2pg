@@ -4,49 +4,34 @@ workflows:
   version: 2
   default:
     jobs:
-    - go-build:
-        name: "go-stage0-build"
+    - build:
+        name: "stage0-build"
         filters: &enable-for-tags
           tags:
             only: '/v.+/'
-    - go-lint:
-        name: "go-stage0-lint"
-    - go-func:
-        name: "go-stage1-func-rockylinux8-pg14"
-        requires: [go-stage0-build]
-        dist: rockylinux8
-        pgversion: "14"
-    - unit:
-        name: "stage0-unit-py<< matrix.python >>"
-        matrix:
-          parameters:
-            python: ["3.6", "2.7"]
-    - rpm:
-        name: "stage0-pkg-<< matrix.dist >>"
-        matrix:
-          parameters:
-            dist: [rockylinux8, centos7, centos6]
+    - lint:
+        name: "stage0-lint"
     - func:
         name: "stage1-func-rockylinux8-pg15"
-        requires: [stage0-pkg-rockylinux8]
         dist: rockylinux8
+        requires: [stage0-build]
         pgversion: "14"
     - func:
         name: "stage1-func-centos7-pg12"
-        requires: [stage0-pkg-centos7]
         dist: centos7
+        requires: [stage0-build]
         pgversion: "12"
     - func:
         name: "stage1-func-centos6-pg9.3"
-        requires: [stage0-pkg-centos6]
         dist: centos6
+        requires: [stage0-build]
         pgversion: "9.3"
     - release:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
         context: ldap2pg
         requires:
-        - go-stage0-build
+        - stage0-build
         filters:
           <<: *enable-for-tags
           # Skip on branches!
@@ -55,7 +40,7 @@ workflows:
 
 
 jobs:
-  go-build:
+  build:
     working_directory: &workspace /workspace
     docker:
     - image: golang:1.20-bullseye
@@ -82,7 +67,7 @@ jobs:
         root: .
         paths: [build/]
 
-  go-lint:
+  lint:
     working_directory: *workspace
     docker:
     - image: golangci/golangci-lint:v1.52.2
@@ -99,7 +84,7 @@ jobs:
         paths:
         - /root/.cache/golangci-lint
 
-  go-func:
+  func:
     parameters:
       dist:
         description: "Distribution."
@@ -136,55 +121,12 @@ jobs:
         name: Smoke test
         command: build/go-ldap2pg.amd64 --version
     - run:
-        name: Install Pytest Requirements
-        command: |
-          pip3 install --prefix=/usr/local --requirement tests/func/requirements.txt
-    - run:
         name: Exécuting Functionnal Tests
         command: |
           echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
-          pytest -k go tests/func/ --ldap2pg=build/go-ldap2pg.amd64
-    - save_cache:
-        key: ldap2pg-go-func-{{ epoch }}
-        paths:
-        - /root/.cache/pip
-
-  func:
-    parameters:
-      dist:
-        description: "Distribution."
-        type: string
-      pgversion:
-        description: "Major dotted version of PostgreSQL."
-        type: string
-    working_directory: *workspace
-    docker:
-      - image: dalibo/buildpack-python:<< parameters.dist >>
-      - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
-        environment:
-          LDAP_DOMAIN: ldap.ldap2pg.docker
-          LDAP_ADMIN_PASSWORD: communication
-          LDAP_ORGANISATION: ldap
-      - image: postgres:<< parameters.pgversion >>-alpine
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: communication
-    steps:
-    - checkout
-    - attach_workspace:
-        at: *workspace
-    - restore_cache:
-        keys: [ldap2pg-func]
-    - run:
-        name: Exécuting functionnal tests
-        command: |
-          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          export PGHOST=localhost PGUSER=postgres PGPASSWORD=communication
-          export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=communication
           tests/func/entrypoint.sh
     - save_cache:
-        key: ldap2pg-func-{{ epoch }}
+        key: ldap2pg-go-func-{{ epoch }}
         paths:
         - /root/.cache/pip
 
@@ -209,50 +151,6 @@ jobs:
         - /root/.cache/pip
         - "~/.cache/pip/"
         - ".venv"
-
-  unit:
-    parameters:
-      python:
-        description: "Python version"
-        type: string
-    docker: [{image: "dalibo/buildpack-python:centos7"}]
-    working_directory: *workspace
-    steps:
-    - checkout
-    - restore_cache:
-        keys: [ldap2pg-unit3]
-    - run:
-        name: Install requirements
-        command: |
-          virtualenv-3 --python=/usr/bin/python<< parameters.python >> .venv/
-          . .venv/bin/activate
-          set -x
-          pip --version
-          pip debug
-          pip install --upgrade-strategy=eager -U -r requirements-ci.txt -e .
-          pip check
-    - save_cache:
-        key: ldap2pg-unit3-{{ epoch }}
-        paths:
-        - /root/.cache/pip
-        - "~/.cache/pip/"
-        - ".venv"
-    - run:
-        name: Lint
-        command: |
-          . .venv/bin/activate
-          set -x
-          grep -v '^#' .gitignore | sort --check
-          git diff --exit-code docs/
-          flake8
-          python setup.py --long-description | rst2html.py --strict >/dev/null
-    - run:
-        name: Python tests
-        command: |
-          . .venv/bin/activate
-          set -x
-          python -m pytest tests/unit/
-          codecov
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.

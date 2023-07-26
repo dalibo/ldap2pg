@@ -9,9 +9,9 @@ teardown() {
 
 trap teardown EXIT TERM
 
-top_srcdir=$(readlink -m $0/../../..)
-cd $top_srcdir
-test -f setup.py
+top_srcdir=$(readlink -m "$0/../../..")
+cd "$top_srcdir"
+test -f go.mod
 
 export LC_ALL=en_US.utf8
 
@@ -27,20 +27,8 @@ case "$rpmdist" in
 		pip=pip2
 		;;
 esac
-fullname=$($python setup.py --fullname)
 
-# Search for the proper RPM package.
-rpms=(dist/${fullname}-*${rpmdist}.noarch.rpm)
-rpm=${rpms[0]}
-test -f "$rpm"
-
-# Clean and install package.
-if rpm --query --queryformat= ldap2pg ; then
-	yum -q -y remove ldap2pg
-fi
-
-yum -q -y install "$rpm"
-ldap2pg --version
+build/go-ldap2pg.amd64 --version
 
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
@@ -65,5 +53,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-"$python" -c "import sys; print(sys.stdout)"
-"$python" -m pytest -x tests/func/
+"$python" -m pytest  -k go --ldap2pg=build/go-ldap2pg.amd64 tests/func/
