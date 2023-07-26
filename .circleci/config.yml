@@ -42,101 +42,6 @@ workflows:
 
 
 jobs:
-  go-build:
-    working_directory: &workspace /workspace
-    docker:
-    - image: golang:1.20-bullseye
-    steps:
-    - checkout
-    - run:
-        name: Go vet
-        command: go vet ./...
-    - run:
-        name: Unit Test
-        command: |
-          go test ./...
-    - run:
-        name: Build Go Files
-        command: |
-          mkdir -p build
-          go build -o build/go-ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/go-ldap2pg
-    - run:
-        name: Smoke test
-        command: build/go-ldap2pg.amd64 --version
-    - store_artifacts:
-        path: /workspace/build/
-    - persist_to_workspace:
-        root: .
-        paths: [build/]
-
-  go-lint:
-    working_directory: *workspace
-    docker:
-    - image: golangci/golangci-lint:v1.52.2
-    steps:
-    - checkout
-    - restore_cache:
-        keys: [ldap2pg-go-lint]
-    - run:
-        name: Lint
-        command: |
-          golangci-lint run
-    - save_cache:
-        key: ldap2pg-go-lint-{{ epoch }}
-        paths:
-        - /root/.cache/golangci-lint
-
-  go-func:
-    parameters:
-      dist:
-        description: "Distribution."
-        type: string
-      pgversion:
-        description: "Major dotted version of PostgreSQL."
-        type: string
-    docker:
-      - image: dalibo/buildpack-python:<< parameters.dist >>
-        environment:
-          PGHOST: 127.0.0.1
-          PGUSER: postgres
-          PGPASSWORD: communication
-          LDAPURI: ldap://ldap.ldap2pg.docker
-          LDAPBINDDN: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
-          LDAPPASSWORD: communication
-      - image: bersace/openldap@sha256:b03ac7f2d85831b93af53c1ac963c17170a4216a4307cf8865142fb6495aee21
-        environment:
-          LDAP_DOMAIN: ldap.ldap2pg.docker
-          LDAP_ADMIN_PASSWORD: communication
-          LDAP_ORGANISATION: ldap
-      - image: postgres:<< parameters.pgversion >>-alpine
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: communication
-    working_directory: *workspace
-    steps:
-    - checkout
-    - attach_workspace:
-        at: *workspace
-    - restore_cache:
-        keys: [ldap2pg-go-func]
-    - run:
-        name: Smoke test
-        command: build/go-ldap2pg.amd64 --version
-    - run:
-        name: Install Pytest Requirements
-        command: |
-          pip3 install --prefix=/usr/local --requirement tests/func/requirements.txt
-    - run:
-        name: Exécuting Functionnal Tests
-        command: |
-          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
-          pytest -k go tests/func/ --ldap2pg=build/go-ldap2pg.amd64
-    - save_cache:
-        key: ldap2pg-go-func-{{ epoch }}
-        paths:
-        - /root/.cache/pip
-
   func:
     parameters:
       dist:
@@ -145,7 +50,7 @@ jobs:
       pgversion:
         description: "Major dotted version of PostgreSQL."
         type: string
-    working_directory: *workspace
+    working_directory: &workspace /workspace
     docker:
       - image: dalibo/buildpack-python:<< parameters.dist >>
       - image: bersace/openldap@sha256:740af91a36b968fc33222b537df35107cccd2f09e6e6aaf28de7828e01ca7986
