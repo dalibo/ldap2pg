@@ -52,6 +52,8 @@ jobs:
     - image: golang:1.20-bullseye
     steps:
     - checkout
+    - restore_cache:
+        keys: [go-build]
     - run:
         name: Unit Test
         command: |
@@ -64,6 +66,11 @@ jobs:
     - run:
         name: Smoke test
         command: build/go-ldap2pg.amd64 --version
+    - save_cache:
+        key: go-build-{{ epoch }}
+        paths:
+        - /go/pkg/mod
+        - /root/.cache/go-build
     - store_artifacts:
         path: /workspace/build/
     - persist_to_workspace:
@@ -83,9 +90,11 @@ jobs:
         command: |
           golangci-lint run
     - save_cache:
-        key: ldap2pg-go-lint-{{ epoch }}
+        key: go-lint-{{ epoch }}
         paths:
         - /root/.cache/golangci-lint
+        - /root/.cache/go-build
+        - /go/pkg/mod
 
   func:
     parameters:
