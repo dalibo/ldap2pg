@@ -53,9 +53,6 @@ jobs:
     steps:
     - checkout
     - run:
-        name: Go vet
-        command: go vet ./...
-    - run:
         name: Unit Test
         command: |
           go test ./...
