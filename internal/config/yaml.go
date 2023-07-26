@@ -22,7 +22,7 @@ import (
 // Marshall YAML from file path or stdin if path is -.
 func ReadYaml(path string) (values interface{}, err error) {
 	var fo io.ReadCloser
-	if path == "-" {
+	if path == "<stdin>" {
 		slog.Info("Reading configuration from standard input.")
 		fo = os.Stdin
 	} else {

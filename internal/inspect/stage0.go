@@ -88,7 +88,7 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 		msg,
 		"user", instance.Me.Name,
 		"super", instance.Me.Options.Super,
-		"version", serverVersion,
+		"server", serverVersion,
 		"cluster", clusterName,
 		"database", instance.DefaultDatabase,
 	)
