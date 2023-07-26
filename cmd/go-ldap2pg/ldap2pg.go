@@ -87,6 +87,9 @@ func ldap2pg(ctx context.Context) (err error) {
 
 	pc := c.Postgres.Build()
 	instance, err := inspect.Stage0(ctx, pc)
+	if err != nil {
+		return
+	}
 	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return

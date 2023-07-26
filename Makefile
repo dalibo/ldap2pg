@@ -1,9 +1,6 @@
-VERSION=$(shell python setup.py --version)
+VERSION=$(shell cat internal/VERSION)
 
 default:
-
-clean-pyc:
-	find . -name __pycache__ -or -name "*.pyc" | xargs -rt rm -rf
 
 %.md: %.md.j2 docs/auto-privileges-doc.py ldap2pg/defaults.py Makefile
 	echo '<!-- GENERATED FROM $< -->' > $@.tmp
@@ -25,16 +22,13 @@ readme-sample:
 	@echo -e '\n\n\n\n'
 
 changelog:
-	python setup.py egg_info
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
-.PHONY: VERSION
-VERSION: internal/VERSION
-internal/VERSION: setup.py
-	echo -n "v$(VERSION).0" > $@
+build:
+	go build -o build/go-ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/go-ldap2pg
 
 release: changelog VERSION
-	git commit internal/VERSION setup.py docs/changelog.md -m "Version $(VERSION)"
+	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git
@@ -42,11 +36,6 @@ release: changelog VERSION
 
 release-notes:  #: Extract changes for current release
 	FINAL_VERSION="$(shell echo $(VERSION) | grep -Po '([^a-z]{3,})')" ; sed -En "/Unreleased/d;/^#+ ldap2pg $$FINAL_VERSION/,/^#/p" CHANGELOG.md  | sed '1d;$$d'
-
-WHL=dist/ldap2pg-$(VERSION)-py2.py3-none-any.whl
-$(WHL):
-	mkdir -p $(dir $@)
-	pip3 download --no-deps --dest $(dir $@) ldap2pg==$(VERSION)
 
 rpm: $(WHL)
 	$(MAKE) -C packaging rpm
