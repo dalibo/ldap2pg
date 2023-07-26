@@ -1,0 +1,14 @@
+name: "ldap2pg"
+arch: "amd64"
+platform: "linux"
+version: "${VERSION}"
+section: "default"
+priority: "extra"
+maintainer: "Étienne BERSAC <contact@dalibo.com>"
+description: Manage PostgreSQL roles and privileges from YAML or LDAP
+vendor: "Dalibo"
+homepage: "https://labs.dalibo.com/ldap2pg"
+license: "PostgreSQL"
+contents:
+- src: ./build/go-ldap2pg.amd64
+  dst: /usr/bin/ldap2pg

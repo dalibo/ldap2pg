@@ -157,7 +157,7 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8.
+On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and
 [sh](https://amoffat.github.io/sh/) projects. `conftest.py` provides various
@@ -170,12 +170,6 @@ loosing context and CPU cycle.
 Two main fixtures are very useful when testing: `psql` and `ldap`. These little
 helpers provide fastpath to frequent inspection of Postgres database on LDAP
 base with `sh.py`-style API.
-
-There is no code coverage in func tests, and you can't enter a debugger inside
-ldap2pg like you do with unit tests. This is on purpose to run ldap2pg in
-real situation. When you need to debug ldap2pg itself, just run it outside
-pytest! **Never import ldap2pg in func tests**. Call it like a subprocess.
-Logs should be enough to diagnose errors.
 
 
 ## Documenting
@@ -192,4 +186,4 @@ information.
 - Review `docs/changelog.md`. `# Unreleased` title will be edited.
 - Increment version in `setup.py`.
 - Generate release commit, tag and changelog with `make release`.
-- Once CircleCI has uploaded artifacts, run `make push-rpm` to build and publish RPM.
+- Once CircleCI has uploaded artifacts, run `make publish-rpm` to build and publish RPM.

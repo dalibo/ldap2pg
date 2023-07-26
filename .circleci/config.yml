@@ -26,6 +26,12 @@ workflows:
         dist: centos6
         requires: [stage0-build]
         pgversion: "9.3"
+    - pkg:
+        name: "stage1-pkg-<< matrix.format >>"
+        requires: [stage0-build]
+        matrix:
+          parameters:
+            format: [deb, rpm]
     - release:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
@@ -46,9 +52,6 @@ jobs:
     - image: golang:1.20-bullseye
     steps:
     - checkout
-    - run:
-        name: Go vet
-        command: go vet ./...
     - run:
         name: Unit Test
         command: |
@@ -130,27 +133,25 @@ jobs:
         paths:
         - /root/.cache/pip
 
-  rpm:
+  pkg:
     parameters:
-      dist:
-        description: "Distribution."
+      format:
+        description: "nFPM packager"
         type: string
-    docker: [{image: "dalibo/buildpack-pkg:<< parameters.dist >>"}]
+    docker: [{image: "dalibo/buildpack-pkg@sha256:5619b00328c5bd193412014b77295776f831cfa40f9feb37accc8f79b59b6de4"}]  # bullseye
     working_directory: *workspace
     steps:
     - checkout
-    - run: ./packaging/build_rpm.sh
+    - attach_workspace:
+        at: *workspace
+    - run:
+        name: nFPM
+        command: |
+          nfpm --version
+          nfpm package --packager << parameters.format >> --target build/
     - persist_to_workspace:
         root: *workspace
-        paths: ["dist/*.noarch.rpm"]
-    - store_artifacts:
-        path: /workspace/dist/
-    - save_cache:
-        key: ldap2pg-{{ epoch }}
-        paths:
-        - /root/.cache/pip
-        - "~/.cache/pip/"
-        - ".venv"
+        paths: ["build/*.deb", "build/*.rpm"]
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
@@ -174,6 +175,8 @@ jobs:
           gh release create \
             $CIRCLE_TAG \
             build/go-ldap2pg* \
+            build/ldap2pg*.deb \
+            build/ldap2pg*.rpm \
             --title "${CIRCLE_TAG#v}" \
             -F <(make -s release-notes VERSION=${CIRCLE_TAG#v}) \
             "${args[@]}"
