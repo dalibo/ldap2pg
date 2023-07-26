@@ -90,20 +90,15 @@ result: 0 Success
 $
 ```
 
-Now you can install ldap2pg from source and test your changes!
+Now you can run ldap2pg from source and test your changes!
 
 ``` console
-$ pip install -e .
-$ ldap2pg
-Starting ldap2pg 5.7.
-Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
-Running in dry mode. Postgres will be untouched.
-Inspecting Postgres...
-Querying LDAP cn=dba,ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
-Querying LDAP ou=groups,dc=ldap,dc=ldap2pg,dc=docker...
-Would create albert.
+$ go run ./cmd/go-ldap2pg
+11:10:26 INFO   Starting ldap2pg commit=(unknown) version=v5.10.0-alpha1 runtime=go1.20.3
+11:10:26 WARN   go-ldap2pg is alpha software! Use at your own risks!
+11:10:26 INFO   Using YAML configuration file. path=./ldap2pg.yml
 ...
-Comparison complete.
+11:10:27 INFO   Comparison complete. elapsed=261.3525ms mempeak=1.3MiB postgres=0s queries=459 ldap=2.33043ms searches=3
 $
 ```
 
@@ -119,78 +114,40 @@ ldap2pg. You can run `fixtures/postgres.sh` every time you need to reset the
 Postgres instance.
 
 
-## Debugging
-
-ldap2pg has a debug mode. Debug mode enables full logs and, if stdout is a
-TTY, drops in a PDB on unhandled exception. You can enable debug mode by
-exporting `DEBUG` envvar to either `1`, `y` or `Y`.
-
-``` console
-$ DEBUG=1 ldap2pg
-[ldap2pg.script      DEBUG] Debug mode enabled.
-[ldap2pg.config      DEBUG] Processing CLI arguments.
-[ldap2pg.config       INFO] Starting ldap2pg 3.4.
-[ldap2pg.config      DEBUG] Trying ./ldap2pg.yml.
-[ldap2pg.config       INFO] Using /home/bersace/src/dalibo/ldap2pg/ldap2pg.yml.
-[ldap2pg.config      DEBUG] Read verbose from DEBUG.
-[ldap2pg.config      DEBUG] Read ldap:uri from LDAPURI.
-[ldap2pg.config      DEBUG] Read ldap:password from LDAPPASSWORD.
-[ldap2pg.config      DEBUG] Read postgres:dsn from PGDSN.
-[ldap2pg.config      DEBUG] Read sync_map from YAML.
-...
-[ldap2pg.script      ERROR] Unhandled error:
-[ldap2pg.script      ERROR] Traceback (most recent call last):
-[ldap2pg.script      ERROR]   File ".../ldap2pg/script.py", line 70, in main
-[ldap2pg.script      ERROR]     wrapped_main(config)
-...
-[ldap2pg.script      ERROR]     raise ValueError(...)
-[ldap2pg.script      ERROR] ValueError: ...
-[ldap2pg.script      DEBUG] Dropping in debugger.
-> /home/../.local/share/virtualenvs/l2p/lib/python3.5/site-packages/...
--> raise ValueError(...)
-(Pdb) _
-```
-
-
 ## Unit tests
 
-Unit tests strictly have **no I/O**. We use pytest to execute them. Since we
-also have a functionnal test battery orchestrated with pytest, you must scope
-pytest execution to `tests/unit/`.
-
+Unit tests strictly have **no I/O**.
 ``` console
-$ pip install -Ur requirements-ci.txt
-...
-$ pytest tests/unit/
-============================= test session starts ==============================
-...
-ldap2pg/psql.py          71      0   100%
-ldap2pg/role.py          96      0   100%
-ldap2pg/script.py        59      0   100%
-ldap2pg/utils.py         26      0   100%
----------------------------------------------------
-TOTAL                   870      0   100%
-
-
-========================== 72 passed in 0.49 seconds ===========================
+$ go test ./...
+?       github.com/dalibo/ldap2pg/cmd/go-ldap2pg        [no test files]
+ok      github.com/dalibo/ldap2pg/internal      (cached)
+ok      github.com/dalibo/ldap2pg/internal/config       (cached)
+ok      github.com/dalibo/ldap2pg/internal/inspect      (cached)
+ok      github.com/dalibo/ldap2pg/internal/ldap (cached)
+ok      github.com/dalibo/ldap2pg/internal/lists        (cached)
+ok      github.com/dalibo/ldap2pg/internal/perf (cached)
+?       github.com/dalibo/ldap2pg/internal/postgres     [no test files]
+?       github.com/dalibo/ldap2pg/internal/role [no test files]
+ok      github.com/dalibo/ldap2pg/internal/privilege    (cached)
+ok      github.com/dalibo/ldap2pg/internal/pyfmt        (cached) [no tests to run]
+ok      github.com/dalibo/ldap2pg/internal/tree (cached)
+ok      github.com/dalibo/ldap2pg/internal/wanted       (cached)
 $
 ```
-
-Unit tests must cover all code in ldap2pg. We use
-[CodeCov](https://codecov.io/) to enforce this.
 
 
 ## Functionnal tests
 
-Functionnal tests tend to validate ldap2pg in real world : **no mocks**. We
-put func tests in `tests/func/`. You can run func tests right from you
-development environment:
+Functionnal tests tend to validate ldap2pg in real world : **no mocks**.
+We put func tests in `tests/func/`.
+You can run func tests right from you development environment:
 
 
 ``` console
-$ pip install -Ur requirements-ci.txt
+$ pip install -Ur tests/func/requirements.txt
 ...
-$ pytest tests/func/
+$ make build
+$ pytest -k go --ldap2pg build/go-ldap2pg tests/func/
 ...
 tests/func/test_sync.py::test_dry_run PASSED
 tests/func/test_sync.py::test_real_mode PASSED
@@ -200,50 +157,7 @@ tests/func/test_sync.py::test_nothing_to_do PASSED
 $
 ```
 
-On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8, with ldap2pg
-and its dependencies installed from rpm. You can reproduce this setup with
-`tests/func/docker-compose.yml` and some `make` calls. Run `make -C tests/func/
-clean rpm tests` to recreate rpm and test env.
-
-
-``` console
-$ make -C tests/func/ clean rpm tests
-runner_1    |
-runner_1    | ========================== 9 passed in 18.16 seconds ===========================
-runner_1    | make: Leaving directory `/workspace/tests/func'
-runner_1    | + teardown
-runner_1    | + '[' -z '' -a 0 -gt 0 -a 1 = 1 ']'
-func_runner_1 exited with code 0
-Aborting on container exit...
-$
-```
-
-On failure, the container waits forever like this:
-
-``` console
-$ make tests
-...
-runner_1    | ===================== 1 failed, 8 passed in 23.47 seconds ======================
-runner_1    | make: *** [pytest] Error 1
-runner_1    | make: Leaving directory `/workspace/tests/func'
-runner_1    | + teardown
-runner_1    | + '[' -z '' -a 2 -gt 0 -a 1 = 1 ']'
-runner_1    | + tailf /dev/null
-```
-
-This way you can either kill it with `^C` or enter it to debug. Run `make debug`
-to enter the container and start debugging it. Source tree is mounted at
-`/workspace`. To reduce dev loop, just `pip install -e .` to use WIP code rather
-than rpm version.
-
-``` console
-$ make debug
-docker-compose exec runner /bin/bash
-[root@1dedbd5c1533 /]# cd /workspace
-[root@1dedbd5c1533 workspace]# pytest -x tests/func/ --pdb
-...
-(Pdb)
-```
+On CI, func tests are executed in CentOS 6 and 7 and RockyLinux 8.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and
 [sh](https://amoffat.github.io/sh/) projects. `conftest.py` provides various
