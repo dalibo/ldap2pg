@@ -14,6 +14,10 @@ import (
 )
 
 func FindFile(userValue string) (configpath string) {
+	if "-" == userValue {
+		return "<stdin>"
+	}
+
 	if "" != userValue {
 		return userValue
 	}

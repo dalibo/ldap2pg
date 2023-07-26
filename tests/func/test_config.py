@@ -69,10 +69,13 @@ def test_custom_yaml():
     os.unlink(LDAP2PG_CONFIG)
 
 
-def test_stdin(capsys):
-    from sh import ldap2pg
-
-    ldap2pg('--config=-', _in="- role: stdinuser", _env=ldapfree_env())
+@pytest.mark.go
+def test_stdin(ldap2pg, capsys):
+    ldap2pg(
+        '--config=-',
+        _in="version: 5\nsync_map:\n- role: stdinuser",
+        _env=ldapfree_env(),
+    )
 
     _, err = capsys.readouterr()
     assert 'stdinuser' in err
