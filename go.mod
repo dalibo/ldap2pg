@@ -16,7 +16,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tzvetkoff-go/fnmatch v0.0.0-20220210160758-879480b5e662
-	golang.org/x/exp v0.0.0-20230725012225-302865e7556b
+	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
 	gopkg.in/yaml.v3 v3.0.1
 )
 
