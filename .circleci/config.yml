@@ -154,6 +154,8 @@ jobs:
     working_directory: *workspace
     steps:
     - checkout
+    - restore_cache:
+        keys: [go-build]
     - run:
         name: GoReleaser
         command: goreleaser release --clean
