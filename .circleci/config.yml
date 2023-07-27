@@ -6,9 +6,6 @@ workflows:
     jobs:
     - build:
         name: "stage0-build"
-        filters: &enable-for-tags
-          tags:
-            only: '/v.+/'
     - lint:
         name: "stage0-lint"
     - func:
@@ -33,7 +30,8 @@ workflows:
         requires:
         - stage0-build
         filters:
-          <<: *enable-for-tags
+          tags:
+            only: '/v.+/'
           # Skip on branches!
           branches:
             ignore: '/.*/'
@@ -154,6 +152,7 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
+    context: ldap2pg
     docker: [{image: goreleaser/goreleaser:v1.19.2}]
     working_directory: *workspace
     steps:
@@ -162,4 +161,4 @@ jobs:
         at: *workspace
     - run:
         name: GoReleaser
-        command: goreleaser release
+        command: goreleaser release --clean
