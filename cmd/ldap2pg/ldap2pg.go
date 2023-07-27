@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -62,7 +63,10 @@ func ldap2pg(ctx context.Context) (err error) {
 		"commit", internal.ShortRevision,
 		"version", internal.Version,
 		"runtime", runtime.Version())
-	slog.Warn("ldap2pg is alpha software! Use at your own risks!")
+
+	if strings.Contains(internal.Version, "-") {
+		slog.Warn("Running a prerelease! Use at your own risks!")
+	}
 
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
