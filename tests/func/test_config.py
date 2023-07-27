@@ -90,7 +90,7 @@ def test_sasl(ldap2pg, capsys):
         os.environ,
         # py-ldap2pg reads non-standard var USER.
         LDAPUSER='testsasl',
-        # go-ldap2pg requires explicit SASL_MECH, and standard SASL_AUTHID.
+        # ldap2pg requires explicit SASL_MECH, and standard SASL_AUTHID.
         LDAPSASL_MECH='DIGEST-MD5',
         LDAPSASL_AUTHCID='testsasl',
         LDAPPASSWORD='voyage',

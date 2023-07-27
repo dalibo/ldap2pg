@@ -27,7 +27,7 @@ changelog:
 
 .PHONY: build
 build:
-	go build -o build/go-ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/go-ldap2pg
+	go build -o build/ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
 
 release: changelog VERSION
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"

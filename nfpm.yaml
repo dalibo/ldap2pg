@@ -10,5 +10,5 @@ vendor: "Dalibo"
 homepage: "https://labs.dalibo.com/ldap2pg"
 license: "PostgreSQL"
 contents:
-- src: ./build/go-ldap2pg.amd64
+- src: ./build/ldap2pg.amd64
   dst: /usr/bin/ldap2pg
