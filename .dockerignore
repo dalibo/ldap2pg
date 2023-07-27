@@ -7,5 +7,4 @@ fixtures/
 mon-*
 my-*
 nfpm.yaml
-packaging/
 tests/
