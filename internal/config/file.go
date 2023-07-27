@@ -72,6 +72,12 @@ func New() Config {
 				SELECT datname FROM pg_catalog.pg_database
 				WHERE datallowconn IS TRUE
 				ORDER BY 1;`, pgx.RowTo[string]),
+			ManagedRolesQuery: NewSQLQuery[string](`
+				SELECT 'public'
+				UNION
+				SELECT role.rolname
+				FROM pg_roles AS role
+				ORDER BY 1;`, pgx.RowTo[string]),
 			RolesBlacklistQuery: NewYAMLQuery[string](
 				"pg_*",
 				"postgres",
