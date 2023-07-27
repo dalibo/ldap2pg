@@ -49,4 +49,7 @@ nfpms:
   homepage: "https://labs.dalibo.com/ldap2pg"
   license: "PostgreSQL"
 
+release:
+  prerelease: auto
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
