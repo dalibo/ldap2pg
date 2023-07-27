@@ -25,10 +25,6 @@ readme-sample:
 changelog:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
-.PHONY: build
-build:
-	go build -o build/ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
-
 release: changelog VERSION
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)

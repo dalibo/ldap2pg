@@ -28,8 +28,6 @@ case "$rpmdist" in
 		;;
 esac
 
-build/ldap2pg.amd64 --version
-
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
 # ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
@@ -53,4 +51,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-"$python" -m pytest  -k go --ldap2pg=build/ldap2pg.amd64 tests/func/
+"$python" -m pytest -k go tests/func/

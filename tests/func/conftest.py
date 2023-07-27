@@ -145,7 +145,7 @@ def ldap2pg(request):
 def pytest_addoption(parser):
     candidates = [
         "ldap2pg",
-        "build/ldap2pg",
+        "build/ldap2pg_linux_amd64_v1/ldap2pg",
     ]
     for candidate in candidates:
         try:
