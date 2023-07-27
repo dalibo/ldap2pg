@@ -1,8 +1,8 @@
-FROM golang:1.20-bullseye AS builder
+FROM goreleaser/goreleaser:v1.19.2 AS builder
 
 WORKDIR /workspace
 COPY . .
-RUN go build -o /tmp/ldap2pg -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
+RUN goreleaser build --clean --snapshot --single-target
 
 FROM debian:bullseye-slim
 
@@ -10,7 +10,7 @@ FROM debian:bullseye-slim
 ENV LANG en_US.utf8
 WORKDIR /workspace
 
-COPY --from=builder /tmp/ldap2pg /usr/bin/ldap2pg
+COPY --from=builder /workspace/build/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
 RUN /usr/bin/ldap2pg --version
 
 COPY docker/docker-entrypoint.sh /usr/local/bin

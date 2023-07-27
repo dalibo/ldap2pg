@@ -1,5 +1,5 @@
 .*
-.circleci/
+!.goreleaser.yaml
 build/
 docker-compose*
 docs/
