@@ -33,6 +33,7 @@ Please carefully test before upgrading on production system.
 - A single sub-search is supported per main LDAP search.
 - On duplicate role rule, the last executed wins.
 - No custom privileges.
+- Docker image is now based on Alpine Linux 3.18.
 
 Unimplemented feature may be reimplemented depending on feedback.
 
@@ -55,6 +56,7 @@ Unimplemented feature may be reimplemented depending on feedback.
 - 40 times less memory consumed for usual scenario.
 - up to 3 times less CPU consumed for usual scenario.
 - Debian and Alpine packages alongside RPM.
+- Docker image sizes now 17MB instead of 126MB..
 
 
 # ldap2pg 5.9

@@ -4,7 +4,7 @@ WORKDIR /workspace
 COPY . .
 RUN goreleaser build --clean --snapshot --single-target
 
-FROM debian:bullseye-slim
+FROM alpine:3.18
 
 # Set LANG for execution order of entrypoint.d run parts.
 ENV LANG en_US.utf8
