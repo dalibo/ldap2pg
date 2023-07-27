@@ -7,7 +7,6 @@ import pytest
 from conftest import PSQL
 
 
-@pytest.mark.go
 def test_run(ldap2pg, psql):
     # type: (PSQL) -> None
 
@@ -42,7 +41,6 @@ def test_run(ldap2pg, psql):
     assert comment
 
 
-@pytest.mark.go
 def test_role_config(ldap2pg, psql):
     # type: (PSQL) -> None
 

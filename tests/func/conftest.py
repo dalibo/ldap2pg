@@ -11,7 +11,7 @@ class PSQL(object):
     # A helper object to do SQL queries with real psql.
     def __init__(self):
         from sh import psql
-        self.psql = psql
+        self.psql = psql.bake("--no-psqlrc")
 
     def __call__(self, *a, **kw):
         return self.psql(*a, **kw)
@@ -145,7 +145,8 @@ def ldap2pg(request):
 def pytest_addoption(parser):
     candidates = [
         "ldap2pg",
-        "build/ldap2pg",
+        "build/ldap2pg_linux_amd64_v1/ldap2pg",
+        "tests/func/ldap2pg.sh",
     ]
     for candidate in candidates:
         try:

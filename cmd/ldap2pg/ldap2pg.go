@@ -60,9 +60,9 @@ func ldap2pg(ctx context.Context) (err error) {
 
 	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
-		"commit", internal.ShortRevision,
 		"version", internal.Version,
-		"runtime", runtime.Version())
+		"runtime", runtime.Version(),
+		"commit", commit)
 
 	if strings.Contains(internal.Version, "-") {
 		slog.Warn("Running a prerelease! Use at your own risks!")

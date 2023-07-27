@@ -26,12 +26,6 @@ workflows:
         dist: centos6
         requires: [stage0-build]
         pgversion: "9.3"
-    - pkg:
-        name: "stage1-pkg-<< matrix.format >>"
-        requires: [stage0-build]
-        matrix:
-          parameters:
-            format: [deb, rpm]
     - release:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
@@ -49,19 +43,18 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
-    - image: golang:1.20-bullseye
+    - image: goreleaser/goreleaser:v1.19.2
     steps:
     - checkout
     - restore_cache:
         keys: [go-build]
     - run:
-        name: Build Go Files
+        name: Build ldap2pg binary
         command: |
-          mkdir -p build
-          go build -o build/ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
+          goreleaser build --clean --snapshot --single-target
     - run:
         name: Smoke test
-        command: build/ldap2pg.amd64 --version
+        command: build/ldap2pg_linux_amd64_v1/ldap2pg --version
     - run:
         name: Unit Test
         command: |
@@ -130,9 +123,6 @@ jobs:
     - restore_cache:
         keys: [ldap2pg-go-func]
     - run:
-        name: Smoke test
-        command: build/ldap2pg.amd64 --version
-    - run:
         name: Exécuting Functionnal Tests
         command: |
           echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
@@ -164,28 +154,12 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
-    docker: [{image: dalibo/buildpack:bullseye}]
+    docker: [{image: goreleaser/goreleaser:v1.19.2}]
     working_directory: *workspace
     steps:
     - checkout
     - attach_workspace:
         at: *workspace
     - run:
-        name: Create GitHub release
-        command: |
-          if [[ "${CIRCLE_TAG#v}" =~ [a-z] ]] ; then
-            args=(--prerelease)
-          else
-            args=()
-          fi
-
-          rm -f dist/*last*
-
-          gh release create \
-            $CIRCLE_TAG \
-            build/ldap2pg* \
-            build/ldap2pg*.deb \
-            build/ldap2pg*.rpm \
-            --title "${CIRCLE_TAG#v}" \
-            -F <(make -s release-notes VERSION=${CIRCLE_TAG#v}) \
-            "${args[@]}"
+        name: GoReleaser
+        command: goreleaser release

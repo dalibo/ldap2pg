@@ -25,19 +25,12 @@ readme-sample:
 changelog:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
-.PHONY: build
-build:
-	go build -o build/ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
-
 release: changelog VERSION
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
 	git push --tags git@github.com:dalibo/ldap2pg.git
 	@echo Now wait for CI and run make push-rpm;
-
-release-notes:  #: Extract changes for current release
-	FINAL_VERSION="$(shell echo $(VERSION) | grep -Po '([^a-z]{3,})')" ; sed -En "/Unreleased/d;/^#+ ldap2pg $$FINAL_VERSION/,/^#/p" CHANGELOG.md  | sed '1d;$$d'
 
 rpm deb:
 	VERSION=$(VERSION) nfpm package --packager $@
