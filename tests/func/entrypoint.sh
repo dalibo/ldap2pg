@@ -51,4 +51,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-"$python" -m pytest -k go tests/func/
+"$python" -m pytest tests/func/

@@ -2,10 +2,7 @@
 
 import os
 
-import pytest
 
-
-@pytest.mark.go
 def test_sync(ldap2pg, psql):
     c = 'tests/func/ldap2pg.nonsuper.yml'
     db = 'nonsuperdb'

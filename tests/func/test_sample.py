@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import pytest
 
 
-@pytest.mark.go
 def test_dry_run(ldap2pg, psql):
     ldap2pg('--verbose', config='ldap2pg.yml')
     roles = list(psql.roles())
@@ -15,12 +14,10 @@ def test_dry_run(ldap2pg, psql):
     assert 'ALICE' in superusers
 
 
-@pytest.mark.go
 def test_check_mode(ldap2pg, psql):
     ldap2pg('--check', config='ldap2pg.yml', _ok_code=1)
 
 
-@pytest.mark.go
 def test_real_mode(ldap2pg, psql):
     assert 'keepme' in psql.tables(dbname='olddb')
 
@@ -47,7 +44,6 @@ def test_real_mode(ldap2pg, psql):
     assert 'keepme' in roles
 
 
-@pytest.mark.go
 def test_re_grant(ldap2pg, psql):
     # Ensure db is sync
     ldap2pg('--check', c='ldap2pg.yml')
@@ -60,7 +56,6 @@ def test_re_grant(ldap2pg, psql):
     ldap2pg('--check', c='ldap2pg.yml')
 
 
-@pytest.mark.go
 def test_re_revoke(ldap2pg, psql):
     c = 'ldap2pg.yml'
 
@@ -75,7 +70,6 @@ def test_re_revoke(ldap2pg, psql):
     ldap2pg('--check', c=c)
 
 
-@pytest.mark.go
 def test_nothing_to_do(ldap2pg, capsys):
     ldap2pg('--real', config='ldap2pg.yml')
 
