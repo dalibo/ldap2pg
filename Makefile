@@ -28,8 +28,7 @@ changelog:
 release: changelog
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
-	git push git@github.com:dalibo/ldap2pg.git
-	git push --tags git@github.com:dalibo/ldap2pg.git
+	git push --follow-tags git@github.com:dalibo/ldap2pg.git refs/heads/master:refs/heads/master
 	@echo Now wait for CI and run make push-rpm;
 
 rpm deb:
