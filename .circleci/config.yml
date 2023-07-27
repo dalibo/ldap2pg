@@ -58,10 +58,10 @@ jobs:
         name: Build Go Files
         command: |
           mkdir -p build
-          go build -o build/go-ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/go-ldap2pg
+          go build -o build/ldap2pg.amd64 -trimpath -buildvcs -ldflags -s ./cmd/ldap2pg
     - run:
         name: Smoke test
-        command: build/go-ldap2pg.amd64 --version
+        command: build/ldap2pg.amd64 --version
     - run:
         name: Unit Test
         command: |
@@ -131,7 +131,7 @@ jobs:
         keys: [ldap2pg-go-func]
     - run:
         name: Smoke test
-        command: build/go-ldap2pg.amd64 --version
+        command: build/ldap2pg.amd64 --version
     - run:
         name: Exécuting Functionnal Tests
         command: |
@@ -183,7 +183,7 @@ jobs:
 
           gh release create \
             $CIRCLE_TAG \
-            build/go-ldap2pg* \
+            build/ldap2pg* \
             build/ldap2pg*.deb \
             build/ldap2pg*.rpm \
             --title "${CIRCLE_TAG#v}" \

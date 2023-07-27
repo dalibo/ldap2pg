@@ -93,9 +93,9 @@ $
 Now you can run ldap2pg from source and test your changes!
 
 ``` console
-$ go run ./cmd/go-ldap2pg
+$ go run ./cmd/ldap2pg
 11:10:26 INFO   Starting ldap2pg commit=(unknown) version=v5.10.0-alpha1 runtime=go1.20.3
-11:10:26 WARN   go-ldap2pg is alpha software! Use at your own risks!
+11:10:26 WARN   ldap2pg is alpha software! Use at your own risks!
 11:10:26 INFO   Using YAML configuration file. path=./ldap2pg.yml
 ...
 11:10:27 INFO   Comparison complete. elapsed=261.3525ms mempeak=1.3MiB postgres=0s queries=459 ldap=2.33043ms searches=3
@@ -119,7 +119,7 @@ Postgres instance.
 Unit tests strictly have **no I/O**.
 ``` console
 $ go test ./...
-?       github.com/dalibo/ldap2pg/cmd/go-ldap2pg        [no test files]
+?       github.com/dalibo/ldap2pg/cmd/ldap2pg        [no test files]
 ok      github.com/dalibo/ldap2pg/internal      (cached)
 ok      github.com/dalibo/ldap2pg/internal/config       (cached)
 ok      github.com/dalibo/ldap2pg/internal/inspect      (cached)
@@ -147,7 +147,7 @@ You can run func tests right from you development environment:
 $ pip install -Ur tests/func/requirements.txt
 ...
 $ make build
-$ pytest -k go --ldap2pg build/go-ldap2pg tests/func/
+$ pytest -k go --ldap2pg build/ldap2pg tests/func/
 ...
 tests/func/test_sync.py::test_dry_run PASSED
 tests/func/test_sync.py::test_real_mode PASSED

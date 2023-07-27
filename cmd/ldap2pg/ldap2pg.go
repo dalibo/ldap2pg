@@ -62,7 +62,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		"commit", internal.ShortRevision,
 		"version", internal.Version,
 		"runtime", runtime.Version())
-	slog.Warn("go-ldap2pg is alpha software! Use at your own risks!")
+	slog.Warn("ldap2pg is alpha software! Use at your own risks!")
 
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
@@ -186,7 +186,7 @@ func ldap2pg(ctx context.Context) (err error) {
 }
 
 func showVersion() {
-	fmt.Printf("go-ldap2pg %s\n", internal.Version)
+	fmt.Printf("ldap2pg %s\n", internal.Version)
 
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {

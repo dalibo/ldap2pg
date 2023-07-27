@@ -28,7 +28,7 @@ case "$rpmdist" in
 		;;
 esac
 
-build/go-ldap2pg.amd64 --version
+build/ldap2pg.amd64 --version
 
 # Check Postgres and LDAP connectivity
 psql -tc "SELECT version();"
@@ -53,4 +53,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-"$python" -m pytest  -k go --ldap2pg=build/go-ldap2pg.amd64 tests/func/
+"$python" -m pytest  -k go --ldap2pg=build/ldap2pg.amd64 tests/func/
