@@ -2,3 +2,5 @@
 __debug_bin
 build/
 docker-compose.override.yml
+
+dist/

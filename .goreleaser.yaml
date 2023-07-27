@@ -1,0 +1,52 @@
+dist: build/
+
+builds:
+- main: ./cmd/ldap2pg
+  env:
+  - CGO_ENABLED=0
+  gcflags:
+  - -trimpath -buildvcs
+  goarch:
+  - amd64
+  goos:
+  - linux
+  - windows
+  - darwin
+
+archives:
+- format: tar.gz
+  # this name template makes the OS and Arch compatible with the results of uname.
+  name_template: >-
+    {{ .ProjectName }}_
+    {{- title .Os }}_
+    {{- if eq .Arch "amd64" }}x86_64
+    {{- else if eq .Arch "386" }}i386
+    {{- else }}{{ .Arch }}{{ end }}
+    {{- if .Arm }}v{{ .Arm }}{{ end }}
+  # use zip for windows archives
+  format_overrides:
+  - goos: windows
+    format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+
+nfpms:
+- formats:
+  - deb
+  - rpm
+  - apk
+  maintainer: "Étienne BERSAC <contact@dalibo.com>"
+  description: Manage PostgreSQL roles and privileges from YAML or LDAP
+  vendor: "Dalibo"
+  homepage: "https://labs.dalibo.com/ldap2pg"
+  license: "PostgreSQL"
+
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json

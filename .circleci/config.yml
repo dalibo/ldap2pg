@@ -26,12 +26,6 @@ workflows:
         dist: centos6
         requires: [stage0-build]
         pgversion: "9.3"
-    - pkg:
-        name: "stage1-pkg-<< matrix.format >>"
-        requires: [stage0-build]
-        matrix:
-          parameters:
-            format: [deb, rpm]
     - release:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
@@ -164,28 +158,12 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
-    docker: [{image: dalibo/buildpack:bullseye}]
+    docker: [{image: goreleaser/goreleaser:v1.19.2}]
     working_directory: *workspace
     steps:
     - checkout
     - attach_workspace:
         at: *workspace
     - run:
-        name: Create GitHub release
-        command: |
-          if [[ "${CIRCLE_TAG#v}" =~ [a-z] ]] ; then
-            args=(--prerelease)
-          else
-            args=()
-          fi
-
-          rm -f dist/*last*
-
-          gh release create \
-            $CIRCLE_TAG \
-            build/ldap2pg* \
-            build/ldap2pg*.deb \
-            build/ldap2pg*.rpm \
-            --title "${CIRCLE_TAG#v}" \
-            -F <(make -s release-notes VERSION=${CIRCLE_TAG#v}) \
-            "${args[@]}"
+        name: GoReleaser
+        command: goreleaser release

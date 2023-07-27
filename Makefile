@@ -36,9 +36,6 @@ release: changelog VERSION
 	git push --tags git@github.com:dalibo/ldap2pg.git
 	@echo Now wait for CI and run make push-rpm;
 
-release-notes:  #: Extract changes for current release
-	FINAL_VERSION="$(shell echo $(VERSION) | grep -Po '([^a-z]{3,})')" ; sed -En "/Unreleased/d;/^#+ ldap2pg $$FINAL_VERSION/,/^#/p" CHANGELOG.md  | sed '1d;$$d'
-
 rpm deb:
 	VERSION=$(VERSION) nfpm package --packager $@
 
