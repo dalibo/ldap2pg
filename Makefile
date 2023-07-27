@@ -25,7 +25,7 @@ readme-sample:
 changelog:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 
-release: changelog VERSION
+release: changelog
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag $(VERSION)
 	git push git@github.com:dalibo/ldap2pg.git
