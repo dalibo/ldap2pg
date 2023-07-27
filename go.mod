@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/deckarep/golang-set/v2 v2.3.0
 	github.com/go-ldap/ldap/v3 v3.4.5
 	github.com/jackc/pgx/v5 v5.4.2
