@@ -27,8 +27,6 @@ workflows:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
         context: ldap2pg
-        requires:
-        - stage0-build
         filters:
           tags:
             only: '/v.+/'
