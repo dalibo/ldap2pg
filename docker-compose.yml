@@ -11,7 +11,8 @@ services:
       LDAP_ORGANISATION: ldap2pg
     volumes:
     - ./test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
-    - ./test/fixtures/openldap-data.ldif:/docker-entrypoint-init.d/95-data.ldif
+    - ./test/fixtures/sasl.ldif:/docker-entrypoint-init.d/95-sasl.ldif
+    - ./test/fixtures/nominal.ldif:/docker-entrypoint-init.d/95-nominal.ldif
     hostname: ldap
     domainname: ldap2pg.docker
     labels:
@@ -19,11 +20,14 @@ services:
 
   postgres:
     image: postgres:${PGVERSION-15}-alpine
+    hostname: postgres
+    domainname: ldap2pg.docker
     environment:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-    - ./test/fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
+    - ./test/fixtures/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
+    - ./test/fixtures/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
     command: [

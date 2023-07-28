@@ -75,7 +75,19 @@ class PSQL(object):
         return c
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module', autouse=True)
+def pgenv(request):
+    mod = request.module.__name__.replace('test_', '')
+    if mod in ('nominal', 'extra'):
+        os.environ['PGDATABASE'] = mod
+
+    if 'extra' == mod:
+        os.environ['PGUSER'] = 'postgres'
+    else:
+        os.environ['PGUSER'] = 'ldap2pg'
+
+
+@pytest.fixture(scope='module')
 def psql():
     # Supply the PSQL helper as a pytest fixture.
     return PSQL()
@@ -116,7 +128,9 @@ def ldap():
 def resetpostgres():
     from sh import Command
 
-    Command('test/fixtures/postgres.sh')()
+    Command('test/fixtures/reset.sh')()
+    Command('test/fixtures/nominal.sh')()
+    Command('test/fixtures/extra.sh')()
 
 
 def lazy_write(attr, data):

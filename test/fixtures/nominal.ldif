@@ -1,0 +1,116 @@
+version: 2
+charset: UTF-8
+
+dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: organizationalUnit
+objectclass: top
+ou: people
+
+# a* for alter
+dn: cn=alice,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: alice
+sn: Alice
+mail: alice@ldap2pg.docker
+
+dn: cn=alain,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: alain
+sn: Alain
+mail: alain@ldap2pg.docker
+
+# Alter has no luck, his name is a SQL literal ^^
+dn: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: alter
+sn: alter
+mail: alter@ldap2pg.docker
+
+
+# c* for create
+
+dn: cn=corinne,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: corinne
+sn: corinne
+mail: corinne@ldap2pg.docker
+
+dn: cn=charles,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: charles
+sn: charles
+mail: charles@ldap2pg.docker
+
+dn: cn=clothilde,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: clothilde
+sn: clothilde
+mail: clothilde@ldap2pg.docker
+
+# For blacklist.
+dn: cn=postgres,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+objectclass: top
+cn: postgres
+sn: postgres
+mail: postgres@ldap2pg.docker
+
+dn: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectclass: organizationalUnit
+objectclass: top
+ou: groups
+
+dn: cn=readers,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: readers
+member: cn=alain,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=corinne,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+# For blacklist
+member: cn=postgres,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+dn: cn=writers,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: writers
+member: cn=alice,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=charles,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+
+dn: cn=owners,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: owners
+member: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member: cn=clothilde,ou=people,dc=ldap,dc=ldap2pg,dc=docker

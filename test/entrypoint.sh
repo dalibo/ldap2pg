@@ -48,7 +48,7 @@ ldapwhoami -x -d 1 -w "${LDAPPASSWORD}"
 if [ -n "${CI+x}" ] ; then
     # We can't modify config with ldapmodify. This prevent us to setup SASL in
     # CircleCI.
-    ldapmodify -xw "${LDAPPASSWORD}" -f ./test/fixtures/openldap-data.ldif
+    ldapmodify -xw "${LDAPPASSWORD}" -f ./test/fixtures/nominal.ldif
 fi
 
 "$python" -m pytest test/

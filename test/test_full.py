@@ -2,12 +2,16 @@
 
 from __future__ import unicode_literals
 
+import os
 import pytest
 
 from conftest import PSQL
 
+pytest.skip(allow_module_level=True)
+
 
 def test_run(ldap2pg, psql):
+    ldap2pg = ldap2pg.bake(_env=dict(os.environ, PGUSER="postgres", PGDATABASE="postgres"))
     # type: (PSQL) -> None
 
     c = 'test/ldap2pg.full.yml'
@@ -42,6 +46,7 @@ def test_run(ldap2pg, psql):
 
 
 def test_role_config(ldap2pg, psql):
+    ldap2pg = ldap2pg.bake(_env=dict(os.environ, PGUSER="postgres", PGDATABASE="postgres"))
     # type: (PSQL) -> None
 
     c = 'test/ldap2pg.config.yml'

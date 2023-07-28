@@ -11,22 +11,6 @@
 version: 2
 charset: UTF-8
 
-# Create the testsasl user to test SASL
-dn: cn=testsasl,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectClass: inetOrgPerson
-cn: testsasl
-uid: testsasl
-sn: SASL is not Simple
-# Clear password for SASL auth
-userPassword: voyage
-
-dn: ou=people,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectclass: organizationalUnit
-objectclass: top
-ou: people
-
 # Our database Administrators: a*
 dn: cn=ALICE,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 changetype: add
@@ -57,28 +41,6 @@ objectclass: top
 cn: albert
 sn: Albert
 mail: albert@ldap2pg.docker
-
-# Alter has no luck, his name is a SQL literal ^^
-dn: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectclass: inetOrgPerson
-objectclass: organizationalPerson
-objectclass: person
-objectclass: top
-cn: alter
-sn: alter
-mail: alter@ldap2pg.docker
-
-# For blacklist.
-dn: cn=postgres,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectclass: inetOrgPerson
-objectclass: organizationalPerson
-objectclass: person
-objectclass: top
-cn: postgres
-sn: postgres
-mail: postgres@ldap2pg.docker
 
 # Our developers: d*
 dn: cn=daniel,ou=people,dc=ldap,dc=ldap2pg,dc=docker
