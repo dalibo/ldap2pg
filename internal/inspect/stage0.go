@@ -9,6 +9,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -44,6 +45,10 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 	}
 	if err := pc.RolesBlacklistQuery.Err(); err != nil {
 		return instance, fmt.Errorf("roles_blacklist_query: %w", err)
+	}
+	if !slices.Contains(instance.RolesBlacklist, instance.Me.Name) {
+		slog.Debug("Blacklisting self.")
+		instance.RolesBlacklist = append(instance.RolesBlacklist, instance.Me.Name)
 	}
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
