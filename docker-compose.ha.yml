@@ -10,8 +10,8 @@ services:
       LDAP_ADMIN_PASSWORD: integral
       LDAP_ORGANISATION: ldap2pg
     volumes:
-    - ./fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
-    - ./fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
+    - ./test/fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
+    - ./test/fixtures/openldap-data.ldif:/container/service/slapd/assets/config/bootstrap/ldif/95-data.ldif
     hostname: secondary
     domainname: ldap.ldap2pg.docker
     labels:

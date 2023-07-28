@@ -116,7 +116,7 @@ def ldap():
 def resetpostgres():
     from sh import Command
 
-    Command('fixtures/postgres.sh')()
+    Command('test/fixtures/postgres.sh')()
 
 
 def lazy_write(attr, data):

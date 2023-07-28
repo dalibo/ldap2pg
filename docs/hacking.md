@@ -104,13 +104,13 @@ $
 
 ## Development Fixtures
 
-OpenLDAP starts with `fixtures/openldap-data.ldif` loaded.
-`fixtures/openldap-data.ldif` is well commented.
+OpenLDAP starts with `test/fixtures/openldap-data.ldif` loaded.
+`test/fixtures/openldap-data.ldif` is well commented.
 
 Some users, database and privileges are provided for testing purpose in
-`fixtures/postgres.sh`. Postgres instance is initialized with this
+`test/fixtures/postgres.sh`. Postgres instance is initialized with this
 automatically. This script also resets modifications to Postgres instance by
-ldap2pg. You can run `fixtures/postgres.sh` every time you need to reset the
+ldap2pg. You can run `test/fixtures/postgres.sh` every time you need to reset the
 Postgres instance.
 
 

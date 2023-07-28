@@ -10,8 +10,8 @@ services:
       LDAP_ADMIN_PASSWORD: integral
       LDAP_ORGANISATION: ldap2pg
     volumes:
-    - ./fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
-    - ./fixtures/openldap-data.ldif:/docker-entrypoint-init.d/95-data.ldif
+    - ./test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
+    - ./test/fixtures/openldap-data.ldif:/docker-entrypoint-init.d/95-data.ldif
     hostname: ldap
     domainname: ldap2pg.docker
     labels:
@@ -23,12 +23,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-    - ./fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
+    - ./test/fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
     command: [
       postgres,
       -c, log_statement=all,
+      -c, log_connections=on,
       -c, "log_line_prefix=%m [%p]: [%l-1] app=%a,db=%d,client=%h,user=%u ",
       -c, cluster_name=ldap2pg-dev,
     ]

@@ -8,8 +8,8 @@ services:
       LDAP_ADMIN_PASSWORD: fonctionnel
       LDAP_ORGANISATION: ldap2pg
     volumes:
-    - ../../fixtures/openldap-config.ldif:/docker-entrypoint-init.d/80-config.ldif
-    - ../../fixtures/openldap-data.ldif:/docker-entrypoint-init.d/90-data.ldif
+    - ../../test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/80-config.ldif
+    - ../../test/fixtures/openldap-data.ldif:/docker-entrypoint-init.d/90-data.ldif
     hostname: ldap
     domainname: ldap2pg.docker
 
