@@ -51,7 +51,7 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 }
 
 func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner string) error {
-	pgconn, err := pgx.Connect(ctx, "")
+	pgconn, err := pgx.Connect(ctx, "connect_timeout=5")
 	if err != nil {
 		return err
 	}
