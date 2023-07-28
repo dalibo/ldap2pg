@@ -2,12 +2,13 @@ WITH me AS (
  SELECT * FROM pg_catalog.pg_roles WHERE rolname = CURRENT_USER
 )
 SELECT
-  rol.rolname,
-  -- Encapsulate columns variation in a sub-row.
-  row(rol.*) AS opt,
-  COALESCE(pg_catalog.shobj_description(rol.oid, 'pg_authid'), '') as comment,
-  array_remove(array_agg(parents.rolname), NULL) AS parents,
-	rol.rolconfig AS config
+	rol.rolname,
+	-- Encapsulate columns variation in a sub-row.
+	row(rol.*) AS opt,
+	COALESCE(pg_catalog.shobj_description(rol.oid, 'pg_authid'), '') as comment,
+	array_remove(array_agg(parents.rolname), NULL) AS parents,
+	rol.rolconfig AS config,
+	pg_has_role(CURRENT_USER, rol.rolname, 'USAGE') AS manageable
 FROM me
 CROSS JOIN pg_catalog.pg_roles AS rol
 LEFT JOIN pg_catalog.pg_auth_members AS membership ON membership.member = rol.oid
