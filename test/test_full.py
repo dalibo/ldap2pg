@@ -10,7 +10,7 @@ from conftest import PSQL
 def test_run(ldap2pg, psql):
     # type: (PSQL) -> None
 
-    c = 'tests/func/ldap2pg.full.yml'
+    c = 'test/ldap2pg.full.yml'
 
     # Ensure database is not sync.
     ldap2pg('--check', c=c, _ok_code=1)
@@ -44,7 +44,7 @@ def test_run(ldap2pg, psql):
 def test_role_config(ldap2pg, psql):
     # type: (PSQL) -> None
 
-    c = 'tests/func/ldap2pg.config.yml'
+    c = 'test/ldap2pg.config.yml'
 
     roles = list(psql.roles())
 

@@ -9,7 +9,7 @@ teardown() {
 
 trap teardown EXIT TERM
 
-top_srcdir=$(readlink -m "$0/../../..")
+top_srcdir=$(readlink -m "$0/../..")
 cd "$top_srcdir"
 test -f go.mod
 
@@ -35,7 +35,7 @@ if "$pip" --version |& grep -Fiq "python 2.6" ; then
 	pip26-install https://files.pythonhosted.org/packages/86/84/6bd1384196a6871a9108157ec934a1e1ee0078582cd208b43352566a86dc/pytest_catchlog-1.2.2-py2.py3-none-any.whl
 	pip26-install https://files.pythonhosted.org/packages/4a/22/17b22ef5b049f12080f5815c41bf94de3c229217609e469001a8f80c1b3d/sh-1.12.14-py2.py3-none-any.whl
 else
-	"$pip" install --prefix=/usr/local --requirement tests/func/requirements.txt
+	"$pip" install --prefix=/usr/local --requirement test/requirements.txt
 fi
 
 # Check Postgres and LDAP connectivity
@@ -51,4 +51,4 @@ if [ -n "${CI+x}" ] ; then
     ldapmodify -xw "${LDAPPASSWORD}" -f ./fixtures/openldap-data.ldif
 fi
 
-"$python" -m pytest tests/func/
+"$python" -m pytest test/

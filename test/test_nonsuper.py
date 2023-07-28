@@ -4,7 +4,7 @@ import os
 
 
 def test_sync(ldap2pg, psql):
-    c = 'tests/func/ldap2pg.nonsuper.yml'
+    c = 'test/ldap2pg.nonsuper.yml'
     db = 'nonsuperdb'
     env = dict(
         os.environ,

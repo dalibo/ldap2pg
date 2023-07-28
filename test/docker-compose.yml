@@ -35,5 +35,5 @@ services:
       PGPASSWORD: fonctionnel
       LDAPURI: ldaps://ldap
       LDAPPASSWORD: fonctionnel
-      HISTFILE: /workspace/test/func/.docker-bash-history
-    entrypoint: /workspace/tests/func/entrypoint.sh
+      HISTFILE: /workspace/test/.docker-bash-history
+    entrypoint: /workspace/test/entrypoint.sh
