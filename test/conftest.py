@@ -150,9 +150,15 @@ def sh_errout():
     ))
 
 
+def loggername_factory(ran, call_args, pid=None):
+    sys.stderr.write("+ %s\n" % (ran,))
+    return 'sh'
+
+
 @pytest.fixture(scope='session')
 def ldap2pg(request):
-    return sh.Command(request.config.getoption("--ldap2pg"))
+    return sh.Command(request.config.getoption("--ldap2pg")) \
+             .bake(_log_msg=loggername_factory)
 
 
 def pytest_addoption(parser):
