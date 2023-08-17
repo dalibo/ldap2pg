@@ -28,13 +28,6 @@ case "$rpmdist" in
 		;;
 esac
 
-# Check Postgres and LDAP connectivity
-psql -tc "SELECT version();"
-# ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
-# workaround this.
-ln -fsv "${PWD}/ldaprc" ~/ldaprc
-ldapwhoami -x -d 1 -w "${LDAPPASSWORD}"
-
 "$pip" --version
 if "$pip" --version |& grep -Fiq "python 2.6" ; then
 	pip26-install https://files.pythonhosted.org/packages/53/67/9620edf7803ab867b175e4fd23c7b8bd8eba11cb761514dcd2e726ef07da/py-1.4.34-py2.py3-none-any.whl
@@ -44,6 +37,13 @@ if "$pip" --version |& grep -Fiq "python 2.6" ; then
 else
 	"$pip" install --prefix=/usr/local --requirement tests/func/requirements.txt
 fi
+
+# Check Postgres and LDAP connectivity
+psql -tc "SELECT version();"
+# ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
+# workaround this.
+ln -fsv "${PWD}/ldaprc" ~/ldaprc
+ldapwhoami -x -d 1 -w "${LDAPPASSWORD}"
 
 if [ -n "${CI+x}" ] ; then
     # We can't modify config with ldapmodify. This prevent us to setup SASL in
