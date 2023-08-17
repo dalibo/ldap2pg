@@ -13,6 +13,7 @@ services:
     - ./test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
     - ./test/fixtures/sasl.ldif:/docker-entrypoint-init.d/95-sasl.ldif
     - ./test/fixtures/nominal.ldif:/docker-entrypoint-init.d/95-nominal.ldif
+    - ./test/fixtures/extra.ldif:/docker-entrypoint-init.d/96-extra.ldif
     hostname: ldap
     domainname: ldap2pg.docker
     labels:
@@ -28,6 +29,7 @@ services:
     volumes:
     - ./test/fixtures/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
     - ./test/fixtures/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
+    - ./test/fixtures/extra.sh:/docker-entrypoint-initdb.d/20-extra.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
     command: [

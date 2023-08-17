@@ -13,6 +13,7 @@ services:
     - ./test/fixtures/openldap-config.ldif:/container/service/slapd/assets/config/bootstrap/ldif/90-config.ldif
     - ./test/fixtures/sasl.ldif:/docker-entrypoint-init.d/95-sasl.ldif
     - ./test/fixtures/nominal.ldif:/docker-entrypoint-init.d/95-nominal.ldif
+    - ./test/fixtures/extra.ldif:/docker-entrypoint-init.d/96-extra.ldif
     hostname: secondary
     domainname: ldap.ldap2pg.docker
     labels:

@@ -11,6 +11,7 @@ FROM pg_stat_activity
 WHERE query IS NOT NULL AND pid <> pg_backend_pid();
 
 DROP DATABASE IF EXISTS nominal;
+DROP DATABASE IF EXISTS extra;
 EOSQL
 
 mapfile -t roles < <("${psql[@]}" -Atc "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname NOT IN (CURRENT_USER, 'postgres');")

@@ -78,13 +78,12 @@ class PSQL(object):
 @pytest.fixture(scope='module', autouse=True)
 def pgenv(request):
     mod = request.module.__name__.replace('test_', '')
-    if mod in ('nominal', 'extra'):
-        os.environ['PGDATABASE'] = mod
-
     if 'extra' == mod:
         os.environ['PGUSER'] = 'postgres'
+        os.environ['PGDATABASE'] = 'extra'
     else:
         os.environ['PGUSER'] = 'ldap2pg'
+        os.environ['PGDATABASE'] = 'nominal'
 
 
 @pytest.fixture(scope='module')
