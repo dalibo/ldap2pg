@@ -34,6 +34,7 @@ Please carefully test before upgrading on production system.
 - On duplicate role rule, the last executed wins.
 - No custom privileges.
 - Docker image is now based on Alpine Linux 3.18.
+- Dropped support for PostgreSQL 9.4.
 
 Unimplemented feature may be reimplemented depending on feedback.
 
