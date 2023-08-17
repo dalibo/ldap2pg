@@ -12,7 +12,7 @@ workflows:
         name: "stage1-func-rockylinux8-pg15"
         dist: rockylinux8
         requires: [stage0-build]
-        pgversion: "14"
+        pgversion: "15"
     - func:
         name: "stage1-func-centos7-pg12"
         dist: centos7
