@@ -16,6 +16,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
@@ -221,6 +222,15 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		privileges := privilege.TypeMap{priv: privileges[priv]}
 		expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
 		currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
+		// Special case, ignore grants on unmanaged databases.
+		currentGrants = lists.Filter(currentGrants, func(g privilege.Grant) bool {
+			if "DATABASE" != g.PrivilegeKey() {
+				return true
+			}
+			_, ok := instance.Databases[g.Object]
+			return ok
+		})
+
 		if err != nil {
 			return 0, fmt.Errorf("privileges: %w", err)
 		}

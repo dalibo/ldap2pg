@@ -26,7 +26,7 @@ func GetConn(ctx context.Context, database string) (*pgx.Conn, error) {
 
 	if nil == globalConn {
 		slog.Debug("Opening Postgres global connection.", "database", database)
-		c, err := pgx.ParseConfig("")
+		c, err := pgx.ParseConfig("connect_timeout=5")
 		if err != nil {
 			return nil, err
 		}

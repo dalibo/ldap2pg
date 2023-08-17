@@ -7,11 +7,12 @@ import (
 )
 
 type Role struct {
-	Name    string
-	Comment string
-	Parents mapset.Set[string]
-	Options Options
-	Config  *Config
+	Name       string
+	Comment    string
+	Parents    mapset.Set[string]
+	Options    Options
+	Config     *Config
+	Manageable bool
 }
 
 func New() Role {
@@ -21,18 +22,18 @@ func New() Role {
 	return r
 }
 
-func RowTo(row pgx.CollectableRow) (role Role, err error) {
+func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	var variableRow interface{}
 	var parents []string
 	var config []string
-	role = New()
-	err = row.Scan(&role.Name, &variableRow, &role.Comment, &parents, &config)
+	r = New()
+	err = row.Scan(&r.Name, &variableRow, &r.Comment, &parents, &config, &r.Manageable)
 	if err != nil {
 		return
 	}
-	role.Parents.Append(parents...)
-	role.Options.LoadRow(variableRow.([]interface{}))
-	(*role.Config).Parse(config)
+	r.Parents.Append(parents...)
+	r.Options.LoadRow(variableRow.([]interface{}))
+	(*r.Config).Parse(config)
 	return
 }
 
@@ -48,6 +49,17 @@ func (r *Role) BlacklistKey() string {
 // configuration.
 func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
+
+	// It's so evident that wanted role has to be manageable. don't even
+	// compare with wanted state.
+	if !r.Manageable {
+		out = append(out, postgres.SyncQuery{
+			Description: "Inherit role for management.",
+			LogArgs:     []interface{}{"role", r.Name},
+			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
+			QueryArgs:   []interface{}{identifier},
+		})
+	}
 
 	optionsString := r.Options.String()
 	wantedOptionsString := wanted.Options.String()
@@ -166,7 +178,7 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Create() (out []postgres.SyncQuery) {
+func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	if 0 < r.Parents.Cardinality() {
@@ -197,6 +209,15 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 		Query:       `COMMENT ON ROLE %s IS %s;`,
 		QueryArgs:   []interface{}{identifier, r.Comment},
 	})
+
+	if !super {
+		out = append(out, postgres.SyncQuery{
+			Description: "Inherit role for management.",
+			LogArgs:     []interface{}{"role", r.Name},
+			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
+			QueryArgs:   []interface{}{identifier},
+		})
+	}
 
 	if nil == r.Config {
 		return

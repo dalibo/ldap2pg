@@ -19,7 +19,7 @@ func Diff(all, managed, wanted Map, me Role, fallbackOwner string, databases *po
 				}
 				sendQueries(other.Alter(role), ch)
 			} else {
-				sendQueries(role.Create(), ch)
+				sendQueries(role.Create(me.Options.Super), ch)
 			}
 		}
 

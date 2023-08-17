@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -48,7 +49,7 @@ func BuildTintOptions(level slog.Level) *tint.Options {
 				a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])
 			case slog.MessageKey:
 				// Reset color after message.
-				a.Value = slog.StringValue(a.Value.String() + "\033[0m")
+				a.Value = slog.StringValue(fmt.Sprintf("%-48s", a.Value.String()) + "\033[0m")
 			default:
 				if a.Value.Kind() == slog.KindAny {
 					v := a.Value.Any()

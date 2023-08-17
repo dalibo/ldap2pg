@@ -19,10 +19,10 @@ workflows:
         requires: [stage0-build]
         pgversion: "12"
     - func:
-        name: "stage1-func-centos6-pg9.3"
+        name: "stage1-func-centos6-pg9.5"
         dist: centos6
         requires: [stage0-build]
-        pgversion: "9.3"
+        pgversion: "9.5"
     - release:
         name: stage2-release
         # Send secrets to this jobs from temboard CircleCI context.
