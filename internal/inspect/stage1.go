@@ -63,6 +63,8 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 		if instance.ManagedDatabases.Contains(db.Name) {
 			slog.Debug("Found database.", "name", db.Name)
 			instance.Databases[db.Name] = db
+		} else {
+			slog.Debug("Ignoring unmanaged database.", "name", db.Name)
 		}
 	}
 	if err := dbq.Err(); err != nil {
