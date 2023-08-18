@@ -12,6 +12,15 @@ default:
 docs: docs/wellknown.md
 	mkdocs build --clean --strict
 
+big: reset-ldap
+	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
+	test/fixtures/genperfldif.sh | ldapmodify -xw integral
+	$(MAKE) reset-big
+
+reset-big: reset-postgres
+	while ! bash -c "echo -n > /dev/tcp/$${PGHOST}/5432" ; do sleep 1; done
+	test/fixtures/perf.sh
+
 readme-sample:
 	@ldap2pg --config docs/readme/ldap2pg.yml --real
 	@psql -f docs/readme/reset.sql
