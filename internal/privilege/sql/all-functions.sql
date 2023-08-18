@@ -1,13 +1,13 @@
 WITH
 grants AS (SELECT
-	pronamespace, grantee, priv,
+	pronamespace, grantee, privilege_type,
 	array_agg(DISTINCT proname ORDER BY proname) AS procs
 	FROM (
 		SELECT
 			pronamespace,
 			proname,
 			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).grantee,
-			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).privilege_type AS priv
+			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).privilege_type
 		FROM pg_catalog.pg_proc
 	) AS grants
 	GROUP BY 1, 2, 3
@@ -23,7 +23,7 @@ namespaces AS (
 	GROUP BY 1, 2
 )
 SELECT
-	COALESCE(priv, '') AS "privilege",
+	COALESCE(privilege_type, '') AS "privilege",
 	nspname AS "schema",
 	COALESCE(rolname, 'public') AS grantee,
 	nsp.procs <> COALESCE(grants.procs, ARRAY[]::name[]) AS "partial"
