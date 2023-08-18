@@ -87,12 +87,13 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 						"role", role.Name, "pattern", pattern)
 					continue
 				}
-				_, exists := roles[role.Name]
+				current, exists := roles[role.Name]
 				if exists {
-					slog.Warn("Duplicated wanted role.", "role", role.Name)
+					role.Merge(current)
 				}
 				slog.Debug("Wants role.",
-					"name", role.Name, "options", role.Options, "parents", role.Parents.ToSlice(), "comment", role.Comment)
+					"name", role.Name, "options", role.Options,
+					"parents", role.Parents.ToSlice(), "comment", role.Comment)
 				roles[role.Name] = role
 			}
 

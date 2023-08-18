@@ -315,3 +315,7 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 	})
 	return
 }
+
+func (r *Role) Merge(o Role) {
+	r.Parents.Append(o.Parents.ToSlice()...)
+}

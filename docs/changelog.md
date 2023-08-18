@@ -31,7 +31,6 @@ Please carefully test before upgrading on production system.
   - configuring PostgreSQL connexion through `postgres:dsn`. Use PG* env var.
   - configuring LDAP connexion through `ldap` dict. Use LDAP* en vars and ldaprc.
 - A single sub-search is supported per main LDAP search.
-- On duplicate role rule, the last executed wins.
 - No custom privileges.
 - Docker image is now based on Alpine Linux 3.18.
 - Dropped support for PostgreSQL 9.4.
