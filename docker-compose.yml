@@ -10,8 +10,10 @@ services:
       LDAP_ADMIN_PASSWORD: integral
       LDAP_ORGANISATION: ldap2pg
     volumes:
-    - ./fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
-    - ./fixtures/openldap-data.ldif:/docker-entrypoint-init.d/95-data.ldif
+    - ./test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
+    - ./test/fixtures/sasl.ldif:/docker-entrypoint-init.d/95-sasl.ldif
+    - ./test/fixtures/nominal.ldif:/docker-entrypoint-init.d/95-nominal.ldif
+    - ./test/fixtures/extra.ldif:/docker-entrypoint-init.d/96-extra.ldif
     hostname: ldap
     domainname: ldap2pg.docker
     labels:
@@ -19,16 +21,21 @@ services:
 
   postgres:
     image: postgres:${PGVERSION-15}-alpine
+    hostname: postgres
+    domainname: ldap2pg.docker
     environment:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-    - ./fixtures/postgres.sh:/docker-entrypoint-initdb.d/fixture.sh
+    - ./test/fixtures/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
+    - ./test/fixtures/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
+    - ./test/fixtures/extra.sh:/docker-entrypoint-initdb.d/20-extra.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
     command: [
       postgres,
       -c, log_statement=all,
+      -c, log_connections=on,
       -c, "log_line_prefix=%m [%p]: [%l-1] app=%a,db=%d,client=%h,user=%u ",
       -c, cluster_name=ldap2pg-dev,
     ]

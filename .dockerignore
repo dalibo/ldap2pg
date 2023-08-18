@@ -3,7 +3,7 @@
 build/
 docker-compose*
 docs/
-fixtures/
+test/fixtures/
 mon-*
 my-*
 nfpm.yaml

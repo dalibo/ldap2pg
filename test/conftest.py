@@ -75,7 +75,18 @@ class PSQL(object):
         return c
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module', autouse=True)
+def pgenv(request):
+    mod = request.module.__name__.replace('test_', '')
+    if 'extra' == mod:
+        os.environ['PGUSER'] = 'postgres'
+        os.environ['PGDATABASE'] = 'extra'
+    else:
+        os.environ['PGUSER'] = 'ldap2pg'
+        os.environ['PGDATABASE'] = 'nominal'
+
+
+@pytest.fixture(scope='module')
 def psql():
     # Supply the PSQL helper as a pytest fixture.
     return PSQL()
@@ -116,7 +127,9 @@ def ldap():
 def resetpostgres():
     from sh import Command
 
-    Command('fixtures/postgres.sh')()
+    Command('test/fixtures/reset.sh')()
+    Command('test/fixtures/nominal.sh')()
+    Command('test/fixtures/extra.sh')()
 
 
 def lazy_write(attr, data):
@@ -137,16 +150,22 @@ def sh_errout():
     ))
 
 
+def loggername_factory(ran, call_args, pid=None):
+    sys.stderr.write("+ %s\n" % (ran,))
+    return 'sh'
+
+
 @pytest.fixture(scope='session')
 def ldap2pg(request):
-    return sh.Command(request.config.getoption("--ldap2pg"))
+    return sh.Command(request.config.getoption("--ldap2pg")) \
+             .bake(_log_msg=loggername_factory)
 
 
 def pytest_addoption(parser):
     candidates = [
         "ldap2pg",
         "build/ldap2pg_linux_amd64_v1/ldap2pg",
-        "tests/func/ldap2pg.sh",
+        "test/ldap2pg.sh",
     ]
     for candidate in candidates:
         try:

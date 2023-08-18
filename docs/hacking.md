@@ -104,13 +104,13 @@ $
 
 ## Development Fixtures
 
-OpenLDAP starts with `fixtures/openldap-data.ldif` loaded.
-`fixtures/openldap-data.ldif` is well commented.
+OpenLDAP starts with `test/fixtures/openldap-data.ldif` loaded.
+`test/fixtures/openldap-data.ldif` is well commented.
 
 Some users, database and privileges are provided for testing purpose in
-`fixtures/postgres.sh`. Postgres instance is initialized with this
+`test/fixtures/postgres.sh`. Postgres instance is initialized with this
 automatically. This script also resets modifications to Postgres instance by
-ldap2pg. You can run `fixtures/postgres.sh` every time you need to reset the
+ldap2pg. You can run `test/fixtures/postgres.sh` every time you need to reset the
 Postgres instance.
 
 
@@ -139,19 +139,19 @@ $
 ## Functionnal tests
 
 Functionnal tests tend to validate ldap2pg in real world : **no mocks**.
-We put func tests in `tests/func/`.
+We put func tests in `test/`.
 You can run func tests right from you development environment:
 
 
 ``` console
-$ pip install -Ur tests/func/requirements.txt
+$ pip install -Ur test/requirements.txt
 ...
 $ make build
-$ pytest -k go --ldap2pg build/ldap2pg tests/func/
+$ pytest -k go --ldap2pg build/ldap2pg test/
 ...
-tests/func/test_sync.py::test_dry_run PASSED
-tests/func/test_sync.py::test_real_mode PASSED
-tests/func/test_sync.py::test_nothing_to_do PASSED
+test/test_sync.py::test_dry_run PASSED
+test/test_sync.py::test_real_mode PASSED
+test/test_sync.py::test_nothing_to_do PASSED
 
 ========================== 9 passed in 10.28 seconds ===========================
 $

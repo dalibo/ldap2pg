@@ -1,0 +1,73 @@
+# See extra.sh
+#
+# extra config tests corner cases or less used features:
+#
+# - run as superuser
+# - LDAP sub-search
+# - role config
+# - local role inherit
+# - sub-set of roles, marked by ldap_roles group.
+# - no privileges
+
+version: 5
+
+postgres:
+  roles_blacklist_query:
+  - extra
+  - postgres
+  - pg_*
+  managed_roles_query: |
+    SELECT 'public'
+    UNION
+    SELECT DISTINCT role.rolname
+    FROM pg_roles AS role
+    LEFT OUTER JOIN pg_auth_members AS ms ON ms.member = role.oid
+    LEFT OUTER JOIN pg_roles AS ldap_roles
+      ON ldap_roles.rolname = 'ldap_roles' AND ldap_roles.oid = ms.roleid
+    WHERE role.rolname = 'ldap_roles'
+        OR ldap_roles.oid IS NOT NULL
+    ORDER BY 1;
+  databases_query: [extra]
+
+sync_map:
+- description: "Static groups"
+  roles:
+  - name: ldap_roles
+    comment: "Group of roles synchronized by ldap2pg."
+
+- description: "Managing role configuration"
+  roles:
+  - name: charles
+    config:
+      client_min_messages: NOTICE
+      application_name: created
+    parents: ldap_roles
+
+  - name: alain
+    config:
+      client_min_messages: NOTICE
+      application_name: updated
+    parents:
+    - local_parent
+    - ldap_roles
+
+  - name: alice
+    config: {}
+    options:
+      CONNECTION LIMIT: 10
+
+  - name: nicolas
+    parents:
+    - ldap_roles
+
+
+- description: "Superusers with sub-search"
+  ldapsearch:
+    base: "ou=groups,dc=ldap,dc=ldap2pg,dc=docker"
+    filter: "(cn=dba)"
+  roles:
+  - name: "{member.cn}"
+    comment: "{member.dn}: {member.mail}"
+    options: LOGIN SUPERUSER
+    parents:
+    - ldap_roles
