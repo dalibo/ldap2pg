@@ -172,6 +172,17 @@ helpers provide fastpath to frequent inspection of Postgres database on LDAP
 base with `sh.py`-style API.
 
 
+## Big Case
+
+To stress ldap2pg on big setup, use `make big`.
+This will feed directory with a lot of users and groups, severals databases with a lot of schemas, etc.
+Synchronize this setup with:
+
+``` console
+$ test/genperfconfig.sh | PGDATABASE=big0 go run ./cmd/ldap2pg -c -
+```
+
+
 ## Documenting
 
 [mkdocs](http://www.mkdocs.org) is in charge of building the documentation. To
