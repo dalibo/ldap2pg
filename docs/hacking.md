@@ -94,29 +94,47 @@ Now you can run ldap2pg from source and test your changes!
 
 ``` console
 $ go run ./cmd/ldap2pg
-11:10:26 INFO   Starting ldap2pg commit=(unknown) version=v5.10.0-alpha1 runtime=go1.20.3
-11:10:26 WARN   ldap2pg is alpha software! Use at your own risks!
-11:10:26 INFO   Using YAML configuration file. path=./ldap2pg.yml
+09:54:27 INFO   Starting ldap2pg                                 version=v6.0-alpha5 runtime=go1.20.3 commit=<none>
+09:54:27 WARN   Running a prerelease! Use at your own risks!
+09:54:27 INFO   Using YAML configuration file.                   path=./ldap2pg.yml
 ...
-11:10:27 INFO   Comparison complete. elapsed=261.3525ms mempeak=1.3MiB postgres=0s queries=459 ldap=2.33043ms searches=3
+09:54:27 INFO   Nothing to do.                                   elapsed=78.470278ms mempeak=1.2MiB postgres=0s queries=0 ldap=486.921µs searches=1
 $
 ```
 
 ## Development Fixtures
 
-OpenLDAP starts with `test/fixtures/openldap-data.ldif` loaded.
-`test/fixtures/openldap-data.ldif` is well commented.
+ldap2pg project comes with three case for testing:
 
-Some users, database and privileges are provided for testing purpose in
-`test/fixtures/postgres.sh`. Postgres instance is initialized with this
-automatically. This script also resets modifications to Postgres instance by
-ldap2pg. You can run `test/fixtures/postgres.sh` every time you need to reset the
-Postgres instance.
+- nominal: a regular case with:
+  - running unprivileged
+  - a single database
+  - 3 groupes : readers, writers and owners
+  - roles and privileges synchronized.
+- extra: a few corner cases
+  - running as superuser
+  - synchronize role configuration
+  - do LDAP sub-searches.
+- big: a huge synchronization project
+  - multiple databases with a LOT of schemas, tables, views, etc.
+  - all privileges synchronized
+  - 3 groups per schemas.
+  - 1K users in directory.
+
+`test/fixtures/` holds fixture for OpenLDAP et PostgreSQL.
+Default development environment loads nominal and extra fixtures.
+Func tests use nominal and extra fixtures.
+See below for big case.
+
+`test/fixtures/reset.sh` resets PostgreSQL state.
+You can also use `make reset-postgres` to recreate PostgreSQL container from scratch.
 
 
 ## Unit tests
 
 Unit tests strictly have **no I/O**.
+Run unit tests as usual go tests.
+
 ``` console
 $ go test ./...
 ?       github.com/dalibo/ldap2pg/cmd/ldap2pg        [no test files]
@@ -146,14 +164,14 @@ You can run func tests right from you development environment:
 ``` console
 $ pip install -Ur test/requirements.txt
 ...
-$ make build
-$ pytest -k go --ldap2pg build/ldap2pg test/
+$ pytest test/
 ...
-test/test_sync.py::test_dry_run PASSED
-test/test_sync.py::test_real_mode PASSED
-test/test_sync.py::test_nothing_to_do PASSED
+ldap2pg: /home/bersace/src/dalibo/ldap2pg/test/ldap2pg.sh
+...
+test/test_nominal.py::test_re_revoke PASSED                                  [ 90%]
+test/test_nominal.py::test_nothing_to_do PASSED                              [100%]
 
-========================== 9 passed in 10.28 seconds ===========================
+=============================== 11 passed in 14.90s ================================
 $
 ```
 
