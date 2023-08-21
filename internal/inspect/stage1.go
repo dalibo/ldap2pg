@@ -3,6 +3,7 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	_ "embed"
@@ -11,7 +12,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 )
 
 var (

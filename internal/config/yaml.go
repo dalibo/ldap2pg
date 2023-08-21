@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"reflect"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/mapstructure"
-	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
 

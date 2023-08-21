@@ -4,11 +4,11 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 )
 
 //go:embed sql/creators.sql

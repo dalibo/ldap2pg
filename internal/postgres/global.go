@@ -2,9 +2,9 @@ package postgres
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 )
 
 var (

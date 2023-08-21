@@ -1,12 +1,12 @@
 package privilege
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
