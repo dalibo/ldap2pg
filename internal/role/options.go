@@ -33,7 +33,7 @@ func (o Options) String() string {
 		fv := v.FieldByName(f.Name)
 		switch f.Type.Kind() {
 		case reflect.Bool:
-			o.writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
+			writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
 		case reflect.Int:
 			fmt.Fprintf(&b, "%s %d", f.Tag.Get("token"), fv.Int())
 		}
@@ -41,11 +41,36 @@ func (o Options) String() string {
 	return b.String()
 }
 
-func (o *Options) writeBoolOption(b *strings.Builder, value bool, token string) {
-	if !value {
-		b.WriteString("NO")
+func (o Options) Diff(other Options) string {
+	v := reflect.ValueOf(o)
+	otherV := reflect.ValueOf(other)
+	t := v.Type()
+	var b strings.Builder
+	for _, f := range reflect.VisibleFields(t) {
+		if !isColumnEnabled(f.Tag.Get("column")) {
+			continue
+		}
+		fv := v.FieldByName(f.Name)
+		otherFV := otherV.FieldByName(f.Name)
+		switch f.Type.Kind() {
+		case reflect.Bool:
+			if fv.Bool() != otherFV.Bool() {
+				if b.Len() > 0 {
+					b.WriteByte(' ')
+				}
+				writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
+			}
+		case reflect.Int:
+			i := fv.Int()
+			if i != otherFV.Int() {
+				if b.Len() > 0 {
+					b.WriteByte(' ')
+				}
+				fmt.Fprintf(&b, "%s %d", f.Tag.Get("token"), i)
+			}
+		}
 	}
-	b.WriteString(token)
+	return b.String()
 }
 
 func (o *Options) LoadYaml(yaml map[string]interface{}) {
@@ -124,4 +149,11 @@ func getColumnNameByOrder(order int) string {
 func isColumnEnabled(name string) bool {
 	available, ok := instanceColumns.availability[name]
 	return ok && available
+}
+
+func writeBoolOption(b *strings.Builder, value bool, token string) {
+	if !value {
+		b.WriteString("NO")
+	}
+	b.WriteString(token)
 }
