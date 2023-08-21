@@ -9,7 +9,7 @@
 # - sub-set of roles, marked by ldap_roles group.
 # - no privileges
 
-version: 5
+version: 6
 
 postgres:
   roles_blacklist_query:
