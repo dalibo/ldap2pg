@@ -39,7 +39,7 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
-    - image: goreleaser/goreleaser:v1.21.0-nightly
+    - image: goreleaser/goreleaser:v1.19.2
     steps:
     - checkout
     - restore_cache:
@@ -69,7 +69,7 @@ jobs:
   lint:
     working_directory: *workspace
     docker:
-    - image: golangci/golangci-lint:v1.54.1
+    - image: golangci/golangci-lint:v1.52.2
     steps:
     - checkout
     - restore_cache:
@@ -150,7 +150,7 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
-    docker: [{image: goreleaser/goreleaser:v1.21.0-nightly}]
+    docker: [{image: goreleaser/goreleaser:v1.19.2}]
     working_directory: *workspace
     steps:
     - checkout

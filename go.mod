@@ -1,23 +1,21 @@
 module github.com/dalibo/ldap2pg
 
-go 1.21
-
-toolchain go1.21.0
+go 1.20
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/deckarep/golang-set/v2 v2.3.1
+	github.com/deckarep/golang-set/v2 v2.3.0
 	github.com/go-ldap/ldap/v3 v3.4.5
-	github.com/jackc/pgx/v5 v5.4.3
+	github.com/jackc/pgx/v5 v5.4.2
 	github.com/lithammer/dedent v1.1.0
-	github.com/lmittmann/tint v1.0.0
+	github.com/lmittmann/tint v0.3.4
 	github.com/mattn/go-isatty v0.0.19
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tzvetkoff-go/fnmatch v0.0.0-20220210160758-879480b5e662
-	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
+	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -35,9 +33,9 @@ require (
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
-	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	github.com/subosito/gotenv v1.4.2 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

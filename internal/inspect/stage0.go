@@ -3,14 +3,14 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"slices"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slices"
+	"golang.org/x/exp/slog"
 )
 
 // Fourzitou struct holding everything need to synchronize Instance.

@@ -1,9 +1,8 @@
 package role
 
 import (
-	"log/slog"
-
 	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/slog"
 )
 
 type Map map[string]Role

@@ -3,7 +3,6 @@ package ldap
 import (
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/url"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
+	"golang.org/x/exp/slog"
 )
 
 type Client struct {

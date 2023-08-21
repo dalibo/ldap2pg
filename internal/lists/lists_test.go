@@ -1,12 +1,12 @@
 package lists_test
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/dalibo/ldap2pg/internal"
 
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/exp/slog"
 )
 
 // Global test suite for lists package.

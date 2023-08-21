@@ -2,9 +2,10 @@ package role
 
 import (
 	"fmt"
-	"log/slog"
 	"reflect"
 	"strings"
+
+	"golang.org/x/exp/slog"
 )
 
 type Options struct {

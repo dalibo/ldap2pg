@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/wanted"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 func FindFile(userValue string) (configpath string) {

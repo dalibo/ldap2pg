@@ -3,10 +3,11 @@ package perf
 import (
 	"bufio"
 	"fmt"
-	"log/slog"
 	"os"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slog"
 )
 
 func ReadVMPeak() int {

@@ -4,12 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"log/slog"
-	"slices"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	mapset "github.com/deckarep/golang-set/v2"
+	"golang.org/x/exp/slices"
+	"golang.org/x/exp/slog"
 )
 
 //go:embed sql/schemas.sql

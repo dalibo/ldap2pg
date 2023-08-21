@@ -2,7 +2,8 @@ package config
 
 import (
 	"fmt"
-	"slices"
+
+	"golang.org/x/exp/slices"
 )
 
 func CheckSpuriousKeys(yaml *map[string]interface{}, knownKeys ...string) error {
