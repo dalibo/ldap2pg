@@ -3,7 +3,7 @@
 set -eu
 
 cat <<-EOF
-version: 5
+version: 6
 
 postgres:
   databases_query: [big0, big1, big2, big3]

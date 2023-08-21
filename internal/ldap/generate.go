@@ -3,14 +3,14 @@ package ldap
 
 import (
 	"fmt"
+	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 var KnownRDNs = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}

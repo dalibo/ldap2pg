@@ -1,6 +1,8 @@
 package wanted
 
 import (
+	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
@@ -10,8 +12,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	ldap3 "github.com/go-ldap/ldap/v3"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 type Item struct {

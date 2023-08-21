@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"os"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slog"
 )
 
 func init() {
@@ -79,7 +79,7 @@ type Controller struct {
 	LdapWatch      perf.StopWatch
 }
 
-var levels []slog.Level = []slog.Level{
+var levels = []slog.Level{
 	slog.LevelDebug,
 	slog.LevelInfo,
 	internal.LevelChange,

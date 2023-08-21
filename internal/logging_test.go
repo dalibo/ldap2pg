@@ -2,10 +2,10 @@ package internal_test
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/lmittmann/tint"
-	"golang.org/x/exp/slog"
 )
 
 func ExampleSetLoggingHandler() {

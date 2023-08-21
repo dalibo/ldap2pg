@@ -2,12 +2,12 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/tree"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slog"
 )
 
 func (c *Config) DropPrivileges() {

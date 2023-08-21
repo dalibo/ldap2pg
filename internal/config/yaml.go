@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"reflect"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/mapstructure"
-	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -145,9 +145,9 @@ func (c *Config) checkVersion(yaml interface{}) (err error) {
 	if !ok {
 		return errors.New("Configuration version must be integer")
 	}
-	if c.Version != 5 {
-		slog.Debug("Unsupported configuration version.", "version", c.Version)
-		return errors.New("Unsupported configuration version")
+	if c.Version != 6 {
+		slog.Debug("Unsupported configuration version. Minimum version is 6.", "version", c.Version)
+		return errors.New("configuration version must be 6")
 	}
 	return
 }

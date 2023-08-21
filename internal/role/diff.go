@@ -1,8 +1,9 @@
 package role
 
 import (
+	"log/slog"
+
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"golang.org/x/exp/slog"
 )
 
 func Diff(all, managed, wanted Map, me Role, fallbackOwner string, databases *postgres.DBMap) <-chan postgres.SyncQuery {

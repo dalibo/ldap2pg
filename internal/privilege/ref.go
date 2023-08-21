@@ -1,11 +1,11 @@
 package privilege
 
 import (
+	"log/slog"
+	"slices"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 // Ref references a privilege type

@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 type Database struct {
