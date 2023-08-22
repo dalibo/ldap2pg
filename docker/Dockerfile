@@ -12,8 +12,9 @@ WORKDIR /workspace
 
 COPY --from=builder /workspace/build/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
 
-COPY docker/docker-entrypoint.sh /usr/local/bin
+RUN apk add --no-cache bash
 RUN mkdir /docker-entrypoint.d
+COPY docker/docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Smoketest
