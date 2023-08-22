@@ -12,6 +12,9 @@ default:
 docs: docs/wellknown.md
 	mkdocs build --clean --strict
 
+build-docker:
+	docker build --build-arg http_proxy -t dalibo/ldap2pg:local -f docker/Dockerfile .
+
 big: reset-ldap
 	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
 	test/fixtures/genperfldif.sh | ldapmodify -xw integral
