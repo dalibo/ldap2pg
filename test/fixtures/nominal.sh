@@ -10,8 +10,9 @@ psql=(psql -v ON_ERROR_STOP=1 --no-psqlrc)
 
 
 "${psql[@]}" <<'EOSQL'
-CREATE ROLE "nominal";
 CREATE ROLE "ldap2pg" LOGIN CREATEDB CREATEROLE;
+
+CREATE ROLE "nominal";
 GRANT "nominal" TO "ldap2pg";
 
 CREATE DATABASE "nominal" WITH OWNER "nominal";
