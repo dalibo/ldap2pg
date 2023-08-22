@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"runtime"
 	"runtime/debug"
-	"slices"
 	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+	"golang.org/x/exp/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"

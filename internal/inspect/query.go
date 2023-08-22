@@ -3,9 +3,9 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 // Querier abstracts the execution of a SQL query or the copy of static rows

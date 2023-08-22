@@ -2,11 +2,11 @@ package internal
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/lmittmann/tint"
+	"golang.org/x/exp/slog"
 )
 
 const LevelChange slog.Level = slog.LevelInfo + 2

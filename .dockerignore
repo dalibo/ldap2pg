@@ -6,5 +6,4 @@ docs/
 test/fixtures/
 mon-*
 my-*
-nfpm.yaml
-tests/
+test/
