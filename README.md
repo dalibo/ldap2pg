@@ -16,7 +16,7 @@
     <img src="https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield" alt="Continuous Integration report" />
   </a>
   <a href="https://hub.docker.com/r/dalibo/ldap2pg" rel="nofollow" class="rich-diff-level-one">
-    <img src="https://img.shields.io/docker/automated/dalibo/ldap2pg.svg" alt="Docker Image Available" />
+    <img alt="Docker Cloud Automated build" src="https://img.shields.io/docker/cloud/automated/dalibo/ldap2pg">
   </a>
 </p>
 
