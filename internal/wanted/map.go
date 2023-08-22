@@ -89,11 +89,16 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 				}
 				current, exists := roles[role.Name]
 				if exists {
-					role.Merge(current)
+					current.Merge(role)
+					role = current
+					slog.Debug("Updated wanted role.",
+						"name", role.Name, "options", role.Options,
+						"parents", role.Parents.ToSlice(), "comment", role.Comment)
+				} else {
+					slog.Debug("Wants role.",
+						"name", role.Name, "options", role.Options,
+						"parents", role.Parents.ToSlice(), "comment", role.Comment)
 				}
-				slog.Debug("Wants role.",
-					"name", role.Name, "options", role.Options,
-					"parents", role.Parents.ToSlice(), "comment", role.Comment)
 				roles[role.Name] = role
 			}
 
