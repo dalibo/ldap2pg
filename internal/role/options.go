@@ -9,14 +9,14 @@ import (
 )
 
 type Options struct {
-	Super       bool `column:"rolsuper" token:"SUPERUSER"`
-	CreateDB    bool `column:"rolcreatedb" token:"CREATEDB"`
-	CreateRole  bool `column:"rolcreaterole" token:"CREATEROLE"`
-	Inherit     bool `column:"rolinherit" token:"INHERIT"`
-	CanLogin    bool `column:"rolcanlogin" token:"LOGIN"`
-	Replication bool `column:"rolreplication" token:"REPLICATION"`
-	ByPassRLS   bool `column:"rolbypassrls" token:"BYPASSRLS"`
-	ConnLimit   int  `column:"rolconnlimit" token:"CONNECTION LIMIT"`
+	Super       bool `column:"rolsuper" mapstructure:"SUPERUSER"`
+	CreateDB    bool `column:"rolcreatedb" mapstructure:"CREATEDB"`
+	CreateRole  bool `column:"rolcreaterole" mapstructure:"CREATEROLE"`
+	Inherit     bool `column:"rolinherit" mapstructure:"INHERIT"`
+	CanLogin    bool `column:"rolcanlogin" mapstructure:"LOGIN"`
+	Replication bool `column:"rolreplication" mapstructure:"REPLICATION"`
+	ByPassRLS   bool `column:"rolbypassrls" mapstructure:"BYPASSRLS"`
+	ConnLimit   int  `column:"rolconnlimit" mapstructure:"CONNECTION LIMIT"`
 }
 
 func (o Options) String() string {
@@ -33,9 +33,9 @@ func (o Options) String() string {
 		fv := v.FieldByName(f.Name)
 		switch f.Type.Kind() {
 		case reflect.Bool:
-			writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
+			writeBoolOption(&b, fv.Bool(), f.Tag.Get("mapstructure"))
 		case reflect.Int:
-			fmt.Fprintf(&b, "%s %d", f.Tag.Get("token"), fv.Int())
+			fmt.Fprintf(&b, "%s %d", f.Tag.Get("mapstructure"), fv.Int())
 		}
 	}
 	return b.String()
@@ -58,7 +58,7 @@ func (o Options) Diff(other Options) string {
 				if b.Len() > 0 {
 					b.WriteByte(' ')
 				}
-				writeBoolOption(&b, fv.Bool(), f.Tag.Get("token"))
+				writeBoolOption(&b, fv.Bool(), f.Tag.Get("mapstructure"))
 			}
 		case reflect.Int:
 			i := fv.Int()
@@ -66,34 +66,11 @@ func (o Options) Diff(other Options) string {
 				if b.Len() > 0 {
 					b.WriteByte(' ')
 				}
-				fmt.Fprintf(&b, "%s %d", f.Tag.Get("token"), i)
+				fmt.Fprintf(&b, "%s %d", f.Tag.Get("mapstructure"), i)
 			}
 		}
 	}
 	return b.String()
-}
-
-func (o *Options) LoadYaml(yaml map[string]interface{}) {
-	for option, value := range yaml {
-		switch option {
-		case "SUPERUSER":
-			o.Super = value.(bool)
-		case "INHERIT":
-			o.Inherit = value.(bool)
-		case "CREATEROLE":
-			o.CreateRole = value.(bool)
-		case "CREATEDB":
-			o.CreateDB = value.(bool)
-		case "LOGIN":
-			o.CanLogin = value.(bool)
-		case "REPLICATION":
-			o.Replication = value.(bool)
-		case "BYPASSRLS":
-			o.ByPassRLS = value.(bool)
-		case "CONNECTION LIMIT":
-			o.ConnLimit = value.(int)
-		}
-	}
 }
 
 func (o *Options) LoadRow(row []interface{}) {
@@ -151,9 +128,9 @@ func isColumnEnabled(name string) bool {
 	return ok && available
 }
 
-func writeBoolOption(b *strings.Builder, value bool, token string) {
+func writeBoolOption(b *strings.Builder, value bool, keyword string) {
 	if !value {
 		b.WriteString("NO")
 	}
-	b.WriteString(token)
+	b.WriteString(keyword)
 }

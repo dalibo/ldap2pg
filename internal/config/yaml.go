@@ -11,7 +11,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/jackc/pgx/v5"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/mapstructure"
@@ -80,9 +79,10 @@ func Dump(root interface{}) {
 // Wrap mapstructure for config object
 func (c *Config) DecodeYaml(yaml any) (err error) {
 	d, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: decodeMapHook,
-		Metadata:   &mapstructure.Metadata{},
-		Result:     c,
+		DecodeHook:       decodeMapHook,
+		Metadata:         &mapstructure.Metadata{},
+		Result:           c,
+		WeaklyTypedInput: true,
 	})
 	if err != nil {
 		return
@@ -101,10 +101,6 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 			return nil, err
 		}
 		return f, nil
-	case reflect.TypeOf(role.Options{}):
-		r := to.Interface().(role.Options)
-		r.LoadYaml(from.Interface().(map[string]interface{}))
-		return r, nil
 	case reflect.TypeOf(QueryConfig[string]{}):
 		v := to.Interface().(QueryConfig[string])
 		v.Value = from.Interface()
