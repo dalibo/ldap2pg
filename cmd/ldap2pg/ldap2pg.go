@@ -164,7 +164,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			queryCount += stageCount
 		}
 	} else {
-		slog.Info("Not synchronizing privileges.")
+		slog.Debug("Not synchronizing privileges.")
 	}
 
 	vmPeak := perf.ReadVMPeak()

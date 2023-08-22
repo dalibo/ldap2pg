@@ -99,7 +99,18 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
 	case map[string]interface{}:
-		maps.Copy(value, yaml.(map[string]interface{}))
+		yamlMap := yaml.(map[string]interface{})
+		for k, v := range yamlMap {
+			switch v {
+			// Replace YAML 1.1 booleans to mapstructure weak boolean.
+			case "y", "Y", "yes", "Yes", "YES", "on", "On", "ON":
+				yamlMap[k] = "true"
+			case "n", "N", "no", "No", "NO", "off", "Off", "OFF":
+				yamlMap[k] = "false"
+			default:
+			}
+		}
+		maps.Copy(value, yamlMap)
 	case nil:
 		return
 	default:

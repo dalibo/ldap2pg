@@ -54,6 +54,7 @@ sync_map:
   - name: alice
     config: {}
     options:
+      LOGIN: true
       CONNECTION LIMIT: 10
 
   - name: nicolas

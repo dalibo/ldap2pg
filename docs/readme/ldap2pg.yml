@@ -1,10 +1,15 @@
+version: 6
+
+sync_map:
 - role:
-    name: ldap_roles
+    name: nominal
     options: NOLOGIN
+    comment: "Database owner"
 - ldapsearch:
     base: ou=people,dc=ldap,dc=ldap2pg,dc=docker
     filter: "(objectClass=organizationalPerson)"
   role:
     name: '{cn}'
-    options: LOGIN
-    parent: ldap_roles
+    options:
+      LOGIN: yes
+      CONNECTION LIMIT: 5
