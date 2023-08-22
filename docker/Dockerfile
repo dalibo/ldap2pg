@@ -11,8 +11,10 @@ ENV LANG en_US.utf8
 WORKDIR /workspace
 
 COPY --from=builder /workspace/build/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
-RUN /usr/bin/ldap2pg --version
 
 COPY docker/docker-entrypoint.sh /usr/local/bin
 RUN mkdir /docker-entrypoint.d
 ENTRYPOINT ["docker-entrypoint.sh"]
+
+# Smoketest
+RUN /usr/local/bin/docker-entrypoint.sh --version
