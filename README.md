@@ -114,7 +114,7 @@ ldap2pg **requires** a configuration file called `ldap2pg.yaml`.
 Project ships a [tested ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) as a starting point.
 
 ``` console
-# curl -LO <https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml>
+# curl -LO https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml
 # editor ldap2pg.yml
 ```
 

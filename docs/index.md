@@ -5,68 +5,53 @@ hide:
 
 <h1 style="display: none"><a href="https://labs.dalibo.com/ldap2pg"><code>ldap2pg</code></a></h1>
 
-
 ![ldap2pg](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)
 
-Postgres is able to check password against an entreprise directory using the
-LDAP protocol out of the box. ldap2pg automates the creation, update and
-removal of PostgreSQL roles and users based on entreprise organigram described
-in the directory.
+Postgres is able to check password of an existing role using the LDAP protocol out of the box.
+ldap2pg automates the creation, update and removal of PostgreSQL roles and users from an entreprise directory.
 
-Managing roles is close to managing privileges as you expect roles to have
-proper default privileges. ldap2pg can grant and revoke privileges too.
-
-Project goals include **stability**, **portability**, high **configurability**
-and nice **user experience**.
+Managing roles is close to managing privileges as you expect roles to have proper default privileges.
+ldap2pg can grant and revoke privileges too.
 
 ![Screenshot](img/screenshot.png)
 
 
-## Features
+# Features
 
 - Reads settings from an expressive YAML config file.
 - Creates, alters and drops PostgreSQL roles from LDAP searches.
 - Creates static roles from YAML to complete LDAP entries.
-- Manages role members (alias *groups*).
+- Manages role parents (alias *groups*).
 - Grants or revokes privileges statically or from LDAP entries.
 - Dry run, check mode.
 - Logs LDAP searches as `ldapsearch(1)` commands.
-- Logs every SQL query.
+- Logs **every** SQL statements.
+
+`ldap2pg` is licensed under [PostgreSQL license](https://opensource.org/licenses/postgresql).
+
+ldap2pg **requires** a configuration file called `ldap2pg.yaml`.
+Project ships a [tested ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) as a starting point.
+
+`ldap2pg` is reported to work with [OpenLDAP](https://www.openldap.org/),
+[FreeIPA](https://www.freeipa.org/),
+Oracle Internet Directory and
+Microsoft Active Directory.
 
 
-## Installation
+# Support
 
-ldap2pg requires Python 2.6+ or 3+, pyyaml, python-ldap and psycopg2.
-
-The universal installation method is to download from PyPI using pip. Other
-methods and more details are described in this documentation.
-
-``` console
-# apt install -y libldap2-dev libsasl2-dev
-# pip install ldap2pg psycopg2-binary
-```
-
-ldap2pg is licensed under PostgreSQL license. ldap2pg is available with the
-help of wonderful people, jump to [contributors] list to see them.
-
-[contributors]: https://github.com/dalibo/ldap2pg/blob/master/CONTRIBUTING.md#contributors
-
-ldap2pg **requires** a configuration file called `ldap2pg.yaml`. The [dumb but
-tested
-`ldap2pg.yml`](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) is a
-good way to start.
-
-``` console
-# curl -LO https://github.com/dalibo/ldap2pg/raw/master/ldap2pg.yml
-# editor ldap2pg.yml
-```
-
-Finally, it's up to you to use `ldap2pg` in a crontab or a playbook. Have fun!
+If you need support
+and you didn't found it in [documentation](https://ldap2pg.readthedocs.io/),
+just drop a question in a [GitHub issue](https://github.com/dalibo/ldap2pg/issues/new)!
+French accepted.
+Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) for advanced use cases.
 
 
-## Support
+# Authors
 
-This documentation includes a [cookbook](cookbook) with many recipes for common
-deployment pattern. If you hit a bug or didn't found what you need in
-documentation, drop an [issue on
-GitHub](https://github.com/dalibo/ldap2pg/issues/new)!
+ldap2pg is a [Dalibo Labs](https://labs.dalibo.com/) project.
+
+- [Étienne BERSAC](https://github.com/bersace) is the maintainer.
+- [Damien Cazeils](https://www.damiencazeils.com) designed the logo.
+- [Harold le CLÉMENT de SAINT-MARCQ](https://github.com/hlecleme) implemented LDAP sub searches.
+- [Randolph Voorhies](https://github.com/randvoorhies) implemented role configuration synchronization.

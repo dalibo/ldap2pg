@@ -106,22 +106,22 @@ $
 
 ldap2pg project comes with three case for testing:
 
-- nominal: a regular case with:
-  - running unprivileged
-  - a single database
-  - 3 groupes : readers, writers and owners
-  - roles and privileges synchronized.
-- extra: a few corner cases
-  - running as superuser
-  - synchronize role configuration
-  - do LDAP sub-searches.
-- big: a huge synchronization project
-  - multiple databases with a LOT of schemas, tables, views, etc.
-  - all privileges synchronized
-  - 3 groups per schemas.
-  - 1K users in directory.
+  - nominal: a regular case with:
+    - running unprivileged
+    - a single database
+    - 3 groupes : readers, writers and owners
+    - roles and privileges synchronized.
+  - extra: a few corner cases
+    - running as superuser
+    - synchronize role configuration
+    - do LDAP sub-searches.
+  - big: a huge synchronization project
+    - multiple databases with a LOT of schemas, tables, views, etc.
+    - all privileges synchronized
+    - 3 groups per schemas.
+    - 1K users in directory.
 
-`test/fixtures/` holds fixture for OpenLDAP et PostgreSQL.
+`test/fixtures/` holds fixtures for OpenLDAP et PostgreSQL.
 Default development environment loads nominal and extra fixtures.
 Func tests use nominal and extra fixtures.
 See below for big case.
@@ -137,19 +137,21 @@ Run unit tests as usual go tests.
 
 ``` console
 $ go test ./...
-?       github.com/dalibo/ldap2pg/cmd/ldap2pg        [no test files]
-ok      github.com/dalibo/ldap2pg/internal      (cached)
-ok      github.com/dalibo/ldap2pg/internal/config       (cached)
-ok      github.com/dalibo/ldap2pg/internal/inspect      (cached)
-ok      github.com/dalibo/ldap2pg/internal/ldap (cached)
-ok      github.com/dalibo/ldap2pg/internal/lists        (cached)
-ok      github.com/dalibo/ldap2pg/internal/perf (cached)
+?       github.com/dalibo/ldap2pg/cmd/ldap2pg   [no test files]
+?       github.com/dalibo/ldap2pg/cmd/render-doc        [no test files]
+ok      github.com/dalibo/ldap2pg/cmd/mon-dojo  0.002s
+ok      github.com/dalibo/ldap2pg/internal      0.003s
+ok      github.com/dalibo/ldap2pg/internal/config       0.007s
+ok      github.com/dalibo/ldap2pg/internal/inspect      0.005s
+ok      github.com/dalibo/ldap2pg/internal/ldap 0.005s
+ok      github.com/dalibo/ldap2pg/internal/lists        0.005s
 ?       github.com/dalibo/ldap2pg/internal/postgres     [no test files]
+ok      github.com/dalibo/ldap2pg/internal/perf 0.004s
+ok      github.com/dalibo/ldap2pg/internal/privilege    0.003s
 ?       github.com/dalibo/ldap2pg/internal/role [no test files]
-ok      github.com/dalibo/ldap2pg/internal/privilege    (cached)
-ok      github.com/dalibo/ldap2pg/internal/pyfmt        (cached) [no tests to run]
-ok      github.com/dalibo/ldap2pg/internal/tree (cached)
-ok      github.com/dalibo/ldap2pg/internal/wanted       (cached)
+ok      github.com/dalibo/ldap2pg/internal/pyfmt        0.004s
+ok      github.com/dalibo/ldap2pg/internal/tree 0.002s
+ok      github.com/dalibo/ldap2pg/internal/wanted       0.003s
 $
 ```
 

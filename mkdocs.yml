@@ -48,7 +48,6 @@ nav:
   - Well-known Privileges: wellknown.md
 - Cookbook: cookbook.md
 - Changelog: changelog.md
-- API: api.md
 - Hacking: hacking.md
 
 site_dir: build/docs/

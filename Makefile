@@ -25,12 +25,12 @@ reset-big: reset-postgres
 	test/fixtures/perf.sh
 
 readme-sample:
-	@ldap2pg --config docs/readme/ldap2pg.yml --real
+	@test/ldap2pg.sh --config docs/readme/ldap2pg.yml --real
 	@psql -f docs/readme/reset.sql
 	@echo '$$ cat ldap2pg.yml'
 	@cat docs/readme/ldap2pg.yml
 	@echo '$$ ldap2pg --real'
-	@ldap2pg --color --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
+	@test/ldap2pg.sh --color --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
 	@echo '$$ '
 	@echo -e '\n\n\n\n'
 
