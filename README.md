@@ -16,7 +16,7 @@
     <img src="https://circleci.com/gh/dalibo/ldap2pg.svg?style=shield" alt="Continuous Integration report" />
   </a>
   <a href="https://hub.docker.com/r/dalibo/ldap2pg" rel="nofollow" class="rich-diff-level-one">
-    <img src="https://img.shields.io/docker/automated/dalibo/ldap2pg.svg" alt="Docker Image Available" />
+    <img alt="Docker Cloud Automated build" src="https://img.shields.io/docker/cloud/automated/dalibo/ldap2pg">
   </a>
 </p>
 
@@ -134,3 +134,13 @@ and you didn't found it in [documentation](https://ldap2pg.readthedocs.io/),
 just drop a question in a [GitHub issue](https://github.com/dalibo/ldap2pg/issues/new)!
 French accepted.
 Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) for advanced use cases.
+
+
+# Authors
+
+ldap2pg is a [Dalibo Labs](https://labs.dalibo.com/) project.
+
+- [Étienne BERSAC](https://github.com/bersace) is the maintainer.
+- [Damien Cazeils](https://www.damiencazeils.com) designed the logo.
+- [Harold le CLÉMENT de SAINT-MARCQ](https://github.com/hlecleme) implemented LDAP sub searches.
+- [Randolph Voorhies](https://github.com/randvoorhies) implemented role configuration synchronization.
