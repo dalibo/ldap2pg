@@ -30,6 +30,7 @@ type YAMLQuery[T any] struct {
 
 func (q *YAMLQuery[_]) Query(_ context.Context, _ Conn) {
 	q.currentIndex = -1
+	slog.Debug("Reading values from YAML.")
 }
 
 func (q *YAMLQuery[_]) Next() bool {
