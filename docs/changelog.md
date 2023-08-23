@@ -104,7 +104,7 @@ Released 2021-11-19.
 - Docker image based on Debian bullseye.
 - Handle bad syntax in ldaprc.
 - Handle bad database encoding.
-- Rename `ldap` to `ldapsearch` in `sync_map`.
+- Rename `ldap` to `ldapsearch` in `rules`.
 - Ignore spurious ldapsearch YAML parameter.
 - Search for .yaml file as well as .yml.
 - Drop legacy `LDAP_BIND` env var support. Use `LDAPBINDDN` instead.
@@ -163,7 +163,7 @@ Released 2020-05-29.
 - Fix comment error with generated comment.
 - Fails if configuration file is not found.
 - Refuse empty configuration file.
-- Refuse undefined `sync_map`.
+- Refuse undefined `rules`.
 - Update [sample
   ldap2pg.yml](https://github.com/dalibo/ldap2pg/bloc/master/ldap2pg.yml) for
   readability and general use.
@@ -386,7 +386,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 # ldap2pg 4.0
 
 - **Deprecation**: use `acls:` rather than `acl_dict` and `acl_groups`.
-- **Deprecation**: `sync_map` should be a list.
+- **Deprecation**: `rules` should be a list.
 - **Deprecation**: schema `__all__` should be used instead of `__all__`.
 - Fix various tracebacks with errors in configuration or SQL queries.
 - Manage grants to `public` role.

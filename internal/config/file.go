@@ -55,7 +55,7 @@ type Config struct {
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
 	Privileges privilege.RefMap
-	SyncMap    wanted.Map `mapstructure:"sync_map"`
+	SyncMap    wanted.Rules `mapstructure:"rules"`
 }
 
 type LdapConfig struct {

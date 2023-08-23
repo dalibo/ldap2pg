@@ -90,15 +90,19 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 		config["privileges"] = privileges
 	}
 
-	section, ok = config["sync_map"]
+	err = NormalizeAlias(&config, "rules", "sync_map")
+	if err != nil {
+		return
+	}
+	section, ok = config["rules"]
 	if !ok {
-		return config, errors.New("missing sync_map")
+		return config, errors.New("missing rules")
 	}
 	syncMap, err := NormalizeSyncMap(section)
 	if err != nil {
-		return config, fmt.Errorf("sync_map: %w", err)
+		return config, fmt.Errorf("rules: %w", err)
 	}
-	config["sync_map"] = syncMap
+	config["rules"] = syncMap
 	return
 }
 

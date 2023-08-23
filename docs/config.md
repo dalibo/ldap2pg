@@ -32,7 +32,7 @@ This is helpful to feed ldap2pg with dynamic configuration.
 - `postgres` : setup Postgres connexion and inspection queries.
 - `ldap` : setup LDAP connexion.
 - `privileges` : the definition of privileges.
-- `sync_map` : the list of LDAP searches and associated mapping to roles and
+- `rules` : the list of LDAP searches and associated mapping to roles and
   grants.
 
 We provide a simple well commented
@@ -372,13 +372,13 @@ See [Privilege documentation](privileges.md) for details.
 
 ## Synchronisation map  { #sync-map }
 
-The top level `sync_map` section is a YAML list. This is the only mandatory
-parameter in `ldap2pg.yaml`. Each item of `sync_map` is called a *mapping*. A
+The top level `rules` section is a YAML list. This is the only mandatory
+parameter in `ldap2pg.yaml`. Each item of `rules` is called a *mapping*. A
 mapping is a YAML dict with a `description` field and any of `ldapsearch`,
 `role` and `grant` subsection.
 
 ``` yaml
-sync_map:
+rules:
 - description: "Define DBA roles"
   ldapsearch:
     base: ...
@@ -433,7 +433,7 @@ The following example accepts that a LDAP entry miss `sAMAccountName`. The
 entry missing `sAMAccountName` wont generate a role.
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     base: ...
     allow_missing_attributes: [member, sAMAccountName]
@@ -449,7 +449,7 @@ These parameters have the same meaning, definition and default as searchbase,
 scope and filter arguments of ldapsearch CLI utility.
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     base: ou=people,dc=acme,dc=tld
     scope: sub
@@ -468,7 +468,7 @@ attribute name as key and LDAP search parameters as value. LDAP search
 parameters are the same as for top LDAP search.
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     joins:
       member:
@@ -502,7 +502,7 @@ this case. The default is to fail. You can choose to either `warn` or silently
 `ignore` these values.
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     on_unexpected_dn: warn  # fail | warn | ignore
 ```
@@ -518,7 +518,7 @@ cluster. This includes name, options, comment and membership. Plural form
 rules.
 
 ``` yaml
-sync_map:
+rules:
 - role:
     name: dba
     options: SUPERUSER LOGIN
@@ -544,7 +544,7 @@ If there is more or less comments generated than name generated, ldap2pg fails.
 The following example defines a static comment shared by all generated roles:
 
 ``` yaml
-sync_map:
+rules:
 - roles:
     names:
     - alice
@@ -556,7 +556,7 @@ The following example generate a single comment from LDAP entry distinguised
 name, copied for all generated roles:
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     ...
   role:
@@ -567,7 +567,7 @@ sync_map:
 The following example generate a unique comment for each roles generated:
 
 ``` yaml
-sync_map:
+rules:
 - ldapsearch:
     ...
   role:
@@ -584,7 +584,7 @@ parameter accepts LDAP attributes injection using curly braces. ldap2pg applies
 [roles_blacklist_query] on this parameter.
 
 ``` yaml
-sync_map
+rules
 - role:
     name: myrole
     member: mychild
@@ -601,7 +601,7 @@ and `members`. `comment` parameter has a special handling, see
 [above](#role-comment).
 
 ``` yaml
-sync_map:
+rules:
 - roles:
     name: "my-role-name"
 ```
@@ -623,7 +623,7 @@ Defines a condition on name as a glob pattern. If a name does not match this
 pattern, the role is skipped from creation.
 
 ``` yaml
-sync_map:
+rules:
 - role:
     name: "{cn}"
     name_match: "external_*"
@@ -684,7 +684,7 @@ is valid too. Parent role is granted with `GRANT ROLE parent TO role;`.
 ldap2pg applies [roles_blacklist_query] on this parameter.
 
 ``` yaml
-sync_map:
+rules:
 - role:
     name: myrole
     parent: myparent
@@ -698,7 +698,7 @@ sync_map:
 Defines a grant of a privilege to a role with corresponding parameters.
 
 ``` yaml
-sync_map:
+rules:
 - grant:
     privilege: reader
     databases: __all__

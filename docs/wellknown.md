@@ -35,7 +35,7 @@ privileges:
   - __all_on_schemas__
   - __all_on_tables__
 
-sync_map:
+rules:
 - grant:
     privilege: ddl
     database: mydb
