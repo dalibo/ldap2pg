@@ -77,7 +77,9 @@ func GroupByDatabase(databases DBMap, defaultDatabase string, in <-chan SyncQuer
 		databases := databases.SyncOrder(defaultDatabase, false)
 
 		for q := range in {
-			if "" == q.Database {
+			if "<first>" == q.Database {
+				q.Database = databases[0]
+			} else if "" == q.Database {
 				q.Database = defaultDatabase
 			}
 			queries = append(queries, q)

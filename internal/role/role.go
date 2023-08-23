@@ -238,6 +238,7 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 		out = append(out, postgres.SyncQuery{
 			Description: "Terminate running sessions.",
 			LogArgs:     []interface{}{"role", r.Name},
+			Database:    "<first>",
 			Query: `
 			SELECT pg_terminate_backend(pid)
 			FROM pg_catalog.pg_stat_activity
@@ -255,7 +256,8 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 				LogArgs: []interface{}{
 					"role", r.Name, "parent", currentUser.Name,
 				},
-				Query: `REVOKE %s FROM %s;`,
+				Database: "<first>",
+				Query:    `REVOKE %s FROM %s;`,
 				QueryArgs: []interface{}{
 					pgx.Identifier{currentUser.Name},
 					identifier,
@@ -267,7 +269,8 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 			LogArgs: []interface{}{
 				"role", r.Name, "parent", currentUser.Name,
 			},
-			Query: `GRANT %s TO %s;`,
+			Database: "<first>",
+			Query:    `GRANT %s TO %s;`,
 			QueryArgs: []interface{}{
 				identifier,
 				pgx.Identifier{currentUser.Name},
