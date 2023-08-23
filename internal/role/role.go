@@ -234,15 +234,17 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 
 func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
-	out = append(out, postgres.SyncQuery{
-		Description: "Terminate running sessions.",
-		LogArgs:     []interface{}{"role", r.Name},
-		Query: `
-		SELECT pg_terminate_backend(pid)
-		FROM pg_catalog.pg_stat_activity
-		WHERE usename = %s;`,
-		QueryArgs: []interface{}{r.Name},
-	})
+	if r.Options.CanLogin {
+		out = append(out, postgres.SyncQuery{
+			Description: "Terminate running sessions.",
+			LogArgs:     []interface{}{"role", r.Name},
+			Query: `
+			SELECT pg_terminate_backend(pid)
+			FROM pg_catalog.pg_stat_activity
+			WHERE usename = %s;`,
+			QueryArgs: []interface{}{r.Name},
+		})
+	}
 
 	if !currentUser.Options.Super {
 		// Non-super user needs to inherit to-be-dropped role to reassign objects.
