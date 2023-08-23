@@ -80,7 +80,7 @@ def pgenv(request):
     mod = request.module.__name__.replace('test_', '')
     if 'extra' == mod:
         os.environ['PGUSER'] = 'postgres'
-        os.environ['PGDATABASE'] = 'extra'
+        os.environ['PGDATABASE'] = 'extra0'
     else:
         os.environ['PGUSER'] = 'ldap2pg'
         os.environ['PGDATABASE'] = 'nominal'

@@ -7,13 +7,14 @@
 # - role config
 # - local role inherit
 # - sub-set of roles, marked by ldap_roles group.
+# - multi-databases
 # - no privileges
 
 version: 6
 
 postgres:
   roles_blacklist_query:
-  - extra
+  - extra*
   - postgres
   - pg_*
   managed_roles_query: |
@@ -27,7 +28,8 @@ postgres:
     WHERE role.rolname = 'ldap_roles'
         OR ldap_roles.oid IS NOT NULL
     ORDER BY 1;
-  databases_query: [extra]
+  databases_query: [extra0, extra1]
+  fallback_owner: extra
 
 rules:
 - description: "Static groups"

@@ -6,8 +6,13 @@ export PGDATABASE=postgres
 psql=(psql -v ON_ERROR_STOP=1 --no-psqlrc)
 
 "${psql[@]}" <<'EOSQL'
+CREATE ROLE "ldap_roles";
+
 CREATE ROLE "extra" SUPERUSER;
-CREATE DATABASE "extra" WITH OWNER "extra";
+CREATE DATABASE "extra0" WITH OWNER "extra";
+-- For reassign database.
+CREATE ROLE "damien" SUPERUSER IN ROLE "ldap_roles";
+CREATE DATABASE "extra1" WITH OWNER "damien";
 
 -- Inherit local parent
 CREATE ROLE "local_parent" NOLOGIN;
