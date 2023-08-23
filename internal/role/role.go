@@ -282,9 +282,9 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 			out = append(out, postgres.SyncQuery{
 				Description: "Reassign database.",
 				LogArgs: []interface{}{
-					"role", r.Name,
 					"database", database.Name,
-					"owner", fallbackOwner,
+					"old", r.Name,
+					"new", fallbackOwner,
 				},
 				Query: `ALTER DATABASE %s OWNER TO %s;`,
 				QueryArgs: []interface{}{
