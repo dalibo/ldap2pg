@@ -103,7 +103,7 @@ func ldap2pg(ctx context.Context) (err error) {
 
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
 	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
-	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, "", controller.Real)
+	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 	if err != nil {
 		return
 	}
@@ -235,7 +235,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 			return 0, fmt.Errorf("privileges: %w", err)
 		}
 		queries := privilege.Diff(currentGrants, expandedGrants)
-		count, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, instance.DefaultDatabase, controller.Real)
+		count, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 		if err != nil {
 			return 0, fmt.Errorf("apply: %w", err)
 		}
