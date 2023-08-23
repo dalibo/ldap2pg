@@ -103,8 +103,7 @@ var instanceColumns struct {
 	order        []string
 }
 
-func ProcessColumns(columns []string, super bool) {
-	instanceColumns.order = columns
+func ProcessColumns(columns []string, super bool) []string {
 	instanceColumns.availability = make(map[string]bool)
 	t := reflect.TypeOf(Options{})
 	for _, f := range reflect.VisibleFields(t) {
@@ -116,7 +115,9 @@ func ProcessColumns(columns []string, super bool) {
 			continue
 		}
 		instanceColumns.availability[name] = true
+		instanceColumns.order = append(instanceColumns.order, name)
 	}
+	return instanceColumns.order
 }
 
 func getColumnNameByOrder(order int) string {

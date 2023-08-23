@@ -89,7 +89,7 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ma
 		return fmt.Errorf("columns: %w", err)
 	}
 	// Setup global var to configure RoleOptions.String()
-	role.ProcessColumns(columns, instance.Me.Options.Super)
+	columns = role.ProcessColumns(columns, instance.Me.Options.Super)
 	slog.Debug("Inspected PostgreSQL instance role options.", "columns", columns)
 
 	slog.Debug("Inspecting all roles.")
