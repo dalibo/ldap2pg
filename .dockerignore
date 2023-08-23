@@ -1,4 +1,5 @@
 .*
+!.git
 !.goreleaser.yaml
 build/
 docker-compose*

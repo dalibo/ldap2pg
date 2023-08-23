@@ -33,6 +33,8 @@ Please carefully test before upgrading on production system.
 - A single sub-search is supported per main LDAP search.
 - No custom privileges.
 - Docker image is now based on Alpine Linux 3.18.
+- Docker image tag latest points to last stable image.
+- Docker image tag nightly points to last commit on master.
 - Dropped support for PostgreSQL 9.4.
 
 Unimplemented feature may be reimplemented depending on feedback.
