@@ -45,7 +45,7 @@ Here is a sample configuration and execution:
 $ cat ldap2pg.yml
 version: 6
 
-sync_map:
+rules:
 - role:
     name: nominal
     options: NOLOGIN

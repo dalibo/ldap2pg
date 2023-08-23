@@ -140,7 +140,7 @@ func (suite *Suite) TestNormalizeConfig() {
 	r := suite.Require()
 
 	rawYaml := dedent.Dedent(`
-	sync_map:
+	rules:
 	- description: Desc0
 	  role: alice
 	- description: Desc1
@@ -152,6 +152,6 @@ func (suite *Suite) TestNormalizeConfig() {
 
 	config, err := config.NormalizeConfigRoot(raw)
 	r.Nil(err)
-	syncMap := config["sync_map"].([]interface{})
+	syncMap := config["rules"].([]interface{})
 	r.Len(syncMap, 2)
 }

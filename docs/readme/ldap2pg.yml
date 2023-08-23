@@ -1,6 +1,6 @@
 version: 6
 
-sync_map:
+rules:
 - role:
     name: nominal
     options: NOLOGIN

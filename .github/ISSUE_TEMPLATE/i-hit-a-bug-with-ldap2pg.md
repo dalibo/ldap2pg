@@ -31,7 +31,7 @@ French accepted.
 postgres:
   ...
 
-sync_map:
+rules:
   ...
 ```
 </details>

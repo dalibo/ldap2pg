@@ -21,7 +21,7 @@ func (suite *Suite) TestItemStatic() {
 	r := suite.Require()
 
 	c := configFromYAML(`
-	sync_map:
+	rules:
 	- roles:
 	  - name: "toto"
 	`)
@@ -35,7 +35,7 @@ func (suite *Suite) TestItemLdapAnalyze() {
 	r := suite.Require()
 
 	c := configFromYAML(`
-	sync_map:
+	rules:
 	- ldapsearch:
 	    base: cn=toto
 	  roles:
@@ -52,7 +52,7 @@ func (suite *Suite) TestSyncItemReplaceMemberAsMemberDotDN() {
 	r := suite.Require()
 
 	c := configFromYAML(`
-	sync_map:
+	rules:
 	- ldapsearch:
 	    base: cn=toto
 	  roles:

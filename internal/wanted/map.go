@@ -12,10 +12,10 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Map holds a set of rules to generate wanted state.
-type Map []Item
+// Rules holds a set of rules to generate wanted state.
+type Rules []Step
 
-func (m Map) HasLDAPSearches() bool {
+func (m Rules) HasLDAPSearches() bool {
 	for _, item := range m {
 		if item.HasLDAPSearch() {
 			return true
@@ -24,16 +24,16 @@ func (m Map) HasLDAPSearches() bool {
 	return false
 }
 
-func (m Map) SplitStaticRules() (newMap Map) {
-	newMap = make(Map, 0)
+func (m Rules) SplitStaticRules() (newMap Rules) {
+	newMap = make(Rules, 0)
 	for _, item := range m {
 		newMap = append(newMap, item.SplitStaticItems()...)
 	}
 	return
 }
 
-func (m Map) DropGrants() (out Map) {
-	out = make(Map, 0)
+func (m Rules) DropGrants() (out Rules) {
+	out = make(Rules, 0)
 	for _, item := range m {
 		item.GrantRules = nil
 		if 0 < len(item.RoleRules) {
@@ -45,7 +45,7 @@ func (m Map) DropGrants() (out Map) {
 	return
 }
 
-func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
+func (m Rules) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
@@ -89,11 +89,16 @@ func (m Map) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges pr
 				}
 				current, exists := roles[role.Name]
 				if exists {
-					role.Merge(current)
+					current.Merge(role)
+					role = current
+					slog.Debug("Updated wanted role.",
+						"name", role.Name, "options", role.Options,
+						"parents", role.Parents.ToSlice(), "comment", role.Comment)
+				} else {
+					slog.Debug("Wants role.",
+						"name", role.Name, "options", role.Options,
+						"parents", role.Parents.ToSlice(), "comment", role.Comment)
 				}
-				slog.Debug("Wants role.",
-					"name", role.Name, "options", role.Options,
-					"parents", role.Parents.ToSlice(), "comment", role.Comment)
 				roles[role.Name] = role
 			}
 

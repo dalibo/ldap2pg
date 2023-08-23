@@ -10,7 +10,7 @@ design, ldap2pg uses inspect-modify design. The process is the same as for
 roles synchronization, including the three following steps:
 
 1. Inspect Postgres cluster for granted privileges.
-2. Loop `sync_map` and generate wanted grants set.
+2. Loop `rules` and generate wanted grants set.
 3. Compare the two sets of grants and update the Postgres cluster using
    `GRANT`, `REVOKE` and `ALTER DEFAULT PRIVILEGES`.
 
@@ -25,19 +25,19 @@ ldap2pg in an active group of privileges.
 Defining a privilege triggers inspection of grants of this privilege in the
 cluster and revocation of grants found in the cluster. To grant privileges and
 keep grants found in the PostgreSQL cluster, you must use `grant` rule in
-`sync_map`.
+`rules`.
 
 !!! warning "If it's not granted, revoke it!"
 
     Once a privilege is enabled, ldap2pg inspects the cluster and **revokes**
-    all grants not required by a `grant` rule in `sync_map`.
+    all grants not required by a `grant` rule in `rules`.
 
 ldap2pg inspects objects grants, owners and schemas only if configuration
 defines privileges. ldap2pg inspects grants, owners and schemas in PostgreSQL
 cluster **after** roles creation, update and drop.
 
 In `ldap2pg.yml`, you specify privileges in a dictionnary named [privileges]
-and grant them with [grant rules] in the `sync_map`.
+and grant them with [grant rules] in the `rules`.
 
 [grant rules]: config.md#sync-map-grant
 
@@ -47,7 +47,7 @@ group role and add user roles in the group to grant them all privileges at
 once.
 
 The following example defines three levels of privileges, the upper including
-lower one. The `sync_map` defines three groups and grant the corresponding
+lower one. The `rules` defines three groups and grant the corresponding
 privilege to the group:
 
 ``` yaml
@@ -67,7 +67,7 @@ privileges:
   - __create_on_schemas__
   - __truncate_on_tables__
 
-sync_map:
+rules:
 - role:
   - names:
     - readers
@@ -128,7 +128,7 @@ properly default privileges on these roles. If you hesitate to manage
 privileges with ldap2pg, you should at least manage default privileges.
 
 ldap2pg inspect the owners from PostgreSQL, not LDAP directory. There is no
-`owner` or `for` parameter to `grant` rule in `sync_map`. Configuration file
+`owner` or `for` parameter to `grant` rule in `rules`. Configuration file
 defines owners either globally using [owners_query] or per schema using
 [schemas_query].
 
@@ -147,7 +147,7 @@ privileges:
   reading:
   - __default_select_on_tables__
 
-sync_map:
+rules:
 - roles:
     names:
     - alice
@@ -199,7 +199,7 @@ privileges:
       JOIN pg_namespace ON pg_namespace.oid = pronamespace
       WHERE proname = 'myfunc' AND privilege_type = 'EXECUTE';
 
-sync_map:
+rules:
 - grant:
     database: mydb
     schema: public

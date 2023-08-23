@@ -14,7 +14,7 @@ from ldap2pg import synchronize, UserError
 
 try:
     synchronize(dedent("""\
-    sync_map:
+    rules:
     - role:
         name: myrole
     """))

@@ -24,7 +24,7 @@ def ldapfree_env():
 def test_stdin(ldap2pg, capsys):
     ldap2pg(
         '--config=-',
-        _in="version: 6\nsync_map:\n- role: stdinuser",
+        _in="version: 6\nrules:\n- role: stdinuser",
         _env=ldapfree_env(),
     )
 

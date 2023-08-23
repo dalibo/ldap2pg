@@ -29,7 +29,7 @@ postgres:
     ORDER BY 1;
   databases_query: [extra]
 
-sync_map:
+rules:
 - description: "Static groups"
   roles:
   - name: ldap_roles

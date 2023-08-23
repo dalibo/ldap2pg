@@ -19,9 +19,11 @@ CREATE DATABASE "nominal" WITH OWNER "nominal";
 
 -- Should be NOLOGIN
 CREATE ROLE "readers" LOGIN;
+CREATE ROLE "owners" NOLOGIN;
+
 
 -- For alter
-CREATE ROLE "alain";
+CREATE ROLE "alain" IN ROLE "owners";  -- Spurious parent.
 CREATE ROLE "alter";
 CREATE ROLE "alice";
 

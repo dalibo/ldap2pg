@@ -28,6 +28,7 @@ def test_roles(nominalrun, psql):
 
     owners = list(psql.members('owners'))
     assert 'alter' in owners
+    assert 'alain' not in owners
 
 
 def test_re_grant(nominalrun, psql):

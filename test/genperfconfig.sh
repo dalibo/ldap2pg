@@ -42,7 +42,7 @@ privileges:
   define:
   - __create_on_schemas__
 
-sync_map:
+rules:
 - description: "Base roles"
   roles:
   - name: ldap_roles

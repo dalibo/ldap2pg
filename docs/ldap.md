@@ -1,6 +1,6 @@
 <h1>Querying Directory with LDAP</h1>
 
-ldap2pg reads LDAP searches in `sync_map` items in the `ldapsearch` entry.
+ldap2pg reads LDAP searches in `rules` items in the `ldapsearch` entry.
 
 A LDAP search is **not** mandatory. ldap2pg can create roles defined statically
 from YAML. Each LDAP search is executed once and only once. There is neither
