@@ -25,12 +25,12 @@ var (
 	inspectLanguage string
 	//go:embed sql/schema.sql
 	inspectSchema string
-	//go:embed sql/all-tables.sql
-	inspectAllTables string
-	//go:embed sql/all-sequences.sql
-	inspectAllSequences string
 	//go:embed sql/all-functions.sql
 	inspectAllFunctions string
+	//go:embed sql/all-sequences.sql
+	inspectAllSequences string
+	//go:embed sql/all-tables.sql
+	inspectAllTables string
 )
 
 func init() {
@@ -50,9 +50,9 @@ func init() {
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
-	register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
 	register("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
+	register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
+	register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
 }
 
 // queries are grant and revoke queries in order.

@@ -3,9 +3,9 @@ WITH grants AS (
 		defaclnamespace AS nsp,
 		defaclrole AS owner,
 		CASE defaclobjtype
-		WHEN 'r' THEN 'TABLES'
-		WHEN 'S' THEN 'SEQUENCES'
 		WHEN 'f' THEN 'FUNCTIONS'
+		WHEN 'S' THEN 'SEQUENCES'
+		WHEN 'r' THEN 'TABLES'
 		END AS "object",
 		defaclobjtype AS objtype,
 		(aclexplode(defaclacl)).grantee AS grantee,
