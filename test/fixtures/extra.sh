@@ -29,4 +29,6 @@ CREATE ROLE "nicolas";
 ALTER ROLE "nicolas" SET client_min_messages TO 'NOTICE';
 ALTER ROLE "nicolas" SET application_name TO 'keep-me';
 GRANT "local_parent" TO "nicolas";
+
+CREATE ROLE "domitille with space" IN ROLE "ldap_roles";
 EOSQL
