@@ -97,13 +97,12 @@ rules:
   grant:
   - privilege: ro
     role: readers
-    schemas: __all__
+    # Scope to a single schema
+    schemas: nominal
   - privilege: rw
     role: writers
-    schema: __all__
   - privilege: ddl
     role: owners
-    schema: __all__
 
 - description: "Search LDAP to create readers, writers and owners."
   ldapsearch:
