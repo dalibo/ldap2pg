@@ -1,3 +1,4 @@
+# coding: utf-8
 import pytest
 
 
@@ -24,7 +25,7 @@ def test_roles(nominalrun, psql):
     assert 'corinne' in readers
 
     writers = list(psql.members('writers'))
-    assert 'alice' in writers
+    assert u'alizée' in writers
 
     owners = list(psql.members('owners'))
     assert 'alter' in owners

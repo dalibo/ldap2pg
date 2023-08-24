@@ -8,25 +8,16 @@ objectclass: top
 ou: people
 
 # a* for alter
-dn: cn=alice,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+# for UTF-8
+dn:: Y249YWxpesOpZSxvdT1wZW9wbGUsZGM9bGRhcCxkYz1sZGFwMnBnLGRjPWRvY2tlcgo=
 changetype: add
 objectclass: inetOrgPerson
 objectclass: organizationalPerson
 objectclass: person
 objectclass: top
-cn: alice
-sn: Alice
-mail: alice@ldap2pg.docker
-
-dn: cn=alain,ou=people,dc=ldap,dc=ldap2pg,dc=docker
-changetype: add
-objectclass: inetOrgPerson
-objectclass: organizationalPerson
-objectclass: person
-objectclass: top
-cn: alain
-sn: Alain
-mail: alain@ldap2pg.docker
+cn:: YWxpesOpZQo=
+sn:: QWxpesOpZQo=
+mail: alizee@ldap2pg.docker
 
 # Alter has no luck, his name is a SQL literal ^^
 dn: cn=alter,ou=people,dc=ldap,dc=ldap2pg,dc=docker
@@ -104,7 +95,7 @@ changetype: add
 objectClass: groupOfNames
 objectClass: top
 cn: writers
-member: cn=alice,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+member:: Y249YWxpesOpZSxvdT1wZW9wbGUsZGM9bGRhcCxkYz1sZGFwMnBnLGRjPWRvY2tlcgo=
 member: cn=charles,ou=people,dc=ldap,dc=ldap2pg,dc=docker
 
 dn: cn=owners,ou=groups,dc=ldap,dc=ldap2pg,dc=docker

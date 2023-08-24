@@ -45,7 +45,7 @@ rules:
       application_name: created
     parents: ldap_roles
 
-  - name: alain
+  - name: alter
     config:
       client_min_messages: NOTICE
       application_name: updated
@@ -53,7 +53,7 @@ rules:
     - local_parent
     - ldap_roles
 
-  - name: alice
+  - name: alizée
     config: {}
     options:
       LOGIN: true

@@ -18,12 +18,12 @@ CREATE DATABASE "extra1" WITH OWNER "damien";
 CREATE ROLE "local_parent" NOLOGIN;
 
 -- Test role config definition.
-ALTER ROLE "alain" SET client_min_messages TO 'ERROR';
-ALTER ROLE "alain" SET application_name TO 'not-updated';
+ALTER ROLE "alter" SET client_min_messages TO 'ERROR';
+ALTER ROLE "alter" SET application_name TO 'not-updated';
 
-ALTER ROLE "alice" SET client_min_messages TO 'NOTICE';
-ALTER ROLE "alice" SET application_name TO 'not-reset';
-ALTER ROLE "alice" CONNECTION LIMIT 5;
+ALTER ROLE "alizée" SET client_min_messages TO 'NOTICE';
+ALTER ROLE "alizée" SET application_name TO 'not-reset';
+ALTER ROLE "alizée" CONNECTION LIMIT 5;
 
 CREATE ROLE "nicolas";
 ALTER ROLE "nicolas" SET client_min_messages TO 'NOTICE';

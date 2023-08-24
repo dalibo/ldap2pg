@@ -1,3 +1,4 @@
+# coding: utf-8
 # Test order matters.
 
 import pytest
@@ -41,9 +42,9 @@ def test_role_config(extrarun, psql):
         'client_min_messages': 'NOTICE',
         'application_name': 'updated',
     }
-    assert expected == psql.config('alain')
+    assert expected == psql.config('alter')
 
-    assert {} == psql.config('alice')
+    assert {} == psql.config(u'alizée')
 
     expected_unmodified_config = {
         'client_min_messages': 'NOTICE',
