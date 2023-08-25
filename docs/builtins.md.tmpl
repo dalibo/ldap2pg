@@ -1,0 +1,135 @@
+<!--*- markdown -*-->
+
+<h1>Builtins Privileges</h1>
+
+ldap2pg provides some builtin ACL and predefined privilege profiles for recurrent usage.
+There is **no warranty** on these privileges.
+You have to check privileges configuration on your databases just like you should do with your own code.
+
+
+## Using Predefined Privilege Profiles
+
+A privilege profile is a list of reference to a privilege type in an ACL.
+In ldap2pg, an ACL is a set of query to inspect, grant and revoke privilege on a class of objects.
+The inspect query expands `aclitem` PostgreSQL type to list all grants from system catalog.
+Privilege profile can include another profile.
+
+Builtin privilege profile starts and ends with `__`.
+ldap2pg [disables privilege profile](config.md#privileges) starting with `_`.
+Thus you have to include builtin privileges profile in another profile to enable them.
+If two profiles reference the same privilege, ldap2pg will inspect it once.
+
+``` yaml
+privileges:
+  ro:
+  - __connect__
+  - __usage_on_schemas__
+  - __select_on_tables__
+
+  rw:
+  - ro
+  - __insert__
+  - __update_on_tables__
+
+  ddl:
+  - rw
+  - __all_on_schemas__
+  - __all_on_tables__
+
+rules:
+- grant:
+    privilege: ddl
+    database: mydb
+    role: admins
+```
+
+Builtin profile's name follows the following loose convention:
+
+- `..._on_all_tables__` references `ALL TABLES IN SCHEMA` ACL.
+   Likewise for sequences and functions.
+- `__default_...__` references both global and schema-wide default privileges.
+- `__..._on_tables__` groups `__..._on_all_tables__` and `__default_..._on_tables__`.
+- Group starting with `__all_on_...__` is *equivalent* to `ALL PRIVILEGES` in SQL.
+  However, each privilege will be granted individually.
+- A privilege specific to one object type does not have `_on_<type>` suffix.
+  E.g. `__delete_on_tables__` is aliased to `__delete__`.
+
+This page does not document the SQL standard and the meaning of each SQL privileges.
+You will find the documentation of SQL privileges in [Postgresql GRANT documentation] and [ALTER DEFAULT PRIVILEGES documentation].
+
+[Postgresql GRANT documentation]: https://www.postgresql.org/docs/current/sql-grant.html
+[ALTER DEFAULT PRIVILEGES documentation]: https://www.postgresql.org/docs/current/sql-alterdefaultprivileges.html
+
+
+## ACL Reference
+
+Here is the list of builtin ACL.
+
+For effective privileges:
+
+- `DATABASE`: privilege on database like `CONNECT`, `CREATE`, etc.
+- `LANGUAGE`: manage `USAGE` on procedural languages.
+- `ALL FUNCTIONS IN SCHEMA`: manage `EXECUTE` on all functions per schema.
+- `ALL SEQUENCES IN SCHEMA`: like above but for sequences.
+- `ALL TABLES IN SCHEMA`: like above but for tables and views.
+
+`ALL ... IN SCHEMA` ACL inspects whether a privilege is granted to only a subset of objects.
+This is a *partial* grant.
+A partial grant is either revoked if unwanted or regranted if expected.
+
+ACL for default privileges:
+
+- `SEQUENCES`
+- `FUNCTIONS`
+- `TABLES`
+
+Theses ACL must be referenced with `global` set to either `schema` or `global`.
+
+You can reference these ACL using [privileges:on] parameter in YAML. Like this:
+
+``` yaml
+privileges:
+  myprofile:
+  - type: SELECT
+    on: ALL TABLES IN SCHEMA
+```
+
+[privileges:on]: config.md#privileges-on
+
+You cannot (yet) configure custom ACL.
+
+
+## Profiles Reference
+
+{{ range $key, $members := .Groups -}}
+
+### Profile `{{ $key }}` { #{{ $key | slugify }}  data-toc-label="{{ $key | markdown_escape }}" }
+
+{{ range $members -}}
+- [`{{ . }}`](#{{ . | slugify }})
+{{ end }}
+
+{{ end -}}
+
+
+## Privileges Reference
+
+Here is the list of predefined privileges:
+
+| Name | Manages |
+|------|---------|
+{{ range $key, $ref := .Refs -}}
+| {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $ref "type" }} ON {{ index $ref "on" }}` |
+{{ end }}
+
+
+## Default Privileges Reference
+
+Here is the list of predefined default privileges.
+Default privilege profile references both global and schema defaults.
+
+| Name | Manages |
+|------|---------|
+{{ range $key, $ref := .Defaults -}}
+| <a name="{{ $key | slugify }}"></a> {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $ref "type" }} ON {{ index $ref "on" }}` |
+{{ end -}}

@@ -43,8 +43,8 @@ postgres:
 #       2.   P R I V I L E G E S   D E F I N I T I O N
 #
 # See https://ldap2pg.readthedocs.io/en/latest/privileges/. Privileges wrapped
-# in double underscores are well-known privileges built-in ldap2pg. See
-# https://ldap2pg.readthedocs.io/en/latest/wellknown/ for a documentation of
+# in double underscores are builtin privilege profiles. See
+# https://ldap2pg.readthedocs.io/en/latest/builtins/ for a documentation of
 # each of them.
 #
 

@@ -21,10 +21,10 @@ ldap2pg synchronizes default privileges last.
 
 By default, ldap2pg does not manage any privileges.
 To enable privilege management, you must define at least one active privilege profile in [privileges] section.
-The simplest way is to reuse [well-known privileges] shipped with ldap2pg in an active group of privileges.
+The simplest way is to reuse [builtin privilege profiless] shipped with ldap2pg in an active group of privileges.
 
 [privileges]: config.md#privileges
-[well-known privileges]: wellknown.md
+[builtin privilege profiles]: builtins.md
 
 
 ## Defining a Privilege Profile
@@ -45,28 +45,6 @@ Inspected grants are supposed to revokation unless explicitly wanted by a `grant
 
     Once a privilege is enabled,
     ldap2pg **revokes** all grants found in Postgres instance and not required by a `grant` rule in `rules`.
-
-
-## Available ACL
-
-Here is the list of builtin ACL.
-
-For effective privileges:
-
-- `DATABASE`: privilege on database like `CONNECT`, `CREATE`, etc.
-- `LANGUAGE`: manage `USAGE` on procedural languages.
-- `ALL FUNCTIONS IN SCHEMA`: manage `EXECUTE` on all functions per schema.
-  Detects whether one function has a spurious grant or if a single function misse one grant.
-- `ALL SEQUENCES IN SCHEMA`: like above but for sequences.
-- `ALL TABLES IN SCHEMA`: like above but for tables and views.
-
-For default privileges:
-
-- `SEQUENCES`
-- `FUNCTIONS`
-- `TABLES`
-
-Theses ACL must be reference with `global` set to either `schema` or `global`.
 
 
 ## Extended Intance inspection

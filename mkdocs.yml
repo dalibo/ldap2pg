@@ -45,7 +45,7 @@ nav:
   - Managing Roles: roles.md
   - Searching Directory: ldap.md
   - Managing Privileges: privileges.md
-  - Well-known Privileges: wellknown.md
+  - Builtins Privileges: builtins.md
 - Cookbook: cookbook.md
 - Changelog: changelog.md
 - Hacking: hacking.md

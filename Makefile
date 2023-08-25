@@ -3,13 +3,13 @@ YUM_LABS?=$(wildcard ../yum-labs)
 
 default:
 
-%.md: %.md.j2 docs/auto-privileges-doc.py ldap2pg/defaults.py Makefile
+%.md: %.md.tmpl cmd/render-doc/main.go Makefile
 	echo '<!-- GENERATED FROM $< -->' > $@.tmp
-	python docs/auto-privileges-doc.py $< >> $@.tmp
+	go run ./cmd/render-doc $< >> $@.tmp
 	mv -f $@.tmp $@
 
 .PHONY: docs
-docs: docs/wellknown.md
+docs: docs/builtins.md
 	mkdocs build --clean --strict
 
 build-docker:
