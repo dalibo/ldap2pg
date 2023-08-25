@@ -1,8 +1,12 @@
 package pyfmt_test
 
 import (
+	"testing"
+
+	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/exp/slog"
 )
 
 type Suite struct {
@@ -106,4 +110,13 @@ func (suite *Suite) TestFormat() {
 		"member.cn": "alice",
 	})
 	r.Equal("ext_dba_ALICE", s)
+}
+
+func Test(t *testing.T) {
+	if testing.Verbose() {
+		internal.SetLoggingHandler(slog.LevelDebug, false)
+	} else {
+		internal.SetLoggingHandler(slog.LevelWarn, false)
+	}
+	suite.Run(t, new(Suite))
 }
