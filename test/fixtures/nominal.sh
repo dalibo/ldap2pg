@@ -21,11 +21,9 @@ CREATE DATABASE "nominal" WITH OWNER "nominal";
 CREATE ROLE "readers" LOGIN;
 CREATE ROLE "owners" NOLOGIN;
 
-
 -- For alter
-CREATE ROLE "alain" IN ROLE "owners";  -- Spurious parent.
 CREATE ROLE "alter";
-CREATE ROLE "alice";
+CREATE ROLE "alizée" IN ROLE "owners";  -- Spurious parent.
 
 -- For drop
 CREATE ROLE "daniel" WITH LOGIN;

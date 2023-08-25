@@ -30,11 +30,11 @@ class PSQL(object):
         # List members of role
         return self.select1(
             # Good old SQL injection. Who cares?
-            "SELECT m.rolname FROM pg_roles AS m "
-            "JOIN pg_auth_members a ON a.member = m.oid "
-            "JOIN pg_roles AS r ON r.oid = a.roleid "
-            " WHERE r.rolname = '%s' "
-            "ORDER BY 1;" % (role,)
+            u"SELECT m.rolname FROM pg_roles AS m "
+            u"JOIN pg_auth_members a ON a.member = m.oid "
+            u"JOIN pg_roles AS r ON r.oid = a.roleid "
+            u" WHERE r.rolname = '%s' "
+            u"ORDER BY 1;" % (role,)
         )
 
     def roles(self):
@@ -50,20 +50,20 @@ class PSQL(object):
     def tables(self, *a, **kw):
         # List tables
         return self.select1(
-            "SELECT relname "
-            "FROM pg_catalog.pg_class c "
-            "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
-            "WHERE "
-            "    c.relkind = 'r' "
-            "    AND n.nspname !~ '^pg_' "
-            "    AND n.nspname <> 'information_schema' "
-            "ORDER BY 1;",
+            u"SELECT relname "
+            u"FROM pg_catalog.pg_class c "
+            u"JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+            u"WHERE "
+            u"    c.relkind = 'r' "
+            u"    AND n.nspname !~ '^pg_' "
+            u"    AND n.nspname <> 'information_schema' "
+            u"ORDER BY 1;",
             *a, **kw
         )
 
     def config(self, role):
         """ Get a dictionary of configuration settings for a role. """
-        config_lines = self.select1("""
+        config_lines = self.select1(u"""
             SELECT unnest(rolconfig)
               FROM pg_roles
              WHERE rolname='{rolname}'

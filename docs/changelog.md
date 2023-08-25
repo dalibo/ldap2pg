@@ -36,6 +36,7 @@ Please carefully test before upgrading on production system.
 - Docker image tag latest points to last stable image.
 - Docker image tag nightly points to last commit on master.
 - Dropped support for PostgreSQL 9.4.
+- Refuse to grant privilege on unmanaged role.
 
 Unimplemented feature may be reimplemented depending on feedback.
 

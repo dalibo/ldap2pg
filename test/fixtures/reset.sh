@@ -24,41 +24,39 @@ printf -v quoted_roles '"%s", ' "${roles[@]+${roles[@]}}"
 quoted_roles="${quoted_roles%, }"
 
 psql=("${psql[@]}" --echo-all)
-for d in template1 postgres ; do
-	for role in "${roles[@]+${roles[@]}}" ; do
-		"${psql[@]}" --dbname "$d" <<-EOF
-		DROP OWNED BY "${role}" CASCADE;
-		EOF
-	done
-
-	"${psql[@]}" "$d" <<-EOSQL
-	GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
-	GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
-	GRANT USAGE ON LANGUAGE plpgsql TO PUBLIC;
-	EOSQL
-
-	# Reset default privileges.
-	"${psql[@]}" -At "$d" <<-EOF | "${psql[@]}" "$d"
-	WITH type_map (typechar, typename) AS (
-		VALUES
-		('T', 'TYPES'),
-		('r', 'TABLES'),
-		('f', 'FUNCTIONS'),
-		('S', 'SEQUENCES')
-	)
-	SELECT
-		'ALTER DEFAULT PRIVILEGES'
-		|| ' FOR ROLE "' ||  pg_get_userbyid(defaclrole) || '"'
-		|| ' IN SCHEMA "' || nspname || '"'
-		|| ' REVOKE ' || (aclexplode(defaclacl)).privilege_type || ''
-		|| ' ON ' || COALESCE(typename, defaclobjtype::TEXT)
-		|| ' FROM "' || pg_get_userbyid((aclexplode(defaclacl)).grantee) || '"'
-		|| ';' AS "sql"
-	FROM pg_catalog.pg_default_acl
-	JOIN pg_namespace AS nsp ON nsp.oid = defaclnamespace
-	LEFT OUTER JOIN type_map ON typechar = defaclobjtype;
+for role in "${roles[@]+${roles[@]}}" ; do
+	"${psql[@]}" <<-EOF
+	DROP OWNED BY "${role}" CASCADE;
 	EOF
 done
+
+"${psql[@]}" <<-EOSQL
+GRANT USAGE ON SCHEMA information_schema TO PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO PUBLIC;
+GRANT USAGE ON LANGUAGE plpgsql TO PUBLIC;
+EOSQL
+
+# Reset default privileges.
+"${psql[@]}" -At <<-EOF | "${psql[@]}"
+WITH type_map (typechar, typename) AS (
+	VALUES
+	('T', 'TYPES'),
+	('r', 'TABLES'),
+	('f', 'FUNCTIONS'),
+	('S', 'SEQUENCES')
+)
+SELECT
+	'ALTER DEFAULT PRIVILEGES'
+	|| ' FOR ROLE "' ||  pg_get_userbyid(defaclrole) || '"'
+	|| ' IN SCHEMA "' || nspname || '"'
+	|| ' REVOKE ' || (aclexplode(defaclacl)).privilege_type || ''
+	|| ' ON ' || COALESCE(typename, defaclobjtype::TEXT)
+	|| ' FROM "' || pg_get_userbyid((aclexplode(defaclacl)).grantee) || '"'
+	|| ';' AS "sql"
+FROM pg_catalog.pg_default_acl
+JOIN pg_namespace AS nsp ON nsp.oid = defaclnamespace
+LEFT OUTER JOIN type_map ON typechar = defaclobjtype;
+EOF
 
 if [ -n "${roles[*]-}" ] ; then
 	"${psql[@]}" <<-EOSQL

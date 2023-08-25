@@ -88,6 +88,13 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+	for _, g := range wantedGrants {
+		_, ok := wantedRoles[g.Grantee]
+		if !ok {
+			slog.Info("Generated grant on unwanted role.", "grant", g)
+			return fmt.Errorf("grant on unwanted role")
+		}
+	}
 
 	// Describe instance, running user, find databases objects, roles, etc.
 	err = instance.InspectStage1(ctx, pc)
@@ -124,7 +131,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		instancePrivileges, objectPrivileges, defaultPrivileges := c.Postgres.PrivilegesMap.BuildTypeMaps()
 
 		// Start by default database. This allow to reuse the last
-		// openned connexion when synchronizing roles.
+		// connexion openned when synchronizing roles.
 		for _, dbname := range instance.Databases.SyncOrder(instance.DefaultDatabase, true) {
 			slog.Debug("Stage 2: privileges.", "database", dbname)
 			err := instance.InspectStage2(ctx, dbname, pc.SchemasQuery)
