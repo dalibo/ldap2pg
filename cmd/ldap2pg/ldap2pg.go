@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -50,6 +51,13 @@ func main() {
 }
 
 func ldap2pg(ctx context.Context) (err error) {
+	stop, err := startProfiling()
+	if err != nil {
+		return
+	}
+	if stop != nil {
+		defer stop()
+	}
 	defer postgres.CloseConn(ctx)
 
 	start := time.Now()
@@ -263,4 +271,26 @@ func logPanic() {
 	slog.Error("Aborting ldap2pg.", "err", r)
 	slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with full log.")
 	os.Exit(1)
+}
+
+func startProfiling() (stop func(), err error) {
+	if !slices.Contains(os.Environ(), "CPUPROFILE=1") {
+		return
+	}
+	slog.Debug("Starting CPU profiling.")
+	f, err := os.Create("default.pgo")
+	if err != nil {
+		return
+	}
+	err = pprof.StartCPUProfile(f)
+	if err != nil {
+		f.Close()
+		return
+	}
+	stop = func() {
+		slog.Debug("Stopping profiling.")
+		pprof.StopCPUProfile()
+		f.Close()
+	}
+	return
 }

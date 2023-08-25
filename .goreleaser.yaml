@@ -6,6 +6,8 @@ builds:
 - main: ./cmd/ldap2pg
   env:
   - CGO_ENABLED=0
+  flags:
+  - -pgo=auto
   gcflags:
   - -trimpath -buildvcs
   goarch:
