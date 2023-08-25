@@ -19,6 +19,7 @@ theme:
   - navigation.tracking
   - search.suggest
   - search.highlight
+  custom_dir: docs/overrides/
 
 extra:
   social:
@@ -44,10 +45,9 @@ nav:
   - Managing Roles: roles.md
   - Searching Directory: ldap.md
   - Managing Privileges: privileges.md
-  - Well-known Privileges: wellknown.md
+  - Builtins Privileges: builtins.md
 - Cookbook: cookbook.md
 - Changelog: changelog.md
-- API: api.md
 - Hacking: hacking.md
 
 site_dir: build/docs/

@@ -34,8 +34,8 @@ func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err e
 	return
 }
 
-// builtins holds yaml rewrite for builtins privileges from v5 format to v6.
-var builtins = map[string]interface{}{
+// BuiltinsProfiles holds yaml rewrite for BuiltinsProfiles privileges from v5 format to v6.
+var BuiltinsProfiles = map[string]interface{}{
 	"__connect__": []interface{}{map[string]string{
 		"type": "CONNECT",
 		"on":   "DATABASE",
@@ -56,7 +56,6 @@ var builtins = map[string]interface{}{
 		"__create_on_schemas__",
 		"__usage_on_schema__",
 	},
-	"__usage_on_types__": []interface{}{},
 }
 
 func init() {
@@ -65,7 +64,7 @@ func init() {
 	registerRelationBuiltins("functions", "execute")
 }
 
-// registerRelationBuiltins generates dunder privileges and privilege groups.
+// registerRelationBuiltins generates dunder privileges profiles and privilege groups.
 //
 // example: __all_on_tables__, __select_on_tables_, etc.
 func registerRelationBuiltins(class string, types ...string) {
@@ -73,7 +72,7 @@ func registerRelationBuiltins(class string, types ...string) {
 	all := []interface{}{}
 	for _, privType := range types {
 		TYPE := strings.ToUpper(privType)
-		builtins["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]string{
+		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]string{
 			"default": "global",
 			"type":    TYPE,
 			"on":      CLASS,
@@ -82,17 +81,17 @@ func registerRelationBuiltins(class string, types ...string) {
 			"type":    TYPE,
 			"on":      CLASS,
 		}}
-		builtins["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]string{
+		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]string{
 			"type": TYPE,
 			"on":   "ALL " + CLASS + " IN SCHEMA",
 		}}
-		builtins["__"+privType+"_on_"+class+"__"] = []interface{}{
+		BuiltinsProfiles["__"+privType+"_on_"+class+"__"] = []interface{}{
 			"__default_" + privType + "_on_" + class + "__",
 			"__" + privType + "_on_all_" + class + "__",
 		}
 		all = append(all, "__"+privType+"_on_"+class+"__")
 	}
-	builtins["__all_on_"+class+"__"] = all
+	BuiltinsProfiles["__all_on_"+class+"__"] = all
 }
 
 func NormalizePrivilegeRefs(value interface{}) []interface{} {
@@ -103,7 +102,7 @@ func NormalizePrivilegeRefs(value interface{}) []interface{} {
 		if !ok {
 			continue
 		}
-		ref := builtins[s]
+		ref := BuiltinsProfiles[s]
 		if ref == nil {
 			continue
 		}
@@ -139,7 +138,7 @@ func ResolvePrivilegeRefs(value map[string]interface{}) map[string][]interface{}
 	}
 
 	// First copy builtins
-	copyRefs(builtins)
+	copyRefs(BuiltinsProfiles)
 	copyRefs(value)
 
 	// Walk the tree and copy parents refs back to children.

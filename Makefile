@@ -3,13 +3,13 @@ YUM_LABS?=$(wildcard ../yum-labs)
 
 default:
 
-%.md: %.md.j2 docs/auto-privileges-doc.py ldap2pg/defaults.py Makefile
+%.md: %.md.tmpl cmd/render-doc/main.go Makefile
 	echo '<!-- GENERATED FROM $< -->' > $@.tmp
-	python docs/auto-privileges-doc.py $< >> $@.tmp
+	go run ./cmd/render-doc $< >> $@.tmp
 	mv -f $@.tmp $@
 
 .PHONY: docs
-docs: docs/wellknown.md
+docs: docs/builtins.md
 	mkdocs build --clean --strict
 
 build-docker:
@@ -25,12 +25,12 @@ reset-big: reset-postgres
 	test/fixtures/perf.sh
 
 readme-sample:
-	@ldap2pg --config docs/readme/ldap2pg.yml --real
+	@test/ldap2pg.sh --config docs/readme/ldap2pg.yml --real
 	@psql -f docs/readme/reset.sql
 	@echo '$$ cat ldap2pg.yml'
 	@cat docs/readme/ldap2pg.yml
 	@echo '$$ ldap2pg --real'
-	@ldap2pg --color --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
+	@test/ldap2pg.sh --color --config docs/readme/ldap2pg.yml --real 2>&1 | sed s,${PWD}/docs/readme,...,g
 	@echo '$$ '
 	@echo -e '\n\n\n\n'
 

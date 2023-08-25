@@ -393,7 +393,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - **Deprecation**: schema `__all__` should be used instead of `__all__`.
 - Fix various tracebacks with errors in configuration or SQL queries.
 - Manage grants to `public` role.
-- Provide new [well known ACL](wellknown.md) for, `__temporary__`,
+- Provide new [well known ACL](builtins.md) for, `__temporary__`,
   `__create_on_schema__`.
 - Provide `__all_on_tables__`, `__all_on_schemas__` and `__all_on_sequences__`
   well known ACL groups.
@@ -405,7 +405,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Fix traceback on nonexistent database in ACL.
 - Fix various configuration loading errors.
 - Fix Distinguished Name case sensitivity.
-- Provide [well known ACLs](wellknown.md).
+- Provide [well known ACLs](builtins.md).
 - Merge `acl_dict` and `acl_groups` in `acls`.
 - Manage `ALTER DEFAULT PRIVILEGES`.
 - Support psycopg2 2.0.

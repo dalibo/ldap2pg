@@ -44,28 +44,6 @@ move to automate role creation from the LDAP directory using ldap2pg:
   execution is frequent, on purpose and notified.
 
 
-## Configure Postgres Connection
-
-The simplest case is to save the connection settings in `ldap2pg.yaml`, section
-`postgres`:
-
-``` yaml
-postgres:
-  dsn: postgres://user:password@host:port/
-```
-
-ldap2pg checks for file mode and refuse to read password in world readable
-files. Ensure it is not world readable by setting a proper file mode:
-
-``` console
-$ chmod 0600 ldap2pg.yml
-```
-
-ldap2pg will warn about *Empty synchronization map* and ends with *Comparison
-complete*. ldap2pg suggests to drop everything. Go on and write the
-synchronization map to tell ldap2pg the required roles for the cluster.
-
-
 ## Search LDAP Directory
 
 The first step is to search your LDAP server with ldapsearch(1), the CLI tool
@@ -95,7 +73,7 @@ Now save the settings in `ldaprc`:
 
 ``` yaml
 LDAPURI ldaps://ldap.ldap2pg.docker
-LDAPUSER testsasl
+LDAPSASL_AUTHCID testsasl
 ```
 
 And in environment: `LDAPPASSWORD=secret`
@@ -165,79 +143,16 @@ See [ldap.conf(5)] for further details.
 
 ## Running as non-superuser
 
-Since Postgres provide a `CREATEROLE` role option, you can manage roles without
-superuser privileges. Security-wise, it's a good idea to manage roles without
-super privileges.
+Since Postgres provide a `CREATEROLE` role option, you can manage roles without superuser privileges.
+Security-wise, it's a good idea to manage roles without super privileges.
 
-ldap2pg supports this case. However, you must be careful about the limitations.
+ldap2pg supports this case.
+However, you must be careful about the limitations.
 Let's call the non-super role creating other roles `creator`.
 
-- You can't manage some roles options like `SUPERUSER`, `BYPASSRLS` and
-  `REPLICATION`. Thus you wont be able to detect spurious superusers.
+- You can't manage some roles options like `SUPERUSER`, `BYPASSRLS` and `REPLICATION`.
+  Thus you wont be able to detect spurious superusers.
 - Ensure `creator` can revoke all grants of managed users.
-- `creator` should own database and other objects if you want `creator` to grant
-  privileges on this. This include `public` schema.
-- Granting `CREATE` on schema requires to grant write access to `pg_catalog`.
-  That's tricky to give such privileges to `creator`.
-
-
-## Revoking privileges
-
-There is no explicit revoke in ldap2pg. ldap2pg inspects SQL grants,
-ldap2pg.yml tells what privileges should be granted. Every unexpected grant is
-revoked. This is called implicit revoke.
-
-ldap2pg don't require any YAML `grant` to trigger inspection of Postgres for SQL
-`GRANT`, and thus revoke. You just declare a privilege with an `inspect` query.
-Of course, you'll need a `revoke` query too.
-
-The following YAML is enough to revoke `CONNECT ON DATABASE` from `public` role:
-
-``` yaml
-privileges:
-  mypriv:
-    type: datacl
-    inspect: |
-      SELECT NULL, 'public';
-    revoke: |
-      REVOKE CONNECT ON DATABASE {database} FROM {role};
-```
-
-The bug here, is that inspect does not truly inspect Postgres and always
-returns the same result. ldap2pg will always execute the revoke query, thinking
-`mypriv` is granted to `public`, whatever the actual state of the cluster. It's
-up to you to dig in `pg_catalog.pg_database.datacl` to find SQL GRANT.
-
-
-## Inherit Unmanaged Role
-
-You may want to grand a local role, not managed by ldap2pg, to managed users.
-This is tricky because ldap2pg can't manage members of a role without managing its own privileges and other options.
-The solution is to isolate managed membership in a preexisting sub-role.
-
-Say you have a `local_readers` roles with custom privileges and custom members.
-You want ldap2pg to add member of this role from directory.
-Prior to running ldap2pg, create a `local_readers_managed_members` role, member of `local_readers`:
-
-``` sql
-=# CREATE ROLE local_readers;
-=# CREATE ROLE local_readers_managed_members;
-=# GRANT local_readers TO local_readers_managed_members;
-```
-
-Now, in `ldap2pg.yml`, declare `local_readers_managed_members` and add members:
-
-``` yaml
-- role: local_readers_managed_members
-- role:
-    name: myuser
-    parent: local_readers_managed_members
-```
-
-Ensure that `local_readers` is not returned by `managed_roles_query` to prevent any modifications by ldap2pg.
-Now run ldap2pg as usual.
-You'll see the message **add missing local_readers_managed_members members**.
-That's it, ldap2pg will never touch `local_readers` privileges or direct members, but managed roles can inherit from it.
 
 
 ## Removing All Roles
@@ -252,8 +167,8 @@ Empty synchronization map. All roles will be dropped!
 ...
 ```
 
-In this example, default blacklist applies. ldap2pg never drop its connect
-role.
+In this example, default blacklist applies.
+ldap2pg never drop its connection role.
 
 
 ## ldap2pg as Docker container
@@ -266,9 +181,8 @@ To run the container simply use the command:
 $ docker run --rm dalibo/ldap2pg --help
 ```
 
-The Docker image of ldap2pg use the same configuration options as explained in
-the [cli](cli.md) and [ldap2pg.yml](config.md) sections. You can mount the
-ldap2pg.yml configuration file.
+The Docker image of ldap2pg use the same configuration options as explained in the [cli](cli.md) and [ldap2pg.yml](config.md) sections.
+You can mount the ldap2pg.yml configuration file.
 
 ``` console
 $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml dalibo/ldap2pg
@@ -280,7 +194,6 @@ You can also export some environmnent variables with the **-e** option:
 $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml -e PGDSN=postgres://postgres@localhost:5432/ -e LDAPURI=ldaps://localhost -e LDAPBINDDN=cn=you,dc=entreprise,dc=fr -e LDAPPASSWORD=pasglop dalibo/ldap2pg
 ```
 
-Make sure your container can resolve the hostname your pointing to. If you use
-some internal name resolution be sure to add the **--dns=** option to your
-command pointing to your internal DNS server. More
-[info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)
+Make sure your container can resolve the hostname your pointing to.
+If you use some internal name resolution be sure to add the **--dns=** option to your command pointing to your internal DNS server.
+More [info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)

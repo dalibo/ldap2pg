@@ -6,6 +6,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/deckarep/golang-set/v2 v2.3.0
 	github.com/go-ldap/ldap/v3 v3.4.5
+	github.com/gosimple/slug v1.13.1
 	github.com/jackc/pgx/v5 v5.4.2
 	github.com/lithammer/dedent v1.1.0
 	github.com/lmittmann/tint v0.3.4
@@ -24,6 +25,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
