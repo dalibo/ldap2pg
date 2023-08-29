@@ -1,19 +1,8 @@
-VERSION=$(shell cat internal/VERSION)
+VERSION=$(shell grep -Po 'v\K.+' internal/VERSION)
 YUM_LABS?=$(wildcard ../yum-labs)
 
 default:
-
-%.md: %.md.tmpl cmd/render-doc/main.go Makefile
-	echo '<!-- GENERATED FROM $< -->' > $@.tmp
-	go run ./cmd/render-doc $< >> $@.tmp
-	mv -f $@.tmp $@
-
-.PHONY: docs
-docs: docs/builtins.md
-	mkdocs build --clean --strict
-
-build-docker:
-	docker build --build-arg http_proxy -t dalibo/ldap2pg:local -f docker/Dockerfile .
+	@echo ldap2pg $(VERSION)
 
 big: reset-ldap
 	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
@@ -23,6 +12,9 @@ big: reset-ldap
 reset-big: reset-postgres
 	while ! bash -c "echo -n > /dev/tcp/$${PGHOST}/5432" ; do sleep 1; done
 	test/fixtures/perf.sh
+
+reset-%:
+	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
 
 readme-sample:
 	@test/ldap2pg.sh --config docs/readme/ldap2pg.yml --real
@@ -34,23 +26,62 @@ readme-sample:
 	@echo '$$ '
 	@echo -e '\n\n\n\n'
 
-changelog:
-	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
+%.md: %.md.tmpl cmd/render-doc/main.go Makefile
+	echo '<!-- GENERATED FROM $< FOR v$(VERSION) -->' > $@.tmp
+	go run ./cmd/render-doc $< >> $@.tmp
+	mv -f $@.tmp $@
+
+.PHONY: docs
+docs: docs/builtins.md
+	mkdocs build --clean --strict
+
+build-docker:
+	docker build --build-arg http_proxy -t dalibo/ldap2pg:local -f docker/Dockerfile .
 
 release: changelog
+	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
-	git tag $(VERSION)
+	git tag v$(VERSION)
 	git push --follow-tags git@github.com:dalibo/ldap2pg.git refs/heads/master:refs/heads/master
 	@echo Now wait for CI and run make push-rpm;
 
-rpm deb:
-	VERSION=$(VERSION) nfpm package --packager $@
+publish-packages:
+	$(MAKE) download-packages
+	$(MAKE) publish-deb
+	$(MAKE) publish-rpm
 
-publish-rpm: rpm
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
+CURL=curl --fail --create-dirs --location --silent --show-error
+GH_DOWNLOAD=https://github.com/dalibo/ldap2pg/releases/download/v$(VERSION)
+PKGBASE=ldap2pg_$(VERSION)_linux_amd64
+download-packages:
+	$(CURL) --output-dir dist/ --remote-name $(GH_DOWNLOAD)/$(PKGBASE).deb
+	$(CURL) --output-dir dist/ --remote-name $(GH_DOWNLOAD)/$(PKGBASE).rpm
+
+dist/$(PKGBASE)_%.changes: dist/$(PKGBASE).deb
+	CODENAME=$* build/simplechanges.py $< > $@
+	debsign $@
+
+publish-deb:
+	rm -vf dist/*.changes
+	$(MAKE) dist/$(PKGBASE)_bookworm.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_bullseye.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_buster.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_stretch.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_jammy.changes
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in APT repository.'; false ; fi
+	dput labs dist/*.changes
+
+publish-rpm:
+	@make -C $(YUM_LABS) clean
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in YUM repository.'; false ; fi
 	@make -C $(YUM_LABS) push createrepos clean
 
-reset-%:
-	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
+tag-latest:
+	docker rmi --force dalibo/ldap2pg:v$(VERSION)
+	docker pull dalibo/ldap2pg:v$(VERSION)
+	docker tag dalibo/ldap2pg:v$(VERSION) dalibo/ldap2pg:latest
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to tag prerelease $(VERSION) as latest in Docker Hub repository.'; false ; fi
+	docker push dalibo/ldap2pg:latest

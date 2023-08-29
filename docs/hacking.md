@@ -217,5 +217,5 @@ information.
 - Review `docs/changelog.md`. `# Unreleased` title will be edited.
 - Increment version in `setup.py`.
 - Generate release commit, tag and changelog with `make release`.
-- Once CircleCI has uploaded artifacts, run `make publish-rpm` to build and publish RPM.
-- Tag latest image on docker hub.
+- Once CircleCI has created GitHub release artifacts, publish packages with `make publish-packages`.
+- Once Docker Hub has published new tag, tag latest image on docker hub with `make tag-latest`.

@@ -1,6 +1,4 @@
 # Delve binary.
 __debug_bin
-build/
-docker-compose.override.yml
-
 dist/
+docker-compose.override.yml
