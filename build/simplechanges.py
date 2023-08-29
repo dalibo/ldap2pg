@@ -39,7 +39,6 @@ def main():
         )
 
     for payload in format(changes):
-        payload = payload.encode('UTF-8')
         sys.stdout.write(payload)
     logger.info(".changes generated for %s.", deb)
 
@@ -137,19 +136,21 @@ def generate_changes(controls, filename, filesize, md5, sha1, sha256):
         os.environ['DEBEMAIL'],
     )
     changes['Changes'] = CHANGELOG_FMT % changes
-    changes['Files'] = [u' '.join([
-        md5,
-        str(filesize),
-        controls['Section'],
-        controls['Priority'],
-        filename,
-    ])]
-    changes['Checksums-Sha1'] = [u' '.join([
-        sha1, str(filesize), filename,
-    ])]
-    changes['Checksums-Sha256'] = [u' '.join([
-        sha256, str(filesize), filename,
-    ])]
+
+    if 'SKIPDEB' not in os.environ:
+        changes['Files'] = [u' '.join([
+            md5,
+            str(filesize),
+            controls['Section'],
+            controls['Priority'],
+            filename,
+        ])]
+        changes['Checksums-Sha1'] = [u' '.join([
+            sha1, str(filesize), filename,
+        ])]
+        changes['Checksums-Sha256'] = [u' '.join([
+            sha256, str(filesize), filename,
+        ])]
 
     return changes
 

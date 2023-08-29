@@ -45,6 +45,11 @@ release: changelog
 	git push --follow-tags git@github.com:dalibo/ldap2pg.git refs/heads/master:refs/heads/master
 	@echo Now wait for CI and run make push-rpm;
 
+publish-packages:
+	$(MAKE) download-packages
+	$(MAKE) publish-deb
+	$(MAKE) publish-rpm
+
 CURL=curl --fail --create-dirs --location --silent --show-error
 GH_DOWNLOAD=https://github.com/dalibo/ldap2pg/releases/download/v$(VERSION)
 PKGBASE=ldap2pg_$(VERSION)_linux_amd64
@@ -52,6 +57,24 @@ download-packages:
 	$(CURL) --output-dir dist/ --remote-name $(GH_DOWNLOAD)/$(PKGBASE).deb
 	$(CURL) --output-dir dist/ --remote-name $(GH_DOWNLOAD)/$(PKGBASE).rpm
 
+dist/$(PKGBASE)_%.changes: dist/$(PKGBASE).deb
+	CODENAME=$* build/simplechanges.py $< > $@
+	debsign $@
+
+publish-deb:
+	rm -vf dist/*.changes
+	$(MAKE) dist/$(PKGBASE)_bookworm.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_bullseye.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_buster.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_stretch.changes
+	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_jammy.changes
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing tu publish prerelease $(VERSION) in APT repository.'; false ; fi
+	dput labs dist/*.changes
+
 publish-rpm:
-	cp dist/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL8-x86_64/ $(YUM_LABS)/rpms/RHEL7-x86_64/ $(YUM_LABS)/rpms/RHEL6-x86_64/
+	@make -C $(YUM_LABS) clean
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing tu publish prerelease $(VERSION) in YUM repository.'; false ; fi
 	@make -C $(YUM_LABS) push createrepos clean
