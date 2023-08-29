@@ -218,4 +218,4 @@ information.
 - Increment version in `setup.py`.
 - Generate release commit, tag and changelog with `make release`.
 - Once CircleCI has created GitHub release artifacts, publish packages with `make publish-packages`.
-- Tag latest image on docker hub.
+- Once Docker Hub has published new tag, tag latest image on docker hub with `make tag-latest`.

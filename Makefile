@@ -68,7 +68,7 @@ publish-deb:
 	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_buster.changes
 	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_stretch.changes
 	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_jammy.changes
-	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing tu publish prerelease $(VERSION) in APT repository.'; false ; fi
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in APT repository.'; false ; fi
 	dput labs dist/*.changes
 
 publish-rpm:
@@ -76,5 +76,12 @@ publish-rpm:
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
-	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing tu publish prerelease $(VERSION) in YUM repository.'; false ; fi
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in YUM repository.'; false ; fi
 	@make -C $(YUM_LABS) push createrepos clean
+
+tag-latest:
+	docker rmi --force dalibo/ldap2pg:v$(VERSION)
+	docker pull dalibo/ldap2pg:v$(VERSION)
+	docker tag dalibo/ldap2pg:v$(VERSION) dalibo/ldap2pg:latest
+	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to tag prerelease $(VERSION) as latest in Docker Hub repository.'; false ; fi
+	docker push dalibo/ldap2pg:latest
