@@ -50,7 +50,7 @@ nav:
 - Changelog: changelog.md
 - Hacking: hacking.md
 
-site_dir: build/docs/
+site_dir: dist/docs/
 
 # Markdown settings
 markdown_extensions:

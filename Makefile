@@ -47,9 +47,9 @@ rpm deb:
 	VERSION=$(VERSION) nfpm package --packager $@
 
 publish-rpm: rpm
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
-	cp build/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
+	cp dist/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
+	cp dist/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
+	cp dist/ldap2pg-$(VERSION).x86_64.rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
 	@make -C $(YUM_LABS) push createrepos clean
 
 reset-%:

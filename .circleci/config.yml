@@ -50,7 +50,7 @@ jobs:
           goreleaser build --clean --snapshot --single-target
     - run:
         name: Smoke test
-        command: build/ldap2pg_linux_amd64_v1/ldap2pg --version
+        command: dist/ldap2pg_linux_amd64_v1/ldap2pg --version
     - run:
         name: Unit Test
         command: |
@@ -61,10 +61,10 @@ jobs:
         - /go/pkg/mod
         - /root/.cache/go-build
     - store_artifacts:
-        path: /workspace/build/
+        path: /workspace/dist/
     - persist_to_workspace:
         root: .
-        paths: [build/]
+        paths: [dist/]
 
   lint:
     working_directory: *workspace
@@ -143,10 +143,10 @@ jobs:
         name: nFPM
         command: |
           nfpm --version
-          nfpm package --packager << parameters.format >> --target build/
+          nfpm package --packager << parameters.format >> --target dist/
     - persist_to_workspace:
         root: *workspace
-        paths: ["build/*.deb", "build/*.rpm"]
+        paths: ["dist/*.deb", "dist/*.rpm"]
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.

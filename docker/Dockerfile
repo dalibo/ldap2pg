@@ -10,7 +10,7 @@ FROM alpine:3.18
 ENV LANG en_US.utf8
 WORKDIR /workspace
 
-COPY --from=builder /workspace/build/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
+COPY --from=builder /workspace/dist/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
 
 RUN apk add --no-cache bash
 RUN mkdir /docker-entrypoint.d
