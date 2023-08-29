@@ -11,7 +11,7 @@ Here is a highlight of changes in each versions. If you need further details,
 follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
-# ldap2pg v6.0.0-alpha1
+# Unreleased
 
 6.0 is a major release including a complete rewrite of ldap2pg in Go.
 
@@ -20,46 +20,47 @@ Please carefully test before upgrading on production system.
 **Breaking changes**
 
 - Command line options have changed.
-- New format version: 6. Version 5 files are refused.
+- New format version: 6. ldap2pg refuses version 5 files.
 - `LDAPUSER` env var is now `LDAPSASL_AUTHCID`.
-- Case renaming is not supported (e.g. from alice to ALICE). ldap2pg is still case sensitive.
+- Dropped support for PostgreSQL 9.4.
+- Dropped case renaming of role. e.g. from alice to ALICE. ldap2pg is still case sensitive.
+- Dropped `owners_query` for a new dynamic owner inspection.
 - Non implemented features:
   - `role_match` condition.
   - `allowed_missing_attributes` and LDAP attribute typo detection.
   - `on_unexpected_dn`. ldap2pg always warn and skip.
-  - `owners_query`. ldap2pg now has a more dynamic owner inspection.
   - configuring PostgreSQL connexion through `postgres:dsn`. Use PG* env var.
-  - configuring LDAP connexion through `ldap` dict. Use LDAP* en vars and ldaprc.
+  - configuring LDAP connexion through `ldap` dict. Use LDAP* env vars and ldaprc.
 - A single sub-search is supported per main LDAP search.
-- No custom privileges.
+- No custom privileges inspection.
 - Docker image is now based on Alpine Linux 3.18.
 - Docker image tag latest points to last stable image.
 - Docker image tag nightly points to last commit on master.
-- Dropped support for PostgreSQL 9.4.
 - Refuse to grant privilege on unmanaged role.
 
-Unimplemented feature may be reimplemented depending on feedback.
+Unimplemented feature may be reimplemented depending on feedback!
 
 
 **New features and behaviour**
 
-- managed roles can now inherit local role.
-- New --skip-privilege option. Ignore privileges and grant from configuration.
+- logfmt output.
+- New `role:config` section allowing to set per role PostgreSQL parameter. For all databases only.
+- Managed roles can now inherit local role.
+- New `--skip-privilege` option. Ignore privileges and grant from configuration.
 - New `owner` field of `grant` rule, default to `__auto__`.
-- New `__auto__` owner value. It's the set of all managed roles having `CREATE`
-  privilege on the target schema of the grant.
-- Default database inspection limited to those running user can reassign objects to owner.
-- Default schema inspection limited to usable ones by running user.
-- inspect object owners after `CREATE` privilege is synchronized.
+- New `__auto__` owner value.
+- Inspect object owners **after** `CREATE` privilege is synchronized.
+  It's the set of all managed roles having `CREATE` privilege on the target schema of the grant.
+- Default database inspection restricted to those running user can reassign objects to owner.
+- Default schema inspection restricted to usable ones by running user.
 - New privilege managed: LANGUAGE.
 - New expressive declaration of privilege in configuration.
 - Use a single database connexion at a time. ldap2pg scales better with the number of databases.
 - Synchronize privileges one at a time, saving a lot of memory.
-- logfmt output.
 - 40 times less memory consumed for usual scenario.
 - up to 3 times less CPU consumed for usual scenario.
 - Debian and Alpine packages alongside RPM.
-- Docker image sizes now 17MB instead of 126MB..
+- Docker image sizes now 17MB instead of 126MB.
 
 
 # ldap2pg 5.9
