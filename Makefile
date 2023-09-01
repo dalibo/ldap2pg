@@ -42,8 +42,8 @@ release:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag v$(VERSION)
-	@echo Now wait for CI and run make push-rpm;
 	git push git@github.com:dalibo/ldap2pg.git refs/heads/master:refs/heads/master v$(VERSION)
+	@echo Now wait for CI and run make publish-packages;
 
 publish-packages:
 	$(MAKE) download-packages
