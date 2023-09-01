@@ -38,7 +38,7 @@ docs: docs/builtins.md
 build-docker:
 	docker build --build-arg http_proxy -t dalibo/ldap2pg:local -f docker/Dockerfile .
 
-release: changelog
+release:
 	sed -i 's/^# Unreleased$$/# ldap2pg $(VERSION)/' docs/changelog.md
 	git commit internal/VERSION docs/changelog.md -m "Version $(VERSION)"
 	git tag v$(VERSION)
