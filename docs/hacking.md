@@ -219,3 +219,4 @@ information.
 - Generate release commit, tag and changelog with `make release`.
 - Once CircleCI has created GitHub release artifacts, publish packages with `make publish-packages`.
 - Once Docker Hub has published new tag, tag latest image on docker hub with `make tag-latest`.
+- Increment `internal/VERSION` to a development version.
