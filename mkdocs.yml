@@ -19,7 +19,6 @@ theme:
   - navigation.tracking
   - search.suggest
   - search.highlight
-  custom_dir: docs/overrides/
 
 extra:
   social:
