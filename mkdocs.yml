@@ -69,6 +69,7 @@ markdown_extensions:
 
 
 plugins:
+- search
 - exclude:
     glob:
     # make docs/wellknown.md produces a .tmp.
