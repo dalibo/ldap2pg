@@ -8,6 +8,7 @@ repo_name: dalibo/ldap2pg
 repo_url: https://github.com/dalibo/ldap2pg
 
 theme:
+  custom_dir: docs/overrides
   favicon: img/logo-80.png
   logo: img/logo-white.png
   name: material
