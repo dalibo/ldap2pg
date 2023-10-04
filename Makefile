@@ -73,6 +73,7 @@ publish-deb:
 
 publish-rpm:
 	@make -C $(YUM_LABS) clean
+	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL9-x86_64/
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL8-x86_64/
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL7-x86_64/
 	cp dist/$(PKGBASE).rpm $(YUM_LABS)/rpms/RHEL6-x86_64/
