@@ -19,7 +19,6 @@ theme:
   - navigation.tracking
   - search.suggest
   - search.highlight
-  custom_dir: docs/overrides/
 
 extra:
   social:
@@ -69,6 +68,10 @@ markdown_extensions:
 
 
 plugins:
+- search:
+    # From material docs: word, symbols and version.
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-site-search/#+search.separator
+    separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
 - exclude:
     glob:
     # make docs/wellknown.md produces a .tmp.
