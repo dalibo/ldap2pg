@@ -11,6 +11,8 @@ import (
 
 const LevelChange slog.Level = slog.LevelInfo + 2
 
+var CurrentLevel slog.Level = slog.LevelInfo
+
 var levelStrings = map[slog.Level]string{
 	slog.LevelDebug: "\033[2mDEBUG ",
 	slog.LevelInfo:  "\033[1mINFO  ",
@@ -38,6 +40,7 @@ func SetLoggingHandler(level slog.Level, color bool) {
 		})
 	}
 	slog.SetDefault(slog.New(h))
+	CurrentLevel = level
 }
 
 func BuildTintOptions(level slog.Level) *tint.Options {

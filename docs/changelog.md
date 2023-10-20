@@ -11,6 +11,11 @@ Here is a highlight of changes in each versions. If you need further details,
 follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
+# Unreleased
+
+- Suggest to run with --verbose on error.
+
+
 # ldap2pg 6.0
 
 6.0 is a major release including a complete rewrite of ldap2pg in Go.
