@@ -31,11 +31,11 @@ Please carefully test before upgrading on production system.
 - Dropped case renaming of role. e.g. from alice to ALICE. ldap2pg is still case sensitive.
 - Dropped `owners_query` for a new dynamic owner inspection.
 - Non implemented features:
-  - `role_match` condition.
-  - `allowed_missing_attributes` and LDAP attribute typo detection.
-  - `on_unexpected_dn`. ldap2pg always warn and skip.
-  - configuring PostgreSQL connexion through `postgres:dsn`. Use PG* env var.
-  - configuring LDAP connexion through `ldap` dict. Use LDAP* env vars and ldaprc.
+    - `role_match` condition.
+    - `allowed_missing_attributes` and LDAP attribute typo detection.
+    - `on_unexpected_dn`. ldap2pg always warn and skip.
+    - configuring PostgreSQL connexion through `postgres:dsn`. Use PG* env var.
+    - configuring LDAP connexion through `ldap` dict. Use LDAP* env vars and ldaprc.
 - A single sub-search is supported per main LDAP search.
 - No custom privileges inspection.
 - Docker image is now based on Alpine Linux 3.18.
