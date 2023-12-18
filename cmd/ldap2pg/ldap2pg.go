@@ -46,6 +46,9 @@ func main() {
 	err := ldap2pg(ctx)
 	if err != nil {
 		slog.Error("Fatal error.", "err", err)
+		if internal.CurrentLevel > slog.LevelDebug {
+			slog.Error("Run ldap2pg with --verbose to get more informations.")
+		}
 		os.Exit(1)
 	}
 }
@@ -269,7 +272,10 @@ func logPanic() {
 	buf := debug.Stack()
 	fmt.Fprintf(os.Stderr, "%s", buf)
 	slog.Error("Aborting ldap2pg.", "err", r)
-	slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with full log.")
+	if internal.CurrentLevel > slog.LevelDebug {
+		slog.Error("Run ldap2pg with --verbose to get more informations.")
+	}
+	slog.Error("Please file an issue at https://github.com/dalibo/ldap2pg/issue/new with verbose log.")
 	os.Exit(1)
 }
 
