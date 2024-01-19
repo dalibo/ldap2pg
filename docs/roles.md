@@ -19,7 +19,7 @@ You can mix static rules and dynamic rules in the same file.
 ## Running unprivileged
 
 ldap2pg is designed to run unprivileged.
-Synchronization user needs `CREATEROLE` option to manage other unprivileged roles.
+Synchronization user needs `CREATEROLE` option and ADMIN OPTION to manage other unprivileged roles.
 `CREATEDB` options allows synchronization user to managed database owners.
 
 

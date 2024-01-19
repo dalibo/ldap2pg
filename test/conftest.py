@@ -74,6 +74,12 @@ class PSQL(object):
             c[kv[0]] = kv[1]
         return c
 
+    def version(self):
+        # Get server_version_num.
+        return self.select1(
+                "SELECT setting::BIGINT FROM pg_settings WHERE name = 'server_version_num';"
+        )
+
 
 @pytest.fixture(scope='module', autouse=True)
 def pgenv(request):
@@ -130,6 +136,10 @@ def resetpostgres():
     Command('test/fixtures/reset.sh')()
     Command('test/fixtures/nominal.sh')()
     Command('test/fixtures/extra.sh')()
+
+    version = int(next(iter(PSQL().version())))
+    if version >= 160000:
+        Command('test/fixtures/setup_for_pg16.sh')()
 
 
 def lazy_write(attr, data):

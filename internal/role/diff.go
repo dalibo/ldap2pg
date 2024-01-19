@@ -5,7 +5,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Diff(all, managed, wanted Map, me Role, fallbackOwner string, databases *postgres.DBMap) <-chan postgres.SyncQuery {
+func Diff(all, managed, wanted Map, me Role, fallbackOwner string, databases *postgres.DBMap, serverVersionNum int) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
@@ -17,9 +17,9 @@ func Diff(all, managed, wanted Map, me Role, fallbackOwner string, databases *po
 				if _, ok := managed[name]; !ok {
 					slog.Warn("Reusing unmanaged role. Ensure managed_roles_query returns all wanted roles.", "role", name)
 				}
-				sendQueries(other.Alter(role), ch)
+				sendQueries(other.Alter(role, serverVersionNum), ch)
 			} else {
-				sendQueries(role.Create(me.Options.Super), ch)
+				sendQueries(role.Create(me.Options.Super, serverVersionNum), ch)
 			}
 		}
 

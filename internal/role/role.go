@@ -47,12 +47,12 @@ func (r *Role) BlacklistKey() string {
 
 // Generate queries to update current role configuration to match wanted role
 // configuration.
-func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
+func (r *Role) Alter(wanted Role, serverVersionNum int) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	// It's so evident that wanted role has to be manageable. don't even
 	// compare with wanted state.
-	if !r.Manageable {
+	if !r.Manageable && 160000 > serverVersionNum {
 		out = append(out, postgres.SyncQuery{
 			Description: "Inherit role for management.",
 			LogArgs:     []interface{}{"role", r.Name},
@@ -176,7 +176,7 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
+func (r *Role) Create(super bool, serverVersionNum int) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	if 0 < r.Parents.Cardinality() {
@@ -209,12 +209,23 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	})
 
 	if !super {
-		out = append(out, postgres.SyncQuery{
-			Description: "Inherit role for management.",
-			LogArgs:     []interface{}{"role", r.Name},
-			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
-			QueryArgs:   []interface{}{identifier},
-		})
+		if 160000 > serverVersionNum {
+			out = append(out, postgres.SyncQuery{
+				Description: "Inherit role for management.",
+				LogArgs:     []interface{}{"role", r.Name},
+				Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
+				QueryArgs:   []interface{}{identifier},
+			})
+		} else {
+			if r.Parents.Contains("owners") {
+				out = append(out, postgres.SyncQuery{
+					Description: "Inherit role for management.",
+					LogArgs:     []interface{}{"role", r.Name},
+					Query:       `GRANT %s TO CURRENT_USER WITH INHERIT OPTION;`,
+					QueryArgs:   []interface{}{identifier},
+				})
+			}
+		}
 	}
 
 	if nil == r.Config {
