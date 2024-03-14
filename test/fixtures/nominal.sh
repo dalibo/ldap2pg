@@ -11,9 +11,19 @@ psql=(psql -v ON_ERROR_STOP=1 --no-psqlrc)
 
 "${psql[@]}" <<'EOSQL'
 CREATE ROLE "ldap2pg" LOGIN CREATEDB CREATEROLE;
+EOSQL
 
+version=$("${psql[@]}" -Atc "SELECT current_setting('server_version_num')")
+if [ "$version" -ge 160000 ]; then
+	"${psql[@]}" <<-'EOSQL'
+	ALTER ROLE "ldap2pg" SET createrole_self_grant TO 'set,inherit';
+	EOSQL
+fi
+
+PGUSER=ldap2pg
+
+"${psql[@]}" <<'EOSQL'
 CREATE ROLE "nominal";
-GRANT "nominal" TO "ldap2pg";
 
 CREATE DATABASE "nominal" WITH OWNER "nominal";
 
@@ -23,10 +33,12 @@ CREATE ROLE "owners" NOLOGIN;
 
 -- For alter
 CREATE ROLE "alter";
-CREATE ROLE "alizée" IN ROLE "owners";  -- Spurious parent.
+CREATE ROLE "alizée";  -- Spurious parent.
 
 -- For drop
 CREATE ROLE "daniel" WITH LOGIN;
+
+GRANT "owners" TO "alizée";
 EOSQL
 
 "${psql[@]}" -d nominal <<'EOSQL'
@@ -43,5 +55,4 @@ GRANT SELECT ON TABLE "nominal"."t0" TO "readers";
 
 -- For revoke.
 GRANT UPDATE ON TABLE "nominal"."t0" TO "readers";
-
 EOSQL

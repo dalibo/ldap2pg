@@ -8,12 +8,11 @@ import (
 )
 
 type Role struct {
-	Name       string
-	Comment    string
-	Parents    []Membership
-	Options    Options
-	Config     *Config
-	Manageable bool
+	Name    string
+	Comment string
+	Parents []Membership
+	Options Options
+	Config  *Config
 }
 
 func New() Role {
@@ -27,7 +26,7 @@ func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	var parents []interface{} // jsonb
 	var config []string
 	r = New()
-	err = row.Scan(&r.Name, &variableRow, &r.Comment, &parents, &config, &r.Manageable)
+	err = row.Scan(&r.Name, &variableRow, &r.Comment, &parents, &config)
 	if err != nil {
 		return
 	}
@@ -59,17 +58,6 @@ func (r *Role) BlacklistKey() string {
 // configuration.
 func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
-
-	// It's so evident that wanted role has to be manageable. don't even
-	// compare with wanted state.
-	if !r.Manageable {
-		out = append(out, postgres.SyncQuery{
-			Description: "Inherit role for management.",
-			LogArgs:     []interface{}{"role", r.Name},
-			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
-			QueryArgs:   []interface{}{identifier},
-		})
-	}
 
 	optionsChanges := r.Options.Diff(wanted.Options)
 	if optionsChanges != "" {
@@ -191,7 +179,7 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
+func (r *Role) Create() (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	if len(r.Parents) > 0 {
@@ -223,15 +211,6 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 		QueryArgs:   []interface{}{identifier, r.Comment},
 	})
 
-	if !super {
-		out = append(out, postgres.SyncQuery{
-			Description: "Inherit role for management.",
-			LogArgs:     []interface{}{"role", r.Name},
-			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
-			QueryArgs:   []interface{}{identifier},
-		})
-	}
-
 	if nil == r.Config {
 		return
 	}
@@ -247,7 +226,7 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
+func (r *Role) Drop(databases *postgres.DBMap, fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	if r.Options.CanLogin {
 		out = append(out, postgres.SyncQuery{
@@ -262,36 +241,6 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 		})
 	}
 
-	if !currentUser.Options.Super {
-		// Non-super user needs to inherit to-be-dropped role to reassign objects.
-		if r.MemberOf(currentUser.Name) {
-			// First, avoid membership loop.
-			out = append(out, postgres.SyncQuery{
-				Description: "Revoke membership on current user.",
-				LogArgs: []interface{}{
-					"role", r.Name, "parent", currentUser.Name,
-				},
-				Database: "<first>",
-				Query:    `REVOKE %s FROM %s;`,
-				QueryArgs: []interface{}{
-					pgx.Identifier{currentUser.Name},
-					identifier,
-				},
-			})
-		}
-		out = append(out, postgres.SyncQuery{
-			Description: "Allow current user to reassign objects.",
-			LogArgs: []interface{}{
-				"role", r.Name, "parent", currentUser.Name,
-			},
-			Database: "<first>",
-			Query:    `GRANT %s TO %s;`,
-			QueryArgs: []interface{}{
-				identifier,
-				pgx.Identifier{currentUser.Name},
-			},
-		})
-	}
 	for dbname, database := range *databases {
 		if database.Owner == r.Name {
 			out = append(out, postgres.SyncQuery{
