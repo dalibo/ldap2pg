@@ -74,10 +74,7 @@ func (q *SQLQuery[_]) Next() bool {
 	}
 	next := q.rows.Next()
 	if !next {
-		return false
-	}
-	q.err = q.rows.Err()
-	if q.err != nil {
+		q.err = q.rows.Err()
 		return false
 	}
 	q.row, q.err = q.RowTo(q.rows)
