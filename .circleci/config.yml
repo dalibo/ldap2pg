@@ -9,6 +9,11 @@ workflows:
     - lint:
         name: "stage0-lint"
     - func:
+        name: "stage1-func-rockylinux8-pg16"
+        dist: rockylinux8
+        requires: [stage0-build]
+        pgversion: "16"
+    - func:
         name: "stage1-func-rockylinux8-pg15"
         dist: rockylinux8
         requires: [stage0-build]

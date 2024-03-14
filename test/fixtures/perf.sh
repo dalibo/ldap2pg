@@ -10,8 +10,7 @@ psql=(psql -v ON_ERROR_STOP=1 --no-psqlrc)
 
 
 "${psql[@]}" <<'EOSQL'
-CREATE ROLE "bigowner";
-GRANT "bigowner" TO "ldap2pg";
+CREATE ROLE "bigowner" ADMIN "ldap2pg";
 
 CREATE DATABASE "big0" WITH OWNER "bigowner";
 EOSQL

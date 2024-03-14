@@ -22,6 +22,10 @@ ldap2pg is designed to run unprivileged.
 Synchronization user needs `CREATEROLE` option to manage other unprivileged roles.
 `CREATEDB` options allows synchronization user to managed database owners.
 
+Running unprivileged before Postgres 16 is actually flawed.
+You'd better just run ldap2pg with superuser privileges, you wont feel falsy secured.
+To handle membership, ldap2pg must have `ADMIN` option to **parent** role.
+
 
 ## Ignoring roles
 
