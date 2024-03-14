@@ -20,7 +20,7 @@ services:
       com.dnsdock.alias: ldap.ldap2pg.docker
 
   postgres:
-    image: postgres:${PGVERSION-15}-alpine
+    image: postgres:${PGVERSION-16}-alpine
     hostname: postgres
     domainname: ldap2pg.docker
     environment:
