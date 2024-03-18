@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
+	"golang.org/x/exp/slog"
 )
 
 // SYNC
@@ -63,7 +64,19 @@ func formatArg(conn *pgx.Conn, arg interface{}) (newArg any, err error) {
 			b.WriteString(fmt.Sprintf("%s", item))
 		}
 		newArg = b.String()
+	case []string:
+		b := strings.Builder{}
+		b.WriteRune('{')
+		for i, item := range arg.([]string) {
+			if i != 0 {
+				b.WriteByte(',')
+			}
+			b.WriteString(item)
+		}
+		b.WriteRune('}')
+		newArg, _ = formatArg(conn, b.String())
 	default:
+		slog.Debug("Unknown type", "type", fmt.Sprintf("%T", arg))
 		newArg = arg
 	}
 	return
