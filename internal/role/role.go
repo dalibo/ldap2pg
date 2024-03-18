@@ -4,6 +4,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"github.com/lithammer/dedent"
 )
 
 type Role struct {
@@ -102,8 +103,25 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 				"role", r.Name,
 				"parents", spuriousParents,
 			},
-			Query:     `REVOKE %s FROM %s;`,
-			QueryArgs: []interface{}{parentIdentifiers, identifier},
+			// It's ugly, but REVOKE role may silently fail if the ldap2pg does
+			// not have to privileges to revoke the membership. Thus we add a
+			// check to raise an error on failure. Another solution would be to
+			// check grantor upfront, distinguished revokable parents en
+			// unrevokable parent or simply ignore unrevokable parents.
+			// See. https://www.postgresql.org/message-id/flat/9c45a5a19718388678d11e0b48b400ad7e3e3d21.camel%40dalibo.com
+			Query: dedent.Dedent(`
+			REVOKE %s FROM %s;
+			DO $$ -- Fails if REVOKE is no-ops.
+			DECLARE parent TEXT;
+			BEGIN
+				FOR parent IN SELECT UNNEST(%s::text[]) LOOP
+					IF pg_has_role(%s, parent, 'USAGE') THEN
+						RAISE EXCEPTION 'Failed to remove %%', parent;
+					END IF;
+				END LOOP;
+			END $$;
+			`)[1:],
+			QueryArgs: []interface{}{parentIdentifiers, identifier, spuriousParents.ToSlice(), r.Name},
 		})
 	}
 
