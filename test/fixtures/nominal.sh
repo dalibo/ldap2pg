@@ -18,6 +18,10 @@ if [ "$version" -ge 160000 ]; then
 	"${psql[@]}" <<-'EOSQL'
 	ALTER ROLE "ldap2pg" SET createrole_self_grant TO 'set,inherit';
 	EOSQL
+else
+	"${psql[@]}" <<-'EOSQL'
+	ALTER ROLE ldap2pg SUPERUSER;
+	EOSQL
 fi
 
 PGUSER=ldap2pg

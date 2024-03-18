@@ -16,7 +16,7 @@ SELECT rol.rolname,
        -- Postgres 16 allows: json_arrayagg(memberships.* ORDER BY 2 ABSENT ON NULL)::jsonb AS parents,
        -- may return {NULL}, array_remove can't compare json object.
        array_agg(to_json(memberships.*)) AS parents,
-       rol.rolconfig AS config,
+       rol.rolconfig AS config
   FROM me
        CROSS JOIN pg_catalog.pg_roles AS rol
        LEFT OUTER JOIN memberships ON memberships.member = rol.oid

@@ -13,6 +13,13 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # Unreleased
 
+**WARNING**
+
+Postgres 16 heavily changed the behaviour when creating roles with an unprivileged role having CREATEROLE option.
+Giving CREATEROLE to an unprivileged role before Postgres 16 was actually flawed.
+The way it's handling is so distinct that keeping the two implementation does not worth the price.
+
+- **breaking** Refuses to run unprivileged before Postgres 16.
 - Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
 - Build RHEL 9 package with Rockylinux 9.
