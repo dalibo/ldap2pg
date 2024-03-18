@@ -28,6 +28,13 @@ CREATE ROLE "alizée" ADMIN "ldap2pg";  -- Spurious parent.
 CREATE ROLE "daniel" WITH LOGIN ADMIN "ldap2pg";
 EOSQL
 
+version=$("${psql[@]}" -Atc "SELECT current_setting('server_version_num')")
+if [ "$version" -lt 160000 ]; then
+	"${psql[@]}" <<-'EOSQL'
+	ALTER ROLE ldap2pg SUPERUSER;
+	EOSQL
+fi
+
 # Grantor must be "ldap2pg" to avoid
 # WARNING:  role "alizée" has not been granted membership in role "owners" by role "ldap2pg"
 # As of Postgres 16.
