@@ -108,8 +108,8 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ma
 			slog.Debug("Ignoring blacklisted role name.", "name", role.Name, "pattern", match)
 		}
 	}
-	if err := q.Err(); err != nil {
-		return fmt.Errorf("options: %w", err)
+	if err := rq.Err(); err != nil {
+		return fmt.Errorf("all: %w", err)
 	}
 
 	if nil == managedRolesQ {

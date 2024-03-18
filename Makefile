@@ -14,7 +14,7 @@ reset-big: reset-postgres
 	test/fixtures/perf.sh
 
 reset-%:
-	docker-compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
+	docker compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
 
 readme-sample:
 	@test/ldap2pg.sh --config docs/readme/ldap2pg.yml --real
