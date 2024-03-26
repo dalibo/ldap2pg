@@ -1,13 +1,16 @@
 package config_test
 
 import (
+	"testing"
+
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *Suite) TestRoleRulesString() {
-	r := suite.Require()
+func TestRoleRulesString(t *testing.T) {
+	r := require.New(t)
 
 	value, err := config.NormalizeRoleRule("alice")
 	r.Nil(err)
@@ -18,8 +21,8 @@ func (suite *Suite) TestRoleRulesString() {
 	r.Equal("alice", names[0])
 }
 
-func (suite *Suite) TestRoleRulesSingle() {
-	r := suite.Require()
+func TestRoleRulesSingle(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	name: alice
@@ -38,8 +41,8 @@ func (suite *Suite) TestRoleRulesSingle() {
 	r.Equal("Managed by ldap2pg", value["comment"])
 }
 
-func (suite *Suite) TestRolesComment() {
-	r := suite.Require()
+func TestRolesComment(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	name: alice
@@ -54,8 +57,8 @@ func (suite *Suite) TestRolesComment() {
 	r.Equal("au pays des merveilles.", value["comment"])
 }
 
-func (suite *Suite) TestRoleOptionsString() {
-	r := suite.Require()
+func TestRoleOptionsString(t *testing.T) {
+	r := require.New(t)
 
 	raw := interface{}("SUPERUSER LOGIN")
 
@@ -65,8 +68,8 @@ func (suite *Suite) TestRoleOptionsString() {
 	r.True(value["LOGIN"].(bool))
 }
 
-func (suite *Suite) TestRoleParents() {
-	r := suite.Require()
+func TestRoleParents(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	name: toto

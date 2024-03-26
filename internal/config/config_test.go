@@ -1,22 +1,20 @@
 package config_test
 
 import (
+	"flag"
 	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/dalibo/ldap2pg/internal"
-	"github.com/stretchr/testify/suite"
 )
 
-type Suite struct {
-	suite.Suite
-}
-
-func TestConfig(t *testing.T) {
+func TestMain(m *testing.M) {
+	flag.Parse()
 	if testing.Verbose() {
 		internal.SetLoggingHandler(slog.LevelDebug, false)
 	} else {
 		internal.SetLoggingHandler(slog.LevelWarn, false)
 	}
-	suite.Run(t, new(Suite))
+	os.Exit(m.Run())
 }
