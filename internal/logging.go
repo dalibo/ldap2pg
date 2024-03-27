@@ -29,7 +29,7 @@ func SetLoggingHandler(level slog.Level, color bool) {
 	} else {
 		h = slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 			Level: level,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 				if slog.LevelKey == a.Key {
 					if a.Value.Any().(slog.Level) == LevelChange {
 						a.Value = slog.StringValue("CHANGE")
@@ -46,7 +46,7 @@ func SetLoggingHandler(level slog.Level, color bool) {
 func BuildTintOptions(level slog.Level) *tint.Options {
 	return &tint.Options{
 		Level: level,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			switch a.Key {
 			case slog.LevelKey:
 				a.Value = slog.StringValue(levelStrings[slog.Level(a.Value.Int64())])

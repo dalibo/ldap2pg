@@ -30,11 +30,11 @@ type Grant struct {
 }
 
 func (g Grant) IsDefault() bool {
-	return "" != g.Owner
+	return g.Owner != ""
 }
 
 func (g Grant) IsRelevant() bool {
-	return "" != g.Type
+	return g.Type != ""
 }
 
 type Normalizer interface {
@@ -51,11 +51,10 @@ func (g *Grant) Normalize() {
 func (g Grant) PrivilegeKey() string {
 	if !g.IsDefault() {
 		return g.Target
-	} else if "" == g.Schema {
+	} else if g.Schema == "" {
 		return "GLOBAL DEFAULT"
-	} else {
-		return "SCHEMA DEFAULT"
 	}
+	return "SCHEMA DEFAULT"
 }
 
 func (g Grant) Privilege() Privilege {
@@ -68,18 +67,18 @@ func (g Grant) String() string {
 		b.WriteString("PARTIAL ")
 	}
 	if g.IsDefault() {
-		if "" == g.Schema {
+		if g.Schema == "" {
 			b.WriteString("GLOBAL ")
 		}
 		b.WriteString("DEFAULT FOR ")
 		b.WriteString(g.Owner)
-		if "" != g.Schema {
+		if g.Schema != "" {
 			b.WriteString(" IN SCHEMA ")
 			b.WriteString(g.Schema)
 		}
 		b.WriteByte(' ')
 	}
-	if "" == g.Type {
+	if g.Type == "" {
 		b.WriteString("ANY")
 	} else {
 		b.WriteString(g.Type)
@@ -90,13 +89,13 @@ func (g Grant) String() string {
 		b.WriteByte(' ')
 		o := strings.Builder{}
 		o.WriteString(g.Database)
-		if "" != g.Schema {
+		if g.Schema != "" {
 			if o.Len() > 0 {
 				o.WriteByte('.')
 			}
 			o.WriteString(g.Schema)
 		}
-		if "" != g.Object {
+		if g.Object != "" {
 			if o.Len() > 0 {
 				o.WriteByte('.')
 			}
@@ -105,7 +104,7 @@ func (g Grant) String() string {
 		b.WriteString(o.String())
 	}
 
-	if "" != g.Grantee {
+	if g.Grantee != "" {
 		b.WriteString(" TO ")
 		b.WriteString(g.Grantee)
 	}
@@ -119,7 +118,7 @@ func (g Grant) ExpandDatabase(database string) (out []Grant) {
 		return
 	}
 
-	if "__all__" != g.Database {
+	if g.Database != "__all__" {
 		return
 	}
 
@@ -130,7 +129,7 @@ func (g Grant) ExpandDatabase(database string) (out []Grant) {
 }
 
 func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
-	if "__auto__" != g.Owner {
+	if g.Owner != "__auto__" {
 		out = append(out, g)
 		return
 	}
@@ -141,7 +140,7 @@ func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
 
 	// Yield default privilege for database owner.
 	var schemas []postgres.Schema
-	if "" == g.Schema {
+	if g.Schema == "" {
 		schemas = maps.Values(database.Schemas)
 	} else {
 		schemas = []postgres.Schema{database.Schemas[g.Schema]}
@@ -167,7 +166,7 @@ func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
 }
 
 func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
-	if "__all__" != g.Schema {
+	if g.Schema != "__all__" {
 		out = append(out, g)
 		return
 	}
