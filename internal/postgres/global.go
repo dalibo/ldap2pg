@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
@@ -34,6 +35,15 @@ func GetConn(ctx context.Context, database string) (*pgx.Conn, error) {
 		globalConn, err = pgx.ConnectConfig(ctx, c)
 		if err != nil {
 			return nil, err
+		}
+
+		version := globalConn.PgConn().ParameterStatus("server_version")
+		if !strings.HasPrefix(version, "9.") && version >= "16" {
+			slog.Debug("Configuring createrole_self_grant.", "server_version", version)
+			_, err := globalConn.Exec(ctx, "SET createrole_self_grant TO inherit")
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

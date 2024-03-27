@@ -4,6 +4,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"github.com/lithammer/dedent"
 )
 
 type Role struct {
@@ -50,17 +51,6 @@ func (r *Role) BlacklistKey() string {
 func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	// It's so evident that wanted role has to be manageable. don't even
-	// compare with wanted state.
-	if !r.Manageable {
-		out = append(out, postgres.SyncQuery{
-			Description: "Inherit role for management.",
-			LogArgs:     []interface{}{"role", r.Name},
-			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
-			QueryArgs:   []interface{}{identifier},
-		})
-	}
-
 	wantedOptions := wanted.Options.Diff(r.Options)
 	if wantedOptions != "" {
 		out = append(out, postgres.SyncQuery{
@@ -102,8 +92,25 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 				"role", r.Name,
 				"parents", spuriousParents,
 			},
-			Query:     `REVOKE %s FROM %s;`,
-			QueryArgs: []interface{}{parentIdentifiers, identifier},
+			// It's ugly, but REVOKE role may silently fail if the ldap2pg does
+			// not have to privileges to revoke the membership. Thus we add a
+			// check to raise an error on failure. Another solution would be to
+			// check grantor upfront, distinguished revokable parents en
+			// unrevokable parent or simply ignore unrevokable parents.
+			// See. https://www.postgresql.org/message-id/flat/9c45a5a19718388678d11e0b48b400ad7e3e3d21.camel%40dalibo.com
+			Query: dedent.Dedent(`
+			REVOKE %s FROM %s;
+			DO $$ -- Fails if REVOKE is no-ops.
+			DECLARE parent TEXT;
+			BEGIN
+				FOR parent IN SELECT UNNEST(%s::text[]) LOOP
+					IF pg_has_role(%s, parent, 'USAGE') THEN
+						RAISE EXCEPTION 'Failed to remove %%', parent;
+					END IF;
+				END LOOP;
+			END $$;
+			`)[1:],
+			QueryArgs: []interface{}{parentIdentifiers, identifier, spuriousParents.ToSlice(), r.Name},
 		})
 	}
 
@@ -176,7 +183,7 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
+func (r *Role) Create() (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
 	if 0 < r.Parents.Cardinality() {
@@ -208,15 +215,6 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 		QueryArgs:   []interface{}{identifier, r.Comment},
 	})
 
-	if !super {
-		out = append(out, postgres.SyncQuery{
-			Description: "Inherit role for management.",
-			LogArgs:     []interface{}{"role", r.Name},
-			Query:       `GRANT %s TO CURRENT_USER WITH ADMIN OPTION;`,
-			QueryArgs:   []interface{}{identifier},
-		})
-	}
-
 	if nil == r.Config {
 		return
 	}
@@ -232,7 +230,7 @@ func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner string) (out []postgres.SyncQuery) {
+func (r *Role) Drop(databases *postgres.DBMap, fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	if r.Options.CanLogin {
 		out = append(out, postgres.SyncQuery{
@@ -247,36 +245,6 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 		})
 	}
 
-	if !currentUser.Options.Super {
-		// Non-super user needs to inherit to-be-dropped role to reassign objects.
-		if r.Parents.Contains(currentUser.Name) {
-			// First, avoid membership loop.
-			out = append(out, postgres.SyncQuery{
-				Description: "Revoke membership on current user.",
-				LogArgs: []interface{}{
-					"role", r.Name, "parent", currentUser.Name,
-				},
-				Database: "<first>",
-				Query:    `REVOKE %s FROM %s;`,
-				QueryArgs: []interface{}{
-					pgx.Identifier{currentUser.Name},
-					identifier,
-				},
-			})
-		}
-		out = append(out, postgres.SyncQuery{
-			Description: "Allow current user to reassign objects.",
-			LogArgs: []interface{}{
-				"role", r.Name, "parent", currentUser.Name,
-			},
-			Database: "<first>",
-			Query:    `GRANT %s TO %s;`,
-			QueryArgs: []interface{}{
-				identifier,
-				pgx.Identifier{currentUser.Name},
-			},
-		})
-	}
 	for dbname, database := range *databases {
 		if database.Owner == r.Name {
 			out = append(out, postgres.SyncQuery{
