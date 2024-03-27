@@ -23,6 +23,7 @@ type Instance struct {
 	ManagedRoles     role.Map
 	Me               role.Role
 	RolesBlacklist   lists.Blacklist
+	ServerVersionNum int
 }
 
 func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
@@ -72,9 +73,8 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 		panic("No data returned.")
 	}
 	var clusterName, serverVersion string
-	var serverVersionNum int
 	err = rows.Scan(
-		&serverVersion, &serverVersionNum,
+		&serverVersion, &instance.ServerVersionNum,
 		&clusterName, &instance.DefaultDatabase,
 		&instance.Me.Name, &instance.Me.Options.Super,
 	)

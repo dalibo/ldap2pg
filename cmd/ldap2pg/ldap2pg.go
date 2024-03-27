@@ -119,7 +119,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
-	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases)
+	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.Me, instance.FallbackOwner, &instance.Databases, instance.ServerVersionNum)
 	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
 	if err != nil {
