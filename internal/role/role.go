@@ -9,7 +9,7 @@ import (
 type Role struct {
 	Name       string
 	Comment    string
-	Parents    mapset.Set[string]
+	Parents    []Membership
 	Options    Options
 	Config     *Config
 	Manageable bool
@@ -17,7 +17,6 @@ type Role struct {
 
 func New() Role {
 	r := Role{}
-	r.Parents = mapset.NewSet[string]()
 	r.Config = &Config{}
 	return r
 }
@@ -31,7 +30,9 @@ func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	if err != nil {
 		return
 	}
-	r.Parents.Append(parents...)
+	for _, name := range parents {
+		r.Parents = append(r.Parents, Membership{Name: name})
+	}
 	r.Options.LoadRow(variableRow.([]interface{}))
 	(*r.Config).Parse(config)
 	return
@@ -74,10 +75,10 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 		})
 	}
 
-	missingParents := wanted.Parents.Difference(r.Parents)
-	if missingParents.Cardinality() > 0 {
+	missingParents := r.MissingParents(wanted.Parents)
+	if len(missingParents) > 0 {
 		var parentIdentifiers []interface{}
-		for parent := range missingParents.Iter() {
+		for _, parent := range missingParents {
 			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
 		}
 		out = append(out, postgres.SyncQuery{
@@ -90,10 +91,10 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 			QueryArgs: []interface{}{parentIdentifiers, identifier},
 		})
 	}
-	spuriousParents := r.Parents.Difference(wanted.Parents)
-	if spuriousParents.Cardinality() > 0 {
+	spuriousParents := wanted.MissingParents(r.Parents)
+	if len(spuriousParents) > 0 {
 		var parentIdentifiers []interface{}
-		for parent := range spuriousParents.Iter() {
+		for _, parent := range spuriousParents {
 			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
 		}
 		out = append(out, postgres.SyncQuery{
@@ -179,14 +180,14 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	if 0 < r.Parents.Cardinality() {
+	if len(r.Parents) > 0 {
 		parents := []interface{}{}
-		for parent := range r.Parents.Iter() {
-			parents = append(parents, pgx.Identifier{parent})
+		for _, parent := range r.Parents {
+			parents = append(parents, pgx.Identifier{parent.Name})
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Create role.",
-			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents.ToSlice()},
+			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
 			Query: `
 			CREATE ROLE %s
 			WITH ` + r.Options.String() + `
@@ -249,7 +250,7 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 
 	if !currentUser.Options.Super {
 		// Non-super user needs to inherit to-be-dropped role to reassign objects.
-		if r.Parents.Contains(currentUser.Name) {
+		if r.MemberOf(currentUser.Name) {
 			// First, avoid membership loop.
 			out = append(out, postgres.SyncQuery{
 				Description: "Revoke membership on current user.",
@@ -320,5 +321,10 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 }
 
 func (r *Role) Merge(o Role) {
-	r.Parents.Append(o.Parents.ToSlice()...)
+	for _, membership := range o.Parents {
+		if r.MemberOf(membership.Name) {
+			continue
+		}
+		r.Parents = append(r.Parents, membership)
+	}
 }

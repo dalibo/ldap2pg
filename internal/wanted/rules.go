@@ -6,7 +6,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type GrantRule struct {
@@ -90,29 +89,29 @@ type RoleRule struct {
 	Name    pyfmt.Format
 	Options role.Options
 	Comment pyfmt.Format
-	Parents []pyfmt.Format
+	Parents []MembershipRule
 	Config  *role.Config
 }
 
 func (r RoleRule) IsStatic() bool {
 	return r.Name.IsStatic() &&
 		r.Comment.IsStatic() &&
-		lists.And(r.Parents, func(f pyfmt.Format) bool { return f.IsStatic() })
+		lists.And(r.Parents, func(m MembershipRule) bool { return m.IsStatic() })
 }
 
 func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 	ch := make(chan role.Role)
 	go func() {
 		defer close(ch)
-		parents := mapset.NewSet[string]()
-		for _, f := range r.Parents {
-			if nil == results.Entry || 0 == len(f.Fields) {
+		parents := []role.Membership{}
+		for _, m := range r.Parents {
+			if nil == results.Entry || 0 == len(m.Name.Fields) {
 				// Static case.
-				parents.Add(f.String())
+				parents = append(parents, m.Generate(nil))
 			} else {
 				// Dynamic case.
-				for values := range results.GenerateValues(f) {
-					parents.Add(f.Format(values))
+				for values := range results.GenerateValues(m.Name) {
+					parents = append(parents, m.Generate(values))
 				}
 			}
 		}
@@ -134,10 +133,28 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 				role.Name = r.Name.Format(values)
 				role.Comment = r.Comment.Format(values)
 				role.Options = r.Options
-				role.Parents = parents.Clone()
+				role.Parents = append(parents[0:0], parents...) // copy
 				ch <- role
 			}
 		}
 	}()
 	return ch
+}
+
+type MembershipRule struct {
+	Name pyfmt.Format
+}
+
+func (m MembershipRule) String() string {
+	return m.Name.String()
+}
+
+func (m MembershipRule) IsStatic() bool {
+	return m.Name.IsStatic()
+}
+
+func (m MembershipRule) Generate(values map[string]string) role.Membership {
+	return role.Membership{
+		Name: m.Name.Format(values),
+	}
 }

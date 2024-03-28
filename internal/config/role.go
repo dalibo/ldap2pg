@@ -40,7 +40,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		} else {
 			return nil, errors.New("missing name")
 		}
-		rule["parents"], err = NormalizeStringList(rule["parents"])
+		rule["parents"], err = NormalizeMemberships(rule["parents"])
 		if err != nil {
 			return
 		}
@@ -111,5 +111,41 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 	}
 
 	err = CheckSpuriousKeys(&value, knownKeys...)
+	return
+}
+
+func NormalizeMemberships(raw interface{}) (memberships []map[string]interface{}, err error) {
+	list := NormalizeList(raw)
+	memberships = make([]map[string]interface{}, 0, len(list))
+	for i, raw := range list {
+		membership, err := NormalizeMembership(raw)
+		if err != nil {
+			return nil, fmt.Errorf("parents[%d]: %w", i, err)
+		}
+		memberships = append(memberships, membership)
+	}
+	return
+}
+
+func NormalizeMembership(raw interface{}) (value map[string]interface{}, err error) {
+	value = make(map[string]interface{})
+	// We could add admin, inherit and set to the map
+
+	switch raw := raw.(type) {
+	case string:
+		value["name"] = raw
+	case map[string]interface{}:
+		for k, v := range raw {
+			value[k] = NormalizeBoolean(v)
+		}
+	default:
+		return nil, fmt.Errorf("bad type: %T", raw)
+	}
+
+	if _, ok := value["name"]; !ok {
+		return nil, errors.New("missing name")
+	}
+
+	err = CheckSpuriousKeys(&value, "name", "inherit", "set", "admin")
 	return
 }

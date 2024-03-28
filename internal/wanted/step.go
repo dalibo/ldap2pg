@@ -22,11 +22,11 @@ type Step struct {
 }
 
 func (s Step) HasLDAPSearch() bool {
-	return 0 < len(s.LdapSearch.Attributes)
+	return len(s.LdapSearch.Attributes) > 0
 }
 
 func (s Step) HasSubsearch() bool {
-	return 0 < len(s.LdapSearch.Subsearches)
+	return len(s.LdapSearch.Subsearches) > 0
 }
 
 func (s *Step) InferAttributes() {
@@ -113,7 +113,9 @@ func (s Step) IterFields() <-chan *pyfmt.Field {
 			allFormats := []pyfmt.Format{
 				rule.Name, rule.Comment,
 			}
-			allFormats = append(allFormats, rule.Parents...)
+			for _, p := range rule.Parents {
+				allFormats = append(allFormats, p.Name)
+			}
 
 			for _, f := range allFormats {
 				for _, field := range f.Fields {
