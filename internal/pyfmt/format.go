@@ -116,6 +116,13 @@ func parseField(s string) (f Field) {
 }
 
 func (f Format) Format(values map[string]string) string {
+	if values == nil {
+		if !f.IsStatic() {
+			panic("rendering dynamic format without values")
+		}
+		return f.String()
+	}
+
 	b := strings.Builder{}
 
 	for _, item := range f.Sections {
