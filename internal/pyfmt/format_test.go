@@ -1,12 +1,12 @@
 package pyfmt_test
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/exp/slog"
 )
 
 type Suite struct {

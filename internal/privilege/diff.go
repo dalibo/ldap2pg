@@ -1,9 +1,10 @@
 package privilege
 
 import (
+	"log/slog"
+
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/slog"
 )
 
 type Granter interface {

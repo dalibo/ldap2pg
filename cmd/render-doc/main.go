@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/gosimple/slug"
 
 	"github.com/dalibo/ldap2pg/internal/config"
-	"golang.org/x/exp/slog"
 )
 
 func main() {
