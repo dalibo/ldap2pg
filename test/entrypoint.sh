@@ -18,6 +18,10 @@ export LC_ALL=en_US.utf8
 # Choose target Python version. Matches packaging/rpm/build_rpm.sh.
 rpmdist=$(rpm --eval '%dist')
 case "$rpmdist" in
+	*.el9)
+		python=python3.9
+		pip=pip3.9
+		;;
 	*.el7|*.el8)
 		python=python3.6
 		pip=pip3.6

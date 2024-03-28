@@ -14,6 +14,9 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Suggest to run with --verbose on error.
+- Tested onRockylinux 9.
+- Build RHEL 9 package with Rockylinux 9.
+
 
 
 # ldap2pg 6.0
