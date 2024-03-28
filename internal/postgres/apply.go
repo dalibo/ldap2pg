@@ -3,12 +3,12 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 var formatter = FmtQueryRewriter{}

@@ -11,7 +11,7 @@ require (
 	github.com/gosimple/slug v1.14.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/lithammer/dedent v1.1.0
-	github.com/lmittmann/tint v0.3.4
+	github.com/lmittmann/tint v1.0.4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/pflag v1.0.5

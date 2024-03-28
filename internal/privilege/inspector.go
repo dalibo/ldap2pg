@@ -3,12 +3,12 @@ package privilege
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 type TypeMap map[string][]string

@@ -3,13 +3,13 @@ package wanted
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
-	"golang.org/x/exp/slog"
 )
 
 // Rules holds a set of rules to generate wanted state.
