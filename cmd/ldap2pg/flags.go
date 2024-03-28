@@ -79,7 +79,7 @@ type Controller struct {
 	LdapWatch      perf.StopWatch
 }
 
-var levels []slog.Level = []slog.Level{
+var levels = []slog.Level{
 	slog.LevelDebug,
 	slog.LevelInfo,
 	internal.LevelChange,

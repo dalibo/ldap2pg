@@ -12,7 +12,7 @@ import (
 // Level for changes only. Aka Magnus owns level. See #219
 const LevelChange slog.Level = slog.LevelInfo + 2
 
-var CurrentLevel slog.Level = slog.LevelInfo
+var CurrentLevel = slog.LevelInfo
 
 func SetLoggingHandler(level slog.Level, color bool) {
 	var h slog.Handler
