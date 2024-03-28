@@ -50,8 +50,14 @@ func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error)
 }
 
 func NormalizeList(yaml interface{}) (list []interface{}) {
-	list, ok := yaml.([]interface{})
-	if !ok {
+	switch v := yaml.(type) {
+	case []interface{}:
+		list = v
+	case []string:
+		for _, s := range v {
+			list = append(list, s)
+		}
+	default:
 		list = append(list, yaml)
 	}
 	return

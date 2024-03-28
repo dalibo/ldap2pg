@@ -31,6 +31,9 @@ func TestNormalizeList(t *testing.T) {
 
 	values := config.NormalizeList(value)
 	r.Equal(1, len(values))
+
+	values = config.NormalizeList([]string{"string", "list"})
+	r.Equal(2, len(values))
 }
 
 func TestNormalizeStringList(t *testing.T) {
