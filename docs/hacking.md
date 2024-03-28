@@ -199,7 +199,7 @@ test/test_nominal.py::test_nothing_to_do PASSED                              [10
 $
 ```
 
-CI executes func tests in CentOS 6 and 7 and RockyLinux 8.
+CI executes func tests in CentOS 6 and 7 and RockyLinux 8 and 9.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and [sh](https://amoffat.github.io/sh/) projects.
 `conftest.py` provides various specific fixtures.
