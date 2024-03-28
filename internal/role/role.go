@@ -4,6 +4,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Role struct {
@@ -23,15 +24,23 @@ func New() Role {
 
 func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	var variableRow interface{}
-	var parents []string
+	var parents []interface{} // jsonb
 	var config []string
 	r = New()
 	err = row.Scan(&r.Name, &variableRow, &r.Comment, &parents, &config, &r.Manageable)
 	if err != nil {
 		return
 	}
-	for _, name := range parents {
-		r.Parents = append(r.Parents, Membership{Name: name})
+	for _, jsonb := range parents {
+		if jsonb == nil {
+			continue
+		}
+		var m Membership
+		err = mapstructure.Decode(jsonb, &m)
+		if err != nil {
+			return r, err
+		}
+		r.Parents = append(r.Parents, m)
 	}
 	r.Options.LoadRow(variableRow.([]interface{}))
 	(*r.Config).Parse(config)
