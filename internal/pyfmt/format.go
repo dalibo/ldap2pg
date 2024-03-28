@@ -16,7 +16,7 @@ type Format struct {
 }
 
 func (f Format) IsStatic() bool {
-	return 0 < len(f.Fields)
+	return len(f.Fields) == 0
 }
 
 type Field struct {
