@@ -39,6 +39,9 @@ func setupViper() {
 	_ = viper.BindEnv("config", "LDAPG2PG_CONFIG")
 	pflag.StringP("config", "c", "", "Path to YAML configuration file. Use - for stdin.")
 
+	viper.SetDefault("directory", "")
+	pflag.StringP("directory", "C", "", "Path to directory containing configuration files.")
+
 	viper.SetDefault("real", false)
 	_ = viper.BindEnv("real")
 	pflag.BoolP("real", "R", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
@@ -85,6 +88,7 @@ type Controller struct {
 	LogLevel       slog.Level
 	PostgresWatch  perf.StopWatch
 	LdapWatch      perf.StopWatch
+	Directory      string
 }
 
 var levels = []slog.Level{
