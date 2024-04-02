@@ -114,7 +114,7 @@ func (c *Config) Load(path string) (err error) {
 	}
 	root, err := NormalizeConfigRoot(yamlData)
 	if err != nil {
-		return fmt.Errorf("YAML error: %w", err)
+		return fmt.Errorf("bad configuration: %w", err)
 	}
 	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
 		Dump(root)

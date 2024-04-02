@@ -2,14 +2,16 @@ package config_test
 
 import (
 	"strings"
+	"testing"
 
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *Suite) TestPrivilegeAlias() {
-	r := suite.Require()
+func TestPrivilegeAlias(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := strings.TrimSpace(dedent.Dedent(`
 	ro:
@@ -38,8 +40,8 @@ func (suite *Suite) TestPrivilegeAlias() {
 	r.Len(value["ddl"], 4)
 }
 
-func (suite *Suite) TestBuiltinPrivilege() {
-	r := suite.Require()
+func TestBuiltinPrivilege(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := strings.TrimSpace(dedent.Dedent(`
 	ro:

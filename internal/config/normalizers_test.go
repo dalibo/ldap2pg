@@ -1,13 +1,16 @@
 package config_test
 
 import (
+	"testing"
+
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *Suite) TestNormalizeList() {
-	r := suite.Require()
+func TestNormalizeList(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	role: alice
@@ -19,8 +22,8 @@ func (suite *Suite) TestNormalizeList() {
 	r.Equal(1, len(values))
 }
 
-func (suite *Suite) TestNormalizeStringList() {
-	r := suite.Require()
+func TestNormalizeStringList(t *testing.T) {
+	r := require.New(t)
 
 	value := interface{}("alice")
 	values, err := config.NormalizeStringList(value)
@@ -29,8 +32,8 @@ func (suite *Suite) TestNormalizeStringList() {
 	r.Equal("alice", values[0])
 }
 
-func (suite *Suite) TestNormalizeAlias() {
-	r := suite.Require()
+func TestNormalizeAlias(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	role: alice
@@ -47,8 +50,8 @@ func (suite *Suite) TestNormalizeAlias() {
 	r.True(found)
 }
 
-func (suite *Suite) TestNormalizeAliasEmpty() {
-	r := suite.Require()
+func TestNormalizeAliasEmpty(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	description: No roles
@@ -63,8 +66,8 @@ func (suite *Suite) TestNormalizeAliasEmpty() {
 	r.False(found)
 }
 
-func (suite *Suite) TestNormalizeString() {
-	r := suite.Require()
+func TestNormalizeString(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	fallback_owner: owner
@@ -77,8 +80,8 @@ func (suite *Suite) TestNormalizeString() {
 	r.Nil(err)
 }
 
-func (suite *Suite) TestNormalizeAliasConflict() {
-	r := suite.Require()
+func TestNormalizeAliasConflict(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	role: alice
@@ -95,8 +98,8 @@ func (suite *Suite) TestNormalizeAliasConflict() {
 	r.Equal("role", conflict.Conflict)
 }
 
-func (suite *Suite) TestNormalizeSyncItem() {
-	r := suite.Require()
+func TestNormalizeSyncItem(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	description: Desc
@@ -118,8 +121,8 @@ func (suite *Suite) TestNormalizeSyncItem() {
 	r.Len(roles, 1)
 }
 
-func (suite *Suite) TestNormalizeSyncMap() {
-	r := suite.Require()
+func TestNormalizeSyncMap(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	- description: Desc0
@@ -136,8 +139,8 @@ func (suite *Suite) TestNormalizeSyncMap() {
 	r.Len(value, 2)
 }
 
-func (suite *Suite) TestNormalizeConfig() {
-	r := suite.Require()
+func TestNormalizeConfig(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	rules:

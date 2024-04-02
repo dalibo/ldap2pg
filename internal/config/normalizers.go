@@ -128,7 +128,7 @@ func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
 		var item interface{}
 		item, err = NormalizeSyncItem(rawItem)
 		if err != nil {
-			return syncMap, fmt.Errorf("item %d: %w", i, err)
+			return syncMap, fmt.Errorf("item[%d]: %w", i, err)
 		}
 		syncMap = append(syncMap, item)
 	}

@@ -1,13 +1,16 @@
 package config_test
 
 import (
+	"testing"
+
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/lithammer/dedent"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
-func (suite *Suite) TestLoadPrivilege() {
-	r := suite.Require()
+func TestLoadPrivilege(t *testing.T) {
+	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
 	privileges:
