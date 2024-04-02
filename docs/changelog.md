@@ -16,6 +16,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
 - Build RHEL 9 package with Rockylinux 9.
+- Add pid in starting log message.
 
 
 
