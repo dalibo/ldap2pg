@@ -80,7 +80,23 @@ func TestRoleParents(t *testing.T) {
 
 	value, err := config.NormalizeRoleRule(raw)
 	r.Nil(err)
-	parents := value["parents"].([]string)
-	r.Equal(1, len(parents))
-	r.Equal("groupe", parents[0])
+	r.Len(value["parents"], 1)
+}
+
+func TestMembership(t *testing.T) {
+	r := require.New(t)
+
+	membership, err := config.NormalizeMembership("owners")
+	r.Nil(err)
+	r.Equal("owners", membership["name"])
+
+	rawYaml := dedent.Dedent(`
+	name: owners
+	`)
+	var raw interface{}
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	membership, err = config.NormalizeMembership(raw)
+	r.Nil(err)
+	r.Equal("owners", membership["name"])
 }

@@ -4,12 +4,13 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Role struct {
 	Name       string
 	Comment    string
-	Parents    mapset.Set[string]
+	Parents    []Membership
 	Options    Options
 	Config     *Config
 	Manageable bool
@@ -17,21 +18,30 @@ type Role struct {
 
 func New() Role {
 	r := Role{}
-	r.Parents = mapset.NewSet[string]()
 	r.Config = &Config{}
 	return r
 }
 
 func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	var variableRow interface{}
-	var parents []string
+	var parents []interface{} // jsonb
 	var config []string
 	r = New()
 	err = row.Scan(&r.Name, &variableRow, &r.Comment, &parents, &config, &r.Manageable)
 	if err != nil {
 		return
 	}
-	r.Parents.Append(parents...)
+	for _, jsonb := range parents {
+		if jsonb == nil {
+			continue
+		}
+		var m Membership
+		err = mapstructure.Decode(jsonb, &m)
+		if err != nil {
+			return r, err
+		}
+		r.Parents = append(r.Parents, m)
+	}
 	r.Options.LoadRow(variableRow.([]interface{}))
 	(*r.Config).Parse(config)
 	return
@@ -74,36 +84,41 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 		})
 	}
 
-	missingParents := wanted.Parents.Difference(r.Parents)
-	if missingParents.Cardinality() > 0 {
+	missingMemberships := r.MissingParents(wanted.Parents)
+	if len(missingMemberships) > 0 {
 		var parentIdentifiers []interface{}
-		for parent := range missingParents.Iter() {
-			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		for _, membership := range missingMemberships {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{membership.Name})
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Grant missing parents.",
 			LogArgs: []interface{}{
 				"role", r.Name,
-				"parents", missingParents,
+				"parents", missingMemberships,
 			},
 			Query:     `GRANT %s TO %s;`,
 			QueryArgs: []interface{}{parentIdentifiers, identifier},
 		})
 	}
-	spuriousParents := r.Parents.Difference(wanted.Parents)
-	if spuriousParents.Cardinality() > 0 {
-		var parentIdentifiers []interface{}
-		for parent := range spuriousParents.Iter() {
-			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
-		}
+	spuriousMemberships := wanted.MissingParents(r.Parents)
+	for _, membership := range spuriousMemberships {
 		out = append(out, postgres.SyncQuery{
-			Description: "Revoke spurious parents.",
+			Description: "Revoke spurious parent.",
 			LogArgs: []interface{}{
 				"role", r.Name,
-				"parents", spuriousParents,
+				"parent", membership.Name,
+				"grantor", membership.Grantor,
 			},
-			Query:     `REVOKE %s FROM %s;`,
-			QueryArgs: []interface{}{parentIdentifiers, identifier},
+			// When running unprivileged, managing role must have admin option
+			// on parent but also on grantor of membership. Otherwise, Postgres
+			// raises a warning. To force Postgres to raise an error, set
+			// explicitly the grantor in GRANTED BY clause.
+			//
+			// This has been discussed a lot for Postgres 16 on pgsql-hackers:
+			// - https://www.postgresql.org/message-id/flat/CAAvxfHdB%3D0vnwbNbNC%2BdrEWUhpM6efHm8%3D%2BjRYCpc%3DnY5FHXew%40mail.gmail.com#43a711d60b82986e417b2f1a3233ad19
+			// - https://www.postgresql.org/message-id/9c45a5a19718388678d11e0b48b400ad7e3e3d21.camel@dalibo.com
+			Query:     `REVOKE %s FROM %s GRANTED BY %s;`,
+			QueryArgs: []interface{}{pgx.Identifier{membership.Name}, identifier, pgx.Identifier{membership.Grantor}},
 		})
 	}
 
@@ -179,14 +194,14 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 func (r *Role) Create(super bool) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
-	if 0 < r.Parents.Cardinality() {
+	if len(r.Parents) > 0 {
 		parents := []interface{}{}
-		for parent := range r.Parents.Iter() {
-			parents = append(parents, pgx.Identifier{parent})
+		for _, parent := range r.Parents {
+			parents = append(parents, pgx.Identifier{parent.Name})
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Create role.",
-			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents.ToSlice()},
+			LogArgs:     []interface{}{"role", r.Name, "parents", r.Parents},
 			Query: `
 			CREATE ROLE %s
 			WITH ` + r.Options.String() + `
@@ -249,7 +264,7 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 
 	if !currentUser.Options.Super {
 		// Non-super user needs to inherit to-be-dropped role to reassign objects.
-		if r.Parents.Contains(currentUser.Name) {
+		if r.MemberOf(currentUser.Name) {
 			// First, avoid membership loop.
 			out = append(out, postgres.SyncQuery{
 				Description: "Revoke membership on current user.",
@@ -320,5 +335,10 @@ func (r *Role) Drop(databases *postgres.DBMap, currentUser Role, fallbackOwner s
 }
 
 func (r *Role) Merge(o Role) {
-	r.Parents.Append(o.Parents.ToSlice()...)
+	for _, membership := range o.Parents {
+		if r.MemberOf(membership.Name) {
+			continue
+		}
+		r.Parents = append(r.Parents, membership)
+	}
 }

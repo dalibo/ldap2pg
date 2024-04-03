@@ -26,10 +26,10 @@ func (m Map) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
 		if (*seen).Contains(r.Name) {
 			return
 		}
-		for parentName := range r.Parents.Iter() {
-			parent, ok := m[parentName]
+		for _, membership := range r.Parents {
+			parent, ok := m[membership.Name]
 			if !ok {
-				slog.Debug("Role herits unmanaged parent.", "role", r.Name, "parent", parentName)
+				slog.Debug("Role herits unmanaged parent.", "role", r.Name, "parent", membership.Name)
 				continue
 			}
 			for deepName := range m.flattenRole(parent, seen) {

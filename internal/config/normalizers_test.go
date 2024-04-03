@@ -9,6 +9,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func TestNormalizeBooleans(t *testing.T) {
+	r := require.New(t)
+
+	r.Equal("true", config.NormalizeBoolean("yes"))
+	r.Equal("false", config.NormalizeBoolean("OFF"))
+	// Noop for non boolean.
+	r.Equal(1, config.NormalizeBoolean(1))
+	// Noop for effective boolean.
+	r.Equal(true, config.NormalizeBoolean(true))
+}
+
 func TestNormalizeList(t *testing.T) {
 	r := require.New(t)
 
@@ -20,6 +31,9 @@ func TestNormalizeList(t *testing.T) {
 
 	values := config.NormalizeList(value)
 	r.Equal(1, len(values))
+
+	values = config.NormalizeList([]string{"string", "list"})
+	r.Equal(2, len(values))
 }
 
 func TestNormalizeStringList(t *testing.T) {

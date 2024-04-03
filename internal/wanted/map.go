@@ -93,11 +93,11 @@ func (m Rules) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges 
 					role = current
 					slog.Debug("Updated wanted role.",
 						"name", role.Name, "options", role.Options,
-						"parents", role.Parents.ToSlice(), "comment", role.Comment)
+						"parents", role.Parents, "comment", role.Comment)
 				} else {
 					slog.Debug("Wants role.",
 						"name", role.Name, "options", role.Options,
-						"parents", role.Parents.ToSlice(), "comment", role.Comment)
+						"parents", role.Parents, "comment", role.Comment)
 				}
 				roles[role.Name] = role
 			}

@@ -18,6 +18,18 @@ func (err *KeyConflict) Error() string {
 	return fmt.Sprintf("key conflict between %s and %s", err.Key, err.Conflict)
 }
 
+func NormalizeBoolean(v interface{}) interface{} {
+	// Replace YAML 1.1 booleans to mapstructure weak boolean.
+	switch v {
+	case "y", "Y", "yes", "Yes", "YES", "on", "On", "ON":
+		return "true"
+	case "n", "N", "no", "No", "NO", "off", "Off", "OFF":
+		return "false"
+	default:
+		return v
+	}
+}
+
 func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error) {
 	value, hasAlias := (*yaml)[alias]
 	if !hasAlias {
@@ -38,8 +50,14 @@ func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error)
 }
 
 func NormalizeList(yaml interface{}) (list []interface{}) {
-	list, ok := yaml.([]interface{})
-	if !ok {
+	switch v := yaml.(type) {
+	case []interface{}:
+		list = v
+	case []string:
+		for _, s := range v {
+			list = append(list, s)
+		}
+	default:
 		list = append(list, yaml)
 	}
 	return
