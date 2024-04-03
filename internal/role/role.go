@@ -84,36 +84,41 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 		})
 	}
 
-	missingParents := r.MissingParents(wanted.Parents)
-	if len(missingParents) > 0 {
+	missingMemberships := r.MissingParents(wanted.Parents)
+	if len(missingMemberships) > 0 {
 		var parentIdentifiers []interface{}
-		for _, parent := range missingParents {
-			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
+		for _, membership := range missingMemberships {
+			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{membership.Name})
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Grant missing parents.",
 			LogArgs: []interface{}{
 				"role", r.Name,
-				"parents", missingParents,
+				"parents", missingMemberships,
 			},
 			Query:     `GRANT %s TO %s;`,
 			QueryArgs: []interface{}{parentIdentifiers, identifier},
 		})
 	}
-	spuriousParents := wanted.MissingParents(r.Parents)
-	if len(spuriousParents) > 0 {
-		var parentIdentifiers []interface{}
-		for _, parent := range spuriousParents {
-			parentIdentifiers = append(parentIdentifiers, pgx.Identifier{parent})
-		}
+	spuriousMemberships := wanted.MissingParents(r.Parents)
+	for _, membership := range spuriousMemberships {
 		out = append(out, postgres.SyncQuery{
-			Description: "Revoke spurious parents.",
+			Description: "Revoke spurious parent.",
 			LogArgs: []interface{}{
 				"role", r.Name,
-				"parents", spuriousParents,
+				"parent", membership.Name,
+				"grantor", membership.Grantor,
 			},
-			Query:     `REVOKE %s FROM %s;`,
-			QueryArgs: []interface{}{parentIdentifiers, identifier},
+			// When running unprivileged, managing role must have admin option
+			// on parent but also on grantor of membership. Otherwise, Postgres
+			// raises a warning. To force Postgres to raise an error, set
+			// explicitly the grantor in GRANTED BY clause.
+			//
+			// This has been discussed a lot for Postgres 16 on pgsql-hackers:
+			// - https://www.postgresql.org/message-id/flat/CAAvxfHdB%3D0vnwbNbNC%2BdrEWUhpM6efHm8%3D%2BjRYCpc%3DnY5FHXew%40mail.gmail.com#43a711d60b82986e417b2f1a3233ad19
+			// - https://www.postgresql.org/message-id/9c45a5a19718388678d11e0b48b400ad7e3e3d21.camel@dalibo.com
+			Query:     `REVOKE %s FROM %s GRANTED BY %s;`,
+			QueryArgs: []interface{}{pgx.Identifier{membership.Name}, identifier, pgx.Identifier{membership.Grantor}},
 		})
 	}
 

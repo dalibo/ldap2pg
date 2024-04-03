@@ -18,10 +18,10 @@ func (r Role) MemberOf(p string) bool {
 	return false
 }
 
-func (r Role) MissingParents(o []Membership) (out []string) {
+func (r Role) MissingParents(o []Membership) (out []Membership) {
 	for _, m := range o {
 		if !r.MemberOf(m.Name) {
-			out = append(out, m.Name)
+			out = append(out, m)
 		}
 	}
 	return
