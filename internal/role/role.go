@@ -71,15 +71,15 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 		})
 	}
 
-	wantedOptions := wanted.Options.Diff(r.Options)
-	if wantedOptions != "" {
+	optionsChanges := r.Options.Diff(wanted.Options)
+	if optionsChanges != "" {
 		out = append(out, postgres.SyncQuery{
 			Description: "Alter options.",
 			LogArgs: []interface{}{
 				"role", r.Name,
-				"options", wantedOptions,
+				"options", optionsChanges,
 			},
-			Query:     `ALTER ROLE %s WITH ` + wantedOptions + `;`,
+			Query:     `ALTER ROLE %s WITH ` + optionsChanges + `;`,
 			QueryArgs: []interface{}{identifier},
 		})
 	}
