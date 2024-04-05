@@ -8,13 +8,9 @@ WITH me AS (
 postgres AS (
 	SELECT
 		substring(version() from '^[^ ]+ [^ ]+') AS server_version,
-		svn.setting::BIGINT AS server_version_num,
-		COALESCE(cn.setting, '') AS cluster_name,
+		current_setting('server_version_num')::BIGINT AS server_version_num,
+		current_setting('cluster_name') AS cluster_name,
 		current_database() AS current_database
-	FROM pg_catalog.pg_settings AS svn
-	LEFT OUTER JOIN pg_catalog.pg_settings AS cn
-	  ON "cn"."name" = 'cluster_name'
-	WHERE "svn"."name" = 'server_version_num'
 )
 SELECT
 	postgres.*,

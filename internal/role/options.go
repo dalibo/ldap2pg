@@ -40,28 +40,28 @@ func (o Options) String() string {
 	return b.String()
 }
 
-func (o Options) Diff(other Options) string {
+// Diff returns the SQL to match wanted role options
+func (o Options) Diff(wanted Options) string {
 	v := reflect.ValueOf(o)
-	otherV := reflect.ValueOf(other)
-	t := v.Type()
+	wantedV := reflect.ValueOf(wanted)
 	var b strings.Builder
-	for _, f := range reflect.VisibleFields(t) {
+	for _, f := range reflect.VisibleFields(v.Type()) {
 		if !isColumnEnabled(f.Tag.Get("column")) {
 			continue
 		}
 		fv := v.FieldByName(f.Name)
-		otherFV := otherV.FieldByName(f.Name)
+		wantedFV := wantedV.FieldByName(f.Name)
 		switch f.Type.Kind() {
 		case reflect.Bool:
-			if fv.Bool() != otherFV.Bool() {
+			if fv.Bool() != wantedFV.Bool() {
 				if b.Len() > 0 {
 					b.WriteByte(' ')
 				}
-				writeBoolOption(&b, fv.Bool(), f.Tag.Get("mapstructure"))
+				writeBoolOption(&b, wantedFV.Bool(), f.Tag.Get("mapstructure"))
 			}
 		case reflect.Int:
-			i := fv.Int()
-			if i != otherFV.Int() {
+			i := wantedFV.Int()
+			if i != fv.Int() {
 				if b.Len() > 0 {
 					b.WriteByte(' ')
 				}
