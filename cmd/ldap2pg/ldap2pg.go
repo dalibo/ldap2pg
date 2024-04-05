@@ -82,6 +82,11 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Running a prerelease! Use at your own risks!")
 	}
 
+	err = changeDirectory(controller.Directory)
+	if err != nil {
+		return
+	}
+
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
@@ -301,4 +306,12 @@ func startProfiling() (stop func(), err error) {
 		f.Close()
 	}
 	return
+}
+
+func changeDirectory(directory string) (err error) {
+	if directory == "" {
+		return
+	}
+	slog.Debug("Changing directory.", "path", directory)
+	return os.Chdir(directory)
 }

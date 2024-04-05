@@ -18,6 +18,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Build RHEL 9 package with Rockylinux 9.
 - Add pid in starting log message.
 - Add NO_COLOR env var support
+- Add -C option to specify the working folder.
 
 
 
