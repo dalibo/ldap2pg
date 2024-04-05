@@ -14,6 +14,9 @@ version: 6
 
 postgres:
   roles_blacklist_query:
+  # Postgres 16 cascades dropping ldap2pg roles to memberships granted by ldap2pg.
+  # https://www.postgresql.org/message-id/flat/dbfd6ee6d4e1d5a9c7ae019a50968ae199436745.camel%40dalibo.com
+  - ldap2pg
   - extra*
   - postgres
   - pg_*
