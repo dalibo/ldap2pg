@@ -16,7 +16,7 @@ version 5.7, this looks like:
 
 ``` console
 $ ldap2pg --help
-usage: ldap2pg [OPTIONS]
+usage: ldap2pg [OPTIONS] [dbname]
 
       --check             Check mode: exits with 1 if Postgres instance is unsynchronized.
       --color             Force color output.
@@ -28,6 +28,8 @@ usage: ldap2pg [OPTIONS]
   -v, --verbose count     Increase log verbosity.
   -V, --version           Show version and exit. (default true)
 
+Optional argument dbname is alternatively the database name or a conninfo string or an URI.
+See man psql(1) for more information.
 
 By default, ldap2pg runs in dry mode.
 ldap2pg requires a configuration file to describe LDAP searches and mappings.

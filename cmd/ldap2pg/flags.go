@@ -16,9 +16,12 @@ import (
 
 func init() {
 	pflag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: %s [OPTIONS]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "usage: %s [OPTIONS] [dbname]\n\n", os.Args[0])
 		pflag.PrintDefaults()
 		os.Stderr.Write([]byte(dedent.Dedent(`
+
+		Optional argument dbname is alternatively the database name or a conninfo string or an URI.
+		See man psql(1) for more information.
 
 		By default, ldap2pg runs in dry mode.
 		ldap2pg requires a configuration file to describe LDAP searches and mappings.
@@ -89,6 +92,7 @@ type Controller struct {
 	PostgresWatch  perf.StopWatch
 	LdapWatch      perf.StopWatch
 	Directory      string
+	Dsn            string
 }
 
 var levels = []slog.Level{
@@ -119,6 +123,10 @@ func unmarshalController() (controller Controller, err error) {
 		} else {
 			slog.Warn("Bad verbosity.", "source", "env", "value", verbosity)
 		}
+	}
+	args := pflag.Args()
+	if len(args) > 0 {
+		controller.Dsn = args[0]
 	}
 	return controller, err
 }
