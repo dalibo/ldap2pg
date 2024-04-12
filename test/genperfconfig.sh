@@ -55,25 +55,25 @@ for n in {0..255} ; do
 
 	- description: "Define groups and privileges for schema $n."
 	  roles:
-	  - name: g${n}_r
+	  - name: big${n}_r
 	    parents: ldap_roles
-	  - name: g${n}_w
+	  - name: big${n}_w
 	    parents:
 	    - ldap_roles
-	    - g${n}_r
-	  - name: g${n}_d
+	    - big${n}_r
+	  - name: big${n}_d
 	    parents:
 	    - ldap_roles
-	    - g${n}_w
+	    - big${n}_w
 	  grants:
 	  - privilege: read
-	    role: g${n}_r
+	    role: big${n}_r
 	    schemas: nsp$n
 	  - privilege: write
-	    role: g${n}_w
+	    role: big${n}_w
 	    schemas: nsp$n
 	  - privilege: define
-	    role: g${n}_d
+	    role: big${n}_d
 	    schemas: nsp$n
 	EOF
 done
@@ -82,8 +82,8 @@ cat <<-EOF
 
 - description: "Define roles from directory."
   ldapsearch:
-    base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
-    filter: (cn=g*)
+    base: cn=users,dc=bridoulou,dc=fr
+    filter: (cn=big*)
   roles:
     name: "{member.cn}"
     parents:

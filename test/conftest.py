@@ -30,7 +30,7 @@ class PSQL(object):
         # List members of role
         return self.select1(
             # Good old SQL injection. Who cares?
-            u"SELECT m.rolname FROM pg_roles AS m "
+            u"SELECT DISTINCT m.rolname FROM pg_roles AS m "
             u"JOIN pg_auth_members a ON a.member = m.oid "
             u"JOIN pg_roles AS r ON r.oid = a.roleid "
             u" WHERE r.rolname = '%s' "
@@ -127,9 +127,9 @@ def ldap():
 def resetpostgres():
     from sh import Command
 
-    Command('test/fixtures/reset.sh')()
-    Command('test/fixtures/nominal.sh')()
-    Command('test/fixtures/extra.sh')()
+    Command('test/fixtures/postgres/reset.sh')()
+    Command('test/fixtures/postgres/nominal.sh')()
+    Command('test/fixtures/postgres/extra.sh')()
 
 
 def lazy_write(attr, data):

@@ -1,4 +1,4 @@
-# See extra.sh
+# See postgres/extra.sh
 #
 # extra config tests corner cases or less used features:
 #
@@ -69,7 +69,7 @@ rules:
 
 - description: "Superusers with sub-search"
   ldapsearch:
-    base: "ou=groups,dc=ldap,dc=ldap2pg,dc=docker"
+    base: "cn=users,dc=bridoulou,dc=fr"
     filter: "(cn=dba)"
   roles:
   - name: "{member.cn}"

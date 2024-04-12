@@ -32,9 +32,7 @@ def test_stdin(ldap2pg, capsys):
     assert 'stdinuser' in err
 
 
-@pytest.mark.xfail(
-    'CI' in os.environ,
-    reason="Can't setup SASL on CircleCI")
+@pytest.mark.xfail(reason="Samba does not support SASL DIGEST-MD5.")
 def test_sasl(ldap2pg, capsys):
     env = dict(
         os.environ,

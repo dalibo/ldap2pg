@@ -106,7 +106,7 @@ rules:
 
 - description: "Search LDAP to create readers, writers and owners."
   ldapsearch:
-    base: ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+    base: cn=users,dc=bridoulou,dc=fr
     filter: "
     (|
       (cn=owners)

@@ -1,5 +1,5 @@
-BINDDN  cn=admin,dc=ldap,dc=ldap2pg,dc=docker
-BASE    dc=ldap,dc=ldap2pg,dc=docker
+BASE    cn=users,dc=bridoulou,dc=fr
+BINDDN  cn=administrator,cn=users,dc=bridoulou,dc=fr
 TLS_REQCERT allow
 NETWORK_TIMEOUT 5
 TIMEOUT 5
