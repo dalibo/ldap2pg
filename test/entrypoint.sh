@@ -47,7 +47,7 @@ psql -tc "SELECT version();"
 # ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
 # workaround this.
 ln -fsv "${PWD}/ldaprc" ~/ldaprc
-ldapwhoami -x -d 1 -w "${LDAPPASSWORD}"
+ldapsearch -x -d 1 -w "${LDAPPASSWORD}" -z none
 
 if [ -n "${CI+x}" ] ; then
     # We can't modify config with ldapmodify. This prevent us to setup SASL in

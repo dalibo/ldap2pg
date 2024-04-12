@@ -78,12 +78,7 @@ func Connect(options OptionsMap) (client Client, err error) {
 		return
 	}
 
-	slog.Debug("Running LDAP whoami.", "cmd", client.Command("ldapwhoami"))
-	wai, err := client.Conn.WhoAmI(nil)
-	if err != nil {
-		return
-	}
-	slog.Info("Connected to LDAP directory.", "uri", client.URI, "authzid", wai.AuthzID)
+	slog.Info("Connected to LDAP directory.", "uri", client.URI)
 	return
 }
 
