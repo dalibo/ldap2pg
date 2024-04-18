@@ -62,7 +62,7 @@ $ ldap2pg --real
 08:25:12 INFO   Starting ldap2pg                                 version=v6.0-alpha5 runtime=go1.21.0 commit=<none>
 08:25:12 INFO   Using YAML configuration file.                   path=docs/readme/ldap2pg.yml
 08:25:12 INFO   Running as unprivileged user.                    user=ldap2pg super=false server="PostgreSQL 15.3" cluster=ldap2pg-dev database=nominal
-08:25:12 INFO   Connected to LDAP directory.                     uri=ldaps://ldap.ldap2pg.docker authzid="dn:cn=admin,dc=ldap,dc=ldap2pg,dc=docker"
+08:25:12 INFO   Connected to LDAP directory.                     uri=ldaps://ad.bridoulou.fr authzid="dn:cn=administrator,cn=users,dc=bridoulou,dc=fr"
 08:25:12 INFO   Real mode. Postgres instance will modified.
 08:25:12 CHANGE Create role.                                     role=charles database=nominal
 08:25:12 CHANGE Set role comment.                                role=charles database=nominal

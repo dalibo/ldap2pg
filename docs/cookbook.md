@@ -50,7 +50,7 @@ The first step is to search your LDAP server with ldapsearch(1), the CLI tool
 from OpenLDAP. Like this:
 
 ``` console
-$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W -b dc=ldap,dc=ldap2pg,dc=docker
+$ ldapsearch -H ldaps://ldap.ldap2pg.docker -U testsasl -W
 Enter LDAP Password:
 SASL/DIGEST-MD5 authentication started
 SASL username: testsasl

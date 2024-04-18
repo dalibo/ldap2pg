@@ -46,29 +46,29 @@ ldap2pg supports `LDAPPASSWORD` to set password from env.
 Check it with `ldapsearch`:
 
 ``` console
-$ export LDAPURI=ldaps://ldap.ldap2pg.docker LDAPPASSWORD=integral
-$ ldapsearch -vxw $LDAPPASSWORD cn
+$ export LDAPURI=ldaps://samba1.ldap2pg.docker LDAPPASSWORD=integral
+$ ldapsearch -vxw $LDAPPASSWORD -s base cn
+ldap_initialize( <DEFAULT> )
+filter: (objectclass=*)
+requesting: cn
 # extended LDIF
 #
 # LDAPv3
-# base <dc=ldap,dc=ldap2pg,dc=docker> (default) with scope subtree
+# base <cn=users,dc=bridoulou,dc=fr> (default) with scope baseObject
 # filter: (objectclass=*)
 # requesting: cn
 #
 
-# ldap.ldap2pg.docker
-dn: dc=ldap,dc=ldap2pg,dc=docker
-
-# admin, ldap.ldap2pg.docker
-dn: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
-cn: admin
+# Users, bridoulou.fr
+dn: CN=Users,DC=bridoulou,DC=fr
+cn: Users
 
 # search result
 search: 2
 result: 0 Success
 
-# numResponses: 3
-# numEntries: 2
+# numResponses: 2
+# numEntries: 1
 $
 ```
 
