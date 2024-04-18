@@ -53,7 +53,7 @@ func (r *Result) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 func (r *Result) GenerateSubsearchValues(parentExpressions []string) map[string]map[string]string {
 	prefix := r.SubsearchAttribute + "."
 	// First, remove sub-attribute from parent expressions. For example :
-	// {member.SAMAccountName} become {SAMAccountname} in the scope of the
+	// {member.sAMAccountName} become {sAMAccountname} in the scope of the
 	// sub-entry.
 	var expressions []string
 	for _, e := range parentExpressions {
@@ -123,7 +123,7 @@ func (r *Result) ResolveExpressions(expressions []string, attrValues map[string]
 			continue
 		}
 
-		// Case {member.SAMAccountName}
+		// Case {member.sAMAccountName}
 		if attr == r.SubsearchAttribute {
 			exprMap[expr] = subExprMap[attrValues[attr]][field]
 			continue
