@@ -87,6 +87,11 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 
+	err = postgres.Configure(controller.Dsn)
+	if err != nil {
+		return
+	}
+
 	configPath := config.FindFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)

@@ -9,7 +9,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slices"
 )
 
@@ -56,11 +55,10 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 }
 
 func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner string) error {
-	pgconn, err := pgx.Connect(ctx, "connect_timeout=5")
+	pgconn, err := postgres.GetConn(ctx, "")
 	if err != nil {
 		return err
 	}
-	defer pgconn.Close(ctx)
 
 	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
@@ -81,7 +79,6 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 	if err != nil {
 		return err
 	}
-	postgres.DefaultDatabase = instance.DefaultDatabase
 
 	var msg string
 	if instance.Me.Options.Super {

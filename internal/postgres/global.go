@@ -3,18 +3,28 @@ package postgres
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
 var (
-	DefaultDatabase string
-	globalConn      *pgx.Conn
+	globalConn *pgx.Conn
+	globalConf *pgx.ConnConfig
 )
 
+func Configure(dsn string) (err error) {
+	globalConf, err = pgx.ParseConfig(dsn)
+	if globalConf.ConnectTimeout == 0 {
+		slog.Debug("Setting default Postgres connection timeout.", "timeout", "5s")
+		globalConf.ConnectTimeout, _ = time.ParseDuration("5s")
+	}
+	return
+}
+
 func GetConn(ctx context.Context, database string) (*pgx.Conn, error) {
-	if "" == database {
-		database = DefaultDatabase
+	if database == "" {
+		database = globalConf.Database
 	}
 
 	if nil != globalConn {
@@ -25,11 +35,9 @@ func GetConn(ctx context.Context, database string) (*pgx.Conn, error) {
 	}
 
 	if nil == globalConn {
+		var err error
 		slog.Debug("Opening Postgres global connection.", "database", database)
-		c, err := pgx.ParseConfig("connect_timeout=5")
-		if err != nil {
-			return nil, err
-		}
+		c := globalConf.Copy()
 		c.Database = database
 		globalConn, err = pgx.ConnectConfig(ctx, c)
 		if err != nil {
