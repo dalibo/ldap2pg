@@ -11,7 +11,7 @@ for i in {0..1023} ; do
 	printf -v u "u%04d" "$i"
 	cat <<-EOF
 
-	dn: cn=$u,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+	dn: cn=$u,cn=users,dc=bridoulou,dc=fr
 	changetype: add
 	objectclass: inetOrgPerson
 	objectclass: organizationalPerson
@@ -19,17 +19,17 @@ for i in {0..1023} ; do
 	objectclass: top
 	cn: $u
 	sn: $u
-	mail: $u@ldap2pg.docker
+	mail: $u@bridoulou.fr
 	EOF
 done
 
 for i in {0..255} ; do
-	printf -v base "g%03d_" "$i"
+	printf -v base "big%03d_" "$i"
 	for g in r w d ; do
 		g="${base}$g"
 		cat <<-EOF
 
-		dn: cn=$g,ou=groups,dc=ldap,dc=ldap2pg,dc=docker
+		dn: cn=$g,cn=users,dc=bridoulou,dc=fr
 		changetype: add
 		objectClass: groupOfNames
 		objectClass: top
@@ -43,7 +43,7 @@ for i in {0..255} ; do
 			fi
 			printf -v u "u%04d" "$u"
 			cat <<-EOF
-			member: cn=$u,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+			member: cn=$u,cn=users,dc=bridoulou,dc=fr
 			EOF
 		done
 
@@ -51,7 +51,7 @@ for i in {0..255} ; do
 		if [ -n "${u#u*}" ] ; then
 			printf -v u "u%04d" "$(( RANDOM % 1024 ))"
 			cat <<-EOF
-			member: cn=$u,ou=people,dc=ldap,dc=ldap2pg,dc=docker
+			member: cn=$u,cn=users,dc=bridoulou,dc=fr
 			EOF
 		fi
 	done

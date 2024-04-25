@@ -48,15 +48,15 @@ ldap2pg expands to all combination of attributes for each entries.
 Given the following LDAP entries:
 
 ``` ldif
-dn: uid=dimitri,ou=people,dc=ldap,dc=acme,dc=tld
+dn: uid=dimitri,cn=Users,dc=bridoulou,dc=fr
 objectClass: inetOrgPerson
 uid: dimitri
 sn: Dimitri
 cn: dimitri
-mail: dimitri@ldap2pg.docker
+mail: dimitri@bridoulou.fr
 company: external
 
-dn: cn=domitille,ou=people,dc=ldap,dc=acme,dc=tld
+dn: cn=domitille,cn=Users,dc=bridoulou,dc=fr
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
@@ -84,7 +84,7 @@ If an RDN has multiple values, only the first value is returned.
 There is no way to access other value.
 
 For example,
-if a LDAP entry has `member` attribute with value `cn=toto,ou=people,dc=ldap,dc=acme,dc=fr`,
+if a LDAP entry has `member` attribute with value `cn=toto,cn=Users,dc=bridoulou,dc=fr`,
 the `{member.cn}` format will generate `toto`.
 The `{member.dc}` format will generate `ldap`.
 There is no way to access `acme` and `fr`.

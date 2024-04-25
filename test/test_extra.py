@@ -6,7 +6,7 @@ import pytest
 
 @pytest.fixture(scope='module')
 def extrarun(ldap2pg):
-    ldap2pg = ldap2pg.bake(c='test/ldap2pg.extra.yml')
+    ldap2pg = ldap2pg.bake(c='test/extra.ldap2pg.yml')
 
     # Ensure database is not sync.
     ldap2pg('--check', _ok_code=1)
@@ -26,7 +26,7 @@ def test_sub_search(extrarun, psql):
     comment = psql.scalar("""\
     SELECT description
     FROM pg_shdescription
-    WHERE description LIKE 'cn=solene,%: solene@ldap2pg.docker';
+    WHERE description LIKE 'CN=solene,%: solene@bridoulou.fr';
     """)
     assert comment
 

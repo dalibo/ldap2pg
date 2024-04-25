@@ -4,9 +4,9 @@ YUM_LABS?=$(wildcard ../yum-labs)
 default:
 	@echo ldap2pg $(VERSION)
 
-big: reset-ldap
+big: reset-samba1
 	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
-	test/fixtures/genperfldif.sh | ldapmodify -xw integral
+	test/fixtures/genperfldif.sh | ldapmodify -xw $$LDAPPASSWORD
 	$(MAKE) reset-big
 
 reset-big: reset-postgres

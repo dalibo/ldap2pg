@@ -103,40 +103,21 @@ jobs:
       pgversion:
         description: "Major dotted version of PostgreSQL."
         type: string
-    docker:
-      - image: dalibo/buildpack-python:<< parameters.dist >>
-        environment:
-          PGHOST: 127.0.0.1
-          PGUSER: postgres
-          PGPASSWORD: communication
-          LDAPURI: ldap://ldap.ldap2pg.docker
-          LDAPBINDDN: cn=admin,dc=ldap,dc=ldap2pg,dc=docker
-          LDAPPASSWORD: communication
-      - image: bersace/openldap@sha256:b03ac7f2d85831b93af53c1ac963c17170a4216a4307cf8865142fb6495aee21
-        environment:
-          LDAP_DOMAIN: ldap.ldap2pg.docker
-          LDAP_ADMIN_PASSWORD: communication
-          LDAP_ORGANISATION: ldap
-      - image: postgres:<< parameters.pgversion >>-alpine
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: communication
-    working_directory: *workspace
+    machine:
+      image: ubuntu-2204:2024.01.2
+      resource_class: medium
+    working_directory: /home/circleci/workspace
     steps:
     - checkout
     - attach_workspace:
-        at: *workspace
-    - restore_cache:
-        keys: [ldap2pg-go-func]
+        at: /home/circleci/workspace
     - run:
-        name: Exécuting Functionnal Tests
+        name: Run tests
+        environment:
+          PGVERSION: "<< parameters.pgversion >>"
+          DIST: "<< parameters.dist >>"
         command: |
-          echo 127.0.1.1 ldap.ldap2pg.docker >> /etc/hosts
-          test/entrypoint.sh
-    - save_cache:
-        key: ldap2pg-go-func-{{ epoch }}
-        paths:
-        - /root/.cache/pip
+          COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose run test
 
   pkg:
     parameters:

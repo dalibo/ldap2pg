@@ -20,6 +20,7 @@ Giving CREATEROLE to an unprivileged role before Postgres 16 was actually flawed
 The way it's handling is so distinct that keeping the two implementation does not worth the price.
 
 - **breaking** Refuses to run unprivileged before Postgres 16.
+- Fix accessing uppercased DN RDN.
 - Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
 - Build RHEL 9 package with Rockylinux 9.
@@ -27,6 +28,7 @@ The way it's handling is so distinct that keeping the two implementation does no
 - Add NO_COLOR env var support
 - Add -C option to specify the working folder.
 - Accept DSN in CLI argument.
+- Stop calling whoami LDAP extended operation.
 
 
 

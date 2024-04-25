@@ -46,7 +46,7 @@ func (s *Step) InferAttributes() {
 			continue
 		}
 
-		// Case {member.SAMAccountName}
+		// Case {member.sAMAccountName}
 		subAttributes, ok := subsearchAttributes[attribute]
 		if !ok {
 			subAttributes = mapset.NewSet[string]()

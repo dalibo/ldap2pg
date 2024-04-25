@@ -1,23 +1,20 @@
 version: '3'
 
 services:
-  ldap:
-    image: bersace/openldap:latest
+  samba1:
+    image: dalibo/samba:master
     environment:
-      # To debug slapd configuration:
-      # LDAP_LOG_LEVEL: 33768
-      LDAP_DOMAIN: ldap.ldap2pg.docker
-      LDAP_ADMIN_PASSWORD: integral
-      LDAP_ORGANISATION: ldap2pg
+      REALM: bridoulou.fr
+      ADMIN_PASS: 1Ntegral
+      DNS_BACKEND: "NONE"
     volumes:
-    - ./test/fixtures/openldap-config.ldif:/docker-entrypoint-init.d/90-config.ldif
-    - ./test/fixtures/sasl.ldif:/docker-entrypoint-init.d/95-sasl.ldif
-    - ./test/fixtures/nominal.ldif:/docker-entrypoint-init.d/95-nominal.ldif
-    - ./test/fixtures/extra.ldif:/docker-entrypoint-init.d/96-extra.ldif
-    hostname: ldap
+      - ./test/fixtures/samba/nominal.sh:/docker-entrypoint-init.d/95-nominal.sh
+      - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
+    hostname: samba1
     domainname: ldap2pg.docker
     labels:
-      com.dnsdock.alias: ldap.ldap2pg.docker
+      com.dnsdock.alias: samba1.ldap2pg.docker
+    command: [-d=1]
 
   postgres:
     image: postgres:${PGVERSION-16}-alpine
@@ -27,9 +24,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-    - ./test/fixtures/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
-    - ./test/fixtures/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
-    - ./test/fixtures/extra.sh:/docker-entrypoint-initdb.d/20-extra.sh
+      - ./test/fixtures/postgres/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
+      - ./test/fixtures/postgres/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
+      - ./test/fixtures/postgres/extra.sh:/docker-entrypoint-initdb.d/20-extra.sh
     labels:
       com.dnsdock.alias: postgres.ldap2pg.docker
     command: [

@@ -53,7 +53,7 @@ func (r *Result) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 func (r *Result) GenerateSubsearchValues(parentExpressions []string) map[string]map[string]string {
 	prefix := r.SubsearchAttribute + "."
 	// First, remove sub-attribute from parent expressions. For example :
-	// {member.SAMAccountName} become {SAMAccountname} in the scope of the
+	// {member.sAMAccountName} become {sAMAccountname} in the scope of the
 	// sub-entry.
 	var expressions []string
 	for _, e := range parentExpressions {
@@ -83,14 +83,11 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 		if "dn" == attr {
 			valuesList[i] = []string{r.Entry.DN}
 		} else if slices.Contains(KnownRDNs, attr) {
-			dn, _ := ldap3.ParseDN(r.Entry.DN)
-			for _, rdn := range dn.RDNs {
-				attr0 := rdn.Attributes[0]
-				if attr == attr0.Type {
-					valuesList[i] = []string{attr0.Value}
-					break
-				}
+			value0, err := ResolveFirstRDN(r.Entry.DN, attr)
+			if err != nil {
+				slog.Warn("Failed to read value from DN.", "dn", r.Entry.DN, "rdn", attr, "err", err)
 			}
+			valuesList[i] = []string{value0}
 		} else if r.SubsearchAttribute == attr {
 			valuesList[i] = subKeys
 		} else {
@@ -118,7 +115,6 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 // Resolve format expression from entry or pre-resolved expression for sub-entries.
 func (r *Result) ResolveExpressions(expressions []string, attrValues map[string]string, subExprMap map[string]map[string]string) map[string]string {
 	exprMap := make(map[string]string)
-exprloop:
 	for _, expr := range expressions {
 		attr, field, hasField := strings.Cut(expr, ".")
 		if !hasField {
@@ -127,28 +123,39 @@ exprloop:
 			continue
 		}
 
-		// Case {member.SAMAccountName}
+		// Case {member.sAMAccountName}
 		if attr == r.SubsearchAttribute {
 			exprMap[expr] = subExprMap[attrValues[attr]][field]
 			continue
 		}
 
 		// Case {member.cn}
-		dn, err := ldap3.ParseDN(attrValues[attr])
+		dn := attrValues[attr]
+		value0, err := ResolveFirstRDN(dn, field)
 		if err != nil {
-			slog.Warn("Bad DN.", "dn", attrValues[attr], "rdn", field, "err", err)
+			slog.Warn("Bad DN.", "dn", dn, "rdn", field, "err", err)
 			continue
 		}
-
-		for _, rdn := range dn.RDNs {
-			attr0 := rdn.Attributes[0]
-			if field == attr0.Type {
-				exprMap[expr] = attr0.Value
-				continue exprloop
-			}
-		}
+		exprMap[expr] = value0
 
 		slog.Warn("Unexpected DN.", "dn", dn, "rdn", field)
 	}
 	return exprMap
+}
+
+func ResolveFirstRDN(rawDN, relativeField string) (string, error) {
+	dn, err := ldap3.ParseDN(rawDN)
+	if err != nil {
+		return "", err
+	}
+
+	for _, rdn := range dn.RDNs {
+		attr0 := rdn.Attributes[0]
+		if relativeField != strings.ToLower(attr0.Type) {
+			continue
+		}
+		return attr0.Value, nil
+	}
+
+	return "", fmt.Errorf("No RDN of type %s in %s", relativeField, rawDN)
 }

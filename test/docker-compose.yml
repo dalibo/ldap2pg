@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  test:
+    image: dalibo/buildpack-python:${DIST-rockylinux8}
+    volumes:
+    - .:/workspace
+    working_dir: /workspace
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      LDAPURI: ldaps://samba1
+      LDAPPASSWORD: 1Ntegral
+      CI: "true"
+    command: test/entrypoint.sh
+    depends_on:
+      - samba1
+      - postgres

@@ -39,7 +39,7 @@ func (suite *Suite) TestItemLdapAnalyze() {
 	- ldapsearch:
 	    base: cn=toto
 	  roles:
-	  - name: "{member.SAMAccountName}"
+	  - name: "{member.sAMAccountName}"
 	`)
 	i := c.SyncMap[0]
 	i.InferAttributes()
@@ -56,7 +56,7 @@ func (suite *Suite) TestSyncItemReplaceMemberAsMemberDotDN() {
 	- ldapsearch:
 	    base: cn=toto
 	  roles:
-	  - name: "{member.SAMAccountName}"
+	  - name: "{member.sAMAccountName}"
 	    comment: "{member}"
 	`)
 	i := c.SyncMap[0]
