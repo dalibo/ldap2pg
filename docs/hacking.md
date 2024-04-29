@@ -13,7 +13,7 @@ Automatic tests on CircleCI will take care of validating regressions.
 
 ## Docker Development Environment
 
-Project repository ships a `docker-compose.yml` file to launch an OpenLDAP and a PostgreSQL instances.
+Project repository ships a `docker-compose.yml` file to launch an Samba Directory and a PostgreSQL instances.
 
 ``` console
 $ docker-compose pull
@@ -22,15 +22,14 @@ Status: Downloaded newer image for postgres:10-alpine
 $ docker-compose up -d
 Creating network "ldap2pg_default" with the default driver
 Creating ldap2pg_postgres_1 ...
-Creating ldap2pg_ldap_1 ...
+Creating ldap2pg_samba1_1 ...
 Creating ldap2pg_postgres_1
-Creating ldap2pg_ldap_1 ... done
+Creating ldap2pg_samba1_1 ... done
 ```
 
 It's up to you to define how to access Postgres and LDAP containers from your host:
 either use DNS resolution or a `docker-compose.override.yml` to expose port on your host.
-Provided `docker-compose.yml` comes with `postgres.ldap2pg.docker` and `ldap.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases.
-If you want to test SSL, you **must** access OpenLDAP through `ldap.ldap2pg.docker` domain name.
+Provided `docker-compose.yml` comes with `postgres.ldap2pg.docker` and `samba1.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases.
 
 Setup your environment with regular `PG*` envvars so that `psql` can just connect to your PostgreSQL instance.
 Check with a simple `psql` invocation.
@@ -46,7 +45,7 @@ ldap2pg supports `LDAPPASSWORD` to set password from env.
 Check it with `ldapsearch`:
 
 ``` console
-$ export LDAPURI=ldaps://samba1.ldap2pg.docker LDAPPASSWORD=integral
+$ export LDAPURI=ldaps://samba1.ldap2pg.docker LDAPPASSWORD=1Ntegral
 $ ldapsearch -vxw $LDAPPASSWORD -s base cn
 ldap_initialize( <DEFAULT> )
 filter: (objectclass=*)
@@ -74,7 +73,7 @@ $
 
 ### Environement without DNS resolution
 
-To access OpenLDAP and PostgreSQL without dnsdock,
+To access Samba Directory and PostgreSQL without dnsdock,
 exposes containers ports to your host with the following override:
 
 ``` yaml
@@ -82,18 +81,18 @@ exposes containers ports to your host with the following override:
 version: '3'
 
 services:
-  ldap:
+  samba1:
     ports:
-    # HOST:CONTAINER
-    - 389:389
-    - 636:636
+      # HOST:CONTAINER
+      - 389:389
+      - 636:636
 
   postgres:
     ports:
-    - 5432:5432
+      - 5432:5432
 ```
 
-Use `PGHOST=localhost` and `LDAPURI=ldap://localhost:389`.
+Use `PGHOST=localhost` and `LDAPURI=ldaps://localhost`.
 
 
 ### Running ldap2pg with Changes
@@ -129,13 +128,13 @@ ldap2pg project comes with three cases for testing:
     - 3 groups per schemas.
     - 1K users in directory.
 
-`test/fixtures/` holds fixtures for OpenLDAP et PostgreSQL.
+`test/fixtures/` holds fixtures for Samba and PostgreSQL.
 Default development environment loads nominal and extra fixtures.
 By default, big case is not loaded.
 Func tests use nominal and extra fixtures.
 See below for big case.
 
-`test/fixtures/reset.sh` resets PostgreSQL state.
+`test/fixtures/postgres/reset.sh` resets PostgreSQL state.
 You can also use `make reset-postgres` to recreate PostgreSQL container from scratch.
 
 
@@ -203,7 +202,7 @@ CI executes func tests in CentOS 6 and 7 and RockyLinux 8 and 9.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and [sh](https://amoffat.github.io/sh/) projects.
 `conftest.py` provides various specific fixtures.
-The most important is that Postgres database and OpenLDAP base are purged between each **module**.
+The most important is that Postgres database is reset between each Python **module**.
 pytests executes Func tests in definition order.
 If a test modifies Postgres, the following tests will have this modification kept until the end of the module.
 This allows to split a big scenario in severals steps without loosing context and CPU cycle.
