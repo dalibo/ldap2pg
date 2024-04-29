@@ -28,6 +28,7 @@ The way it's handling is so distinct that keeping the two implementation does no
 - Add NO_COLOR env var support
 - Add -C option to specify the working folder.
 - Accept DSN in CLI argument.
+- Refuse empty LDAP URI or BINDDN.
 - Stop calling whoami LDAP extended operation.
 
 

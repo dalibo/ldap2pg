@@ -61,6 +61,10 @@ func Connect(options OptionsMap) (client Client, err error) {
 	switch client.SaslMech {
 	case "":
 		client.BindDN = options.GetString("BINDDN")
+		if client.BindDN == "" {
+			err = fmt.Errorf("missing BINDDN")
+			return
+		}
 		password := options.GetSecret("PASSWORD")
 		client.Password = "*******"
 		slog.Debug("LDAP simple bind.", "binddn", client.BindDN)
