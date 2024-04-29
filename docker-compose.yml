@@ -2,7 +2,7 @@ version: '3'
 
 services:
   samba1:
-    image: dalibo/samba:master
+    image: dalibo/samba:4.18.9@sha256:93c575469bfc8da8c26995a91a15a4b95f1f69d6eafbf3d4c104cb2d519ffb72
     environment:
       REALM: bridoulou.fr
       ADMIN_PASS: 1Ntegral
