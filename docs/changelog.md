@@ -46,6 +46,7 @@ Please carefully test before upgrading on production system.
 - Dropped support for PostgreSQL 9.4.
 - Dropped case renaming of role. e.g. from alice to ALICE. ldap2pg is still case sensitive.
 - Dropped `owners_query` for a new dynamic owner inspection.
+- Dropped STARTTLS. Use `ldaps://` uri instead.
 - Non implemented features:
     - `role_match` condition.
     - `allowed_missing_attributes` and LDAP attribute typo detection.
