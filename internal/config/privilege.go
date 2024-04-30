@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
+	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/tree"
 	"golang.org/x/exp/maps"
 )
@@ -26,29 +27,51 @@ func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err e
 		return nil, fmt.Errorf("bad type")
 	}
 	for key, value := range rawMap {
-		rawMap[key] = NormalizePrivilegeRefs(value)
+		rawMap[key] = NormalizeList(value)
 	}
 
 	out = ResolvePrivilegeRefs(rawMap)
+	err = CheckPrivilegesACL(out)
 
 	return
 }
 
+func CheckPrivilegesACL(profiles map[string][]interface{}) error {
+	for name, profile := range profiles {
+		for i, ref := range profile {
+			refMap := ref.(map[string]interface{})
+			on, ok := refMap["on"].(string)
+			if !ok {
+				return fmt.Errorf("%s[%d]: missing ACL", name, i)
+			}
+			_, ok = refMap["default"]
+			if ok {
+				continue
+			}
+			_, ok = privilege.Builtins[on]
+			if !ok {
+				return fmt.Errorf("%s[%d]: unknown ACL: %s", name, i, on)
+			}
+		}
+	}
+	return nil
+}
+
 // BuiltinsProfiles holds yaml rewrite for BuiltinsProfiles privileges from v5 format to v6.
 var BuiltinsProfiles = map[string]interface{}{
-	"__connect__": []interface{}{map[string]string{
+	"__connect__": []interface{}{map[string]interface{}{
 		"type": "CONNECT",
 		"on":   "DATABASE",
 	}},
-	"__temporary__": []interface{}{map[string]string{
+	"__temporary__": []interface{}{map[string]interface{}{
 		"type": "TEMPORARY",
 		"on":   "DATABASE",
 	}},
-	"__create_on_schemas__": []interface{}{map[string]string{
+	"__create_on_schemas__": []interface{}{map[string]interface{}{
 		"type": "CREATE",
 		"on":   "SCHEMA",
 	}},
-	"__usage_on_schemas__": []interface{}{map[string]string{
+	"__usage_on_schemas__": []interface{}{map[string]interface{}{
 		"type": "USAGE",
 		"on":   "SCHEMA",
 	}},
@@ -72,16 +95,16 @@ func registerRelationBuiltins(class string, types ...string) {
 	all := []interface{}{}
 	for _, privType := range types {
 		TYPE := strings.ToUpper(privType)
-		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]string{
+		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]interface{}{
 			"default": "global",
 			"type":    TYPE,
 			"on":      CLASS,
-		}, map[string]string{
+		}, map[string]interface{}{
 			"default": "schema",
 			"type":    TYPE,
 			"on":      CLASS,
 		}}
-		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]string{
+		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]interface{}{
 			"type": TYPE,
 			"on":   "ALL " + CLASS + " IN SCHEMA",
 		}}
@@ -92,28 +115,6 @@ func registerRelationBuiltins(class string, types ...string) {
 		all = append(all, "__"+privType+"_on_"+class+"__")
 	}
 	BuiltinsProfiles["__all_on_"+class+"__"] = all
-}
-
-func NormalizePrivilegeRefs(value interface{}) []interface{} {
-	list := NormalizeList(value)
-
-	for i, item := range list {
-		s, ok := item.(string)
-		if !ok {
-			continue
-		}
-		ref := BuiltinsProfiles[s]
-		if ref == nil {
-			continue
-		}
-		refMap, ok := ref.(map[string]string)
-		if !ok {
-			continue
-		}
-		list[i] = refMap
-	}
-
-	return list
 }
 
 func ResolvePrivilegeRefs(value map[string]interface{}) map[string][]interface{} {

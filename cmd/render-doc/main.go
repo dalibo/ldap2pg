@@ -41,12 +41,12 @@ func main() {
 
 	data := struct {
 		Groups   map[string][]interface{}
-		Refs     map[string]map[string]string
-		Defaults map[string]map[string]string
+		Refs     map[string]map[string]interface{}
+		Defaults map[string]map[string]interface{}
 	}{
 		Groups:   make(map[string][]interface{}),
-		Refs:     make(map[string]map[string]string),
-		Defaults: make(map[string]map[string]string),
+		Refs:     make(map[string]map[string]interface{}),
+		Defaults: make(map[string]map[string]interface{}),
 	}
 
 	for key, items := range config.BuiltinsProfiles {
@@ -57,9 +57,9 @@ func main() {
 			data.Groups[key] = l
 		default:
 			if strings.HasPrefix(key, "__default") {
-				data.Defaults[key] = item.(map[string]string)
+				data.Defaults[key] = item.(map[string]interface{})
 			} else {
-				data.Refs[key] = item.(map[string]string)
+				data.Refs[key] = item.(map[string]interface{})
 			}
 		}
 	}
