@@ -163,10 +163,15 @@ def ldap2pg(request):
 
 def pytest_addoption(parser):
     candidates = [
-        "ldap2pg",
-        "dist/ldap2pg_linux_amd64_v1/ldap2pg",
-        "test/ldap2pg.sh",
+        "test/ldap2pg.sh",  # Wraps go run.
     ]
+    if 'CI' in os.environ:
+        # On CI, search for binary
+        candidates[:0] = [
+            "ldap2pg",  # in PATH
+            "dist/ldap2pg_linux_amd64_v1/ldap2pg",  # in goreleaser dist dir.
+        ]
+
     for candidate in candidates:
         try:
             default = sh.Command(candidate)._path
