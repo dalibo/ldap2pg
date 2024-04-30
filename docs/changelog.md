@@ -21,6 +21,7 @@ The way it's handling is so distinct that keeping the two implementation does no
 
 - **breaking** Refuses to run unprivileged before Postgres 16.
 - Fix accessing uppercased DN RDN.
+- Restore LDAP HA: ldap2pg retries next LDAP URI.
 - Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
 - Build RHEL 9 package with Rockylinux 9.

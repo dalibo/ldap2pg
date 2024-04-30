@@ -129,8 +129,8 @@ real with `--real`.
 
 ## Using LDAP High-Availability
 
-ldap2pg supports LDAP HA out of the box just like any openldap client. Use a
-space separated list of URI to tells all servers.
+ldap2pg supports LDAP High Availability out of the box just like any openldap client.
+Use a space separated list of URI to tells all servers.
 
 ``` console
 $ LDAPURI="ldaps://ldap1 ldaps://ldap2" ldap2pg
