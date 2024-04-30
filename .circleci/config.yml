@@ -117,7 +117,7 @@ jobs:
           PGVERSION: "<< parameters.pgversion >>"
           DIST: "<< parameters.dist >>"
         command: |
-          COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose run test
+          COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
 
   pkg:
     parameters:
