@@ -25,6 +25,10 @@ type Client struct {
 
 func Connect(options OptionsMap) (client Client, err error) {
 	client.URI = options.GetString("URI")
+	if client.URI == "" {
+		err = fmt.Errorf("missing URI")
+		return
+	}
 
 	t := tls.Config{
 		InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
@@ -57,6 +61,10 @@ func Connect(options OptionsMap) (client Client, err error) {
 	switch client.SaslMech {
 	case "":
 		client.BindDN = options.GetString("BINDDN")
+		if client.BindDN == "" {
+			err = fmt.Errorf("missing BINDDN")
+			return
+		}
 		password := options.GetSecret("PASSWORD")
 		client.Password = "*******"
 		slog.Debug("LDAP simple bind.", "binddn", client.BindDN)

@@ -28,6 +28,7 @@ The way it's handling is so distinct that keeping the two implementation does no
 - Add NO_COLOR env var support
 - Add -C option to specify the working folder.
 - Accept DSN in CLI argument.
+- Refuse empty LDAP URI or BINDDN.
 - Stop calling whoami LDAP extended operation.
 
 
@@ -46,6 +47,7 @@ Please carefully test before upgrading on production system.
 - Dropped support for PostgreSQL 9.4.
 - Dropped case renaming of role. e.g. from alice to ALICE. ldap2pg is still case sensitive.
 - Dropped `owners_query` for a new dynamic owner inspection.
+- Dropped STARTTLS. Use `ldaps://` uri instead.
 - Non implemented features:
     - `role_match` condition.
     - `allowed_missing_attributes` and LDAP attribute typo detection.

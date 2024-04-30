@@ -121,7 +121,8 @@ Project ships a [tested ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/mast
 Finally, it's up to you to use `ldap2pg` in a crontab or a playbook.
 Have fun!
 
-`ldap2pg` is reported to work with [OpenLDAP](https://www.openldap.org/),
+`ldap2pg` is reported to work with [Samba Directory](https://www.samba.org/),
+[OpenLDAP](https://www.openldap.org/),
 [FreeIPA](https://www.freeipa.org/),
 Oracle Internet Directory and
 Microsoft Active Directory.
