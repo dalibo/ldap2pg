@@ -2,3 +2,5 @@
 __debug_bin
 dist/
 docker-compose.override.yml
+# test/conftest.py creates .env files
+.env

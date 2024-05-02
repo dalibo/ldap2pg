@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import sys
 from functools import partial
 
@@ -148,6 +149,22 @@ def sh_errout():
         out=partial(lazy_write, 'stdout'),
         tee=True,
     ))
+
+
+@pytest.fixture(scope='session', autouse=True)
+def dot_env():
+    # test dot env file loading
+    # moving LDAPPASSWORD from environement to .env file
+    ldappasswd = os.environ['LDAPPASSWORD']
+    if os.path.exists(".env") or os.path.exists("test/.env"):
+        pytest.fail(".env or test/.env already exists")
+    del os.environ['LDAPPASSWORD']
+    with open(".env", "w") as f:
+        f.write("LDAPPASSWORD=%s\n" % ldappasswd)
+    shutil.copy(".env", "test/.env")
+    yield
+    os.unlink(".env")
+    os.unlink("test/.env")
 
 
 def loggername_factory(ran, call_args, pid=None):
