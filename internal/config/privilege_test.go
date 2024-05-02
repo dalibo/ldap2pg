@@ -16,24 +16,24 @@ func TestPrivilegeAlias(t *testing.T) {
 	rawYaml := strings.TrimSpace(dedent.Dedent(`
 	ro:
 	- type: SELECT
-	  on: ALL TABLES
+	  on: ALL TABLES IN SCHEMA
 	- type: USAGE
-	  on: SCHEMAS
+	  on: SCHEMA
 	rw:
 	- ro
 	- type: SELECT
-	  on: ALL SEQUENCES
+	  on: ALL SEQUENCES IN SCHEMA
 	ddl:
 	- rw
 	- type: CREATE
-	  on: SCHEMAS
+	  on: SCHEMA
 	`))
 	var raw interface{}
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
-	rawMap := raw.(map[string]interface{})
 
-	value := config.ResolvePrivilegeRefs(rawMap)
+	value, err := config.NormalizePrivileges(raw)
+	r.Nil(err)
 	r.Len(value, 3)
 	r.Len(value["ro"], 2)
 	r.Len(value["rw"], 3)
@@ -50,11 +50,27 @@ func TestBuiltinPrivilege(t *testing.T) {
 	var raw interface{}
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
-	rawMap := raw.(map[string]interface{})
 
-	value := config.ResolvePrivilegeRefs(rawMap)
+	value, err := config.NormalizePrivileges(raw)
+	r.Nil(err)
 	r.Len(value, 1)
 	r.Contains(value, "ro")
 	ro := value["ro"]
 	r.Len(ro, 3)
+}
+
+func TestUnknownACL(t *testing.T) {
+	r := require.New(t)
+
+	rawYaml := strings.TrimSpace(dedent.Dedent(`
+	rewinder:
+	- type: EXECUTE
+	  on: function pg_catalog.pg_ls_dir(text, boolean, boolean)
+	`))
+	var raw interface{}
+	err := yaml.Unmarshal([]byte(rawYaml), &raw)
+	r.Nil(err, rawYaml)
+
+	_, err = config.NormalizePrivileges(raw)
+	r.ErrorContains(err, "unknown ACL")
 }
