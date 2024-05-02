@@ -31,6 +31,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Add -C option to specify the working folder.
 - Accept DSN in CLI argument.
 - Refuse empty LDAP URI or BINDDN.
+- Don't want default privileges on self.
 - Stop calling whoami LDAP extended operation.
 - Load .env file.
 

@@ -120,15 +120,11 @@ func TestExpandOwners(t *testing.T) {
 		},
 	}
 	grants := g.ExpandOwners(db)
-	r.Len(t, grants, 6)
+	r.Len(t, grants, 3)
 	r.Equal(t, "o0", grants[0].Owner)
 	r.Equal(t, "toto", grants[0].Grantee)
-	r.Equal(t, "o0", grants[1].Owner)
-	r.Equal(t, "o0", grants[1].Grantee)
-	r.Equal(t, "o1", grants[2].Owner)
-	r.Equal(t, "o1", grants[3].Owner)
-	r.Equal(t, "o2", grants[4].Owner)
-	r.Equal(t, "o2", grants[5].Owner)
+	r.Equal(t, "o1", grants[1].Owner)
+	r.Equal(t, "o2", grants[2].Owner)
 }
 
 func TestExpandSchema(t *testing.T) {

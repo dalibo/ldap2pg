@@ -187,3 +187,16 @@ rules:
     privilege: reading
     role: bob
 ```
+
+
+PostgreSQL has hard-wire global default privileges.
+If a role does not have global default privileges configured, PostgreSQL assume some defaults.
+By default, PostgreSQL just grant privileges on owner.
+You can see them once you modify the default privileges.
+PostgreSQL will copy the hard-wired values along your granted privileges.
+
+If you don't explicitly re-grant these privileges in ldap2pg.yml,
+ldap2pg will revoke these hard-wired privileges.
+Actually, an owner of table don't need to be granted SELECT on its own tables.
+Thus, the hard-wired defaults are useless.
+You can let ldap2pg purge these useless defaults.
