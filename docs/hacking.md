@@ -239,10 +239,8 @@ Successfully installed babel-2.12.1 certifi-2023.7.22 charset-normalizer-3.2.0 c
 ## Releasing
 
 - Review `docs/changelog.md`.
-  `# Unreleased` title will be edited.
-- Increment version in `internal/VERSION`.
+  First title must be `# ldap2pg X.Y`
 - Generate release commit, tag and changelog with `make release`.
+  make reads next version from changelog.
 - Once CircleCI has created GitHub release artifacts, publish packages with `make publish-packages`.
 - Once Docker Hub has published new tag, tag latest image on docker hub with `make tag-latest`.
-- Increment `internal/VERSION` to a development version.
-  Commit and push to master.
