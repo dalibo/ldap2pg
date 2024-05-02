@@ -1,3 +1,4 @@
+<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.1.0-alpha0 -->
 <!--*- markdown -*-->
 
 <h1>Builtins Privileges</h1>
@@ -68,6 +69,7 @@ Here is the list of builtin ACL.
 For effective privileges:
 
 - `DATABASE`: privilege on database like `CONNECT`, `CREATE`, etc.
+- `SCHEMA`: manage `USAGE` and `CREATE` on schema.
 - `LANGUAGE`: manage `USAGE` on procedural languages.
 - `ALL FUNCTIONS IN SCHEMA`: manage `EXECUTE` on all functions per schema.
 - `ALL SEQUENCES IN SCHEMA`: like above but for sequences.
