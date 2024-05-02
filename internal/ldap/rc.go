@@ -94,18 +94,24 @@ func (m OptionsMap) GetSecret(name string) string {
 	option, ok := m[name]
 	if ok {
 		slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
-		return option.Value
 	}
-	return ""
+	return option.Value
 }
 
 func (m OptionsMap) GetString(name string) string {
 	option, ok := m[name]
 	if ok {
 		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
-		return option.Value
 	}
-	return ""
+	return option.Value
+}
+
+func (m OptionsMap) GetStrings(name string) []string {
+	option, ok := m[name]
+	if ok {
+		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
+	}
+	return strings.Fields(option.Value)
 }
 
 func (m *OptionsMap) LoadDefaults() {

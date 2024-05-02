@@ -24,8 +24,8 @@ type Client struct {
 }
 
 func Connect(options OptionsMap) (client Client, err error) {
-	client.URI = options.GetString("URI")
-	if client.URI == "" {
+	uris := options.GetStrings("URI")
+	if len(uris) == 0 {
 		err = fmt.Errorf("missing URI")
 		return
 	}
@@ -36,9 +36,14 @@ func Connect(options OptionsMap) (client Client, err error) {
 	d := net.Dialer{
 		Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
 	}
-	slog.Debug("LDAP dial.", "uri", client.URI)
+	try := 0
 	err = retry.Do(
 		func() error {
+			// Round-robin URIs
+			i := try % len(uris)
+			try++
+			client.URI = uris[i]
+			slog.Debug("LDAP dial.", "uri", client.URI, "try", try)
 			client.Conn, err = ldap3.DialURL(
 				client.URI,
 				ldap3.DialWithTLSDialer(&t, &d),

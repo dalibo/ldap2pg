@@ -1,6 +1,9 @@
 # coding: utf-8
 # Test order matters.
 
+import os
+import io
+
 import pytest
 
 
@@ -13,8 +16,22 @@ def extrarun(ldap2pg):
 
     # Synchronize all
     ldap2pg('--real')
-    ldap2pg('--check')
-    return ldap2pg
+
+    # Prefix LDAPURI with ldaps://localhost:1234 to force HA round-robin.
+    uri = " ".join(["ldaps://localhost:12345", os.environ['LDAPURI']])
+    err = io.StringIO()
+    ldap2pg(
+        '--check', '--verbose',
+        _env=dict(os.environ, LDAPURI=uri),
+        _err=err,
+    )
+    return err.getvalue()
+
+
+def test_ha(extrarun):
+    assert "ldaps://localhost:12345" in extrarun
+    assert os.environ['LDAPURI'] in extrarun
+    assert " try=2" in extrarun
 
 
 def test_roles(extrarun, psql):
