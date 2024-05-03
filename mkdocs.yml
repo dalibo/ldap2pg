@@ -74,6 +74,6 @@ plugins:
     separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
 - exclude:
     glob:
-    # make docs/wellknown.md produces a .tmp.
+    # make docs/builtins.md produces a .tmp.
     # Exclude it to avoid mkdocs serve to fail with a file not found.
     - "*.tmp"
