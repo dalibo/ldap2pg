@@ -132,8 +132,9 @@ Microsoft Active Directory.
 
 If you need support
 and you didn't found it in [documentation](https://ldap2pg.readthedocs.io/),
-just drop a question in a [GitHub issue](https://github.com/dalibo/ldap2pg/issues/new)!
+just drop a question in a [GitHub discussion](https://github.com/dalibo/ldap2pg/discussions)!
 French accepted.
+If you hit a bug or miss a feature, open a [GitHub issue](https://github.com/dalibo/ldap2pg/issues/new).
 Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) for advanced use cases.
 
 
