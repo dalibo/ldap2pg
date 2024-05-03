@@ -146,6 +146,12 @@ See [ldap.conf(5)] for further details.
 Since Postgres provide a `CREATEROLE` role option, you can manage roles without superuser privileges.
 Security-wise, it's a good idea to manage roles without super privileges.
 
+!!! warning
+
+    Up to Postgres 15, having CREATEROLE is roughly equivalent to being superuser.
+    This because CREATEROLE user can grant themselve almost every privileges.
+    Thus ldap2pg supports running unprivileged against Postgres 16 and later only.
+
 ldap2pg supports this case.
 However, you must be careful about the limitations.
 Let's call the non-super role creating other roles `creator`.
