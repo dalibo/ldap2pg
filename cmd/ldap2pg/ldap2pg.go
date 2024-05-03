@@ -72,13 +72,13 @@ func ldap2pg(ctx context.Context) (err error) {
 
 	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
-		"version", internal.Version,
+		"version", version,
 		"runtime", runtime.Version(),
 		"commit", commit,
 		"pid", os.Getpid(),
 	)
 
-	if strings.Contains(internal.Version, "-") {
+	if strings.Contains(version, "-") {
 		slog.Warn("Running a prerelease! Use at your own risks!")
 	}
 
@@ -221,7 +221,7 @@ func ldap2pg(ctx context.Context) (err error) {
 }
 
 func showVersion() {
-	fmt.Printf("ldap2pg %s\n", internal.Version)
+	fmt.Printf("ldap2pg %s\n", version)
 
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
