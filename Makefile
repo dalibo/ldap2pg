@@ -43,7 +43,7 @@ RELEASE_REMOTE=git@github.com:dalibo/ldap2pg.git
 NEXT_RELEASE:=$(shell grep -m 1 -Po '^# ldap2pg \K.+' CHANGELOG.md)
 release:
 	git rev-parse --abbrev-ref HEAD | grep -q '^$(RELEASE_BRANCH)$$'
-	! grep -q '# Unreleased' CHANGELOG.md
+	! grep -iq '^# Unreleased' CHANGELOG.md
 	git commit docs/changelog.md -m "New version $(NEXT_RELEASE)"
 	git tag v$(NEXT_RELEASE)
 	git push $(RELEASE_REMOTE) refs/heads/$(RELEASE_BRANCH):refs/heads/$(RELEASE_BRANCH)
