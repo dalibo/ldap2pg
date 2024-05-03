@@ -10,5 +10,8 @@ adduser() {
 adduser solene
 adduser samuel
 
+samba-tool group add prod
+samba-tool group addmembers prod solene
+
 samba-tool group add dba
-samba-tool group addmembers dba solene,samuel
+samba-tool group addmembers dba samuel,prod

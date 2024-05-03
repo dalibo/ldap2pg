@@ -43,7 +43,7 @@ def test_sub_search(extrarun, psql):
     comment = psql.scalar("""\
     SELECT description
     FROM pg_shdescription
-    WHERE description LIKE 'CN=solene,%: solene@bridoulou.fr';
+    WHERE description = 'group: prod';
     """)
     assert comment
 
