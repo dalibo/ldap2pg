@@ -16,10 +16,10 @@ Automatic tests on CircleCI will take care of validating regressions.
 Project repository ships a `docker-compose.yml` file to launch an Samba Directory and a PostgreSQL instances.
 
 ``` console
-$ docker-compose pull
+$ docker compose pull
 ...
-Status: Downloaded newer image for postgres:10-alpine
-$ docker-compose up -d
+Status: Downloaded newer image for postgres:16-alpine
+$ docker compose up -d
 Creating network "ldap2pg_default" with the default driver
 Creating ldap2pg_postgres_1 ...
 Creating ldap2pg_samba1_1 ...
