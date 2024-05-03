@@ -26,7 +26,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -36,11 +35,11 @@ func main() {
 
 	// Bootstrap logging first to log in setup.
 	internal.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
-	setupViper()
-	if viper.GetBool("help") {
+	loadEnvAndFlags()
+	if k.Bool("help") {
 		pflag.Usage()
 		return
-	} else if viper.GetBool("version") {
+	} else if k.Bool("version") {
 		showVersion()
 		return
 	}
