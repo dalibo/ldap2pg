@@ -6,12 +6,12 @@ default:
 
 big: reset-samba1
 	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
-	test/fixtures/genperfldif.sh | ldapmodify -xw $$LDAPPASSWORD
+	test/fixtures/genbigldif.sh | ldapmodify -xw $$LDAPPASSWORD
 	$(MAKE) reset-big
 
 reset-big: reset-postgres
 	while ! bash -c "echo -n > /dev/tcp/$${PGHOST}/5432" ; do sleep 1; done
-	test/fixtures/perf.sh
+	test/fixtures/big.sh
 
 reset-%:
 	docker compose up --force-recreate --no-deps --renew-anon-volumes --detach $*
