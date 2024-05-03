@@ -13,16 +13,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func FindFile(userValue string) (configpath string) {
-	if "-" == userValue {
-		return "<stdin>"
+func FindDotEnvFile(configpath string) string {
+	envpath := path.Join(path.Dir(configpath), "/.env")
+	_, err := os.Stat(envpath)
+	if err != nil {
+		return ""
 	}
+	return envpath
+}
 
-	if "" != userValue {
-		return userValue
-	}
-
-	slog.Debug("Searching configuration file in standard locations.")
+func FindConfigFile(userValue string) string {
 	home, _ := os.UserHomeDir()
 	candidates := []string{
 		"./ldap2pg.yml",
@@ -32,6 +32,19 @@ func FindFile(userValue string) (configpath string) {
 		"/etc/ldap2pg.yml",
 		"/etc/ldap2pg.yaml",
 	}
+	return FindFile(userValue, candidates)
+}
+
+func FindFile(userValue string, candidates []string) (configpath string) {
+	if "-" == userValue {
+		return "<stdin>"
+	}
+
+	if "" != userValue {
+		return userValue
+	}
+
+	slog.Debug("Searching configuration file in standard locations.")
 
 	for _, candidate := range candidates {
 		_, err := os.Stat(candidate)

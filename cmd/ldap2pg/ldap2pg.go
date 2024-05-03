@@ -23,6 +23,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/joho/godotenv"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -87,17 +88,27 @@ func ldap2pg(ctx context.Context) (err error) {
 		return
 	}
 
-	err = postgres.Configure(controller.Dsn)
-	if err != nil {
-		return
-	}
-
-	configPath := config.FindFile(controller.Config)
+	configPath := config.FindConfigFile(controller.Config)
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err := config.Load(configPath)
 	if err != nil {
 		return
 	}
+
+	envpath := config.FindDotEnvFile(configPath)
+	if envpath != "" {
+		slog.Debug("Loading .env file.", "path", envpath)
+		err = godotenv.Load(envpath)
+		if err != nil {
+			return fmt.Errorf(".env: %w", err)
+		}
+	}
+
+	err = postgres.Configure(controller.Dsn)
+	if err != nil {
+		return
+	}
+
 	if controller.SkipPrivileges {
 		c.DropPrivileges()
 	}

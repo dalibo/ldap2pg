@@ -31,6 +31,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Accept DSN in CLI argument.
 - Refuse empty LDAP URI or BINDDN.
 - Stop calling whoami LDAP extended operation.
+- Load .env file.
 
 
 
