@@ -129,10 +129,10 @@ ldap2pg project comes with three cases for testing:
     - 1K users in directory.
 
 `test/fixtures/` holds fixtures for Samba and PostgreSQL.
-Default development environment loads nominal and extra fixtures.
+Default development environment loads *nominal* and *extra* fixtures.
 By default, big case is not loaded.
-Func tests use nominal and extra fixtures.
-See below for big case.
+Func tests use *nominal* and *extra* fixtures.
+See below for *big* case.
 
 `test/fixtures/postgres/reset.sh` resets PostgreSQL state.
 You can also use `make reset-postgres` to recreate PostgreSQL container from scratch.
