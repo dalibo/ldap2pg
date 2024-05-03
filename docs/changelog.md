@@ -13,13 +13,13 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 6.1-alpha2
 
-**WARNING**
+!!! warning "Running ldap2pg unprivileged"
 
-Postgres 16 heavily changed the behaviour when creating roles with an unprivileged role having CREATEROLE option.
-Giving CREATEROLE to an unprivileged role before Postgres 16 was actually flawed.
-The way it's handling is so distinct that keeping the two implementation does not worth the price.
+    Postgres 16 heavily changed the behaviour when creating roles with an unprivileged role having CREATEROLE option.
+    Giving CREATEROLE to an unprivileged role before Postgres 16 was actually flawed.
+    The way it's handling is so distinct that keeping the two implementation does not worth the price.
 
-- **breaking** Refuses to run unprivileged before Postgres 16.
+- **BREAKING** Refuses to run unprivileged before Postgres 16.
 - Fix accessing uppercased DN RDN.
 - Restore LDAP HA: ldap2pg retries next LDAP URI.
 - Suggest to run with --verbose on error.
