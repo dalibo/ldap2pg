@@ -5,14 +5,19 @@ import (
 	"log/slog"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/koanf/v2"
 	"github.com/lithammer/dedent"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
+
+var k = koanf.New(".")
 
 func init() {
 	pflag.Usage = func() {
@@ -30,44 +35,36 @@ func init() {
 	}
 }
 
-func setupViper() {
-	viper.SetDefault("check", false)
-	pflag.Bool("check", viper.GetBool("check"), "Check mode: exits with 1 if Postgres instance is unsynchronized.")
+func loadEnvAndFlags() {
+	// env.Provider does not return error.
+	_ = k.Load(env.Provider("LDAP2PG_", k.Delim(), func(s string) string {
+		slog.Debug("Reading env.", "var", s)
+		s = strings.TrimPrefix(s, "LDAP2PG_")
+		s = strings.ToLower(s)
+		return s
+	}), nil)
 
-	viper.SetDefault("color", defaultColor())
-	_ = viper.BindEnv("color")
-	pflag.Bool("color", viper.GetBool("color"), "Force color output.")
-
-	viper.SetDefault("config", "")
-	_ = viper.BindEnv("config", "LDAPG2PG_CONFIG")
-	pflag.StringP("config", "c", "", "Path to YAML configuration file. Use - for stdin.")
-
-	viper.SetDefault("directory", "")
+	// Actually, we don't need to use k.* to set default from environment
+	// because we pass k to posflag.ProviderWithFlag so that posflag provider
+	// checks whether parameter is set in environment.
+	pflag.Bool("check", false, "Check mode: exits with 1 if Postgres instance is unsynchronized.")
+	pflag.Bool("color", defaultColor(), "Force color output.")
+	pflag.StringP("config", "c", k.String("config"), "Path to YAML configuration file. Use - for stdin.")
 	pflag.StringP("directory", "C", "", "Path to directory containing configuration files.")
-
-	viper.SetDefault("real", false)
-	_ = viper.BindEnv("real")
-	pflag.BoolP("real", "R", viper.GetBool("real"), "Real mode. Apply changes to Postgres instance.")
-
-	viper.SetDefault("skip-privileges", false)
-	_ = viper.BindEnv("skip-privileges")
-	pflag.BoolP("skip-privileges", "P", viper.GetBool("skip-privileges"), "Turn off privilege synchronisation.")
-
-	viper.SetDefault("help", false)
-	pflag.BoolP("help", "?", true, "Show this help message and exit.")
-
-	viper.SetDefault("version", false)
-	pflag.BoolP("version", "V", true, "Show version and exit.")
-
-	viper.SetDefault("quiet", 0)
+	pflag.BoolP("real", "R", k.Bool("real"), "Real mode. Apply changes to Postgres instance.")
+	pflag.BoolP("skip-privileges", "P", k.Bool("skipprivileges"), "Turn off privilege synchronisation.")
+	pflag.BoolP("help", "?", false, "Show this help message and exit.")
+	pflag.BoolP("version", "V", false, "Show version and exit.")
 	pflag.CountP("quiet", "q", "Decrease log verbosity.")
-	viper.SetDefault("verbose", 0)
 	pflag.CountP("verbose", "v", "Increase log verbosity.")
-	viper.SetDefault("verbosity", "")
-	_ = viper.BindEnv("verbosity", "LDAP2PG_VERBOSITY")
-
 	pflag.Parse()
-	_ = viper.BindPFlags(pflag.CommandLine)
+
+	// posflag.Provider does not return error.
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, ".", k, func(f *pflag.Flag) (string, interface{}) {
+		// remove hyphen from e.g. skip-privileges.
+		key := strings.ReplaceAll(f.Name, "-", "")
+		return key, posflag.FlagVal(pflag.CommandLine, f)
+	}), nil)
 }
 
 func defaultColor() bool {
@@ -84,7 +81,7 @@ type Controller struct {
 	Color          bool
 	Config         string
 	Real           bool
-	SkipPrivileges bool `mapstructure:"skip-privileges"`
+	SkipPrivileges bool
 	Quiet          int
 	Verbose        int
 	Verbosity      string
@@ -104,13 +101,13 @@ var levels = []slog.Level{
 }
 
 func unmarshalController() (controller Controller, err error) {
-	err = viper.Unmarshal(&controller)
-	verbosity := viper.GetString("verbosity")
+	err = k.Unmarshal("", &controller)
+	verbosity := k.String("verbosity")
 	var level slog.LevelVar
 	switch verbosity {
 	case "":
 		// Default log level is INFO, which index is 1.
-		levelIndex := 1 - viper.GetInt("verbose") + viper.GetInt("quiet")
+		levelIndex := 1 - k.Int("verbose") + k.Int("quiet")
 		levelIndex = int(math.Max(0, float64(levelIndex)))
 		levelIndex = int(math.Min(float64(levelIndex), float64(len(levels)-1)))
 		controller.LogLevel = levels[levelIndex]

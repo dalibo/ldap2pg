@@ -54,6 +54,8 @@ ldap2pg accepts one extra variable: `LDAPPASSWORD`.
 
 ldap2pg loads `.env` file in the lda2pg.yml's parent directory if exists.
 
+Use `true` or `false` for boolean values in environment. e.g. `LDAP2PG_SKIPPRIVILEGES=true`.
+
 !!! tip
 
     Test Postgres connexion using `psql(1)` and LDAP using `ldapwhoami(1)`,
