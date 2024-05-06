@@ -21,6 +21,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - **BREAKING** Refuses to run unprivileged before Postgres 16.
 - Fix accessing uppercased DN RDN.
+- Fix hardwired global default privileges not inspected.
 - Restore LDAP HA: ldap2pg retries next LDAP URI.
 - Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
