@@ -49,12 +49,12 @@ func (m Rules) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges 
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
-		ldapOptions, err := ldap.Initialize()
+		err := ldap.Initialize()
 		if err != nil {
 			return nil, nil, err
 		}
 
-		ldapc, err = ldap.Connect(ldapOptions)
+		ldapc, err = ldap.Connect()
 		if err != nil {
 			return nil, nil, err
 		}

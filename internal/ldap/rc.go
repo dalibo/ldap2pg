@@ -3,194 +3,117 @@ package ldap
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
+
+	"github.com/knadh/koanf/maps"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/v2"
 )
 
-var knownOptions = []string{
-	"BASE",
-	"BINDDN",
-	"PASSWORD", // ldap2pg extension.
-	"REFERRALS",
-	"SASL_AUTHCID",
-	"SASL_AUTHZID",
-	"SASL_MECH",
-	"TIMEOUT",
-	"TLS_REQCERT",
-	"NETWORK_TIMEOUT",
-	"URI",
-}
+var k = koanf.New("_")
 
-// Holds options with their raw value from either file of env. Marshaling is
-// done on demand by getters.
-type OptionsMap map[string]RawOption
-
-type RawOption struct {
-	Key    string
-	Value  string
-	Origin string
-}
-
-func Initialize() (options OptionsMap, err error) {
+// cf. https://git.openldap.org/openldap/openldap/-/blob/bf01750381726db3052d94514eec4048c90a616a/libraries/libldap/init.c#L640
+func Initialize() error {
 	_, ok := os.LookupEnv("LDAPNOINIT")
 	if ok {
 		slog.Debug("Skip LDAP initialization.")
-		return
+		return nil
 	}
-	path := "/etc/ldap/ldap.conf"
-	home, _ := os.UserHomeDir()
-	options = make(OptionsMap)
-	options.LoadDefaults()
-	err = options.LoadFiles(
-		path,
-		filepath.Join(home, "ldaprc"),
-		filepath.Join(home, ".ldaprc"),
-		"ldaprc",
-	)
-	if err != nil {
-		return
-	}
-	path = os.Getenv("LDAPCONF")
-	if "" != path {
-		err = options.LoadFiles(path)
-		if err != nil {
-			return
-		}
-	}
-	path = os.Getenv("LDAPRC")
-	if "" != path {
-		err = options.LoadFiles(
-			filepath.Join(home, path),
-			fmt.Sprintf("%s/.%s", home, path),
-			"./"+path,
-		)
-	}
-	options.LoadEnv()
-	return
-}
 
-func (m OptionsMap) GetSeconds(name string) time.Duration {
-	option, ok := m[name]
-	if ok {
-		integer, err := strconv.Atoi(option.Value)
-		if nil == err {
-			slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
-			return time.Duration(integer) * time.Second
-		}
-		slog.Warn("Bad integer.", "key", name, "value", option.Value, "err", err.Error(), "origin", option.Origin)
-	}
-	return 0
-}
-
-// Like GetString, but does not log value.
-func (m OptionsMap) GetSecret(name string) string {
-	option, ok := m[name]
-	if ok {
-		slog.Debug("Read LDAP option.", "key", option.Key, "origin", option.Origin)
-	}
-	return option.Value
-}
-
-func (m OptionsMap) GetString(name string) string {
-	option, ok := m[name]
-	if ok {
-		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
-	}
-	return option.Value
-}
-
-func (m OptionsMap) GetStrings(name string) []string {
-	option, ok := m[name]
-	if ok {
-		slog.Debug("Read LDAP option.", "key", option.Key, "value", option.Value, "origin", option.Origin)
-	}
-	return strings.Fields(option.Value)
-}
-
-func (m *OptionsMap) LoadDefaults() {
-	defaults := map[string]string{
+	_ = k.Load(confmap.Provider(map[string]interface{}{
+		"URI":             "ldap://localhost",
 		"NETWORK_TIMEOUT": "30",
+		"RC":              "ldaprc",
 		"TLS_REQCERT":     "try",
 		"TIMEOUT":         "30",
-	}
+	}, "_"), nil)
 
-	for key, value := range defaults {
-		(*m)[key] = RawOption{
-			Key:    key,
-			Value:  value,
-			Origin: "default",
-		}
-	}
-}
+	_ = k.Load(env.Provider("LDAP", "_", func(key string) string {
+		return strings.TrimPrefix(key, "LDAP")
+	}), nil)
 
-func (m *OptionsMap) LoadEnv() {
-	for _, name := range knownOptions {
-		envName := "LDAP" + name
-		value, ok := os.LookupEnv(envName)
-		if !ok {
+	// cf. https://git.openldap.org/openldap/openldap/-/blob/bf01750381726db3052d94514eec4048c90a616a/libraries/libldap/init.c#L741
+	home, _ := os.UserHomeDir()
+	files := []string{
+		"/etc/ldap/ldap.conf",
+		filepath.Join(home, "ldaprc"),
+		filepath.Join(home, ".ldaprc"),
+		"ldaprc", // search in CWD
+		// Read CONF and RC only from env, before above files are effectively read.
+		k.String("CONF"),
+		filepath.Join(home, k.String("RC")),
+		filepath.Join(home, fmt.Sprintf(".%s", k.String("RC"))),
+		k.String("RC"), // Search in CWD.
+	}
+	for _, candidate := range files {
+		if candidate == "" {
 			continue
 		}
-		option := RawOption{
-			Key:    strings.TrimPrefix(envName, "LDAP"),
-			Value:  value,
-			Origin: "env",
-		}
-		(*m)[option.Key] = option
-	}
-}
 
-func (m *OptionsMap) LoadFiles(path ...string) (err error) {
-	for _, candidate := range path {
-		if !filepath.IsAbs(candidate) {
-			candidate, _ = filepath.Abs(candidate)
-		}
-		_, err := os.Stat(candidate)
-		if err != nil {
-			slog.Debug("Ignoring configuration file.", "path", candidate, "err", err.Error())
-			continue
-		}
-		slog.Debug("Found LDAP configuration file.", "path", candidate)
-
-		fo, err := os.Open(candidate)
+		err := k.Load(newLooseFileProvider(candidate), parser{})
 		if err != nil {
 			return fmt.Errorf("%s: %w", candidate, err)
 		}
-		for option := range iterFileOptions(fo) {
-			option.Origin = candidate
-			(*m)[option.Key] = option
-		}
 	}
-	return
+	return nil
 }
 
-func iterFileOptions(r io.Reader) <-chan RawOption {
-	ch := make(chan RawOption)
-	scanner := bufio.NewScanner(r)
+// looseFileProvider reads a file if it exists.
+type looseFileProvider struct {
+	path string
+}
+
+func newLooseFileProvider(path string) koanf.Provider {
+	if !filepath.IsAbs(path) {
+		path, _ = filepath.Abs(path)
+	}
+	return looseFileProvider{path: path}
+}
+
+func (p looseFileProvider) ReadBytes() ([]byte, error) {
+	data, err := os.ReadFile(p.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	slog.Debug("Found LDAP configuration file.", "path", p.path, "err", err)
+	return data, err
+}
+
+func (looseFileProvider) Read() (map[string]interface{}, error) {
+	panic("not implemented")
+}
+
+// parser returns ldaprc as plain map for koanf.
+type parser struct{}
+
+func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
+	out := make(map[string]interface{})
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	re := regexp.MustCompile(`\s+`)
-	go func() {
-		defer close(ch)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "#") {
-				continue
-			}
-			line = strings.TrimSpace(line)
-			if "" == line {
-				continue
-			}
-			fields := re.Split(line, 2)
-			ch <- RawOption{
-				Key:   strings.ToUpper(fields[0]),
-				Value: fields[1],
-			}
+	for scanner.Scan() {
+		line := scanner.Text()
+		slog.Debug("LDAP config line.", "line", line)
+		if strings.HasPrefix(line, "#") {
+			continue
 		}
-	}()
-	return ch
+		line = strings.TrimSpace(line)
+		if "" == line {
+			continue
+		}
+		fields := re.Split(line, 2)
+		slog.Debug("LDAP config line.", "key", fields[0], "value", fields[1])
+		out[fields[0]] = fields[1]
+	}
+	return maps.Unflatten(out, "_"), nil
+}
+
+func (parser) Marshal(map[string]interface{}) ([]byte, error) {
+	panic("not implemented")
 }

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -23,18 +24,19 @@ type Client struct {
 	Conn        *ldap3.Conn
 }
 
-func Connect(options OptionsMap) (client Client, err error) {
-	uris := options.GetStrings("URI")
+func Connect() (client Client, err error) {
+	uri := k.String("URI")
+	uris := strings.Split(uri, " ")
 	if len(uris) == 0 {
 		err = fmt.Errorf("missing URI")
 		return
 	}
 
 	t := tls.Config{
-		InsecureSkipVerify: options.GetString("TLS_REQCERT") != "try",
+		InsecureSkipVerify: k.String("TLS_REQCERT") != "try",
 	}
 	d := net.Dialer{
-		Timeout: options.GetSeconds("NETWORK_TIMEOUT"),
+		Timeout: k.Duration("NETWORK_TIMEOUT") * time.Second,
 	}
 	try := 0
 	err = retry.Do(
@@ -60,24 +62,25 @@ func Connect(options OptionsMap) (client Client, err error) {
 		return
 	}
 
-	client.Timeout = options.GetSeconds("TIMEOUT")
+	client.Timeout = k.Duration("TIMEOUT") * time.Second
+	slog.Debug("LDAP set timeout.", "timeout", client.Timeout)
 	client.Conn.SetTimeout(client.Timeout)
 
-	client.SaslMech = options.GetString("SASL_MECH")
+	client.SaslMech = k.String("SASL_MECH")
 	switch client.SaslMech {
 	case "":
-		client.BindDN = options.GetString("BINDDN")
+		client.BindDN = k.String("BINDDN")
 		if client.BindDN == "" {
 			err = fmt.Errorf("missing BINDDN")
 			return
 		}
-		password := options.GetSecret("PASSWORD")
+		password := k.String("PASSWORD")
 		client.Password = "*******"
 		slog.Debug("LDAP simple bind.", "binddn", client.BindDN)
 		err = client.Conn.Bind(client.BindDN, password)
 	case "DIGEST-MD5":
-		client.SaslAuthCID = options.GetString("SASL_AUTHCID")
-		password := options.GetSecret("PASSWORD")
+		client.SaslAuthCID = k.String("SASL_AUTHCID")
+		password := k.String("PASSWORD")
 		var parsedURI *url.URL
 		parsedURI, err = url.Parse(client.URI)
 		if err != nil {
