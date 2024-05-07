@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/avast/retry-go/v4 v4.6.0
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/gosimple/slug v1.14.0
