@@ -99,7 +99,6 @@ func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 	re := regexp.MustCompile(`\s+`)
 	for scanner.Scan() {
 		line := scanner.Text()
-		slog.Debug("LDAP config line.", "line", line)
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -108,7 +107,6 @@ func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 			continue
 		}
 		fields := re.Split(line, 2)
-		slog.Debug("LDAP config line.", "key", fields[0], "value", fields[1])
 		out[fields[0]] = fields[1]
 	}
 	return maps.Unflatten(out, "_"), nil
