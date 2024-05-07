@@ -7,7 +7,7 @@ toolchain go1.21.1
 require (
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/deckarep/golang-set/v2 v2.6.0
-	github.com/go-ldap/ldap/v3 v3.4.6
+	github.com/go-ldap/ldap/v3 v3.4.8
 	github.com/gosimple/slug v1.14.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/joho/godotenv v1.5.1
@@ -21,14 +21,14 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	github.com/tzvetkoff-go/fnmatch v0.0.0-20220210160758-879480b5e662
-	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/go-asn1-ber/asn1-ber v1.5.5 // indirect
+	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
 	github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
@@ -39,8 +39,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 )

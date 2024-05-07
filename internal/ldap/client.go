@@ -46,7 +46,8 @@ func Connect(options OptionsMap) (client Client, err error) {
 			slog.Debug("LDAP dial.", "uri", client.URI, "try", try)
 			client.Conn, err = ldap3.DialURL(
 				client.URI,
-				ldap3.DialWithTLSDialer(&t, &d),
+				ldap3.DialWithTLSConfig(&t),
+				ldap3.DialWithDialer(&d),
 			)
 			return err
 		},
