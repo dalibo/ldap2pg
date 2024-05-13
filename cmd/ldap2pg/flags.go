@@ -86,7 +86,6 @@ type Controller struct {
 	Verbose        int
 	Verbosity      string
 	LogLevel       slog.Level
-	PostgresWatch  perf.StopWatch
 	LdapWatch      perf.StopWatch
 	Directory      string
 	Dsn            string
