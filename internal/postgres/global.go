@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -18,6 +19,19 @@ func Configure(dsn string) (err error) {
 	if globalConf.ConnectTimeout == 0 {
 		slog.Debug("Setting default Postgres connection timeout.", "timeout", "5s")
 		globalConf.ConnectTimeout, _ = time.ParseDuration("5s")
+		globalConf.OnNotice = func(_ *pgconn.PgConn, n *pgconn.Notice) {
+			switch n.Severity {
+			case "NOTICE":
+				slog.Info("Postgres message.", "message", n.Message, "hint", n.Hint, "detail", n.Detail)
+			case "WARNING":
+				slog.Warn("Postgres warning.", "message", n.Message, "hint", n.Hint, "detail", n.Detail)
+			case "ERROR", "FATAL", "PANIC":
+				slog.Error("Postgres error.", "message", n.Message, "hint", n.Hint, "detail", n.Detail)
+				panic("Postgres out of band error.") // We should propagate error. No case found yet.
+			default:
+				slog.Debug("Postgres message.", "message", n.Message, "severity", n.Severity, "detail", n.Detail)
+			}
+		}
 	}
 	return
 }
