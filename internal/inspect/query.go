@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/jackc/pgx/v5"
 )
+
+var Watch perf.StopWatch
 
 // Querier abstracts the execution of a SQL query or the copy of static rows
 // from YAML.
@@ -60,7 +63,11 @@ type SQLQuery[T any] struct {
 
 func (q *SQLQuery[_]) Query(ctx context.Context, pgconn Conn) {
 	slog.Debug("Executing SQL query:\n" + q.SQL)
-	rows, err := pgconn.Query(ctx, q.SQL)
+	var rows pgx.Rows
+	var err error
+	Watch.TimeIt(func() {
+		rows, err = pgconn.Query(ctx, q.SQL)
+	})
 	if err != nil {
 		q.err = fmt.Errorf("bad query: %w", err)
 		return

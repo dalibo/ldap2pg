@@ -213,6 +213,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	logAttrs := []interface{}{
 		"elapsed", elapsed,
 		"mempeak", perf.FormatBytes(vmPeak),
+		"inspect", inspect.Watch.Total,
 		"sync", postgres.Watch.Total,
 		"queries", queryCount, // Don't use Watch.Count for dry run case.
 		"ldap", ldap.Watch.Total,
