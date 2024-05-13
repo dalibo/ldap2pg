@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
@@ -186,7 +185,7 @@ type SearchResult struct {
 
 // search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func (s Step) search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResult {
+func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
 	ch := make(chan SearchResult)
 	go func() {
 		defer close(ch)
@@ -197,7 +196,7 @@ func (s Step) search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResu
 		}
 
 		search := s.LdapSearch
-		res, err := ldapc.Search(watch, search.Base, search.Scope, search.Filter, search.Attributes)
+		res, err := ldapc.Search(search.Base, search.Scope, search.Filter, search.Attributes)
 		if err != nil {
 			ch <- SearchResult{err: err}
 			return
@@ -216,7 +215,7 @@ func (s Step) search(ldapc ldap.Client, watch *perf.StopWatch) <-chan SearchResu
 			bases := entry.GetAttributeValues(subsearchAttr)
 			for _, base := range bases {
 				s := s.LdapSearch.Subsearches[subsearchAttr]
-				res, err = ldapc.Search(watch, base, s.Scope, s.Filter, s.Attributes)
+				res, err = ldapc.Search(base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
 					ch <- SearchResult{err: err}
 					continue

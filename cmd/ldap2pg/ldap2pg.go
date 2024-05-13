@@ -17,6 +17,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -117,7 +118,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
+	wantedRoles, wantedGrants, err := c.SyncMap.Run(instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return
 	}
@@ -214,8 +215,8 @@ func ldap2pg(ctx context.Context) (err error) {
 		"mempeak", perf.FormatBytes(vmPeak),
 		"sync", postgres.Watch.Total,
 		"queries", queryCount, // Don't use Watch.Count for dry run case.
-		"ldap", controller.LdapWatch.Total,
-		"searches", controller.LdapWatch.Count,
+		"ldap", ldap.Watch.Total,
+		"searches", ldap.Watch.Count,
 	}
 	if queryCount > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
