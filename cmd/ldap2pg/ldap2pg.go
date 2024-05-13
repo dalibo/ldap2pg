@@ -17,6 +17,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -117,7 +118,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := c.SyncMap.Run(&controller.LdapWatch, instance.RolesBlacklist, c.Privileges)
+	wantedRoles, wantedGrants, err := c.SyncMap.Run(instance.RolesBlacklist, c.Privileges)
 	if err != nil {
 		return
 	}
@@ -143,7 +144,7 @@ func ldap2pg(ctx context.Context) (err error) {
 
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner, &instance.Databases)
 	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
-	stageCount, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
+	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
 	if err != nil {
 		return
 	}
@@ -212,10 +213,11 @@ func ldap2pg(ctx context.Context) (err error) {
 	logAttrs := []interface{}{
 		"elapsed", elapsed,
 		"mempeak", perf.FormatBytes(vmPeak),
-		"postgres", controller.PostgresWatch.Total,
-		"queries", queryCount,
-		"ldap", controller.LdapWatch.Total,
-		"searches", controller.LdapWatch.Count,
+		"inspect", inspect.Watch.Total,
+		"sync", postgres.Watch.Total,
+		"queries", queryCount, // Don't use Watch.Count for dry run case.
+		"ldap", ldap.Watch.Total,
+		"searches", ldap.Watch.Count,
 	}
 	if queryCount > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
@@ -275,7 +277,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 			return 0, fmt.Errorf("privileges: %w", err)
 		}
 		queries := privilege.Diff(currentGrants, expandedGrants)
-		count, err := postgres.Apply(ctx, &controller.PostgresWatch, queries, controller.Real)
+		count, err := postgres.Apply(ctx, queries, controller.Real)
 		if err != nil {
 			return 0, fmt.Errorf("apply: %w", err)
 		}

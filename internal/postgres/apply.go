@@ -11,9 +11,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var formatter = FmtQueryRewriter{}
+var (
+	Watch     perf.StopWatch
+	formatter = FmtQueryRewriter{}
+)
 
-func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, real bool) (count int, err error) {
+func Apply(ctx context.Context, diff <-chan SyncQuery, real bool) (count int, err error) {
 	prefix := ""
 	if !real {
 		prefix = "Would "
@@ -41,7 +44,7 @@ func Apply(ctx context.Context, watch *perf.StopWatch, diff <-chan SyncQuery, re
 		}
 
 		var tag pgconn.CommandTag
-		duration := watch.TimeIt(func() {
+		duration := Watch.TimeIt(func() {
 			_, err = pgConn.Exec(ctx, sql)
 		})
 		if err != nil {

@@ -34,6 +34,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Don't want default privileges on self.
 - Stop calling whoami LDAP extended operation.
 - Load .env file.
+- Watch time spent inspecting Postgres.
 
 
 

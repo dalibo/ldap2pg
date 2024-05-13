@@ -24,6 +24,8 @@ type Client struct {
 	Conn        *ldap3.Conn
 }
 
+var Watch perf.StopWatch
+
 func Connect() (client Client, err error) {
 	uri := k.String("URI")
 	uris := strings.Split(uri, " ")
@@ -99,7 +101,7 @@ func Connect() (client Client, err error) {
 	return
 }
 
-func (c *Client) Search(watch *perf.StopWatch, base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
+func (c *Client) Search(base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
 	search := ldap3.SearchRequest{
 		BaseDN:     base,
 		Scope:      int(scope),
@@ -111,7 +113,7 @@ func (c *Client) Search(watch *perf.StopWatch, base string, scope Scope, filter 
 	slog.Debug("Searching LDAP directory.", "cmd", c.Command("ldapsearch", args...))
 	var err error
 	var res *ldap3.SearchResult
-	duration := watch.TimeIt(func() {
+	duration := Watch.TimeIt(func() {
 		res, err = c.Conn.Search(&search)
 	})
 	if err != nil {

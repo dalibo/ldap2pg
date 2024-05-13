@@ -7,7 +7,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
 )
@@ -45,7 +44,7 @@ func (m Rules) DropGrants() (out Rules) {
 	return
 }
 
-func (m Rules) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
+func (m Rules) Run(blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
@@ -69,7 +68,7 @@ func (m Rules) Run(watch *perf.StopWatch, blacklist lists.Blacklist, privileges 
 			slog.Debug(fmt.Sprintf("Processing sync map item %d.", i))
 		}
 
-		for res := range item.search(ldapc, watch) {
+		for res := range item.search(ldapc) {
 			if res.err != nil {
 				slog.Error("Search error. Keep going.", "err", res.err)
 				errList = append(errList, res.err)

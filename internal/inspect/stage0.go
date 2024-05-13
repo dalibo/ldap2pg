@@ -9,6 +9,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slices"
 )
 
@@ -62,7 +63,10 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 
 	slog.Debug("Inspecting PostgreSQL server and session.")
 	slog.Debug("Executing SQL query:\n" + sessionQuery)
-	rows, err := pgconn.Query(ctx, sessionQuery)
+	var rows pgx.Rows
+	Watch.TimeIt(func() {
+		rows, err = pgconn.Query(ctx, sessionQuery)
+	})
 	if err != nil {
 		return err
 	}

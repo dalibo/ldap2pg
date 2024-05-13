@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal"
-	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
@@ -86,8 +85,6 @@ type Controller struct {
 	Verbose        int
 	Verbosity      string
 	LogLevel       slog.Level
-	PostgresWatch  perf.StopWatch
-	LdapWatch      perf.StopWatch
 	Directory      string
 	Dsn            string
 }
