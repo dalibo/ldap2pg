@@ -37,6 +37,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Suggest --verbose on error.
 - Suggest --real on dry run with changes.
 - New final metrics: roles, grants, inspect time.
+- Escape attribute with : `{sAMAccountName.identifier()}` and `{sAMAccountName.string()}`.
 
 
 
