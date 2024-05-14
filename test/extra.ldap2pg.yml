@@ -81,3 +81,13 @@ rules:
       comment: "group: {memberOf.sAMAccountName}"
       options: LOGIN SUPERUSER
       parents: [ldap_roles]
+
+- description: "Hooks"
+  ldapsearch:
+    base: "cn=users,dc=bridoulou,dc=fr"
+    filter: "(cn=corinne)"
+  role:
+    name: "{cn}"
+    parent: ldap_roles
+    before_create: "CREATE SCHEMA {cn.identifier()};"
+    after_create: "CREATE TABLE {cn.identifier()}.username AS SELECT {cn.string()}::regrole AS username;"

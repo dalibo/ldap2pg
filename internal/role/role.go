@@ -8,11 +8,13 @@ import (
 )
 
 type Role struct {
-	Name    string
-	Comment string
-	Parents []Membership
-	Options Options
-	Config  *Config
+	Name         string
+	Comment      string
+	Parents      []Membership
+	Options      Options
+	Config       *Config
+	BeforeCreate string
+	AfterCreate  string
 }
 
 func New() Role {
@@ -182,6 +184,14 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 func (r *Role) Create() (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 
+	if r.BeforeCreate != "" {
+		out = append(out, postgres.SyncQuery{
+			Description: "Run before create hook.",
+			LogArgs:     []interface{}{"role", r.Name, "sql", r.BeforeCreate},
+			Query:       r.BeforeCreate,
+		})
+	}
+
 	if len(r.Parents) > 0 {
 		parents := []interface{}{}
 		for _, parent := range r.Parents {
@@ -211,18 +221,25 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 		QueryArgs:   []interface{}{identifier, r.Comment},
 	})
 
-	if nil == r.Config {
-		return
+	if r.Config != nil {
+		for k, v := range *r.Config {
+			out = append(out, postgres.SyncQuery{
+				Description: "Set role config.",
+				LogArgs:     []interface{}{"role", r.Name, "config", k, "value", v},
+				Query:       `ALTER ROLE %s SET %s TO %s`,
+				QueryArgs:   []interface{}{identifier, pgx.Identifier{k}, v},
+			})
+		}
 	}
 
-	for k, v := range *r.Config {
+	if r.AfterCreate != "" {
 		out = append(out, postgres.SyncQuery{
-			Description: "Set role config.",
-			LogArgs:     []interface{}{"role", r.Name, "config", k, "value", v},
-			Query:       `ALTER ROLE %s SET %s TO %s`,
-			QueryArgs:   []interface{}{identifier, pgx.Identifier{k}, v},
+			Description: "Run after create hook.",
+			LogArgs:     []interface{}{"role", r.Name, "sql", r.AfterCreate},
+			Query:       r.AfterCreate,
 		})
 	}
+
 	return
 }
 

@@ -85,11 +85,13 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 }
 
 type RoleRule struct {
-	Name    pyfmt.Format
-	Options role.Options
-	Comment pyfmt.Format
-	Parents []MembershipRule
-	Config  *role.Config
+	Name         pyfmt.Format
+	Options      role.Options
+	Comment      pyfmt.Format
+	Parents      []MembershipRule
+	Config       *role.Config
+	BeforeCreate pyfmt.Format `mapstructure:"before_create"`
+	AfterCreate  pyfmt.Format `mapstructure:"after_create"`
 }
 
 func (r RoleRule) IsStatic() bool {
@@ -97,7 +99,7 @@ func (r RoleRule) IsStatic() bool {
 }
 
 func (r RoleRule) Formats() []pyfmt.Format {
-	fmts := []pyfmt.Format{r.Name, r.Comment}
+	fmts := []pyfmt.Format{r.Name, r.Comment, r.BeforeCreate, r.AfterCreate}
 	for _, p := range r.Parents {
 		fmts = append(fmts, p.Name)
 	}
@@ -124,21 +126,25 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 		if nil == results.Entry {
 			// Case static rule.
 			role := role.Role{
-				Name:    r.Name.String(),
-				Comment: r.Comment.String(),
-				Options: r.Options,
-				Parents: parents,
-				Config:  r.Config,
+				Name:         r.Name.String(),
+				Comment:      r.Comment.String(),
+				Options:      r.Options,
+				Parents:      parents,
+				Config:       r.Config,
+				BeforeCreate: r.BeforeCreate.String(),
+				AfterCreate:  r.AfterCreate.String(),
 			}
 			ch <- role
 		} else {
 			// Case dynamic rule.
-			for values := range results.GenerateValues(r.Name, r.Comment) {
+			for values := range results.GenerateValues(r.Name, r.Comment, r.BeforeCreate, r.AfterCreate) {
 				role := role.Role{}
 				role.Name = r.Name.Format(values)
 				role.Comment = r.Comment.Format(values)
 				role.Options = r.Options
 				role.Parents = append(parents[0:0], parents...) // copy
+				role.BeforeCreate = r.BeforeCreate.Format(values)
+				role.AfterCreate = r.AfterCreate.Format(values)
 				ch <- role
 			}
 		}
