@@ -18,12 +18,11 @@ type GrantRule struct {
 }
 
 func (r GrantRule) IsStatic() bool {
-	return r.Database.IsStatic() &&
-		r.Object.IsStatic() &&
-		r.Owner.IsStatic() &&
-		r.Schema.IsStatic() &&
-		r.To.IsStatic() &&
-		r.Privilege.IsStatic()
+	return lists.And(r.Formats(), func(f pyfmt.Format) bool { return f.IsStatic() })
+}
+
+func (r GrantRule) Formats() []pyfmt.Format {
+	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
 }
 
 func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <-chan privilege.Grant {
@@ -94,9 +93,15 @@ type RoleRule struct {
 }
 
 func (r RoleRule) IsStatic() bool {
-	return r.Name.IsStatic() &&
-		r.Comment.IsStatic() &&
-		lists.And(r.Parents, func(m MembershipRule) bool { return m.IsStatic() })
+	return lists.And(r.Formats(), func(f pyfmt.Format) bool { return f.IsStatic() })
+}
+
+func (r RoleRule) Formats() []pyfmt.Format {
+	fmts := []pyfmt.Format{r.Name, r.Comment}
+	for _, p := range r.Parents {
+		fmts = append(fmts, p.Name)
+	}
+	return fmts
 }
 
 func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
