@@ -133,12 +133,10 @@ func (r *Result) ResolveExpressions(expressions []string, attrValues map[string]
 		dn := attrValues[attr]
 		value0, err := ResolveFirstRDN(dn, field)
 		if err != nil {
-			slog.Warn("Bad DN.", "dn", dn, "rdn", field, "err", err)
+			slog.Warn("Failed to resolve expression.", "attribute", attr, "dn", dn, "rdn", field, "err", err)
 			continue
 		}
 		exprMap[expr] = value0
-
-		slog.Warn("Unexpected DN.", "dn", dn, "rdn", field)
 	}
 	return exprMap
 }
@@ -157,5 +155,5 @@ func ResolveFirstRDN(rawDN, relativeField string) (string, error) {
 		return attr0.Value, nil
 	}
 
-	return "", fmt.Errorf("No RDN of type %s in %s", relativeField, rawDN)
+	return "", fmt.Errorf("no such RDN in DN")
 }
