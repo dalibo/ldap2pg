@@ -80,9 +80,10 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 	// Extract raw LDAP attributes values from entry.
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
+		lowerAttr := strings.ToLower(attr)
 		if "dn" == attr {
 			valuesList[i] = []string{r.Entry.DN}
-		} else if slices.Contains(KnownRDNs, attr) {
+		} else if slices.Contains(KnownRDNs, lowerAttr) {
 			value0, err := ResolveFirstRDN(r.Entry.DN, attr)
 			if err != nil {
 				slog.Warn("Failed to read value from DN.", "dn", r.Entry.DN, "rdn", attr, "err", err)
@@ -149,7 +150,7 @@ func ResolveFirstRDN(rawDN, relativeField string) (string, error) {
 
 	for _, rdn := range dn.RDNs {
 		attr0 := rdn.Attributes[0]
-		if relativeField != strings.ToLower(attr0.Type) {
+		if !strings.EqualFold(relativeField, attr0.Type) {
 			continue
 		}
 		return attr0.Value, nil
