@@ -80,18 +80,19 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 	// Extract raw LDAP attributes values from entry.
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
-		if "dn" == attr {
+		lowerAttr := strings.ToLower(attr)
+		if "dn" == lowerAttr {
 			valuesList[i] = []string{r.Entry.DN}
-		} else if slices.Contains(KnownRDNs, attr) {
+		} else if slices.Contains(KnownRDNs, lowerAttr) {
 			value0, err := ResolveFirstRDN(r.Entry.DN, attr)
 			if err != nil {
 				slog.Warn("Failed to read value from DN.", "dn", r.Entry.DN, "rdn", attr, "err", err)
 			}
 			valuesList[i] = []string{value0}
-		} else if r.SubsearchAttribute == attr {
+		} else if strings.EqualFold(r.SubsearchAttribute, attr) {
 			valuesList[i] = subKeys
 		} else {
-			valuesList[i] = r.Entry.GetAttributeValues(attr)
+			valuesList[i] = r.Entry.GetEqualFoldAttributeValues(attr)
 		}
 	}
 
@@ -133,12 +134,10 @@ func (r *Result) ResolveExpressions(expressions []string, attrValues map[string]
 		dn := attrValues[attr]
 		value0, err := ResolveFirstRDN(dn, field)
 		if err != nil {
-			slog.Warn("Bad DN.", "dn", dn, "rdn", field, "err", err)
+			slog.Warn("Failed to resolve expression.", "attribute", attr, "dn", dn, "rdn", field, "err", err)
 			continue
 		}
 		exprMap[expr] = value0
-
-		slog.Warn("Unexpected DN.", "dn", dn, "rdn", field)
 	}
 	return exprMap
 }
@@ -151,11 +150,11 @@ func ResolveFirstRDN(rawDN, relativeField string) (string, error) {
 
 	for _, rdn := range dn.RDNs {
 		attr0 := rdn.Attributes[0]
-		if relativeField != strings.ToLower(attr0.Type) {
+		if !strings.EqualFold(relativeField, attr0.Type) {
 			continue
 		}
 		return attr0.Value, nil
 	}
 
-	return "", fmt.Errorf("No RDN of type %s in %s", relativeField, rawDN)
+	return "", fmt.Errorf("no such RDN in DN")
 }
