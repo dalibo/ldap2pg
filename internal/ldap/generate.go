@@ -81,7 +81,7 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
 		lowerAttr := strings.ToLower(attr)
-		if "dn" == attr {
+		if "dn" == lowerAttr {
 			valuesList[i] = []string{r.Entry.DN}
 		} else if slices.Contains(KnownRDNs, lowerAttr) {
 			value0, err := ResolveFirstRDN(r.Entry.DN, attr)
@@ -89,10 +89,10 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 				slog.Warn("Failed to read value from DN.", "dn", r.Entry.DN, "rdn", attr, "err", err)
 			}
 			valuesList[i] = []string{value0}
-		} else if r.SubsearchAttribute == attr {
+		} else if strings.EqualFold(r.SubsearchAttribute, attr) {
 			valuesList[i] = subKeys
 		} else {
-			valuesList[i] = r.Entry.GetAttributeValues(attr)
+			valuesList[i] = r.Entry.GetEqualFoldAttributeValues(attr)
 		}
 	}
 

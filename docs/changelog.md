@@ -20,7 +20,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
     The way it's handling is so distinct that keeping the two implementation does not worth the price.
 
 - **BREAKING** Refuses to run unprivileged before Postgres 16.
-- Fix accessing uppercased DN RDN.
+- Case-less access to LDAP attribute and RDN.
 - Fix hardwired global default privileges not inspected.
 - Restore LDAP HA: ldap2pg retries next LDAP URI.
 - Suggest to run with --verbose on error.

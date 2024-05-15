@@ -212,7 +212,7 @@ func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
 				ch <- SearchResult{result: result}
 				continue
 			}
-			bases := entry.GetAttributeValues(subsearchAttr)
+			bases := entry.GetEqualFoldAttributeValues(subsearchAttr)
 			for _, base := range bases {
 				s := s.LdapSearch.Subsearches[subsearchAttr]
 				res, err = ldapc.Search(base, s.Scope, s.Filter, s.Attributes)
