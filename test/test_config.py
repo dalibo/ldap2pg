@@ -28,18 +28,17 @@ def test_stdin(ldap2pg, capsys):
     assert "stdinuser" in err
 
 
-@pytest.mark.xfail(reason="Samba does not support SASL DIGEST-MD5.")
 def test_sasl(ldap2pg, capsys):
     env = dict(
         os.environ,
-        # py-ldap2pg reads non-standard var USER.
-        LDAPUSER='testsasl',
-        # ldap2pg requires explicit SASL_MECH, and standard SASL_AUTHID.
-        LDAPSASL_MECH='DIGEST-MD5',
-        LDAPSASL_AUTHCID='testsasl',
-        LDAPPASSWORD='voyage',
+        LDAPSASL_MECH="GSSAPI",
+        LDAPSASL_AUTHCID="Administrator",
     )
     ldap2pg(config="ldap2pg.yml", verbose=True, _env=env)
 
     _, err = capsys.readouterr()
-    assert "SASL" in err
+    assert "SASL/GSSAPI" in err
+    assert "cid=Administrator" in err
+    assert "spn=ldap/samba" in err
+    assert "Connected to LDAP" in err
+    assert "Got LDAP entry" in err

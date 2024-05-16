@@ -201,6 +201,24 @@ Synchronize this setup with:
 $ test/genbigconfig.sh | PGDATABASE=big0 go run . -c -
 ```
 
+## GSSAPI/Kerberos
+
+It's easier to test GSSAPI inside `test` container:
+
+``` console
+$ docker compose up test
+$ docker compose exec -it test /bin/bash
+[root@623edae1fe8f workspace]# kinit -V -k -t "${PWD}/test/samba.keytab" Administrator
+Using default cache: /tmp/krb5cc_0
+Using principal: Administrator@BRIDOULOU.FR
+Using keytab: /workspace/test/samba.keytab
+Authenticated to Kerberos v5
+[root@623edae1fe8f workspace]# LDAPSASL_MECH=GSSAPI LDAPSASL_AUTHCID=Administrator dist/ldap2pg_linux_amd64_v1/ldap2pg -v
+08:24:34 INFO   Starting ldap2pg                                 version=6.5.1-SNAPSHOT-3ae2cfa commit=3ae2cfa4 runtime=go1.26.4 pid=68
+...
+```
+
+
 
 ## Documenting
 
