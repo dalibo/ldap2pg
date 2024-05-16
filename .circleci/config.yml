@@ -119,26 +119,6 @@ jobs:
         command: |
           COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
 
-  pkg:
-    parameters:
-      format:
-        description: "nFPM packager"
-        type: string
-    docker: [{image: "dalibo/buildpack-pkg@sha256:5619b00328c5bd193412014b77295776f831cfa40f9feb37accc8f79b59b6de4"}]  # bullseye
-    working_directory: *workspace
-    steps:
-    - checkout
-    - attach_workspace:
-        at: *workspace
-    - run:
-        name: nFPM
-        command: |
-          nfpm --version
-          nfpm package --packager << parameters.format >> --target dist/
-    - persist_to_workspace:
-        root: *workspace
-        paths: ["dist/*.deb", "dist/*.rpm"]
-
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
     docker: [{image: goreleaser/goreleaser:v1.25.1}]
