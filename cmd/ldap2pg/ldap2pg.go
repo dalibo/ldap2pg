@@ -208,16 +208,16 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Debug("Not synchronizing privileges.")
 	}
 
-	vmPeak := perf.ReadVMPeak()
-	elapsed := time.Since(start)
+	// Final messages.
 	logAttrs := []interface{}{
-		"elapsed", elapsed,
-		"mempeak", perf.FormatBytes(vmPeak),
-		"inspect", inspect.Watch.Total,
-		"sync", postgres.Watch.Total,
-		"queries", queryCount, // Don't use Watch.Count for dry run case.
-		"ldap", ldap.Watch.Total,
 		"searches", ldap.Watch.Count,
+		"roles", len(wantedRoles),
+		"queries", queryCount, // Don't use Watch.Count for dry run case.
+	}
+	if !controller.SkipPrivileges {
+		logAttrs = append(logAttrs,
+			"grants", len(wantedGrants),
+		)
 	}
 	if queryCount > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
@@ -227,6 +227,17 @@ func ldap2pg(ctx context.Context) (err error) {
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
 	}
+
+	vmPeak := perf.ReadVMPeak()
+	elapsed := time.Since(start)
+	slog.Info(
+		"Done.",
+		"elapsed", elapsed,
+		"mempeak", perf.FormatBytes(vmPeak),
+		"ldap", ldap.Watch.Total,
+		"inspect", inspect.Watch.Total,
+		"sync", postgres.Watch.Total,
+	)
 
 	if controller.Check && queryCount > 0 {
 		os.Exit(1)

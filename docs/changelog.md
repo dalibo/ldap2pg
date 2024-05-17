@@ -23,7 +23,6 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Case-less access to LDAP attribute and RDN.
 - Fix hardwired global default privileges not inspected.
 - Restore LDAP HA: ldap2pg retries next LDAP URI.
-- Suggest to run with --verbose on error.
 - Tested onRockylinux 9.
 - Build RHEL 9 package with Rockylinux 9.
 - Add pid in starting log message.
@@ -34,9 +33,10 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Don't want default privileges on self.
 - Stop calling whoami LDAP extended operation.
 - Load .env file.
-- Watch time spent inspecting Postgres.
 - Log Postgres out of band warnings.
-- Suggest --real option on dry run with changes.
+- Suggest --verbose on error.
+- Suggest --real on dry run with changes.
+- New final metrics: roles, grants, inspect time.
 
 
 
