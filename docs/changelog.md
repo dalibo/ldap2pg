@@ -36,6 +36,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Load .env file.
 - Watch time spent inspecting Postgres.
 - Log Postgres out of band warnings.
+- Suggest --real option on dry run with changes.
 
 
 

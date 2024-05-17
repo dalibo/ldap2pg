@@ -221,6 +221,9 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 	if queryCount > 0 {
 		slog.Info("Comparison complete.", logAttrs...)
+		if !controller.Real {
+			slog.Info("Use --real option to apply changes.")
+		}
 	} else {
 		slog.Info("Nothing to do.", logAttrs...)
 	}
