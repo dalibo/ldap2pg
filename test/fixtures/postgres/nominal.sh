@@ -2,7 +2,7 @@
 set -eux
 
 # Dév fixture initializing a cluster with a «previous state», needing a lot of
-# synchronization. See openldap-data.ldif for details.
+# synchronization.
 
 export PGUSER=postgres
 export PGDATABASE=postgres
