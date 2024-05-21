@@ -14,7 +14,17 @@ import (
 )
 
 func FindDotEnvFile(configpath string) string {
-	envpath := path.Join(path.Dir(configpath), "/.env")
+	var envpath string
+	if configpath == "-" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			slog.Warn("Cannot get current working directory.", "err", err)
+			return ""
+		}
+		envpath = path.Join(cwd, ".env")
+	} else {
+		envpath = path.Join(path.Dir(configpath), "/.env")
+	}
 	_, err := os.Stat(envpath)
 	if err != nil {
 		return ""
