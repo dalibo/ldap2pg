@@ -82,7 +82,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := conf.SyncMap.Run(instance.RolesBlacklist, conf.Privileges)
+	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist, conf.Privileges)
 	if err != nil {
 		return
 	}

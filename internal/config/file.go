@@ -68,7 +68,7 @@ type Config struct {
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
 	Privileges privilege.RefMap
-	SyncMap    wanted.Rules `mapstructure:"rules"`
+	Rules      wanted.Rules `mapstructure:"rules"`
 }
 
 type LdapConfig struct {
@@ -138,6 +138,6 @@ func (c *Config) Load(path string) (err error) {
 	}
 
 	c.Postgres.PrivilegesMap = c.Privileges
-	c.SyncMap = c.SyncMap.SplitStaticRules()
+	c.Rules = c.Rules.SplitStaticRules()
 	return
 }

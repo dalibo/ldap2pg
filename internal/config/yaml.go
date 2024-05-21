@@ -43,8 +43,8 @@ func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
 		return
 	}
 
-	for i := range c.SyncMap {
-		item := &c.SyncMap[i]
+	for i := range c.Rules {
+		item := &c.Rules[i]
 		item.InferAttributes()
 		// states.ComputeWanted is simplified base on the assumption
 		// there is no more than one sub-search. Fail otherwise.

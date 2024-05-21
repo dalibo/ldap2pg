@@ -116,7 +116,7 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 	if !ok {
 		return config, errors.New("missing rules")
 	}
-	syncMap, err := NormalizeSyncMap(section)
+	syncMap, err := NormalizeRules(section)
 	if err != nil {
 		return config, fmt.Errorf("rules: %w", err)
 	}
@@ -137,7 +137,7 @@ func NormalizePostgres(yaml interface{}) error {
 	return nil
 }
 
-func NormalizeSyncMap(yaml interface{}) (syncMap []interface{}, err error) {
+func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
 	rawItems, ok := yaml.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T, must be a list", yaml)
