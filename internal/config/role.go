@@ -52,7 +52,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
-	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options", "config")
+	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options", "config", "before_create", "after_create")
 	return
 }
 

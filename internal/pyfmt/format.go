@@ -138,6 +138,10 @@ func (f Format) Format(values map[string]string) string {
 				v = strings.ToLower(v)
 			case "upper()":
 				v = strings.ToUpper(v)
+			case "identifier()":
+				v = fmt.Sprintf("\"%s\"", v)
+			case "string()":
+				v = fmt.Sprintf("'%s'", strings.ReplaceAll(v, "'", "''"))
 			default:
 				v = "!INVALID_METHOD"
 			}

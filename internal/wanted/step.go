@@ -109,25 +109,14 @@ func (s Step) IterFields() <-chan *pyfmt.Field {
 	go func() {
 		defer close(ch)
 		for _, rule := range s.RoleRules {
-			allFormats := []pyfmt.Format{
-				rule.Name, rule.Comment,
-			}
-			for _, p := range rule.Parents {
-				allFormats = append(allFormats, p.Name)
-			}
-
-			for _, f := range allFormats {
+			for _, f := range rule.Formats() {
 				for _, field := range f.Fields {
 					ch <- field
 				}
 			}
 		}
 		for _, rule := range s.GrantRules {
-			allFormats := []pyfmt.Format{
-				rule.Privilege, rule.Database, rule.Schema, rule.Object, rule.To,
-			}
-
-			for _, f := range allFormats {
+			for _, f := range rule.Formats() {
 				for _, field := range f.Fields {
 					ch <- field
 				}

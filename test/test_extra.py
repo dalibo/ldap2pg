@@ -68,3 +68,7 @@ def test_role_config(extrarun, psql):
         'application_name': 'keep-me',
     }
     assert expected_unmodified_config == psql.config('nicolas')
+
+
+def test_role_hook(extrarun, psql):
+    assert psql.scalar("SELECT username FROM corinne.username;") == "corinne"

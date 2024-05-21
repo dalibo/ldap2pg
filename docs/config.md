@@ -509,6 +509,36 @@ rules:
 ```
 
 
+#### `before_create`  { #role-before-create }
+
+SQL snippet to execute before role creation.
+`before_create` accepts LDAP attributes injection using curly braces.
+You are responsible to escape attribute with either `.identifier()` or `.string()`.
+
+``` yaml
+rules:
+- ldapsearch: ...
+  role:
+    name: "{cn}"
+    before_create: "INSERT INTO log VALUES ({cn.string()})"
+```
+
+
+#### `after_create` { #role-after-create }
+
+SQL snippet to execute after role creation.
+`after_create` accepts LDAP attributes injection using curly braces.
+You are responsible to escape attribute with either `.identifier()` or `.string()`.
+
+``` yaml
+rules:
+- ldapsearch: ...
+  role:
+    name: "{sAMAccountName}"
+    after_create: "CREATE SCHEMA {sAMAccountName.identifier()} AUTHORIZATION {sAMAccountName.identifier()}"
+```
+
+
 ### `grant`  { #rules-grant }
 
 [grant rule]: #rules-grant
