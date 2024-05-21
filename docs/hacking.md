@@ -210,6 +210,12 @@ This allows to split a big scenario in severals steps without loosing context an
 Two main pytest fixtures are very useful when testing: `psql` and `ldap`.
 These little helpers provide fastpath to frequent inspection of Postgres database on LDAP base with `sh.py`-style API.
 
+You can execute tests just like in CI with the following commands:
+
+``` console
+$ goreleaser build --clean --snapshot --single-target
+$ COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
+```
 
 ## Big Case
 
