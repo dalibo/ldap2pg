@@ -86,14 +86,6 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	for _, g := range wantedGrants {
-		_, ok := wantedRoles[g.Grantee]
-		if !ok {
-			slog.Info("Generated grant on unwanted role.", "grant", g)
-			return fmt.Errorf("grant on unwanted role")
-		}
-	}
-
 	// Describe instance, running user, find databases objects, roles, etc.
 	err = instance.InspectStage1(ctx, pc)
 	if err != nil {
