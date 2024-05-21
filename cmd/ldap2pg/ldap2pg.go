@@ -61,6 +61,8 @@ func main() {
 }
 
 func ldap2pg(ctx context.Context) (err error) {
+	start := time.Now()
+
 	stop, err := startProfiling()
 	if err != nil {
 		return
@@ -69,8 +71,6 @@ func ldap2pg(ctx context.Context) (err error) {
 		defer stop()
 	}
 	defer postgres.CloseConn(ctx)
-
-	start := time.Now()
 
 	controller, conf, err := configure()
 	if err != nil {
