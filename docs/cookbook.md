@@ -167,7 +167,7 @@ If ever you want to clean all roles in a PostgreSQL cluster, ldap2pg could be
 helpful. You must explicitly define an empty `rules`.
 
 ``` console
-$ echo 'rules: []' | ldap2pg --config - --real
+$ echo '{version: 6, rules: []}' | ldap2pg --config -
 ...
 Empty synchronization map. All roles will be dropped!
 ...
