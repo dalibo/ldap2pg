@@ -8,28 +8,23 @@ workflows:
         name: "stage0-build"
     - lint:
         name: "stage0-lint"
-    - func:
-        name: "stage1-func-rockylinux8-pg16"
-        dist: rockylinux8
-        requires: [stage0-build]
-        pgversion: "16"
-    - func:
-        name: "stage1-func-rockylinux8-pg15"
-        dist: rockylinux8
-        requires: [stage0-build]
-        pgversion: "15"
-    - func:
-        name: "stage1-func-rockylinux9-pg15"
+    - e2e:
+        name: "stage1-e2e-rockylinux9-pg16"
         dist: rockylinux9
         requires: [stage0-build]
+        pgversion: "16"
+    - e2e:
+        name: "stage1-e2e-rockylinux8-pg14"
+        dist: rockylinux8
+        requires: [stage0-build]
         pgversion: "15"
-    - func:
-        name: "stage1-func-centos7-pg12"
+    - e2e:
+        name: "stage1-e2e-centos7-pg11"
         dist: centos7
         requires: [stage0-build]
         pgversion: "12"
-    - func:
-        name: "stage1-func-centos6-pg9.5"
+    - e2e:
+        name: "stage1-e2e-centos6-pg9.5"
         dist: centos6
         requires: [stage0-build]
         pgversion: "9.5"
@@ -55,7 +50,7 @@ jobs:
     - restore_cache:
         keys: [go-build]
     - run:
-        name: Build ldap2pg binary
+        name: Build ldap2pg binary snapshot
         command: |
           goreleaser build --clean --snapshot --single-target
     - run:
@@ -95,7 +90,7 @@ jobs:
         - /root/.cache/go-build
         - /go/pkg/mod
 
-  func:
+  e2e:
     parameters:
       dist:
         description: "Distribution."
@@ -112,7 +107,7 @@ jobs:
     - attach_workspace:
         at: /home/circleci/workspace
     - run:
-        name: Run tests
+        name: Run Docker Compose
         environment:
           PGVERSION: "<< parameters.pgversion >>"
           DIST: "<< parameters.dist >>"

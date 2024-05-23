@@ -47,6 +47,6 @@ psql -tc "SELECT version();"
 # ldap-utils on CentOS does not read properly current ldaprc. Linking it in ~
 # workaround this.
 ln -fsv "${PWD}/ldaprc" ~/ldaprc
-retry ldapsearch -x -v -w "${LDAPPASSWORD}" -z none
+retry ldapsearch -x -v -w "${LDAPPASSWORD}" -z none >/dev/null
 
 "$python" -m pytest test/ "$@"
