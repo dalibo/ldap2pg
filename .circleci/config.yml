@@ -50,7 +50,7 @@ jobs:
     - restore_cache:
         keys: [go-build]
     - run:
-        name: Build ldap2pg binary
+        name: Build ldap2pg binary snapshot
         command: |
           goreleaser build --clean --snapshot --single-target
     - run:
@@ -107,7 +107,7 @@ jobs:
     - attach_workspace:
         at: /home/circleci/workspace
     - run:
-        name: Run tests
+        name: Run Docker Compose
         environment:
           PGVERSION: "<< parameters.pgversion >>"
           DIST: "<< parameters.dist >>"
