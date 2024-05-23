@@ -18,9 +18,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privilege"
 	"github.com/dalibo/ldap2pg/internal/role"
@@ -61,6 +59,8 @@ func main() {
 }
 
 func ldap2pg(ctx context.Context) (err error) {
+	start := time.Now()
+
 	stop, err := startProfiling()
 	if err != nil {
 		return
@@ -70,85 +70,30 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 	defer postgres.CloseConn(ctx)
 
-	start := time.Now()
-
-	controller, err := unmarshalController()
+	controller, conf, err := configure()
 	if err != nil {
 		return
 	}
 
-	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
-	slog.Info("Starting ldap2pg",
-		"version", version,
-		"runtime", runtime.Version(),
-		"commit", commit,
-		"pid", os.Getpid(),
-	)
-
-	if strings.Contains(version, "-") {
-		slog.Warn("Running a prerelease! Use at your own risks!")
-	}
-
-	err = changeDirectory(controller.Directory)
-	if err != nil {
-		return
-	}
-
-	configPath := config.FindConfigFile(controller.Config)
-	slog.Info("Using YAML configuration file.", "path", configPath)
-	c, err := config.Load(configPath)
-	if err != nil {
-		return
-	}
-
-	envpath := config.FindDotEnvFile(configPath)
-	if envpath != "" {
-		slog.Debug("Loading .env file.", "path", envpath)
-		err = godotenv.Load(envpath)
-		if err != nil {
-			return fmt.Errorf(".env: %w", err)
-		}
-	}
-
-	err = postgres.Configure(controller.Dsn)
-	if err != nil {
-		return
-	}
-
-	if controller.SkipPrivileges {
-		c.DropPrivileges()
-	}
-
-	pc := c.Postgres.Build()
+	pc := conf.Postgres.Build()
+	// Inspect session, running user, user options, blacklist, etc.
 	instance, err := inspect.Stage0(ctx, pc)
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := c.SyncMap.Run(instance.RolesBlacklist, c.Privileges)
+	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist, conf.Privileges)
 	if err != nil {
 		return
 	}
-	for _, g := range wantedGrants {
-		_, ok := wantedRoles[g.Grantee]
-		if !ok {
-			slog.Info("Generated grant on unwanted role.", "grant", g)
-			return fmt.Errorf("grant on unwanted role")
-		}
-	}
-
-	// Describe instance, running user, find databases objects, roles, etc.
+	// Inspect users and databases (for drop owned by loop).
 	err = instance.InspectStage1(ctx, pc)
 	if err != nil {
 		return
 	}
 
-	if controller.Real {
-		slog.Info("Real mode. Postgres instance will modified.")
-	} else {
-		slog.Warn("Dry run. Postgres instance will be untouched.")
-	}
-
 	syncErrors := errorlist.New("synchronization errors")
+
+	// Synchronize roles.
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner, &instance.Databases)
 	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
@@ -161,7 +106,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	}
 	queryCount := stageCount
 
-	if c.ArePrivilegesManaged() {
+	// Synchronize privileges.
+	if conf.ArePrivilegesManaged() {
 		slog.Debug("Synchronizing privileges.")
 		// Get the effective list of managed roles.
 		managedRoles := mapset.NewSet(maps.Keys(wantedRoles)...)
@@ -170,7 +116,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			managedRoles.Add("public")
 		}
 
-		instancePrivileges, objectPrivileges, defaultPrivileges := c.Postgres.PrivilegesMap.BuildTypeMaps()
+		instancePrivileges, objectPrivileges, defaultPrivileges := conf.Postgres.PrivilegesMap.BuildTypeMaps()
 
 		// Start by default database. This allow to reuse the last
 		// connexion openned when synchronizing roles.
@@ -222,41 +168,13 @@ func ldap2pg(ctx context.Context) (err error) {
 		return syncErrors
 	}
 
-	// Final messages.
-	logAttrs := []interface{}{
-		"searches", ldap.Watch.Count,
-		"roles", len(wantedRoles),
-		"queries", queryCount, // Don't use Watch.Count for dry run case.
-	}
-	if !controller.SkipPrivileges {
-		logAttrs = append(logAttrs,
-			"grants", len(wantedGrants),
-		)
-	}
-	if queryCount > 0 {
-		slog.Info("Comparison complete.", logAttrs...)
-		if !controller.Real {
-			slog.Info("Use --real option to apply changes.")
-		}
-	} else {
-		slog.Info("Nothing to do.", logAttrs...)
-	}
-
-	vmPeak := perf.ReadVMPeak()
-	elapsed := time.Since(start)
-	slog.Info(
-		"Done.",
-		"elapsed", elapsed,
-		"mempeak", perf.FormatBytes(vmPeak),
-		"ldap", ldap.Watch.Total,
-		"inspect", inspect.Watch.Total,
-		"sync", postgres.Watch.Total,
+	exitCode := controller.Finalize(
+		start,
+		len(wantedRoles),
+		len(wantedGrants),
+		queryCount,
 	)
-
-	if controller.Check && queryCount > 0 {
-		os.Exit(1)
-	}
-
+	os.Exit(exitCode)
 	return
 }
 
@@ -281,6 +199,70 @@ func showVersion() {
 	}
 
 	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
+}
+
+func changeDirectory(directory string) (err error) {
+	if directory == "" {
+		return
+	}
+	slog.Debug("Changing directory.", "path", directory)
+	return os.Chdir(directory)
+}
+
+// configure setup process settings from inputs
+//
+// Configures logging, environment, database connexion, etc.
+func configure() (controller Controller, c config.Config, err error) {
+	controller, err = unmarshalController()
+	if err != nil {
+		return
+	}
+
+	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
+	slog.Info("Starting ldap2pg",
+		"version", version,
+		"runtime", runtime.Version(),
+		"commit", commit,
+		"pid", os.Getpid(),
+	)
+	if strings.Contains(version, "-") {
+		slog.Warn("Running a prerelease! Use at your own risks!")
+	}
+
+	err = changeDirectory(controller.Directory)
+	if err != nil {
+		return
+	}
+
+	configPath := config.FindConfigFile(controller.Config)
+	slog.Info("Using YAML configuration file.", "path", configPath)
+	c, err = config.Load(configPath)
+	if err != nil {
+		return
+	}
+
+	if controller.SkipPrivileges {
+		c.DropPrivileges()
+	}
+
+	envpath := config.FindDotEnvFile(configPath)
+	if envpath != "" {
+		slog.Debug("Loading .env file.", "path", envpath)
+		err = godotenv.Load(envpath)
+		if err != nil {
+			err = fmt.Errorf(".env: %w", err)
+			return
+		}
+	}
+
+	if controller.Real {
+		slog.Info("Real mode. Postgres instance will be modified.")
+	} else {
+		slog.Warn("Dry run. Postgres instance will be untouched.")
+	}
+
+	err = postgres.Configure(controller.Dsn)
+	return
 }
 
 func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privilege.Grant, dbname string, privileges privilege.TypeMap) (int, error) {
@@ -351,12 +333,4 @@ func startProfiling() (stop func(), err error) {
 		f.Close()
 	}
 	return
-}
-
-func changeDirectory(directory string) (err error) {
-	if directory == "" {
-		return
-	}
-	slog.Debug("Changing directory.", "path", directory)
-	return os.Chdir(directory)
 }

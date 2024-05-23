@@ -14,7 +14,7 @@ import (
 func (c *Config) DropPrivileges() {
 	slog.Debug("Dropping privilege configuration.")
 	maps.Clear(c.Privileges)
-	c.SyncMap = c.SyncMap.DropGrants()
+	c.Rules = c.Rules.DropGrants()
 }
 
 func (c Config) ArePrivilegesManaged() bool {

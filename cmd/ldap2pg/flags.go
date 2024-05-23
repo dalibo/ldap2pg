@@ -6,8 +6,13 @@ import (
 	"math"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
@@ -87,6 +92,44 @@ type Controller struct {
 	LogLevel       slog.Level
 	Directory      string
 	Dsn            string
+}
+
+// Finalize logs the end of ldap2pg execution and determine exit code.
+func (controller Controller) Finalize(start time.Time, roles, grants, queries int) int {
+	logAttrs := []interface{}{
+		"searches", ldap.Watch.Count,
+		"roles", roles,
+		"queries", queries, // Don't use Watch.Count for dry run case.
+	}
+	if !controller.SkipPrivileges {
+		logAttrs = append(logAttrs,
+			"grants", grants,
+		)
+	}
+	if queries > 0 {
+		slog.Info("Comparison complete.", logAttrs...)
+		if !controller.Real {
+			slog.Info("Use --real option to apply changes.")
+		}
+	} else {
+		slog.Info("Nothing to do.", logAttrs...)
+	}
+
+	vmPeak := perf.ReadVMPeak()
+	elapsed := time.Since(start)
+	slog.Info(
+		"Done.",
+		"elapsed", elapsed,
+		"mempeak", perf.FormatBytes(vmPeak),
+		"ldap", ldap.Watch.Total,
+		"inspect", inspect.Watch.Total,
+		"sync", postgres.Watch.Total,
+	)
+
+	if controller.Check && queries > 0 {
+		return 1
+	}
+	return 0
 }
 
 var levels = []slog.Level{

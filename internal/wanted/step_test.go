@@ -25,7 +25,7 @@ func (suite *Suite) TestItemStatic() {
 	- roles:
 	  - name: "toto"
 	`)
-	i := c.SyncMap[0]
+	i := c.Rules[0]
 	i.InferAttributes()
 	r.False(i.HasLDAPSearch())
 	r.False(i.HasSubsearch())
@@ -41,7 +41,7 @@ func (suite *Suite) TestItemLdapAnalyze() {
 	  roles:
 	  - name: "{member.sAMAccountName}"
 	`)
-	i := c.SyncMap[0]
+	i := c.Rules[0]
 	i.InferAttributes()
 	r.True(i.HasLDAPSearch())
 	r.True(i.HasSubsearch())
@@ -59,7 +59,7 @@ func (suite *Suite) TestSyncItemReplaceMemberAsMemberDotDN() {
 	  - name: "{member.sAMAccountName}"
 	    comment: "{member}"
 	`)
-	i := c.SyncMap[0]
+	i := c.Rules[0]
 	i.InferAttributes()
 	i.ReplaceAttributeAsSubentryField()
 	for f := range i.IterFields() {

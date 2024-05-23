@@ -114,6 +114,15 @@ func (m Rules) Run(blacklist lists.Blacklist, privileges privilege.RefMap) (role
 			}
 		}
 	}
+
+	for _, g := range grants {
+		_, ok := roles[g.Grantee]
+		if !ok {
+			slog.Info("Generated grant on unwanted role.", "grant", g)
+			return nil, nil, fmt.Errorf("grant on unwanted role")
+		}
+	}
+
 	if 0 < len(errList) {
 		err = errors.Join(errList...)
 	}

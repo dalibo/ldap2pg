@@ -14,7 +14,17 @@ import (
 )
 
 func FindDotEnvFile(configpath string) string {
-	envpath := path.Join(path.Dir(configpath), "/.env")
+	var envpath string
+	if configpath == "-" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			slog.Warn("Cannot get current working directory.", "err", err)
+			return ""
+		}
+		envpath = path.Join(cwd, ".env")
+	} else {
+		envpath = path.Join(path.Dir(configpath), "/.env")
+	}
 	_, err := os.Stat(envpath)
 	if err != nil {
 		return ""
@@ -68,7 +78,7 @@ type Config struct {
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
 	Privileges privilege.RefMap
-	SyncMap    wanted.Rules `mapstructure:"rules"`
+	Rules      wanted.Rules `mapstructure:"rules"`
 }
 
 type LdapConfig struct {
@@ -138,6 +148,6 @@ func (c *Config) Load(path string) (err error) {
 	}
 
 	c.Postgres.PrivilegesMap = c.Privileges
-	c.SyncMap = c.SyncMap.SplitStaticRules()
+	c.Rules = c.Rules.SplitStaticRules()
 	return
 }
