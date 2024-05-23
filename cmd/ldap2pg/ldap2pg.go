@@ -16,6 +16,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal"
 	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
@@ -46,7 +47,12 @@ func main() {
 	}
 	err := ldap2pg(ctx)
 	if err != nil {
-		slog.Error("Fatal error.", "err", err)
+		if errs, ok := err.(interface{ Len() int }); ok {
+			// Assume error are already logged before.
+			slog.Error("Some errors occurred. See above for more details.", "err", err, "count", errs.Len())
+		} else {
+			slog.Error("Fatal error.", "err", err)
+		}
 		if internal.CurrentLevel > slog.LevelDebug {
 			slog.Error("Run ldap2pg with --verbose to get more informations.")
 		}
@@ -142,9 +148,11 @@ func ldap2pg(ctx context.Context) (err error) {
 		slog.Warn("Dry run. Postgres instance will be untouched.")
 	}
 
+	syncErrors := errorlist.New("synchronization errors")
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner, &instance.Databases)
 	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
+	err = syncErrors.Extend(err)
 	if err != nil {
 		return
 	}
@@ -182,6 +190,7 @@ func ldap2pg(ctx context.Context) (err error) {
 				privileges = objectPrivileges
 			}
 			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, privileges)
+			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 2: %w", err)
 			}
@@ -196,6 +205,7 @@ func ldap2pg(ctx context.Context) (err error) {
 				return fmt.Errorf("inspect: %w", err)
 			}
 			stageCount, err = syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, defaultPrivileges)
+			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 3: %w", err)
 			}
@@ -206,6 +216,10 @@ func ldap2pg(ctx context.Context) (err error) {
 		}
 	} else {
 		slog.Debug("Not synchronizing privileges.")
+	}
+
+	if syncErrors.Len() > 0 {
+		return syncErrors
 	}
 
 	// Final messages.

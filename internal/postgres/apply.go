@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slices"
@@ -22,6 +23,7 @@ func Apply(ctx context.Context, diff <-chan SyncQuery, real bool) (count int, er
 		prefix = "Would "
 	}
 
+	errs := errorlist.New("synchronisation errors")
 	for query := range diff {
 		if !slices.ContainsFunc(query.LogArgs, func(i interface{}) bool {
 			return i == "database"
@@ -48,9 +50,16 @@ func Apply(ctx context.Context, diff <-chan SyncQuery, real bool) (count int, er
 			_, err = pgConn.Exec(ctx, sql)
 		})
 		if err != nil {
-			return count, fmt.Errorf("sync: %w", err)
+			slog.Error("Synchronisation error.", "err", err)
+			if !errs.Append(err) {
+				break
+			}
+		} else {
+			slog.Debug("Query terminated.", "duration", duration, "rows", tag.RowsAffected())
 		}
-		slog.Debug("Query terminated.", "duration", duration, "rows", tag.RowsAffected())
 	}
-	return
+	if errs.Len() > 0 {
+		return count, errs
+	}
+	return count, nil
 }
