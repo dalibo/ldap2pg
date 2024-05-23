@@ -16,10 +16,10 @@ Automatic tests on CircleCI will take care of validating regressions.
 Project repository ships a `docker-compose.yml` file to launch an Samba Directory and a PostgreSQL instances.
 
 ``` console
-$ docker-compose pull
+$ docker compose pull
 ...
-Status: Downloaded newer image for postgres:10-alpine
-$ docker-compose up -d
+Status: Downloaded newer image for postgres:16-alpine
+$ docker compose up -d
 Creating network "ldap2pg_default" with the default driver
 Creating ldap2pg_postgres_1 ...
 Creating ldap2pg_samba1_1 ...
@@ -210,6 +210,12 @@ This allows to split a big scenario in severals steps without loosing context an
 Two main pytest fixtures are very useful when testing: `psql` and `ldap`.
 These little helpers provide fastpath to frequent inspection of Postgres database on LDAP base with `sh.py`-style API.
 
+You can execute tests just like in CI with the following commands:
+
+``` console
+$ goreleaser build --clean --snapshot --single-target
+$ COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
+```
 
 ## Big Case
 

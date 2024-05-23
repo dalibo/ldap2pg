@@ -20,25 +20,24 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
     The way it's handling is so distinct that keeping the two implementation does not worth the price.
 
 - **BREAKING** Refuses to run unprivileged before Postgres 16.
+- Refuse empty LDAP URI or BINDDN.
 - Case-less access to LDAP attribute and RDN.
 - Fix hardwired global default privileges not inspected.
-- Restore LDAP HA: ldap2pg retries next LDAP URI.
-- Tested onRockylinux 9.
-- Build RHEL 9 package with Rockylinux 9.
-- Add pid in starting log message.
-- Add NO_COLOR env var support
-- Add -C option to specify the working folder.
-- Accept DSN in CLI argument.
-- Refuse empty LDAP URI or BINDDN.
 - Don't want default privileges on self.
-- Stop calling whoami LDAP extended operation.
-- Load .env file.
-- Log Postgres out of band warnings.
-- Suggest --verbose on error.
-- Suggest --real on dry run with changes.
-- New final metrics: roles, grants, inspect time.
+- Restore LDAP HA: ldap2pg retries next directory in LDAPURI parameter.
+- Accept -C option to specify the working folder.
+- Accept DSN in CLI argument.
 - Execute arbitrary SQL snippet before and after role creation.
 - Escape attribute with : `{sAMAccountName.identifier()}` and `{sAMAccountName.string()}`.
+- Load .env file.
+- Support [NO_COLOR](https://no-color.org/) env var.
+- Continue on error. E.g. if a DROP ROLE fails.
+- Log Postgres out of band warnings.
+- Suggest --verbose on error and --real on dry run with changes.
+- Show pid in starting log message.
+- New final metrics: roles count, grants count, inspect time.
+- Stop calling whoami LDAP extended operation.
+- Build RHEL 9 package with Rockylinux 9.
 
 
 
