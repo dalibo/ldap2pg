@@ -82,25 +82,29 @@ $
 Download package or binary from [Releases page](https://github.com/dalibo/ldap2pg/releases).
 
 ``` console
-$ sudo yum install https://github.com/dalibo/ldap2pg/releases/download/v6.0-alpha5/ldap2pg_6.0-alpha5_linux_amd64.rpm
+$ sudo yum install https://github.com/dalibo/ldap2pg/releases/download/v6.1/ldap2pg_6.1_linux_amd64.rpm
 ...
 Installed:
-  ldap2pg-6.0.0~alpha5-1.x86_64
+  ldap2pg-6.1-1.x86_64
 
 Complete!
 $ ldap2pg --help
-usage: ldap2pg [OPTIONS]
+usage: ldap2pg [OPTIONS] [dbname]
 
-      --check             Check mode: exits with 1 if Postgres instance is unsynchronized.
-      --color             Force color output. (default true)
-  -c, --config string     Path to YAML configuration file. Use - for stdin.
-  -?, --help              Show this help message and exit. (default true)
-  -q, --quiet count       Decrease log verbosity.
-  -R, --real              Real mode. Apply changes to Postgres instance.
-  -P, --skip-privileges   Turn off privilege synchronisation.
-  -v, --verbose count     Increase log verbosity.
-  -V, --version           Show version and exit. (default true)
+      --check              Check mode: exits with 1 if Postgres instance is unsynchronized.
+      --color              Force color output. (default true)
+  -c, --config string      Path to YAML configuration file. Use - for stdin.
+  -C, --directory string   Path to directory containing configuration files.
+  -?, --help               Show this help message and exit.
+  -q, --quiet count        Decrease log verbosity.
+  -R, --real               Real mode. Apply changes to Postgres instance.
+  -P, --skip-privileges    Turn off privilege synchronisation.
+  -v, --verbose count      Increase log verbosity.
+  -V, --version            Show version and exit.
 
+
+Optional argument dbname is alternatively the database name or a conninfo string or an URI.
+See man psql(1) for more information.
 
 By default, ldap2pg runs in dry mode.
 ldap2pg requires a configuration file to describe LDAP searches and mappings.
