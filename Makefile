@@ -69,10 +69,10 @@ dist/$(PKGBASE)_%.changes: dist/$(PKGBASE).deb
 publish-deb:
 	rm -vf dist/*.changes
 	$(MAKE) dist/$(PKGBASE)_bookworm.changes
-	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_bullseye.changes
-	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_buster.changes
-	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_stretch.changes
-	SKIPDEB=1 $(MAKE) dist/$(PKGBASE)_jammy.changes
+	$(MAKE) dist/$(PKGBASE)_bullseye.changes
+	$(MAKE) dist/$(PKGBASE)_buster.changes
+	$(MAKE) dist/$(PKGBASE)_stretch.changes
+	$(MAKE) dist/$(PKGBASE)_jammy.changes
 	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in APT repository.'; false ; fi
 	dput labs dist/*.changes
 

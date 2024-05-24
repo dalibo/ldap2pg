@@ -137,20 +137,19 @@ def generate_changes(controls, filename, filesize, md5, sha1, sha256):
     )
     changes['Changes'] = CHANGELOG_FMT % changes
 
-    if 'SKIPDEB' not in os.environ:
-        changes['Files'] = [u' '.join([
-            md5,
-            str(filesize),
-            controls['Section'] or 'default',
-            controls['Priority'],
-            filename,
-        ])]
-        changes['Checksums-Sha1'] = [u' '.join([
-            sha1, str(filesize), filename,
-        ])]
-        changes['Checksums-Sha256'] = [u' '.join([
-            sha256, str(filesize), filename,
-        ])]
+    changes['Files'] = [u' '.join([
+        md5,
+        str(filesize),
+        controls['Section'] or 'default',
+        controls['Priority'],
+        filename,
+    ])]
+    changes['Checksums-Sha1'] = [u' '.join([
+        sha1, str(filesize), filename,
+    ])]
+    changes['Checksums-Sha256'] = [u' '.join([
+        sha256, str(filesize), filename,
+    ])]
 
     return changes
 
