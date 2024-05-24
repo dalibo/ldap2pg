@@ -16,6 +16,9 @@ builds:
   - windows
   - darwin
 
+changelog:
+  disable: true
+
 nfpms:
 - formats:
   - deb
