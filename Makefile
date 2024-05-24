@@ -86,8 +86,8 @@ publish-rpm:
 	@make -C $(YUM_LABS) push createrepos clean
 
 tag-latest:
-	docker rmi --force dalibo/ldap2pg:v$(VERSION)
-	docker pull dalibo/ldap2pg:v$(VERSION)
-	docker tag dalibo/ldap2pg:v$(VERSION) dalibo/ldap2pg:latest
+	docker rmi --force dalibo/ldap2pg:$(VERSION)
+	docker pull dalibo/ldap2pg:$(VERSION)
+	docker tag dalibo/ldap2pg:$(VERSION) dalibo/ldap2pg:latest
 	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to tag prerelease $(VERSION) as latest in Docker Hub repository.'; false ; fi
 	docker push dalibo/ldap2pg:latest
