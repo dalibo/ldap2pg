@@ -2,7 +2,14 @@ FROM goreleaser/goreleaser:v1.24.0 AS builder
 
 WORKDIR /workspace
 COPY . .
-RUN goreleaser build --clean --snapshot --single-target
+# Clean directory of untracked files, even those in developer ~/.config/git/ignore
+RUN git clean -df
+# Simulate release --auto-snapshot for build command.
+RUN if git describe --tags --exact-match; then \
+    goreleaser build --clean --single-target; \
+    else \
+    goreleaser build --clean --single-target --snapshot ; \
+    fi
 
 FROM alpine:3.18
 
