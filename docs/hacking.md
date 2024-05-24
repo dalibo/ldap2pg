@@ -244,6 +244,7 @@ Successfully installed babel-2.12.1 certifi-2023.7.22 charset-normalizer-3.2.0 c
 
 ## Releasing
 
+- Update default.pgo
 - Review `docs/changelog.md`.
   First title must be `# ldap2pg X.Y`
 - Generate release commit, tag and changelog with `make release`.
