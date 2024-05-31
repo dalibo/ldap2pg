@@ -6,12 +6,14 @@ import (
 	"log/slog"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/dalibo/ldap2pg/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
+	"github.com/go-ldap/ldap/v3/gssapi"
 )
 
 type Client struct {
@@ -90,6 +92,38 @@ func Connect() (client Client, err error) {
 		}
 		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
 		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+	case "GSSAPI":
+		// Get the principal
+		client.SaslAuthCID = k.String("SASL_AUTHCID")
+		ccache, ok := os.LookupEnv("KRB5CCNAME")
+		if ok {
+			ccache = strings.TrimPrefix(ccache, "FILE:")
+		} else {
+			uid := os.Getuid()
+			ccache = fmt.Sprintf("/tmp/krb5cc_%d", uid)
+		}
+		krb5confPath, ok := os.LookupEnv("KRB5_CONFIG")
+		if !ok {
+			krb5confPath = "/etc/krb5.conf"
+		}
+		slog.Debug("Initial SSPI client.", "ccache", ccache, "krb5conf", krb5confPath)
+		sspiClient, err := gssapi.NewClientFromCCache(ccache, krb5confPath)
+		if err != nil {
+			return client, err
+		}
+		defer sspiClient.Close()
+		// Build service Principal from URI.
+		var parsedURI *url.URL
+		parsedURI, err = url.Parse(client.URI)
+		if err != nil {
+			return client, err
+		}
+		spn := "ldap/" + strings.Split(parsedURI.Host, ":")[0]
+		slog.Debug("LDAP SASL/GSSAPI bind.", "principal", client.SaslAuthCID, "spn", spn)
+		err = client.Conn.GSSAPIBind(sspiClient, spn, client.SaslAuthCID)
+		if err != nil {
+			return client, err
+		}
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
 	}

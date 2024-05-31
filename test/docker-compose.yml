@@ -1,6 +1,17 @@
 version: '3'
 
 services:
+  samba1:
+    labels:
+      # Disable dnsdock on test.
+      com.dnsdock.alias: samba1.test.ldap2pg.docker
+    networks:
+      default:
+        aliases:
+          # Fake dnsdock for CI.
+          # This value is used in test/krb5.conf for KDC.
+          - samba1.ldap2pg.docker
+
   test:
     image: dalibo/buildpack-python:${DIST-rockylinux8}
     volumes:

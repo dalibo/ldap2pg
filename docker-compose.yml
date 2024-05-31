@@ -6,15 +6,16 @@ services:
     environment:
       REALM: bridoulou.fr
       ADMIN_PASS: 1Ntegral
-      DNS_BACKEND: "NONE"
     volumes:
+      - ./test/fixtures/samba/kerberos.sh:/docker-entrypoint-init.d/00-kerberos.sh
+      - ./test:/test  # Use to export keytab in kerberos.sh
       - ./test/fixtures/samba/nominal.sh:/docker-entrypoint-init.d/95-nominal.sh
       - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
     hostname: samba1
     domainname: ldap2pg.docker
     labels:
       com.dnsdock.alias: samba1.ldap2pg.docker
-    command: [-d=1]
+    command: [-d=3]
 
   postgres:
     image: postgres:${PGVERSION-16}-alpine
