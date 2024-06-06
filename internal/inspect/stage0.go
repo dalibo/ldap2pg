@@ -34,7 +34,7 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 		return instance, fmt.Errorf("session: %w", err)
 	}
 
-	slog.Debug("Inspecting roles blacklist.")
+	slog.Debug("Inspecting roles blacklist.", "config", "roles_blacklist_query")
 	conn, err := postgres.GetConn(ctx, "")
 	if err != nil {
 		return instance, err

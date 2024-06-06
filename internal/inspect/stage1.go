@@ -47,7 +47,7 @@ func (instance *Instance) InspectStage1(ctx context.Context, pc Config) (err err
 }
 
 func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *pgx.Conn, q Querier[string]) error {
-	slog.Debug("Inspecting managed databases.")
+	slog.Debug("Inspecting managed databases.", "config", "databases_query")
 	for q.Query(ctx, pgconn); q.Next(); {
 		instance.ManagedDatabases.Add(q.Row())
 	}
@@ -117,7 +117,7 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ma
 		return nil
 	}
 
-	slog.Debug("Inspecting managed roles.")
+	slog.Debug("Inspecting managed roles.", "config", "managed_roles_query")
 	instance.ManagedRoles = make(role.Map)
 	for managedRolesQ.Query(ctx, pgconn); managedRolesQ.Next(); {
 		name := managedRolesQ.Row()

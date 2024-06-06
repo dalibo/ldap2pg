@@ -49,9 +49,8 @@ func (instance *Instance) InspectSchemas(ctx context.Context, dbname string, man
 		return err
 	}
 
-	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
 	var managedSchemas []string
-	slog.Debug("Inspecting managed schemas.", "database", dbname)
+	slog.Debug("Inspecting managed schemas.", "config", "schemas_query", "database", dbname)
 	for managedQuery.Query(ctx, conn); managedQuery.Next(); {
 		s := managedQuery.Row()
 		managedSchemas = append(managedSchemas, s.Name)
@@ -62,6 +61,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, dbname string, man
 	}
 
 	database := instance.Databases[dbname]
+	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
 	for sq.Query(ctx, conn); sq.Next(); {
 		s := sq.Row()
 		if !slices.Contains(managedSchemas, s.Name) {
