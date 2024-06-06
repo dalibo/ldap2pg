@@ -9,10 +9,10 @@ services:
     environment:
       PGHOST: postgres
       PGUSER: postgres
-      LDAPURI: ldaps://samba1
+      LDAPURI: ldaps://samba
       LDAPPASSWORD: 1Ntegral
       CI: "true"
     command: test/entrypoint.sh
     depends_on:
-      - samba1
+      - samba
       - postgres
