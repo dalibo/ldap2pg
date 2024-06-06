@@ -50,6 +50,10 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 		slog.Debug("Blacklisting self.")
 		instance.RolesBlacklist = append(instance.RolesBlacklist, instance.Me.Name)
 	}
+	err = instance.RolesBlacklist.Check()
+	if err != nil {
+		return instance, fmt.Errorf("roles_blacklist_query: %w", err)
+	}
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
 	return
