@@ -77,7 +77,7 @@ var BuiltinsProfiles = map[string]interface{}{
 	}},
 	"__all_on_schemas__": []interface{}{
 		"__create_on_schemas__",
-		"__usage_on_schema__",
+		"__usage_on_schemas__",
 	},
 }
 

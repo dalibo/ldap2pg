@@ -22,14 +22,14 @@ Status: Downloaded newer image for postgres:16-alpine
 $ docker compose up -d
 Creating network "ldap2pg_default" with the default driver
 Creating ldap2pg_postgres_1 ...
-Creating ldap2pg_samba1_1 ...
+Creating ldap2pg_samba_1 ...
 Creating ldap2pg_postgres_1
-Creating ldap2pg_samba1_1 ... done
+Creating ldap2pg_samba_1 ... done
 ```
 
 It's up to you to define how to access Postgres and LDAP containers from your host:
 either use DNS resolution or a `docker-compose.override.yml` to expose port on your host.
-Provided `docker-compose.yml` comes with `postgres.ldap2pg.docker` and `samba1.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases.
+Provided `docker-compose.yml` comes with `postgres.ldap2pg.docker` and `samba.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases.
 
 Setup your environment with regular `PG*` envvars so that `psql` can just connect to your PostgreSQL instance.
 Check with a simple `psql` invocation.
@@ -45,7 +45,7 @@ ldap2pg supports `LDAPPASSWORD` to set password from env.
 Check it with `ldapsearch`:
 
 ``` console
-$ export LDAPURI=ldaps://samba1.ldap2pg.docker LDAPPASSWORD=1Ntegral
+$ export LDAPURI=ldaps://samba.ldap2pg.docker LDAPPASSWORD=1Ntegral
 $ ldapsearch -vxw $LDAPPASSWORD -s base cn
 ldap_initialize( <DEFAULT> )
 filter: (objectclass=*)
@@ -81,7 +81,7 @@ exposes containers ports to your host with the following override:
 version: '3'
 
 services:
-  samba1:
+  samba:
     ports:
       # HOST:CONTAINER
       - 389:389

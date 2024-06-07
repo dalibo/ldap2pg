@@ -158,7 +158,7 @@ func unmarshalController() (controller Controller, err error) {
 		if err == nil {
 			controller.LogLevel = level.Level()
 		} else {
-			slog.Warn("Bad verbosity.", "source", "env", "value", verbosity)
+			slog.Error("Bad verbosity.", "source", "env", "value", verbosity)
 		}
 	}
 	args := pflag.Args()

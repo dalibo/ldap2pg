@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  samba1:
+  samba:
     image: dalibo/samba:4.18.9@sha256:567871a0d075bc74cad191a8b0db97f952b5021657f5afdcdf6a0c91e8a7ef49
     environment:
       REALM: bridoulou.fr
@@ -10,10 +10,10 @@ services:
     volumes:
       - ./test/fixtures/samba/nominal.sh:/docker-entrypoint-init.d/95-nominal.sh
       - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
-    hostname: samba1
+    hostname: samba
     domainname: ldap2pg.docker
     labels:
-      com.dnsdock.alias: samba1.ldap2pg.docker
+      com.dnsdock.alias: samba.ldap2pg.docker
     command: [-d=1]
 
   postgres:

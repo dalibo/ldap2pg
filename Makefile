@@ -4,7 +4,7 @@ YUM_LABS?=$(wildcard ../yum-labs)
 default:
 	@echo ldap2pg $(VERSION)
 
-big: reset-samba1
+big: reset-samba
 	while ! bash -c "echo -n > /dev/tcp/$${LDAPURI#*//}/636" ; do sleep 1; done
 	test/fixtures/genbigldif.sh | ldapmodify -xw $$LDAPPASSWORD
 	$(MAKE) reset-big

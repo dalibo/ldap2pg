@@ -2,7 +2,7 @@
 package lists
 
 import (
-	"github.com/tzvetkoff-go/fnmatch"
+	"path/filepath"
 )
 
 type (
@@ -11,6 +11,19 @@ type (
 		BlacklistKey() string
 	}
 )
+
+// Check verify patterns are valid.
+//
+// Use it before using MatchString().
+func (bl *Blacklist) Check() error {
+	for _, pattern := range *bl {
+		_, err := filepath.Match(pattern, "pouet")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func (bl *Blacklist) Filter(items []Blacklistable) []Blacklistable {
 	var filteredItems []Blacklistable
@@ -23,9 +36,19 @@ func (bl *Blacklist) Filter(items []Blacklistable) []Blacklistable {
 	return filteredItems
 }
 
+// MatchString returns the first pattern that matches the item.
+//
+// Use Check() before using MatchString().
+// panics if pattern is invalid.
+// returns empty string if no match.
 func (bl *Blacklist) MatchString(item string) string {
 	for _, pattern := range *bl {
-		if fnmatch.Match(pattern, item, 0) {
+		ok, err := filepath.Match(pattern, item)
+		if err != nil {
+			// Use Check() before using MatchString().
+			panic(err)
+		}
+		if ok {
 			return pattern
 		}
 	}

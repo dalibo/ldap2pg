@@ -34,7 +34,7 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 		return instance, fmt.Errorf("session: %w", err)
 	}
 
-	slog.Debug("Inspecting roles blacklist.")
+	slog.Debug("Inspecting roles blacklist.", "config", "roles_blacklist_query")
 	conn, err := postgres.GetConn(ctx, "")
 	if err != nil {
 		return instance, err
@@ -49,6 +49,10 @@ func Stage0(ctx context.Context, pc Config) (instance Instance, err error) {
 	if !slices.Contains(instance.RolesBlacklist, instance.Me.Name) {
 		slog.Debug("Blacklisting self.")
 		instance.RolesBlacklist = append(instance.RolesBlacklist, instance.Me.Name)
+	}
+	err = instance.RolesBlacklist.Check()
+	if err != nil {
+		return instance, fmt.Errorf("roles_blacklist_query: %w", err)
 	}
 	slog.Debug("Roles blacklist loaded.", "patterns", instance.RolesBlacklist)
 
