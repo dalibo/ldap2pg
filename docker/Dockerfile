@@ -19,7 +19,7 @@ WORKDIR /workspace
 
 COPY --from=builder /workspace/dist/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash openldap-clients
 RUN mkdir /docker-entrypoint.d
 COPY docker/docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["docker-entrypoint.sh"]
