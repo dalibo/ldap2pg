@@ -1,4 +1,4 @@
-<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.1.0-alpha0 -->
+<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.2-beta1 -->
 <!--*- markdown -*-->
 
 <h1>Builtins Privileges</h1>
@@ -111,7 +111,7 @@ You cannot (yet) configure custom ACL.
 ### Profile `__all_on_schemas__` { #all-on-schemas  data-toc-label="&#95;&#95;all&#95;on&#95;schemas&#95;&#95;" }
 
 - [`__create_on_schemas__`](#create-on-schemas)
-- [`__usage_on_schema__`](#usage-on-schema)
+- [`__usage_on_schemas__`](#usage-on-schemas)
 
 
 ### Profile `__all_on_sequences__` { #all-on-sequences  data-toc-label="&#95;&#95;all&#95;on&#95;sequences&#95;&#95;" }
