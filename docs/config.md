@@ -236,7 +236,7 @@ privileges:
 Target ACL of privilege type.
 e.g. TABLES, SEQUENCES, SCHEMAS, etc.
 Note the special cases `ALL TABLES`, `ALL SEQUENCES`, etc.
-See [Manageing Privileges] documentation for details.
+See [Managing Privileges] documentation for details.
 
 ``` yaml
 privileges:
