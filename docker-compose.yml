@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   samba:
     image: dalibo/samba:4.18.9@sha256:567871a0d075bc74cad191a8b0db97f952b5021657f5afdcdf6a0c91e8a7ef49
@@ -17,7 +15,7 @@ services:
     command: [-d=1]
 
   postgres:
-    image: postgres:${PGVERSION-16}-alpine
+    image: postgres:${PGVERSION-17}-alpine
     hostname: postgres
     domainname: ldap2pg.docker
     environment:
