@@ -9,17 +9,17 @@ workflows:
     - lint:
         name: "stage0-lint"
     - e2e:
-        name: "stage1-e2e-rockylinux9-pg16"
+        name: "stage1-e2e-rockylinux9-pg17"
         dist: rockylinux9
         requires: [stage0-build]
         pgversion: "16"
     - e2e:
-        name: "stage1-e2e-rockylinux8-pg14"
+        name: "stage1-e2e-rockylinux8-pg16"
         dist: rockylinux8
         requires: [stage0-build]
         pgversion: "15"
     - e2e:
-        name: "stage1-e2e-centos7-pg11"
+        name: "stage1-e2e-centos7-pg12"
         dist: centos7
         requires: [stage0-build]
         pgversion: "12"

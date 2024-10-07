@@ -13,6 +13,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # ldap2pg 6.2-beta1
 
+- Postgres 17 support.
 - Fix inspecting global default privileges on role requiring identifier escaping.
 - Fix `__all_on_schemas__` not including `__usage_on_schemas__`.
 - Log source of configurable inspection SQL queries.
