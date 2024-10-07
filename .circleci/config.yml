@@ -44,7 +44,7 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
-    - image: goreleaser/goreleaser:v1.24.0
+    - image: goreleaser/goreleaser:v2.3.2
     steps:
     - checkout
     - restore_cache:

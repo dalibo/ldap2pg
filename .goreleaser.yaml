@@ -1,3 +1,5 @@
+version: 2
+
 # Required when source tree is not copied in a directory called ldap2pg
 project_name: ldap2pg
 
