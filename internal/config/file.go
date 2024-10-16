@@ -41,6 +41,8 @@ func FindConfigFile(userValue string) string {
 		path.Join(home, "/.config/ldap2pg.yaml"),
 		"/etc/ldap2pg.yml",
 		"/etc/ldap2pg.yaml",
+		"/etc/ldap2pg/ldap2pg.yml",
+		"/etc/ldap2pg/ldap2pg.yaml",
 	}
 	return FindFile(userValue, candidates)
 }
