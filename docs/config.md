@@ -18,6 +18,7 @@ ldap2pg searches for configuration file in the following order :
 1. `ldap2pg.yml` in current working directory.
 2. `~/.config/ldap2pg.yml`.
 3. `/etc/ldap2pg.yml`.
+4. `/etc/ldap2pg/ldap2pg.yml`.
 
 If `LDAP2PG_CONFIG` or `--config` is set,
 ldap2pg skips searching the standard file locations.
