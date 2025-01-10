@@ -108,7 +108,9 @@ Unimplemented feature may be reimplemented depending on feedback!
 - Docker image sizes now 17MB instead of 126MB.
 
 
-# ldap2pg 5.9
+# Older Releases
+
+## ldap2pg 5.9
 
 Released 2023-04-11.
 
@@ -123,7 +125,7 @@ Released 2023-04-11.
 Support for running ldap2pg on Python 2.7 is now deprecated.
 
 
-# ldap2pg 5.8
+## ldap2pg 5.8
 
 Released 2022-06-10.
 
@@ -142,7 +144,7 @@ Released 2022-06-10.
 - Revamped documentation.
 
 
-# ldap2pg 5.7
+## ldap2pg 5.7
 
 Released 2021-11-19.
 
@@ -159,7 +161,7 @@ Released 2021-11-19.
 - Drop legacy `LDAP_BIND` env var support. Use `LDAPBINDDN` instead.
 
 
-# ldap2pg 5.6
+## ldap2pg 5.6
 
 Released 2021-06-21.
 
@@ -175,7 +177,7 @@ Released 2021-06-21.
 - Protect static rules mixed in dynamics rules instead of rejecting config.
 
 
-# ldap2pg 5.5
+## ldap2pg 5.5
 
 Released 2020-10-02.
 
@@ -193,7 +195,7 @@ Released 2020-10-02.
 - Fix join order.
 
 
-# ldap2pg 5.4
+## ldap2pg 5.4
 
 Released 2020-06-11.
 
@@ -203,7 +205,7 @@ Released 2020-06-11.
 - Add `description:` to mapping for logging.
 
 
-# ldap2pg 5.3
+## ldap2pg 5.3
 
 Released 2020-05-29.
 
@@ -218,7 +220,7 @@ Released 2020-05-29.
   readability and general use.
 
 
-# ldap2pg 5.2
+## ldap2pg 5.2
 
 Released 2020-04-03.
 
@@ -238,7 +240,7 @@ deploying on production.
 - Move `on_unexpected_dn` to `ldap` query.
 
 
-# ldap2pg 5.1
+## ldap2pg 5.1
 
 Released 2019-11-07.
 
@@ -254,7 +256,7 @@ Run `ldap2pg --dry` before and check for renames.
 - Moved to new homepage : [labs.dalibo.com/ldap2pg](https://labs.dalibo.com/ldap2pg).
 
 
-# ldap2pg 5.0
+## ldap2pg 5.0
 
 Released 2019-08-26.
 
@@ -266,28 +268,28 @@ Released 2019-08-26.
 - Support GSSAPI authentification for Kerberos. Thanks @djkube for testing.
 
 
-# ldap2pg 4.18
+## ldap2pg 4.18
 
 - Fix ref discarding.
 - Ship official docker image: dalibo/ldap2pg.
 - Parse LDAP settings from YAML too.
 
 
-# ldap2pg 4.17
+## ldap2pg 4.17
 
 - Fix broken `__usage_on_types__`. Replaced by `__default_usage_on_types__`.
 - Gently raise connection errors.
 - Warn on possible typo in config key.
 
 
-# ldap2pg 4.16
+## ldap2pg 4.16
 
 - Allow to customize comment on role creation.
 - Fix decoding Postgres error with utf-8 chars.
 - Include foreign tables in inspect ON ALL TABLES grants.
 
 
-# ldap2pg 4.15
+## ldap2pg 4.15
 
 - Add Amazon RDS admin roles in default blacklist.
 - Skip `pg_temp_*` and `pg_toast_temp_*` schemas when inspecting grants.
@@ -299,7 +301,7 @@ Released 2019-08-26.
 - Reduce memory usage of grants and roles.
 
 
-# ldap2pg 4.14
+## ldap2pg 4.14
 
 - Allow to exclude public from managed roles. When scoping ldap2pg to a subset
   of roles, ldap2pg was including the public role, always. Now you can include
@@ -309,7 +311,7 @@ Released 2019-08-26.
   roles](postgres.md#synchronize-a-subset-of-roles) documentation section.
 
 
-# ldap2pg 4.13
+## ldap2pg 4.13
 
 - Allow to configure behaviour on unexpected DN. Current behaviour are `ignore`,
   `warn` and `fail`. If a LDAP attribute has references different objectClass,
@@ -320,13 +322,13 @@ Released 2019-08-26.
   env var, or `REFERRALS yes` ldap.conf(1) parameter.
 
 
-# ldap2pg 4.12
+## ldap2pg 4.12
 
 - Fix Bad search filter when using multiline YAML string.
 - Fix support for Postgres 9.3.
 
 
-# ldap2pg 4.11
+## ldap2pg 4.11
 
 - Use PyYAML safe loading.
 - Don't log `-D` switch for anonymous `ldapsearch`.
@@ -335,20 +337,20 @@ Released 2019-08-26.
 - Fix gathering of LDAP attributes on Python 2.
 
 
-# ldap2pg 4.10
+## ldap2pg 4.10
 
 - Fine grained logging setup.
 - Unify `roles` and `role_attribute` with string formatting.
 
 
-# ldap2pg 4.9
+## ldap2pg 4.9
 
 - Fix mix of parents in same role rule
 - Renamed `acl` to `privilege` in configuration. See documentation for details.
 - Run as non-superuser, in a degraded mode. See Cookbook for details.
 
 
-# ldap2pg 4.8
+## ldap2pg 4.8
 
 - Fix traceback on unknown schema.
 - Check YAML gotchas.
@@ -364,7 +366,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - keep running ldap2pg 4.7.
 
 
-# ldap2pg 4.7
+## ldap2pg 4.7
 
 - Fix `__usage_on_types__` regranted for each owner.
 - Fix `ALTER DEFAULT PRIVILEGES` on blacklisted roles.
@@ -374,7 +376,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Commit transaction when changing database. This increase performances a lot.
 
 
-# ldap2pg 4.6
+## ldap2pg 4.6
 
 - Allow to inspect owners per schema.
 - Use configured database instead of hardcoded `postgres`.
@@ -382,7 +384,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Accept list for `grant:databases` and `grant:schemas`.
 
 
-# ldap2pg 4.5
+## ldap2pg 4.5
 
 - Lint log level and messages.
 - Deduplicate LDAP auto-attributes.
@@ -390,7 +392,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Comment roles with `Managed by ldap2pg.`.
 
 
-# ldap2pg 4.4
+## ldap2pg 4.4
 
 - Fix uninitialized ldap parameters.
 - Fix `__all_on_schemas__` group including a `sequences` ACL.
@@ -404,12 +406,12 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Don't revoke ACL granted on schema not in `schemas_query`.
 
 
-# ldap2pg 4.3.1
+## ldap2pg 4.3.1
 
 - Fix all procs ACL inspection.
 
 
-# ldap2pg 4.3
+## ldap2pg 4.3
 
 - Fix case sensitivity in LDAP search. Thanks @dirks for report and tests.
 - Allow to customize owners for `ALTER DEFAULT PRIVILEGES` with
@@ -418,7 +420,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Allow to customize schema introspection with `postgres:schema_query`.
 
 
-# ldap2pg 4.2
+## ldap2pg 4.2
 
 - Support Postgres 9.4 and lower.
 - Manage ACL on views.
@@ -426,13 +428,13 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Fix case sensitivity of `*_attribute`.
 
 
-# ldap2pg 4.1
+## ldap2pg 4.1
 
 - Merge role memberships when inspected twice.
 - Manage `ALTER DEFAULT PRIVILEGES` on global schema.
 
 
-# ldap2pg 4.0
+## ldap2pg 4.0
 
 - **Deprecation**: use `acls:` rather than `acl_dict` and `acl_groups`.
 - **Deprecation**: `rules` should be a list.
@@ -445,7 +447,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
   well known ACL groups.
 
 
-# ldap2pg 3.4
+## ldap2pg 3.4
 
 - Fix unicode error on logging SQL query.
 - Fix traceback on nonexistent database in ACL.
@@ -464,20 +466,20 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Documentation and sample update.
 
 
-# ldap2pg 3.3
+## ldap2pg 3.3
 
 - Fix unicode management in Python3.
 - Check for name or name_attribute in role rule.
 - Avoid inspecting schema if only synchronizing roles.
 
 
-# ldap2pg 3.2
+## ldap2pg 3.2
 
 - Manage unicode in role name.
 - Tested on Postgres 10.
 
 
-# ldap2pg 3.1
+## ldap2pg 3.1
 
 - Fix unhandled exception when attribute does not exists in LDAP.
 - Use LDAP standard default filter `(objectClass=*)`.
@@ -485,7 +487,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Change *Empty mapping* error to a warning.
 
 
-# ldap2pg 3.0
+## ldap2pg 3.0
 
 - Breakage: Use Python `{}` format string for ACL queries instead of named
   printf style.
@@ -501,7 +503,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Add Cookbook in documentation.
 
 
-# ldap2pg 2.0
+## ldap2pg 2.0
 
 - Adopt new logo.
 - Inspect, grant and revoke custom ACLs.
@@ -517,7 +519,7 @@ If you use pyldap to run ldap2pg on Python3, please either :
 - Read configuration from stdin.
 
 
-# ldap2pg 1.0
+## ldap2pg 1.0
 
 - Bootstrap project
 - Automatic unit and functional tests.
