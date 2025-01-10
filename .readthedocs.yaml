@@ -11,3 +11,4 @@ python:
 
 mkdocs:
   fail_on_warning: true
+  configuration: mkdocs.yml
