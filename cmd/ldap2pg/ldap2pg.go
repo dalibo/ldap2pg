@@ -235,6 +235,11 @@ func configure() (controller Controller, c config.Config, err error) {
 	}
 
 	configPath := config.FindConfigFile(controller.Config)
+	if configPath == "" {
+		err = fmt.Errorf("no configuration file found")
+		return
+	}
+
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err = config.Load(configPath)
 	if err != nil {
