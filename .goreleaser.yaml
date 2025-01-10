@@ -13,10 +13,14 @@ builds:
   - -trimpath -buildvcs
   goarch:
   - amd64
+  - arm64
   goos:
   - linux
   - windows
   - darwin
+  ignore:
+  - goos: windows
+    goarch: arm64
 
 changelog:
   disable: true
