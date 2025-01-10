@@ -28,6 +28,19 @@ grants AS (
 
      UNION ALL
 
+     SELECT 0::oid AS nsp,
+            pg_roles.oid AS owner,
+            'FUNCTIONS' AS object,
+            0::oid AS grantee,
+            'EXECUTE' AS priv
+     FROM pg_catalog.pg_roles
+     LEFT OUTER JOIN pg_catalog.pg_default_acl
+          ON defaclrole = pg_roles.oid
+          AND defaclnamespace = 0
+     WHERE defaclnamespace IS NULL
+
+     UNION ALL
+
     SELECT defaclnamespace AS nsp,
            defaclrole AS owner,
            CASE defaclobjtype
