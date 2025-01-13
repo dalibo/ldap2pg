@@ -16,6 +16,9 @@ var (
 
 func Configure(dsn string) (err error) {
 	globalConf, err = pgx.ParseConfig(dsn)
+	if err != nil {
+		return
+	}
 	if globalConf.ConnectTimeout == 0 {
 		slog.Debug("Setting default Postgres connection timeout.", "timeout", "5s")
 		globalConf.ConnectTimeout, _ = time.ParseDuration("5s")
