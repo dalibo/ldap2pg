@@ -17,6 +17,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Build for ARM64v8.
 - Gracefully handle missing configuration file.
 - Gracefully handle passing file as DSN.
+- Add new default configuration location in `/etc/ldap2pg/`.
 
 
 # ldap2pg 6.2
