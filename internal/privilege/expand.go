@@ -4,7 +4,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 )
 
-type Expander interface {
+type expander interface {
 	Expand(Grant, postgres.Database, []string) []Grant
 }
 

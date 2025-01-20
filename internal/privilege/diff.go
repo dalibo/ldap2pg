@@ -7,11 +7,11 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-type Granter interface {
+type granter interface {
 	Grant(Grant) postgres.SyncQuery
 }
 
-type Revoker interface {
+type revoker interface {
 	Revoke(Grant) postgres.SyncQuery
 }
 

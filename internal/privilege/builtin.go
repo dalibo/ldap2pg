@@ -5,16 +5,16 @@ import (
 	"strings"
 )
 
-type Privilege interface {
-	Inspecter
-	Normalizer
-	Expander
-	Revoker
-	Granter
+type privilege interface {
+	inspecter
+	normalizer
+	expander
+	revoker
+	granter
 }
 
 var (
-	Builtins map[string]Privilege
+	Builtins map[string]privilege
 	//go:embed sql/database.sql
 	inspectDatabase string
 	//go:embed sql/global-default.sql
@@ -34,7 +34,7 @@ var (
 )
 
 func init() {
-	Builtins = make(map[string]Privilege)
+	Builtins = make(map[string]privilege)
 
 	register("instance", "DATABASE", inspectDatabase)
 	register("instance", "LANGUAGE", inspectLanguage)
@@ -77,7 +77,7 @@ func register(scope, object, inspect string, queries ...string) {
 		panic("too many queries")
 	}
 
-	var p Privilege
+	var p privilege
 
 	if "GLOBAL DEFAULT" == object {
 		p = NewGlobalDefault(object, inspect, grant, revoke)

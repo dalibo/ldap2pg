@@ -69,7 +69,7 @@ func (i Inspector) Err() error {
 // Implemented by ACL types
 //
 // e.g. datacl, nspacl, etc.
-type Inspecter interface {
+type inspecter interface {
 	IsGlobal() bool
 	Inspect() string
 	RowTo(pgx.CollectableRow) (Grant, error)
@@ -100,7 +100,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	return ch
 }
 
-func (i *Inspector) inspect1(object string, p Privilege, types []string, ch chan Grant) {
+func (i *Inspector) inspect1(object string, p privilege, types []string, ch chan Grant) {
 	pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 	if err != nil {
 		i.err = err

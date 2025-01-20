@@ -37,7 +37,7 @@ func (g Grant) IsRelevant() bool {
 	return g.Type != ""
 }
 
-type Normalizer interface {
+type normalizer interface {
 	Normalize(g *Grant)
 }
 
@@ -57,7 +57,7 @@ func (g Grant) ACL() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) Privilege() Privilege {
+func (g Grant) Privilege() privilege {
 	return Builtins[g.ACL()]
 }
 
