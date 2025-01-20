@@ -11,8 +11,14 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// TypeMap lists managed privilege types for each ACL
+//
+// e.g.: SELECT, UPDATE for TABLES, EXECUTE for FUNCTIONS, etc.
 type TypeMap map[string][]string
 
+// Inspector orchestrates privilege inspection
+//
+// Delegates querying and scanning to ACL.
 type Inspector struct {
 	database          postgres.Database
 	defaultDatabase   string
@@ -24,7 +30,7 @@ type Inspector struct {
 	grant     Grant
 }
 
-func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges map[string][]string) Inspector {
+func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges TypeMap) Inspector {
 	return Inspector{
 		database:          database,
 		defaultDatabase:   defaultDatabase,
@@ -60,6 +66,9 @@ func (i Inspector) Err() error {
 	return i.err
 }
 
+// Implemented by ACL types
+//
+// e.g. datacl, nspacl, etc.
 type Inspecter interface {
 	IsGlobal() bool
 	Inspect() string

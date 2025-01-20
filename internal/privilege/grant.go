@@ -48,7 +48,7 @@ func (g *Grant) Normalize() {
 	g.Privilege().Normalize(g)
 }
 
-func (g Grant) PrivilegeKey() string {
+func (g Grant) ACL() string {
 	if !g.IsDefault() {
 		return g.Target
 	} else if g.Schema == "" {
@@ -58,7 +58,7 @@ func (g Grant) PrivilegeKey() string {
 }
 
 func (g Grant) Privilege() Privilege {
-	return Builtins[g.PrivilegeKey()]
+	return Builtins[g.ACL()]
 }
 
 func (g Grant) String() string {

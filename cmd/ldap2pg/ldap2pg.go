@@ -270,18 +270,19 @@ func configure() (controller Controller, c config.Config, err error) {
 	return
 }
 
+// syncPrivileges for a given database.
 func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privilege.Grant, dbname string, privileges privilege.TypeMap) (int, error) {
 	stageCount := 0
 	allDatabases := maps.Keys(instance.Databases)
-	privKeys := maps.Keys(privileges)
-	slices.Sort(privKeys)
-	for _, priv := range privKeys {
-		privileges := privilege.TypeMap{priv: privileges[priv]}
+	acls := maps.Keys(privileges)
+	slices.Sort(acls)
+	for _, acl := range acls {
+		privileges := privilege.TypeMap{acl: privileges[acl]}
 		expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
 		currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
 		// Special case, ignore grants on unmanaged databases.
 		currentGrants = lists.Filter(currentGrants, func(g privilege.Grant) bool {
-			if "DATABASE" != g.PrivilegeKey() {
+			if "DATABASE" != g.ACL() {
 				return true
 			}
 			_, ok := instance.Databases[g.Object]
@@ -296,7 +297,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		if err != nil {
 			return 0, fmt.Errorf("apply: %w", err)
 		}
-		slog.Debug("Privilege synchronized.", "privilege", priv, "database", dbname)
+		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
 		stageCount += count
 	}
 	return stageCount, nil
