@@ -107,6 +107,9 @@ func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 			continue
 		}
 		fields := re.Split(line, 2)
+		if len(fields) < 2 {
+			return nil, fmt.Errorf("invalid line: %s", line)
+		}
 		out[fields[0]] = fields[1]
 	}
 	return maps.Unflatten(out, "_"), nil
