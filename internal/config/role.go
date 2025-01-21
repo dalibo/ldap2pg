@@ -53,7 +53,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
-	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options", "config", "before_create", "after_create")
+	err = normalize.SpuriousKeys(rule, "names", "comment", "parents", "options", "config", "before_create", "after_create")
 	return
 }
 
@@ -111,7 +111,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
-	err = CheckSpuriousKeys(&value, knownKeys...)
+	err = normalize.SpuriousKeys(value, knownKeys...)
 	return
 }
 
@@ -147,6 +147,6 @@ func NormalizeMembership(raw interface{}) (value map[string]interface{}, err err
 		return nil, errors.New("missing name")
 	}
 
-	err = CheckSpuriousKeys(&value, "name", "inherit", "set", "admin")
+	err = normalize.SpuriousKeys(value, "name", "inherit", "set", "admin")
 	return
 }

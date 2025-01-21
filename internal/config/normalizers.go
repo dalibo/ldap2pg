@@ -55,7 +55,7 @@ func NormalizePostgres(yaml interface{}) error {
 		return fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 
-	err := CheckIsString(yamlMap["fallback_owner"])
+	err := normalize.IsString(yamlMap["fallback_owner"])
 	if err != nil {
 		return fmt.Errorf("fallback_owner: %w", err)
 	}
@@ -106,7 +106,7 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 
 	maps.Copy(rule, yamlMap)
 
-	err = CheckIsString(rule["description"])
+	err = normalize.IsString(rule["description"])
 	if err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	}
 	rule["grants"] = rules
 
-	err = CheckSpuriousKeys(&rule, "description", "ldapsearch", "roles", "grants")
+	err = normalize.SpuriousKeys(rule, "description", "ldapsearch", "roles", "grants")
 	return
 }
 
@@ -157,7 +157,7 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 	if err != nil {
 		return
 	}
-	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
+	err = normalize.SpuriousKeys(search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
 	if err != nil {
 		return
 	}
@@ -173,7 +173,7 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 			return
 		}
 		subsearches[attr] = subsearch
-		err = CheckSpuriousKeys(&subsearch, "filter", "scope")
+		err = normalize.SpuriousKeys(subsearch, "filter", "scope")
 		if err != nil {
 			return
 		}

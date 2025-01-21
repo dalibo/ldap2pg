@@ -1,4 +1,4 @@
-package config
+package normalize
 
 import (
 	"fmt"
@@ -6,8 +6,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func CheckSpuriousKeys(yaml *map[string]interface{}, knownKeys ...string) error {
-	for key := range *yaml {
+// SpuriousKeys checks for unknown keys in a YAML map.
+func SpuriousKeys(yaml map[string]interface{}, knownKeys ...string) error {
+	for key := range yaml {
 		if !slices.Contains(knownKeys, key) {
 			return fmt.Errorf("unknown key '%s'", key)
 		}
@@ -15,7 +16,8 @@ func CheckSpuriousKeys(yaml *map[string]interface{}, knownKeys ...string) error 
 	return nil
 }
 
-func CheckIsString(yaml interface{}) error {
+// IsString checks for string type.
+func IsString(yaml interface{}) error {
 	_, ok := yaml.(string)
 	if !ok && yaml != nil {
 		return fmt.Errorf("bad value %v, must be string", yaml)

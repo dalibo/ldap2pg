@@ -244,7 +244,7 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 			return nil, fmt.Errorf("%s: %w", k, err)
 		}
 	}
-	err = CheckSpuriousKeys(&rule, keys...)
+	err = normalize.SpuriousKeys(rule, keys...)
 	return
 }
 

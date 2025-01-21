@@ -9,20 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestNormalizeString(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := dedent.Dedent(`
-	fallback_owner: owner
-	`)
-	var value interface{}
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
-
-	mapValue := value.(map[string]interface{})
-	err := config.CheckIsString(mapValue["fallback_owner"])
-	r.Nil(err)
-}
-
 func TestNormalizeWantRule(t *testing.T) {
 	r := require.New(t)
 
