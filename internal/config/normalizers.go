@@ -138,13 +138,13 @@ func NormalizePostgres(yaml interface{}) error {
 }
 
 func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
-	rawItems, ok := yaml.([]interface{})
+	rawRules, ok := yaml.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T, must be a list", yaml)
 	}
-	for i, rawItem := range rawItems {
+	for i, rawRule := range rawRules {
 		var item interface{}
-		item, err = NormalizeSyncItem(rawItem)
+		item, err = NormalizeWantRule(rawRule)
 		if err != nil {
 			return syncMap, fmt.Errorf("item[%d]: %w", i, err)
 		}
@@ -153,8 +153,8 @@ func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
 	return
 }
 
-func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
-	item = map[string]interface{}{
+func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error) {
+	rule = map[string]interface{}{
 		"description": "",
 		"ldapsearch":  map[string]interface{}{},
 		"roles":       []interface{}{},
@@ -179,19 +179,19 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		return
 	}
 
-	maps.Copy(item, yamlMap)
+	maps.Copy(rule, yamlMap)
 
-	err = CheckIsString(item["description"])
+	err = CheckIsString(rule["description"])
 	if err != nil {
 		return
 	}
-	search, err := NormalizeLdapSearch(item["ldapsearch"])
+	search, err := NormalizeLdapSearch(rule["ldapsearch"])
 	if err != nil {
 		return nil, fmt.Errorf("ldapsearch: %w", err)
 	}
-	item["ldapsearch"] = search
+	rule["ldapsearch"] = search
 
-	list := NormalizeList(item["roles"])
+	list := NormalizeList(rule["roles"])
 	rules := []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
@@ -203,9 +203,9 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			rules = append(rules, rule)
 		}
 	}
-	item["roles"] = rules
+	rule["roles"] = rules
 
-	list = NormalizeList(item["grants"])
+	list = NormalizeList(rule["grants"])
 	rules = []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
@@ -217,9 +217,9 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			rules = append(rules, rule)
 		}
 	}
-	item["grants"] = rules
+	rule["grants"] = rules
 
-	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
+	err = CheckSpuriousKeys(&rule, "description", "ldapsearch", "roles", "grants")
 	return
 }
 

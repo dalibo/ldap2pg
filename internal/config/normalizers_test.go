@@ -112,7 +112,7 @@ func TestNormalizeAliasConflict(t *testing.T) {
 	r.Equal("role", conflict.Conflict)
 }
 
-func TestNormalizeSyncItem(t *testing.T) {
+func TestNormalizeWantRule(t *testing.T) {
 	r := require.New(t)
 
 	rawYaml := dedent.Dedent(`
@@ -122,7 +122,7 @@ func TestNormalizeSyncItem(t *testing.T) {
 	var raw interface{}
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
-	value, err := config.NormalizeSyncItem(raw)
+	value, err := config.NormalizeWantRule(raw)
 	r.Nil(err)
 
 	_, exists := value["role"]
