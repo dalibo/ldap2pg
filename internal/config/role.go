@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/normalize"
 	"golang.org/x/exp/maps"
 )
 
@@ -20,11 +21,11 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		rule["names"] = []string{yaml.(string)}
 	case map[string]interface{}:
 		yamlMap := yaml.(map[string]interface{})
-		err = NormalizeAlias(&yamlMap, "names", "name")
+		err = normalize.Alias(yamlMap, "names", "name")
 		if err != nil {
 			return
 		}
-		err = NormalizeAlias(&yamlMap, "parents", "parent")
+		err = normalize.Alias(yamlMap, "parents", "parent")
 		if err != nil {
 			return
 		}

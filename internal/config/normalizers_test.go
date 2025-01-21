@@ -46,40 +46,6 @@ func TestNormalizeStringList(t *testing.T) {
 	r.Equal("alice", values[0])
 }
 
-func TestNormalizeAlias(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := dedent.Dedent(`
-	role: alice
-	`)
-	var value interface{}
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
-
-	mapValue := value.(map[string]interface{})
-	err := config.NormalizeAlias(&mapValue, "roles", "role")
-	r.Nil(err)
-	_, found := mapValue["role"]
-	r.False(found)
-	_, found = mapValue["roles"]
-	r.True(found)
-}
-
-func TestNormalizeAliasEmpty(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := dedent.Dedent(`
-	description: No roles
-	`)
-	var value interface{}
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
-
-	mapValue := value.(map[string]interface{})
-	err := config.NormalizeAlias(&mapValue, "roles", "role")
-	r.Nil(err)
-	_, found := mapValue["roles"]
-	r.False(found)
-}
-
 func TestNormalizeString(t *testing.T) {
 	r := require.New(t)
 
@@ -92,24 +58,6 @@ func TestNormalizeString(t *testing.T) {
 	mapValue := value.(map[string]interface{})
 	err := config.CheckIsString(mapValue["fallback_owner"])
 	r.Nil(err)
-}
-
-func TestNormalizeAliasConflict(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := dedent.Dedent(`
-	role: alice
-	roles: alice
-	`)
-	var value interface{}
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
-
-	mapValue := value.(map[string]interface{})
-	err := config.NormalizeAlias(&mapValue, "roles", "role")
-	conflict := err.(*config.KeyConflict)
-	r.NotNil(err)
-	r.Equal("roles", conflict.Key)
-	r.Equal("role", conflict.Conflict)
 }
 
 func TestNormalizeWantRule(t *testing.T) {

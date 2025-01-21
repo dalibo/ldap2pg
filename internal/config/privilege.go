@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
+	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/tree"
 	"golang.org/x/exp/maps"
@@ -36,7 +37,7 @@ func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err e
 				continue
 			}
 
-			err := NormalizeAlias(&privilegeRef, "types", "type")
+			err := normalize.Alias(privilegeRef, "types", "type")
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", key, err)
 			}
@@ -201,35 +202,35 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 		return nil, fmt.Errorf("bad type")
 	}
 
-	err = NormalizeAlias(&yamlMap, "owners", "owner")
+	err = normalize.Alias(yamlMap, "owners", "owner")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "privileges", "privilege")
+	err = normalize.Alias(yamlMap, "privileges", "privilege")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "databases", "database")
+	err = normalize.Alias(yamlMap, "databases", "database")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "schemas", "schema")
+	err = normalize.Alias(yamlMap, "schemas", "schema")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "roles", "to")
+	err = normalize.Alias(yamlMap, "roles", "to")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "roles", "grantee")
+	err = normalize.Alias(yamlMap, "roles", "grantee")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "roles", "role")
+	err = normalize.Alias(yamlMap, "roles", "role")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "objects", "object")
+	err = normalize.Alias(yamlMap, "objects", "object")
 	if err != nil {
 		return
 	}

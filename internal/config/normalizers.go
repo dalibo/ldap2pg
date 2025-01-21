@@ -6,17 +6,9 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/normalize"
 	"golang.org/x/exp/maps"
 )
-
-type KeyConflict struct {
-	Key      string
-	Conflict string
-}
-
-func (err *KeyConflict) Error() string {
-	return fmt.Sprintf("key conflict between %s and %s", err.Key, err.Conflict)
-}
 
 func NormalizeBoolean(v interface{}) interface{} {
 	// Replace YAML 1.1 booleans to mapstructure weak boolean.
@@ -28,25 +20,6 @@ func NormalizeBoolean(v interface{}) interface{} {
 	default:
 		return v
 	}
-}
-
-func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error) {
-	value, hasAlias := (*yaml)[alias]
-	if !hasAlias {
-		return
-	}
-
-	_, hasKey := (*yaml)[key]
-	if hasKey {
-		return &KeyConflict{
-			Key:      key,
-			Conflict: alias,
-		}
-	}
-
-	delete(*yaml, alias)
-	(*yaml)[key] = value
-	return
 }
 
 func NormalizeList(yaml interface{}) (list []interface{}) {
@@ -108,7 +81,7 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 		config["privileges"] = privileges
 	}
 
-	err = NormalizeAlias(&config, "rules", "sync_map")
+	err = normalize.Alias(config, "rules", "sync_map")
 	if err != nil {
 		return
 	}
@@ -166,15 +139,15 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 		return nil, fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 
-	err = NormalizeAlias(&yamlMap, "ldapsearch", "ldap")
+	err = normalize.Alias(yamlMap, "ldapsearch", "ldap")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "roles", "role")
+	err = normalize.Alias(yamlMap, "roles", "role")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "grants", "grant")
+	err = normalize.Alias(yamlMap, "grants", "grant")
 	if err != nil {
 		return
 	}
@@ -228,7 +201,7 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&search, "subsearches", "joins")
+	err = normalize.Alias(search, "subsearches", "joins")
 	if err != nil {
 		return
 	}
