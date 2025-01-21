@@ -2,19 +2,9 @@ package privileges
 
 import (
 	_ "embed"
-	"strings"
 )
 
-type privilege interface {
-	inspecter
-	normalizer
-	expander
-	revoker
-	granter
-}
-
 var (
-	Builtins map[string]privilege
 	//go:embed sql/database.sql
 	inspectDatabase string
 	//go:embed sql/global-default.sql
@@ -34,63 +24,23 @@ var (
 )
 
 func init() {
-	Builtins = make(map[string]privilege)
+	ACLs = make(map[string]privilege)
 
-	register("instance", "DATABASE", inspectDatabase)
-	register("instance", "LANGUAGE", inspectLanguage)
+	Register("instance", "DATABASE", inspectDatabase)
+	Register("instance", "LANGUAGE", inspectLanguage)
 
-	register("database", "SCHEMA", inspectSchema)
-	register(
+	Register("database", "SCHEMA", inspectSchema)
+	Register(
 		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	register(
+	Register(
 		"schema", "SCHEMA DEFAULT", inspectSchemaDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	register("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
-	register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
-	register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
-}
-
-// queries are grant and revoke queries in order.
-func register(scope, object, inspect string, queries ...string) {
-	var grant, revoke string
-
-	if 0 < len(queries) {
-		grant = queries[0]
-		queries = queries[1:]
-	} else {
-		grant = `GRANT %s ON ` + object + ` %%s TO %%s;`
-	}
-
-	if 0 < len(queries) {
-		revoke = queries[0]
-		queries = queries[1:]
-	} else {
-		revoke = `REVOKE %s ON ` + object + ` %%s FROM %%s;`
-	}
-
-	if 0 < len(queries) {
-		panic("too many queries")
-	}
-
-	var p privilege
-
-	if "GLOBAL DEFAULT" == object {
-		p = NewGlobalDefault(object, inspect, grant, revoke)
-	} else if "SCHEMA DEFAULT" == object {
-		p = NewSchemaDefault(object, inspect, grant, revoke)
-	} else if strings.HasPrefix(object, "ALL ") {
-		p = NewAll(object, inspect, grant, revoke)
-	} else if "instance" == scope {
-		p = NewInstance(object, inspect, grant, revoke)
-	} else if "database" == scope {
-		p = NewDatabase(object, inspect, grant, revoke)
-	} else {
-		panic("unsupported privilege")
-	}
-	Builtins[object] = p
+	Register("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
+	Register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
+	Register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
 }

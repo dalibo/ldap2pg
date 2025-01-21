@@ -80,7 +80,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	go func() {
 		defer close(ch)
 		runGlobal := i.database.Name == i.defaultDatabase
-		names := maps.Keys(Builtins)
+		names := maps.Keys(ACLs)
 		slices.Sort(names)
 		for _, object := range names {
 			arg, ok := i.managedPrivileges[object]
@@ -88,7 +88,7 @@ func (i *Inspector) iterGrants() chan Grant {
 				continue
 			}
 
-			p := Builtins[object]
+			p := ACLs[object]
 			if p.IsGlobal() && !runGlobal {
 				continue
 			}

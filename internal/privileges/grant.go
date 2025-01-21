@@ -58,7 +58,7 @@ func (g Grant) ACL() string {
 }
 
 func (g Grant) Privilege() privilege {
-	return Builtins[g.ACL()]
+	return ACLs[g.ACL()]
 }
 
 func (g Grant) String() string {

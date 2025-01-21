@@ -78,7 +78,7 @@ func CheckPrivilegesACL(profiles map[string][]interface{}) error {
 			if ok {
 				continue
 			}
-			_, ok = privileges.Builtins[on]
+			_, ok = privileges.ACLs[on]
 			if !ok {
 				return fmt.Errorf("%s[%d]: unknown ACL: %s", name, i, on)
 			}

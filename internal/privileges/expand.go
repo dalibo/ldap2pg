@@ -20,7 +20,7 @@ func Expand(in []Grant, privileges TypeMap, database postgres.Database, database
 			continue
 		}
 
-		e := Builtins[k]
+		e := ACLs[k]
 		out = append(out, e.Expand(grant, database, databases)...)
 	}
 	return
