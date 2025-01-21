@@ -116,7 +116,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 }
 
 func NormalizeMemberships(raw interface{}) (memberships []map[string]interface{}, err error) {
-	list := NormalizeList(raw)
+	list := normalize.List(raw)
 	memberships = make([]map[string]interface{}, 0, len(list))
 	for i, raw := range list {
 		membership, err := NormalizeMembership(raw)

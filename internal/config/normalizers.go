@@ -10,20 +10,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func NormalizeList(yaml interface{}) (list []interface{}) {
-	switch v := yaml.(type) {
-	case []interface{}:
-		list = v
-	case []string:
-		for _, s := range v {
-			list = append(list, s)
-		}
-	default:
-		list = append(list, yaml)
-	}
-	return
-}
-
 func NormalizeStringList(yaml interface{}) (list []string, err error) {
 	switch yaml.(type) {
 	case nil:
@@ -152,7 +138,7 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	}
 	rule["ldapsearch"] = search
 
-	list := NormalizeList(rule["roles"])
+	list := normalize.List(rule["roles"])
 	rules := []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
@@ -166,7 +152,7 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	}
 	rule["roles"] = rules
 
-	list = NormalizeList(rule["grants"])
+	list = normalize.List(rule["grants"])
 	rules = []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}

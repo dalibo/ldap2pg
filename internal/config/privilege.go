@@ -41,7 +41,7 @@ func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err e
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", key, err)
 			}
-			privilegeRef["types"] = NormalizeList(privilegeRef["types"])
+			privilegeRef["types"] = normalize.List(privilegeRef["types"])
 			privilegeRefs = append(privilegeRefs, DuplicatePrivilegeRef(privilegeRef)...)
 		}
 		rawMap[key] = privilegeRefs

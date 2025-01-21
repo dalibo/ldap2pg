@@ -9,22 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestNormalizeList(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := dedent.Dedent(`
-	role: alice
-	`)
-	var value interface{}
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
-
-	values := config.NormalizeList(value)
-	r.Equal(1, len(values))
-
-	values = config.NormalizeList([]string{"string", "list"})
-	r.Equal(2, len(values))
-}
-
 func TestNormalizeStringList(t *testing.T) {
 	r := require.New(t)
 
