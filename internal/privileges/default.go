@@ -1,5 +1,5 @@
 // Default privileges for object owners.
-package privilege
+package privileges
 
 import (
 	"fmt"

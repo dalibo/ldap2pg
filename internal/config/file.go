@@ -8,7 +8,7 @@ import (
 	"path"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/wanted"
 	"github.com/jackc/pgx/v5"
 )
@@ -79,7 +79,7 @@ type Config struct {
 	Version    int
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
-	Privileges privilege.RefMap
+	Privileges privileges.RefMap
 	Rules      wanted.Rules `mapstructure:"rules"`
 }
 

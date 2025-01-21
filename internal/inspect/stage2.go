@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 )
@@ -23,8 +23,8 @@ func (instance *Instance) InspectStage2(ctx context.Context, dbname string, quer
 	return nil
 }
 
-func (instance *Instance) InspectGrants(ctx context.Context, dbname string, privileges privilege.TypeMap, roles mapset.Set[string]) (out []privilege.Grant, err error) {
-	inspector := privilege.NewInspector(instance.Databases[dbname], instance.DefaultDatabase, privileges)
+func (instance *Instance) InspectGrants(ctx context.Context, dbname string, privs privileges.TypeMap, roles mapset.Set[string]) (out []privileges.Grant, err error) {
+	inspector := privileges.NewInspector(instance.Databases[dbname], instance.DefaultDatabase, privs)
 	for inspector.Run(ctx); inspector.Next(); {
 		grant := inspector.Grant()
 		if grant.IsRelevant() && !roles.Contains(grant.Grantee) {

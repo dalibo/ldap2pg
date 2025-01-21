@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"github.com/dalibo/ldap2pg/internal/postgres"

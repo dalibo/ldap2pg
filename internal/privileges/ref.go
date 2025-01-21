@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"log/slog"
@@ -69,7 +69,7 @@ func (rm RefMap) BuildTypeMaps() (instance, other, defaults TypeMap) {
 		} else {
 			other[target] = types
 		}
-		slog.Debug("Managing privilege.", "types", types, "on", target)
+		slog.Debug("Managing privileges.", "types", types, "on", target)
 	}
 
 	return

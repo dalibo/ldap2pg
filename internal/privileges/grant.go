@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ import (
 // SEQUENCES, etc. instead of the name of an object.
 type Grant struct {
 	Target   string // Name of the referenced privilege object: DATABASE, TABLES, etc.
-	Owner    string // For default privilege. Empty otherwise.
+	Owner    string // For default privileges. Empty otherwise.
 	Grantee  string
 	Type     string // Privilege type (USAGE, SELECT, etc.)
 	Database string // "" for instance grant.

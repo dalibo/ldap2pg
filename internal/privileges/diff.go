@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"log/slog"
@@ -34,7 +34,7 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 
 			p := grant.Privilege()
 			q := p.Revoke(grant)
-			q.Description = "Revoke privilege."
+			q.Description = "Revoke privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q
@@ -58,7 +58,7 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			slog.Debug("Wants grant.", "grant", grant)
 			p := grant.Privilege()
 			q := p.Grant(grant)
-			q.Description = "Grant privilege."
+			q.Description = "Grant privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}
 			ch <- q

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/tree"
 	"golang.org/x/exp/maps"
 )
@@ -78,7 +78,7 @@ func CheckPrivilegesACL(profiles map[string][]interface{}) error {
 			if ok {
 				continue
 			}
-			_, ok = privilege.Builtins[on]
+			_, ok = privileges.Builtins[on]
 			if !ok {
 				return fmt.Errorf("%s[%d]: unknown ACL: %s", name, i, on)
 			}

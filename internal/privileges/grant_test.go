@@ -1,15 +1,15 @@
-package privilege_test
+package privileges_test
 
 import (
 	"testing"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	r "github.com/stretchr/testify/require"
 )
 
 func TestGrantString(t *testing.T) {
-	g := privilege.Grant{
+	g := privileges.Grant{
 		Target:   "DATABASE",
 		Grantee:  "public",
 		Type:     "CONNECT",
@@ -17,7 +17,7 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `CONNECT ON DATABASE template1 TO public`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target:   "SCHEMA",
 		Grantee:  "public",
 		Type:     "CREATE",
@@ -26,7 +26,7 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `CREATE ON SCHEMA template1.public TO public`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target:   "TABLE",
 		Grantee:  "public",
 		Type:     "SELECT",
@@ -36,14 +36,14 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `SELECT ON TABLE template1.public.table1 TO public`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target: "TABLES",
 		Owner:  "postgres",
 		Type:   "SELECT",
 	}
 	r.Equal(t, `GLOBAL DEFAULT FOR postgres SELECT ON TABLES`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target: "TABLES",
 		Owner:  "postgres",
 		Type:   "SELECT",
@@ -51,7 +51,7 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `DEFAULT FOR postgres IN SCHEMA public SELECT ON TABLES`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target:   "TABLE",
 		Grantee:  "public",
 		Type:     "SELECT",
@@ -62,7 +62,7 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `PARTIAL SELECT ON TABLE template1.public.table1 TO public`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target:  "LANGUAGE",
 		Grantee: "public",
 		Type:    "USAGE",
@@ -70,7 +70,7 @@ func TestGrantString(t *testing.T) {
 	}
 	r.Equal(t, `USAGE ON LANGUAGE plpgsql TO public`, g.String())
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Target:  "ALL TABLES IN SCHEMA",
 		Grantee: "dave",
 		Schema:  "public",
@@ -80,7 +80,7 @@ func TestGrantString(t *testing.T) {
 }
 
 func TestExpandDatabase(t *testing.T) {
-	g := privilege.Grant{
+	g := privileges.Grant{
 		Database: "db0",
 	}
 	grants := g.ExpandDatabase("db0")
@@ -90,7 +90,7 @@ func TestExpandDatabase(t *testing.T) {
 	grants = g.ExpandDatabase("db1")
 	r.Len(t, grants, 0)
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Database: "__all__",
 	}
 	grants = g.ExpandDatabase("db0")
@@ -99,7 +99,7 @@ func TestExpandDatabase(t *testing.T) {
 }
 
 func TestExpandOwners(t *testing.T) {
-	g := privilege.Grant{
+	g := privileges.Grant{
 		Database: "db0",
 		Schema:   "nsp0",
 		Owner:    "__auto__",
@@ -128,14 +128,14 @@ func TestExpandOwners(t *testing.T) {
 }
 
 func TestExpandSchema(t *testing.T) {
-	g := privilege.Grant{
+	g := privileges.Grant{
 		Schema: "nsp0",
 	}
 	grants := g.ExpandSchemas([]string{"nsp0", "nsp1"})
 	r.Len(t, grants, 1)
 	r.Equal(t, "nsp0", grants[0].Schema)
 
-	g = privilege.Grant{
+	g = privileges.Grant{
 		Schema: "__all__",
 	}
 	grants = g.ExpandSchemas([]string{"nsp0", "nsp1"})

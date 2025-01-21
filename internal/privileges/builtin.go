@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	_ "embed"

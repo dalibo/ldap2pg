@@ -3,7 +3,7 @@ package wanted
 import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 )
@@ -25,15 +25,15 @@ func (r GrantRule) Formats() []pyfmt.Format {
 	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
 }
 
-func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <-chan privilege.Grant {
-	ch := make(chan privilege.Grant)
+func (r GrantRule) Generate(results *ldap.Result, privs privileges.RefMap) <-chan privileges.Grant {
+	ch := make(chan privileges.Grant)
 	go func() {
 		defer close(ch)
 		if nil == results.Entry {
 			alias := r.Privilege.Input
-			for _, priv := range privileges[alias] {
+			for _, priv := range privs[alias] {
 				// Case static rule.
-				grant := privilege.Grant{
+				grant := privileges.Grant{
 					Target:   priv.On,
 					Grantee:  r.To.Input,
 					Type:     priv.Type,
@@ -57,8 +57,8 @@ func (r GrantRule) Generate(results *ldap.Result, privileges privilege.RefMap) <
 			// Case dynamic rule.
 			for values := range results.GenerateValues(r.Privilege, r.Database, r.Schema, r.Object, r.To) {
 				alias := r.Privilege.Format(values)
-				for _, priv := range privileges[alias] {
-					grant := privilege.Grant{
+				for _, priv := range privs[alias] {
+					grant := privileges.Grant{
 						Target:   priv.On,
 						Grantee:  r.To.Format(values),
 						Type:     priv.Type,

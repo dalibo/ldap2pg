@@ -20,7 +20,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/inspect"
 	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/joho/godotenv"
@@ -126,16 +126,16 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			var privileges privilege.TypeMap
+			var privs privileges.TypeMap
 			if dbname == instance.DefaultDatabase {
 				slog.Debug("Managing instance wide privileges.", "database", dbname)
-				privileges = make(privilege.TypeMap)
-				maps.Copy(privileges, instancePrivileges)
-				maps.Copy(privileges, objectPrivileges)
+				privs = make(privileges.TypeMap)
+				maps.Copy(privs, instancePrivileges)
+				maps.Copy(privs, objectPrivileges)
 			} else {
-				privileges = objectPrivileges
+				privs = objectPrivileges
 			}
-			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, privileges)
+			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, privs)
 			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 2: %w", err)
@@ -271,17 +271,18 @@ func configure() (controller Controller, c config.Config, err error) {
 }
 
 // syncPrivileges for a given database.
-func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privilege.Grant, dbname string, privileges privilege.TypeMap) (int, error) {
+func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privileges.Grant, dbname string, privs privileges.TypeMap) (int, error) {
 	stageCount := 0
 	allDatabases := maps.Keys(instance.Databases)
-	acls := maps.Keys(privileges)
+	acls := maps.Keys(privs)
 	slices.Sort(acls)
 	for _, acl := range acls {
-		privileges := privilege.TypeMap{acl: privileges[acl]}
-		expandedGrants := privilege.Expand(wantedGrants, privileges, instance.Databases[dbname], allDatabases)
-		currentGrants, err := instance.InspectGrants(ctx, dbname, privileges, roles)
+		// synchronize ACL one at a time
+		privs := privileges.TypeMap{acl: privs[acl]}
+		expandedGrants := privileges.Expand(wantedGrants, privs, instance.Databases[dbname], allDatabases)
+		currentGrants, err := instance.InspectGrants(ctx, dbname, privs, roles)
 		// Special case, ignore grants on unmanaged databases.
-		currentGrants = lists.Filter(currentGrants, func(g privilege.Grant) bool {
+		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
 			if "DATABASE" != g.ACL() {
 				return true
 			}
@@ -292,7 +293,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		if err != nil {
 			return 0, fmt.Errorf("privileges: %w", err)
 		}
-		queries := privilege.Diff(currentGrants, expandedGrants)
+		queries := privileges.Diff(currentGrants, expandedGrants)
 		count, err := postgres.Apply(ctx, queries, controller.Real)
 		if err != nil {
 			return 0, fmt.Errorf("apply: %w", err)
