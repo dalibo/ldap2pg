@@ -34,7 +34,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 
 		names, ok := rule["names"]
 		if ok {
-			rule["names"], err = NormalizeStringList(names)
+			rule["names"], err = normalize.StringList(names)
 			if err != nil {
 				return
 			}

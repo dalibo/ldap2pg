@@ -24,3 +24,13 @@ func TestList(t *testing.T) {
 	values = normalize.List([]string{"string", "list"})
 	r.Equal(2, len(values))
 }
+
+func TestStringList(t *testing.T) {
+	r := require.New(t)
+
+	value := interface{}("alice")
+	values, err := normalize.StringList(value)
+	r.Nil(err)
+	r.Equal(1, len(values))
+	r.Equal("alice", values[0])
+}

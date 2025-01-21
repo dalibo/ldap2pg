@@ -10,28 +10,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func NormalizeStringList(yaml interface{}) (list []string, err error) {
-	switch yaml.(type) {
-	case nil:
-		return
-	case string:
-		list = append(list, yaml.(string))
-	case []interface{}:
-		for _, iItem := range yaml.([]interface{}) {
-			item, ok := iItem.(string)
-			if !ok {
-				return nil, errors.New("must be string")
-			}
-			list = append(list, item)
-		}
-	case []string:
-		list = yaml.([]string)
-	default:
-		return nil, fmt.Errorf("must be string or list of string, got %v", yaml)
-	}
-	return
-}
-
 func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
 	config, ok := yaml.(map[string]interface{})
 	if !ok {

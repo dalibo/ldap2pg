@@ -239,7 +239,7 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 
 	keys := []string{"owners", "privileges", "databases", "schemas", "roles", "objects"}
 	for _, k := range keys {
-		rule[k], err = NormalizeStringList(rule[k])
+		rule[k], err = normalize.StringList(rule[k])
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", k, err)
 		}

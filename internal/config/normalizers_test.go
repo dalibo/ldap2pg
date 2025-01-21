@@ -9,16 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestNormalizeStringList(t *testing.T) {
-	r := require.New(t)
-
-	value := interface{}("alice")
-	values, err := config.NormalizeStringList(value)
-	r.Nil(err)
-	r.Equal(1, len(values))
-	r.Equal("alice", values[0])
-}
-
 func TestNormalizeString(t *testing.T) {
 	r := require.New(t)
 
