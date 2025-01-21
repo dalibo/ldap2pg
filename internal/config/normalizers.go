@@ -10,18 +10,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func NormalizeBoolean(v interface{}) interface{} {
-	// Replace YAML 1.1 booleans to mapstructure weak boolean.
-	switch v {
-	case "y", "Y", "yes", "Yes", "YES", "on", "On", "ON":
-		return "true"
-	case "n", "N", "no", "No", "NO", "off", "Off", "OFF":
-		return "false"
-	default:
-		return v
-	}
-}
-
 func NormalizeList(yaml interface{}) (list []interface{}) {
 	switch v := yaml.(type) {
 	case []interface{}:

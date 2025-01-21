@@ -102,7 +102,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 	case map[string]interface{}:
 		yamlMap := yaml.(map[string]interface{})
 		for k, v := range yamlMap {
-			yamlMap[k] = NormalizeBoolean(v)
+			yamlMap[k] = normalize.Boolean(v)
 		}
 		maps.Copy(value, yamlMap)
 	case nil:
@@ -137,7 +137,7 @@ func NormalizeMembership(raw interface{}) (value map[string]interface{}, err err
 		value["name"] = raw
 	case map[string]interface{}:
 		for k, v := range raw {
-			value[k] = NormalizeBoolean(v)
+			value[k] = normalize.Boolean(v)
 		}
 	default:
 		return nil, fmt.Errorf("bad type: %T", raw)
