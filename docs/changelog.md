@@ -19,6 +19,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Gracefully handle passing file as DSN.
 - Add new default configuration location in `/etc/ldap2pg/`.
 - Fix panic on syntax error in ldaprc.
+- Accept `types` as a list of privileges type in config.
+
 
 # ldap2pg 6.2
 
