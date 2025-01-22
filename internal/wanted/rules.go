@@ -3,86 +3,9 @@ package wanted
 import (
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 )
-
-type GrantRule struct {
-	Owner     pyfmt.Format
-	Privilege pyfmt.Format
-	Database  pyfmt.Format
-	Schema    pyfmt.Format
-	Object    pyfmt.Format
-	To        pyfmt.Format `mapstructure:"role"`
-}
-
-func (r GrantRule) IsStatic() bool {
-	return lists.And(r.Formats(), func(f pyfmt.Format) bool { return f.IsStatic() })
-}
-
-func (r GrantRule) Formats() []pyfmt.Format {
-	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
-}
-
-func (r GrantRule) Generate(results *ldap.Result, privs privileges.Profiles) <-chan privileges.Grant {
-	ch := make(chan privileges.Grant)
-	go func() {
-		defer close(ch)
-		if nil == results.Entry {
-			alias := r.Privilege.Input
-			for _, priv := range privs[alias] {
-				// Case static rule.
-				grant := privileges.Grant{
-					Target:   priv.On,
-					Grantee:  r.To.Input,
-					Type:     priv.Type,
-					Database: r.Database.Input,
-					Schema:   r.Schema.Input,
-					Object:   r.Object.Input,
-				}
-				if priv.IsDefault() {
-					grant.Owner = r.Owner.Input
-					grant.Object = ""
-					if "global" == priv.Default {
-						grant.Schema = ""
-					} else if "__all__" == grant.Schema {
-						// Use global default instead
-						continue
-					}
-				}
-				ch <- grant
-			}
-		} else {
-			// Case dynamic rule.
-			for values := range results.GenerateValues(r.Privilege, r.Database, r.Schema, r.Object, r.To) {
-				alias := r.Privilege.Format(values)
-				for _, priv := range privs[alias] {
-					grant := privileges.Grant{
-						Target:   priv.On,
-						Grantee:  r.To.Format(values),
-						Type:     priv.Type,
-						Database: r.Database.Format(values),
-						Schema:   r.Schema.Format(values),
-						Object:   r.Object.Format(values),
-					}
-					if priv.IsDefault() {
-						grant.Owner = r.Owner.Input
-						grant.Object = ""
-						if "global" == priv.Default {
-							grant.Schema = ""
-						} else if "__all__" == grant.Schema {
-							// Use global default instead
-							continue
-						}
-					}
-					ch <- grant
-				}
-			}
-		}
-	}()
-	return ch
-}
 
 type RoleRule struct {
 	Name         pyfmt.Format

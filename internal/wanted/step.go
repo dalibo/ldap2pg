@@ -16,8 +16,8 @@ import (
 type Step struct {
 	Description string
 	LdapSearch  ldap.Search
-	RoleRules   []RoleRule  `mapstructure:"roles"`
-	GrantRules  []GrantRule `mapstructure:"grants"`
+	RoleRules   []RoleRule             `mapstructure:"roles"`
+	GrantRules  []privileges.GrantRule `mapstructure:"grants"`
 }
 
 func (s Step) HasLDAPSearch() bool {
@@ -135,7 +135,7 @@ func (s Step) SplitStaticItems() (items []Step) {
 			dynamicRoles = append(dynamicRoles, rule)
 		}
 	}
-	var staticGrants, dynamicGrants []GrantRule
+	var staticGrants, dynamicGrants []privileges.GrantRule
 	for _, rule := range s.GrantRules {
 		if rule.IsStatic() {
 			staticGrants = append(staticGrants, rule)
