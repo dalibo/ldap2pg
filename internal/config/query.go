@@ -22,7 +22,7 @@ type PostgresConfig struct {
 	ManagedRolesQuery   QueryConfig[string]          `mapstructure:"managed_roles_query"`
 	RolesBlacklistQuery QueryConfig[string]          `mapstructure:"roles_blacklist_query"`
 	SchemasQuery        QueryConfig[postgres.Schema] `mapstructure:"schemas_query"`
-	PrivilegesMap       privileges.Profiles          `mapstructure:"omit"`
+	PrivilegesProfiles  privileges.Profiles          `mapstructure:"omit"`
 }
 
 func (c PostgresConfig) Build() inspect.Config {

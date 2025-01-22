@@ -116,7 +116,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			managedRoles.Add("public")
 		}
 
-		instancePrivileges, objectPrivileges, defaultPrivileges := conf.Postgres.PrivilegesMap.BuildTypeMaps()
+		instancePrivileges, objectPrivileges, defaultPrivileges := conf.Postgres.PrivilegesProfiles.BuildTypeMaps()
 
 		// Start by default database. This allow to reuse the last
 		// connexion openned when synchronizing roles.
@@ -272,7 +272,7 @@ func configure() (controller Controller, c config.Config, err error) {
 
 // syncPrivileges for a given database.
 func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privileges.Grant, dbname string, privs privileges.TypeMap) (int, error) {
-	stageCount := 0
+	queryCount := 0
 	allDatabases := maps.Keys(instance.Databases)
 	acls := maps.Keys(privs)
 	slices.Sort(acls)
@@ -299,9 +299,9 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 			return 0, fmt.Errorf("apply: %w", err)
 		}
 		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
-		stageCount += count
+		queryCount += count
 	}
-	return stageCount, nil
+	return queryCount, nil
 }
 
 func logPanic() {
