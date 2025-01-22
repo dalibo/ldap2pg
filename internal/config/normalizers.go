@@ -7,6 +7,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/normalize"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"golang.org/x/exp/maps"
 )
 
@@ -125,13 +126,11 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	rules = []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
-		rule, err = NormalizeGrantRule(rawRule)
+		rule, err = privileges.NormalizeGrantRule(rawRule)
 		if err != nil {
 			return nil, fmt.Errorf("grants[%d]: %w", i, err)
 		}
-		for _, rule := range DuplicateGrantRules(rule) {
-			rules = append(rules, rule)
-		}
+		rules = append(rules, privileges.DuplicateGrantRules(rule)...)
 	}
 	rule["grants"] = rules
 
