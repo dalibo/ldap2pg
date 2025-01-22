@@ -27,7 +27,7 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 
 	section, ok = config["privileges"]
 	if ok {
-		privileges, err := NormalizePrivileges(section)
+		privileges, err := privileges.NormalizePrivileges(section)
 		if err != nil {
 			return config, fmt.Errorf("privileges: %w", err)
 		}
