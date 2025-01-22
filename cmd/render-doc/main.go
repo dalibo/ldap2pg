@@ -7,9 +7,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/gosimple/slug"
-
-	"github.com/dalibo/ldap2pg/internal/config"
 )
 
 func main() {
@@ -49,7 +48,7 @@ func main() {
 		Defaults: make(map[string]map[string]interface{}),
 	}
 
-	for key, items := range config.BuiltinsProfiles {
+	for key, items := range privileges.BuiltinsProfiles {
 		l := items.([]interface{})
 		item := l[0]
 		switch item.(type) {
