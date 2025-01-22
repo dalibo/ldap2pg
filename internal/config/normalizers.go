@@ -50,14 +50,9 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 }
 
 func NormalizePostgres(yaml interface{}) error {
-	yamlMap, ok := yaml.(map[string]interface{})
+	_, ok := yaml.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("bad type: %T, must be a map", yaml)
-	}
-
-	err := normalize.IsString(yamlMap["fallback_owner"])
-	if err != nil {
-		return fmt.Errorf("fallback_owner: %w", err)
 	}
 	return nil
 }
@@ -106,10 +101,6 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 
 	maps.Copy(rule, yamlMap)
 
-	err = normalize.IsString(rule["description"])
-	if err != nil {
-		return
-	}
 	search, err := NormalizeLdapSearch(rule["ldapsearch"])
 	if err != nil {
 		return nil, fmt.Errorf("ldapsearch: %w", err)

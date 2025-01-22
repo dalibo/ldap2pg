@@ -15,12 +15,3 @@ func SpuriousKeys(yaml map[string]interface{}, knownKeys ...string) error {
 	}
 	return nil
 }
-
-// IsString checks for string type.
-func IsString(yaml interface{}) error {
-	_, ok := yaml.(string)
-	if !ok && yaml != nil {
-		return fmt.Errorf("bad value %v, must be string", yaml)
-	}
-	return nil
-}
