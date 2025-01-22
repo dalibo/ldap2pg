@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// Ref references a privilege type
+// Ref references a privilege type and an ACL
 //
 // Example: {Type: "CONNECT", To: "DATABASE"}
 type Ref struct {
@@ -21,11 +21,11 @@ func (r Ref) IsDefault() bool {
 	return "" != r.Default
 }
 
-// RefMap holds privilege groups
-type RefMap map[string][]Ref
+// Profiles holds privilege groups
+type Profiles map[string][]Ref
 
 // BuildDefaultArg returns the list of (Type, On) couple referenced.
-func (rm RefMap) BuildDefaultArg(def string) (out [][]string) {
+func (rm Profiles) BuildDefaultArg(def string) (out [][]string) {
 	for _, refs := range rm {
 		for _, ref := range refs {
 			if ref.Default != def {
@@ -37,7 +37,7 @@ func (rm RefMap) BuildDefaultArg(def string) (out [][]string) {
 	return
 }
 
-func (rm RefMap) BuildTypeMaps() (instance, other, defaults TypeMap) {
+func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
 	all := make(TypeMap)
 	other = make(TypeMap)
 	defaults = make(TypeMap)

@@ -233,7 +233,7 @@ func (s Step) generateRoles(results *ldap.Result) <-chan role.Role {
 	return ch
 }
 
-func (s Step) generateGrants(results *ldap.Result, privs privileges.RefMap) <-chan privileges.Grant {
+func (s Step) generateGrants(results *ldap.Result, privs privileges.Profiles) <-chan privileges.Grant {
 	ch := make(chan privileges.Grant)
 	go func() {
 		defer close(ch)

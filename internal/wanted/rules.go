@@ -25,7 +25,7 @@ func (r GrantRule) Formats() []pyfmt.Format {
 	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
 }
 
-func (r GrantRule) Generate(results *ldap.Result, privs privileges.RefMap) <-chan privileges.Grant {
+func (r GrantRule) Generate(results *ldap.Result, privs privileges.Profiles) <-chan privileges.Grant {
 	ch := make(chan privileges.Grant)
 	go func() {
 		defer close(ch)

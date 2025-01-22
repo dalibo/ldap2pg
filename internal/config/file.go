@@ -79,7 +79,7 @@ type Config struct {
 	Version    int
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
-	Privileges privileges.RefMap
+	Privileges privileges.Profiles
 	Rules      wanted.Rules `mapstructure:"rules"`
 }
 

@@ -44,7 +44,7 @@ func (m Rules) DropGrants() (out Rules) {
 	return
 }
 
-func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.RefMap) (roles role.Map, grants []privileges.Grant, err error) {
+func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (roles role.Map, grants []privileges.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
