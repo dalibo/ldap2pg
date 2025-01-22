@@ -26,25 +26,25 @@ var (
 
 func init() {
 	// ACLs
-	ACLs = make(map[string]privilege)
+	acls = make(map[string]acl)
 
-	Register("instance", "DATABASE", inspectDatabase)
-	Register("instance", "LANGUAGE", inspectLanguage)
+	registerACL("instance", "DATABASE", inspectDatabase)
+	registerACL("instance", "LANGUAGE", inspectLanguage)
 
-	Register("database", "SCHEMA", inspectSchema)
-	Register(
+	registerACL("database", "SCHEMA", inspectSchema)
+	registerACL(
 		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	Register(
+	registerACL(
 		"schema", "SCHEMA DEFAULT", inspectSchemaDefault,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
 		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
 	)
-	Register("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
-	Register("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
-	Register("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
+	registerACL("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
+	registerACL("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
+	registerACL("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
 
 	// profiles
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")

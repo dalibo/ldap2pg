@@ -57,8 +57,8 @@ func (g Grant) ACL() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) Privilege() privilege {
-	return ACLs[g.ACL()]
+func (g Grant) Privilege() acl {
+	return acls[g.ACL()]
 }
 
 func (g Grant) String() string {

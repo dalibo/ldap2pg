@@ -64,7 +64,7 @@ func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
 		slices.Sort(types)
 		if strings.HasSuffix(target, " DEFAULT") {
 			defaults[target] = types
-		} else if ACLs[target].IsGlobal() {
+		} else if acls[target].IsGlobal() {
 			instance[target] = types
 		} else {
 			other[target] = types

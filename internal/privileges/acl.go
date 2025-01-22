@@ -2,7 +2,7 @@ package privileges
 
 import "strings"
 
-type privilege interface {
+type acl interface {
 	inspecter
 	normalizer
 	expander
@@ -10,15 +10,16 @@ type privilege interface {
 	granter
 }
 
-var ACLs map[string]privilege
+// ACLs registry
+var acls map[string]acl
 
-// Register an ACL
+// registerACL an ACL
 //
 // scope is one of instance, database, namespace.
 // Determines de granularity and relevant fields of the privilege.
 //
 // grant and revoke queries may be generated from object.
-func Register(scope, object, inspect string, queries ...string) {
+func registerACL(scope, object, inspect string, queries ...string) {
 	var grant, revoke string
 
 	if 0 < len(queries) {
@@ -39,7 +40,7 @@ func Register(scope, object, inspect string, queries ...string) {
 		panic("too many queries")
 	}
 
-	var p privilege
+	var p acl
 
 	if "GLOBAL DEFAULT" == object {
 		p = newGlobalDefault(object, inspect, grant, revoke)
@@ -54,5 +55,5 @@ func Register(scope, object, inspect string, queries ...string) {
 	} else {
 		panic("unsupported acl scope")
 	}
-	ACLs[object] = p
+	acls[object] = p
 }

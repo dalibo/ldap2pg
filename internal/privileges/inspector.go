@@ -80,7 +80,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	go func() {
 		defer close(ch)
 		runGlobal := i.database.Name == i.defaultDatabase
-		names := maps.Keys(ACLs)
+		names := maps.Keys(acls)
 		slices.Sort(names)
 		for _, object := range names {
 			arg, ok := i.managedPrivileges[object]
@@ -88,7 +88,7 @@ func (i *Inspector) iterGrants() chan Grant {
 				continue
 			}
 
-			p := ACLs[object]
+			p := acls[object]
 			if p.IsGlobal() && !runGlobal {
 				continue
 			}
@@ -100,7 +100,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	return ch
 }
 
-func (i *Inspector) inspect1(object string, p privilege, types []string, ch chan Grant) {
+func (i *Inspector) inspect1(object string, p acl, types []string, ch chan Grant) {
 	pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 	if err != nil {
 		i.err = err

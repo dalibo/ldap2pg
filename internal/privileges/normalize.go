@@ -67,7 +67,7 @@ func CheckPrivilegesACL(profiles map[string][]interface{}) error {
 			if ok {
 				continue
 			}
-			_, ok = ACLs[on]
+			_, ok = acls[on]
 			if !ok {
 				return fmt.Errorf("%s[%d]: unknown ACL: %s", name, i, on)
 			}
