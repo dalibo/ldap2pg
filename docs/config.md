@@ -221,6 +221,10 @@ privileges:
 
 Type of privilege as described in [Section 5.7 of PostgreSQL documentation].
 e.g. SELECT, REFERENCES, USAGE, etc.
+The value can be either a single string or a list of strings.
+Plural form `types` is valid.
+When multiple types are defined, a new privilege is defined for each type,
+each with the same attributes such as `on`.
 
 [Section 5.7 of PostgreSQL documentation]: https://www.postgresql.org/docs/current/ddl-priv.html
 

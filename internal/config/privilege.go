@@ -27,12 +27,42 @@ func NormalizePrivileges(value interface{}) (out map[string][]interface{}, err e
 		return nil, fmt.Errorf("bad type")
 	}
 	for key, value := range rawMap {
-		rawMap[key] = NormalizeList(value)
-	}
+		privilegeRefs := []interface{}{}
+		for _, rawPrivilegeRef := range value.([]interface{}) {
+			privilegeRef, ok := rawPrivilegeRef.(map[string]interface{})
+			if !ok {
+				// should be a string, referencing another profile for inclusion.
+				privilegeRefs = append(privilegeRefs, rawPrivilegeRef)
+				continue
+			}
 
+			err := NormalizeAlias(&privilegeRef, "types", "type")
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", key, err)
+			}
+			privilegeRef["types"] = NormalizeList(privilegeRef["types"])
+			privilegeRefs = append(privilegeRefs, DuplicatePrivilegeRef(privilegeRef)...)
+		}
+		rawMap[key] = privilegeRefs
+	}
 	out = ResolvePrivilegeRefs(rawMap)
 	err = CheckPrivilegesACL(out)
 
+	return
+}
+
+func DuplicatePrivilegeRef(yaml map[string]interface{}) (privileges []interface{}) {
+	for _, singleType := range yaml["types"].([]interface{}) {
+		privilege := make(map[string]interface{})
+		privilege["type"] = singleType
+		for key, value := range yaml {
+			if "types" == key {
+				continue
+			}
+			privilege[key] = value
+		}
+		privileges = append(privileges, privilege)
+	}
 	return
 }
 

@@ -74,3 +74,31 @@ func TestUnknownACL(t *testing.T) {
 	_, err = config.NormalizePrivileges(raw)
 	r.ErrorContains(err, "unknown ACL")
 }
+
+func TestPrivilegeTypes(t *testing.T) {
+	r := require.New(t)
+
+	rawYaml := strings.TrimSpace(dedent.Dedent(`
+	ro:
+	- on: ALL TABLES IN SCHEMA
+	  type: [INSERT, UPDATE, DELETE]
+	- on: SCHEMA
+	  type: CREATE
+	rw:
+	- ro
+	- types: SELECT
+	  on: ALL TABLES IN SCHEMA
+	- type: USAGE
+	  on: SCHEMA
+	  `))
+	var raw interface{}
+	err := yaml.Unmarshal([]byte(rawYaml), &raw)
+	r.Nil(err, rawYaml)
+
+	value, err := config.NormalizePrivileges(raw)
+	r.Nil(err)
+	r.Len(value, 2)
+	r.Contains(value, "ro")
+	ro := value["ro"]
+	r.Len(ro, 4)
+}
