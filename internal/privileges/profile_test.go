@@ -32,7 +32,7 @@ func TestPrivilegeAlias(t *testing.T) {
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
-	value, err := privileges.NormalizePrivileges(raw)
+	value, err := privileges.NormalizeProfiles(raw)
 	r.Nil(err)
 	r.Len(value, 3)
 	r.Len(value["ro"], 2)
@@ -51,7 +51,7 @@ func TestBuiltinPrivilege(t *testing.T) {
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
-	value, err := privileges.NormalizePrivileges(raw)
+	value, err := privileges.NormalizeProfiles(raw)
 	r.Nil(err)
 	r.Len(value, 1)
 	r.Contains(value, "ro")
@@ -71,7 +71,7 @@ func TestUnknownACL(t *testing.T) {
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
-	_, err = privileges.NormalizePrivileges(raw)
+	_, err = privileges.NormalizeProfiles(raw)
 	r.ErrorContains(err, "unknown ACL")
 }
 
@@ -95,7 +95,7 @@ func TestPrivilegeTypes(t *testing.T) {
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
-	value, err := privileges.NormalizePrivileges(raw)
+	value, err := privileges.NormalizeProfiles(raw)
 	r.Nil(err)
 	r.Len(value, 2)
 	r.Contains(value, "ro")
