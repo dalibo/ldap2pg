@@ -36,8 +36,20 @@ func Initialize() error {
 	}, "_"), nil)
 
 	_ = k.Load(env.Provider("LDAP", "_", func(key string) string {
+		slog.Debug("Loading LDAP environment var.", "var", key)
 		return strings.TrimPrefix(key, "LDAP")
 	}), nil)
+
+	passwordFilePath := k.String("PASSWORD_FILE")
+	if passwordFilePath != "" {
+		slog.Debug("Reading password from file.", "path", passwordFilePath)
+		data, err := readSecretFromFile(passwordFilePath)
+		if err != nil {
+			return fmt.Errorf("ldap password: %w", err)
+		}
+		// Set() only throws error when using StrictMerge which is not the case.
+		_ = k.Set("PASSWORD", data)
+	}
 
 	// cf. https://git.openldap.org/openldap/openldap/-/blob/bf01750381726db3052d94514eec4048c90a616a/libraries/libldap/init.c#L741
 	home, _ := os.UserHomeDir()
@@ -63,6 +75,23 @@ func Initialize() error {
 		}
 	}
 	return nil
+}
+
+// readSecretFromFile reads a file and returns its content.
+// It returns an error if the file does not exist or has too open permissions.
+func readSecretFromFile(path string) (string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if (info.Mode().Perm() & 0o007) != 0 {
+		return "", errors.New("permissions too wide")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
 }
 
 // looseFileProvider reads a file if it exists.

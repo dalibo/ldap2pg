@@ -50,7 +50,7 @@ See [psql(1)] for details on libpq env vars.
 
 The same goes for LDAP, ldap2pg supports standard `LDAP*` env vars and `ldaprc` files.
 See `ldap.conf(5)` for further details on how to configure.
-ldap2pg accepts one extra variable: `LDAPPASSWORD`.
+ldap2pg accepts two extra variables: `LDAPPASSWORD` and `LDAPPASSWORD_FILE`.
 
 ldap2pg loads `.env` file in the lda2pg.yml's parent directory if exists.
 
