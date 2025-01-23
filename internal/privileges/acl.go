@@ -1,11 +1,15 @@
 package privileges
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/dalibo/ldap2pg/internal/postgres"
+)
 
 type acl interface {
 	inspecter
 	normalizer
-	expander
+	Expand(Grant, postgres.Database, []string) []Grant
 	revoker
 	granter
 }
