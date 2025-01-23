@@ -7,8 +7,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 // TypeMap lists managed privilege types for each ACL
@@ -30,6 +28,9 @@ type Inspector struct {
 }
 
 func NewInspector(database postgres.Database, managedPrivileges TypeMap) Inspector {
+	if len(managedPrivileges) > 1 {
+		panic("only one ACL is supported")
+	}
 	return Inspector{
 		database:          database,
 		managedPrivileges: managedPrivileges,
@@ -77,17 +78,10 @@ func (i *Inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		names := maps.Keys(acls)
-		slices.Sort(names)
-		for _, object := range names {
-			arg, ok := i.managedPrivileges[object]
-			if !ok {
-				continue
-			}
-
-			p := acls[object]
-			slog.Debug("Inspecting grants.", "object", p, "database", i.database.Name)
-			i.inspect1(object, p, arg, ch)
+		for name, types := range i.managedPrivileges {
+			acl := acls[name]
+			slog.Debug("Inspecting grants.", "acl", acl, "database", i.database.Name)
+			i.inspect1(name, acl, types, ch)
 		}
 	}()
 	return ch
