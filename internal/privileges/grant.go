@@ -45,10 +45,10 @@ type normalizer interface {
 //
 // This way grants from wanted state and from inspect are comparables.
 func (g *Grant) Normalize() {
-	g.Privilege().Normalize(g)
+	g.ACL().Normalize(g)
 }
 
-func (g Grant) ACL() string {
+func (g Grant) ACLName() string {
 	if !g.IsDefault() {
 		return g.Target
 	} else if g.Schema == "" {
@@ -57,8 +57,8 @@ func (g Grant) ACL() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) Privilege() acl {
-	return acls[g.ACL()]
+func (g Grant) ACL() acl {
+	return acls[g.ACLName()]
 }
 
 func (g Grant) String() string {
@@ -187,7 +187,7 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 // Same for schemas and owners.
 func Expand(in []Grant, privileges TypeMap, database postgres.Database, databases []string) (out []Grant) {
 	for _, grant := range in {
-		k := grant.ACL()
+		k := grant.ACLName()
 		_, ok := privileges[k]
 		if !ok {
 			continue

@@ -283,7 +283,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		currentGrants, err := instance.InspectGrants(ctx, dbname, privs, roles)
 		// Special case, ignore grants on unmanaged databases.
 		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
-			if "DATABASE" != g.ACL() {
+			if "DATABASE" != g.ACLName() {
 				return true
 			}
 			_, ok := instance.Databases[g.Object]

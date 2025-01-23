@@ -32,8 +32,8 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 				continue
 			}
 
-			p := grant.Privilege()
-			q := p.Revoke(grant)
+			acl := grant.ACL()
+			q := acl.Revoke(grant)
 			q.Description = "Revoke privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}
@@ -56,7 +56,7 @@ func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			}
 
 			slog.Debug("Wants grant.", "grant", grant)
-			p := grant.Privilege()
+			p := grant.ACL()
 			q := p.Grant(grant)
 			q.Description = "Grant privileges."
 			q.Database = grant.Database
