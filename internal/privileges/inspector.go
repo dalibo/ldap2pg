@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -14,10 +15,31 @@ import (
 // e.g.: SELECT, UPDATE for TABLES, EXECUTE for FUNCTIONS, etc.
 type TypeMap map[string][]string
 
-// Inspector orchestrates privilege inspection
+// InspectGrants returns ACL items from Postgres instance.
+func InspectGrants(ctx context.Context, db postgres.Database, privs TypeMap, roles mapset.Set[string]) (out []Grant, err error) {
+	inspector := newInspector(db, privs)
+	for inspector.Run(ctx); inspector.Next(); {
+		grant := inspector.Grant()
+		if grant.IsRelevant() && !roles.Contains(grant.Grantee) {
+			continue
+		}
+		if grant.IsDefault() && !roles.Contains(grant.Owner) {
+			continue
+		}
+
+		grant.Normalize()
+
+		slog.Debug("Found grant in Postgres instance.", "grant", grant)
+		out = append(out, grant)
+	}
+	err = inspector.Err()
+	return
+}
+
+// inspector orchestrates privilege inspection
 //
 // Delegates querying and scanning to ACL.
-type Inspector struct {
+type inspector struct {
 	database          postgres.Database
 	managedPrivileges map[string][]string
 
@@ -27,22 +49,22 @@ type Inspector struct {
 	grant     Grant
 }
 
-func NewInspector(database postgres.Database, managedPrivileges TypeMap) Inspector {
+func newInspector(database postgres.Database, managedPrivileges TypeMap) inspector {
 	if len(managedPrivileges) > 1 {
 		panic("only one ACL is supported")
 	}
-	return Inspector{
+	return inspector{
 		database:          database,
 		managedPrivileges: managedPrivileges,
 	}
 }
 
-func (i *Inspector) Run(ctx context.Context) {
+func (i *inspector) Run(ctx context.Context) {
 	i.ctx = ctx
 	i.grantChan = i.iterGrants()
 }
 
-func (i *Inspector) Next() bool {
+func (i *inspector) Next() bool {
 	grant, ok := <-i.grantChan
 	if !ok {
 		return false
@@ -54,14 +76,14 @@ func (i *Inspector) Next() bool {
 	return true
 }
 
-func (i Inspector) Grant() Grant {
+func (i inspector) Grant() Grant {
 	if i.err != nil {
 		panic("inconsistent state")
 	}
 	return i.grant
 }
 
-func (i Inspector) Err() error {
+func (i inspector) Err() error {
 	return i.err
 }
 
@@ -74,7 +96,7 @@ type inspecter interface {
 	RowTo(pgx.CollectableRow) (Grant, error)
 }
 
-func (i *Inspector) iterGrants() chan Grant {
+func (i *inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
@@ -87,7 +109,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	return ch
 }
 
-func (i *Inspector) inspect1(object string, p acl, types []string, ch chan Grant) {
+func (i *inspector) inspect1(object string, p acl, types []string, ch chan Grant) {
 	pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 	if err != nil {
 		i.err = err

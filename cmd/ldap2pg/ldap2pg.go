@@ -280,7 +280,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		// synchronize ACL one at a time
 		privs := privileges.TypeMap{acl: privs[acl]}
 		expandedGrants := privileges.Expand(wantedGrants, privs, instance.Databases[dbname], allDatabases)
-		currentGrants, err := instance.InspectGrants(ctx, dbname, privs, roles)
+		currentGrants, err := privileges.InspectGrants(ctx, instance.Databases[dbname], privs, roles)
 		// Special case, ignore grants on unmanaged databases.
 		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
 			if "DATABASE" != g.ACLName() {
