@@ -17,9 +17,9 @@ var (
 	formatter = FmtQueryRewriter{}
 )
 
-func Apply(ctx context.Context, diff <-chan SyncQuery, real bool) (count int, err error) {
+func Apply(ctx context.Context, diff <-chan SyncQuery, really bool) (count int, err error) {
 	prefix := ""
-	if !real {
+	if !really {
 		prefix = "Would "
 	}
 
@@ -41,7 +41,7 @@ func Apply(ctx context.Context, diff <-chan SyncQuery, real bool) (count int, er
 		sql, _, _ := formatter.RewriteQuery(ctx, pgConn, query.Query, query.QueryArgs)
 		slog.Debug(prefix + "Execute SQL query:\n" + sql)
 
-		if !real {
+		if !really {
 			continue
 		}
 
