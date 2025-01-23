@@ -21,7 +21,6 @@ type TypeMap map[string][]string
 // Delegates querying and scanning to ACL.
 type Inspector struct {
 	database          postgres.Database
-	defaultDatabase   string
 	managedPrivileges map[string][]string
 
 	ctx       context.Context
@@ -30,10 +29,9 @@ type Inspector struct {
 	grant     Grant
 }
 
-func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges TypeMap) Inspector {
+func NewInspector(database postgres.Database, managedPrivileges TypeMap) Inspector {
 	return Inspector{
 		database:          database,
-		defaultDatabase:   defaultDatabase,
 		managedPrivileges: managedPrivileges,
 	}
 }
@@ -79,7 +77,6 @@ func (i *Inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		runGlobal := i.database.Name == i.defaultDatabase
 		names := maps.Keys(acls)
 		slices.Sort(names)
 		for _, object := range names {
@@ -89,10 +86,6 @@ func (i *Inspector) iterGrants() chan Grant {
 			}
 
 			p := acls[object]
-			if p.IsGlobal() && !runGlobal {
-				continue
-			}
-
 			slog.Debug("Inspecting grants.", "object", p, "database", i.database.Name)
 			i.inspect1(object, p, arg, ch)
 		}
