@@ -7,8 +7,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/tree"
-	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/slices"
 )
 
 // Profile lists privileges to grant.
@@ -118,42 +116,22 @@ var profiles Profiles
 
 func RegisterProfiles(p Profiles) {
 	profiles = p
-}
 
-func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
-	all := make(TypeMap)
-	other = make(TypeMap)
-	defaults = make(TypeMap)
-	instance = make(TypeMap)
-
-	for _, privList := range rm {
-		for _, priv := range privList {
-			var k, t string
-			if "" != priv.Default {
-				k = strings.ToUpper(priv.Default) + " DEFAULT"
-				t = priv.On + "--" + priv.Type
-			} else {
-				k = priv.On
-				t = priv.Type
+	for _, privs := range p {
+		for _, priv := range privs {
+			on := priv.On
+			t := priv.Type
+			if priv.IsDefault() {
+				on = fmt.Sprintf("%s DEFAULT", strings.ToUpper(priv.Default))
+				t = fmt.Sprintf("%s--%s", priv.On, strings.ToUpper(t))
 			}
-
-			all[k] = append(all[k], t)
+			if _, ok := acls[on]; !ok {
+				panic(fmt.Sprintf("unknown ACL: %s", on))
+			}
+			managedACLs[on] = append(managedACLs[on], t)
 		}
 	}
-
-	for target, types := range all {
-		set := mapset.NewSet(types...)
-		types := set.ToSlice()
-		slices.Sort(types)
-		if strings.HasSuffix(target, " DEFAULT") {
-			defaults[target] = types
-		} else if acls[target].IsGlobal() {
-			instance[target] = types
-		} else {
-			other[target] = types
-		}
-		slog.Debug("Managing privileges.", "types", types, "on", target)
+	for acl, types := range managedACLs {
+		slog.Debug("Managing privileges.", "types", types, "on", acl)
 	}
-
-	return
 }
