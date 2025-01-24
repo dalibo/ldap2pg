@@ -6,7 +6,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/postgres"
 )
 
-func Diff(all, managed, wanted Map, fallbackOwner string, databases *postgres.DBMap) <-chan postgres.SyncQuery {
+func Diff(all, managed, wanted Map, fallbackOwner string) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
@@ -42,7 +42,7 @@ func Diff(all, managed, wanted Map, fallbackOwner string, databases *postgres.DB
 				continue
 			}
 
-			sendQueries(role.Drop(databases, fallbackOwner), ch)
+			sendQueries(role.Drop(fallbackOwner), ch)
 		}
 	}()
 	return ch

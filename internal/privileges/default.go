@@ -41,7 +41,7 @@ func (a globalDefaultACL) Inspect() string {
 	return a.inspect
 }
 
-func (globalDefaultACL) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		out = append(out, g.ExpandOwners(database)...)
 	}
@@ -101,7 +101,7 @@ func (a schemaDefaultACL) Inspect() string {
 	return a.inspect
 }
 
-func (schemaDefaultACL) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		for _, g := range g.ExpandSchemas(maps.Keys(database.Schemas)) {
 			out = append(out, g.ExpandOwners(database)...)

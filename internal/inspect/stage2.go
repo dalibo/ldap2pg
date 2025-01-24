@@ -38,7 +38,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, dbname string, man
 		return err
 	}
 
-	database := instance.Databases[dbname]
+	database := postgres.Databases[dbname]
 	sq := &SQLQuery[postgres.Schema]{SQL: schemasQuery, RowTo: postgres.RowToSchema}
 	for sq.Query(ctx, conn); sq.Next(); {
 		s := sq.Row()
@@ -53,7 +53,7 @@ func (instance *Instance) InspectSchemas(ctx context.Context, dbname string, man
 		return err
 	}
 
-	instance.Databases[dbname] = database
+	postgres.Databases[dbname] = database
 
 	return nil
 }

@@ -16,7 +16,6 @@ import (
 // Fourzitou struct holding everything need to synchronize Instance.
 type Instance struct {
 	AllRoles         role.Map
-	Databases        postgres.DBMap
 	DefaultDatabase  string
 	FallbackOwner    string
 	ManagedDatabases mapset.Set[string]

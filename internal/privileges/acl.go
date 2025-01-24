@@ -9,7 +9,7 @@ import (
 type acl interface {
 	inspecter
 	normalizer
-	Expand(Grant, postgres.Database, []string) []Grant
+	Expand(Grant, postgres.Database) []Grant
 	revoker
 	granter
 }

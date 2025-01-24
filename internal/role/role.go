@@ -243,7 +243,7 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 	return
 }
 
-func (r *Role) Drop(databases *postgres.DBMap, fallbackOwner string) (out []postgres.SyncQuery) {
+func (r *Role) Drop(fallbackOwner string) (out []postgres.SyncQuery) {
 	identifier := pgx.Identifier{r.Name}
 	if r.Options.CanLogin {
 		out = append(out, postgres.SyncQuery{
@@ -258,7 +258,7 @@ func (r *Role) Drop(databases *postgres.DBMap, fallbackOwner string) (out []post
 		})
 	}
 
-	for dbname, database := range *databases {
+	for dbname, database := range postgres.Databases {
 		if database.Owner == r.Name {
 			out = append(out, postgres.SyncQuery{
 				Description: "Reassign database.",
@@ -275,7 +275,7 @@ func (r *Role) Drop(databases *postgres.DBMap, fallbackOwner string) (out []post
 			})
 			// Update model to generate propery queries next.
 			database.Owner = fallbackOwner
-			(*databases)[dbname] = database
+			postgres.Databases[dbname] = database
 		}
 		out = append(out, postgres.SyncQuery{
 			Description: "Reassign objects and purge ACL.",

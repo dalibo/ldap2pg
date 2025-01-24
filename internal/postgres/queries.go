@@ -69,12 +69,12 @@ func formatArg(conn *pgx.Conn, arg interface{}) (newArg any, err error) {
 	return
 }
 
-func GroupByDatabase(databases DBMap, defaultDatabase string, in <-chan SyncQuery) chan SyncQuery {
+func GroupByDatabase(defaultDatabase string, in <-chan SyncQuery) chan SyncQuery {
 	ch := make(chan SyncQuery)
 	go func() {
 		defer close(ch)
 		var queries []SyncQuery
-		databases := databases.SyncOrder(defaultDatabase, false)
+		databases := SyncOrder(defaultDatabase, false)
 
 		for q := range in {
 			if "<first>" == q.Database {

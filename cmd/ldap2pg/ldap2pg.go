@@ -95,8 +95,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	syncErrors := errorlist.New("synchronization errors")
 
 	// Synchronize roles.
-	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner, &instance.Databases)
-	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
+	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner)
+	queries = postgres.GroupByDatabase(instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
 	err = syncErrors.Extend(err)
 	if err != nil {
@@ -121,7 +121,7 @@ func ldap2pg(ctx context.Context) (err error) {
 
 		// Start by default database. This allow to reuse the last
 		// connexion openned when synchronizing roles.
-		for _, dbname := range instance.Databases.SyncOrder(instance.DefaultDatabase, true) {
+		for _, dbname := range postgres.SyncOrder(instance.DefaultDatabase, true) {
 			slog.Debug("Stage 2: privileges.", "database", dbname)
 			err := instance.InspectStage2(ctx, dbname, pc.SchemasQuery)
 			if err != nil {
@@ -134,7 +134,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			}
 			acls = append(acls, databaseACLs...)
 
-			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, acls)
+			stageCount, err := syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, acls)
 			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 2: %w", err)
@@ -149,7 +149,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			stageCount, err = syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, defaultACLs)
+			stageCount, err = syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, defaultACLs)
 			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 3: %w", err)
@@ -274,19 +274,18 @@ func configure() (controller Controller, c config.Config, err error) {
 }
 
 // syncPrivileges for a given database.
-func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], allWantedGrants map[string][]privileges.Grant, dbname string, acls []string) (int, error) {
+func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Set[string], allWantedGrants map[string][]privileges.Grant, dbname string, acls []string) (int, error) {
 	queryCount := 0
-	allDatabases := maps.Keys(instance.Databases)
 	// synchronize ACL one at a time
 	for _, acl := range acls {
-		wantedGrants := privileges.Expand(allWantedGrants[acl], acl, instance.Databases[dbname], allDatabases)
-		currentGrants, err := privileges.InspectGrants(ctx, instance.Databases[dbname], acl, roles)
+		wantedGrants := privileges.Expand(allWantedGrants[acl], acl, postgres.Databases[dbname])
+		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
 		// Special case: ignore database grants on unmanaged databases.
 		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
 			if "DATABASE" != g.ACLName() {
 				return true
 			}
-			_, ok := instance.Databases[g.Object]
+			_, ok := postgres.Databases[g.Object]
 			return ok
 		})
 

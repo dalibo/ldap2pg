@@ -44,9 +44,10 @@ func (a instanceACL) Inspect() string {
 	return a.inspect
 }
 
-func (instanceACL) Expand(g Grant, _ postgres.Database, _ []string) (out []Grant) {
+func (instanceACL) Expand(g Grant, _ postgres.Database) (out []Grant) {
 	if "__all__" == g.Object {
-		for _, dbname := range databases {
+		// Expand __all__ to all databases.
+		for dbname := range postgres.Databases {
 			g := g // copy
 			g.Object = dbname
 			out = append(out, g)
@@ -124,7 +125,7 @@ func (databaseACL) Normalize(g *Grant) {
 	g.Schema = ""
 }
 
-func (databaseACL) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (databaseACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		if "__all__" == g.Object {
 			for _, s := range database.Schemas {
@@ -192,7 +193,7 @@ func (a schemaACL) Inspect() string {
 func (schemaACL) Normalize(_ *Grant) {
 }
 
-func (schemaACL) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (schemaACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		out = append(out, g.ExpandSchemas(maps.Keys(database.Schemas))...)
 	}

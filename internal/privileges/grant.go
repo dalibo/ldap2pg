@@ -185,13 +185,13 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 //
 // e.g.: instantiate a grant on all databases for each database.
 // Same for schemas and owners.
-func Expand(in []Grant, acl string, database postgres.Database, databases []string) (out []Grant) {
+func Expand(in []Grant, acl string, database postgres.Database) (out []Grant) {
 	e := acls[acl]
 	for _, grant := range in {
 		if grant.ACLName() != acl {
 			continue
 		}
-		out = append(out, e.Expand(grant, database, databases)...)
+		out = append(out, e.Expand(grant, database)...)
 	}
 	return
 }
