@@ -49,13 +49,13 @@ func registerACL(scope, object, inspect string, queries ...string) {
 	if "GLOBAL DEFAULT" == object {
 		p = newGlobalDefault(object, inspect, grant, revoke)
 	} else if "SCHEMA DEFAULT" == object {
-		p = newSchemaDefault(object, inspect, grant, revoke)
+		p = newSchemaDefaultACL(object, inspect, grant, revoke)
 	} else if strings.HasPrefix(object, "ALL ") {
-		p = newAll(object, inspect, grant, revoke)
+		p = newSchemaACL(object, inspect, grant, revoke)
 	} else if "instance" == scope {
-		p = newInstance(object, inspect, grant, revoke)
+		p = newInstanceACL(object, inspect, grant, revoke)
 	} else if "database" == scope {
-		p = newDatabase(object, inspect, grant, revoke)
+		p = newDatabaseACL(object, inspect, grant, revoke)
 	} else {
 		panic("unsupported acl scope")
 	}
@@ -77,9 +77,9 @@ var managedACLs = map[string][]string{}
 func SplitManagedACLs() (instancesACLs, databaseACLs, defaultACLs []string) {
 	for object := range managedACLs {
 		switch acls[object].(type) {
-		case instance:
+		case instanceACL:
 			instancesACLs = append(instancesACLs, object)
-		case globalDefault, schemaDefault:
+		case globalDefaultACL, schemaDefaultACL:
 			defaultACLs = append(defaultACLs, object)
 		default:
 			databaseACLs = append(databaseACLs, object)
