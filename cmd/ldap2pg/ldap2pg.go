@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -275,18 +276,26 @@ func configure() (controller Controller, c config.Config, err error) {
 // syncPrivileges for a given database.
 func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Set[string], allWantedGrants map[string][]privileges.Grant, dbname string, acls []string) (int, error) {
 	queryCount := 0
+	var errs []error
 	// synchronize ACL one at a time
 	for _, acl := range acls {
 		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
 		if err != nil {
-			return 0, fmt.Errorf("inspect: %w", err)
+			slog.Error("Failed to inspect privileges.", "acl", acl, "database", dbname, "err", err)
+			errs = append(errs, fmt.Errorf("inspect: %w", err))
+			continue
 		}
 		count, err := privileges.Sync(ctx, controller.Real, dbname, acl, currentGrants, allWantedGrants[acl])
+		queryCount += count
 		if err != nil {
-			return 0, fmt.Errorf("sync: %w", err)
+			slog.Error("Failed to synchronize privileges", "acl", acl, "database", dbname, "err", err)
+			errs = append(errs, fmt.Errorf("sync: %w", err))
+			continue
 		}
 		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
-		queryCount += count
+	}
+	if 0 < len(errs) {
+		return queryCount, errors.Join(errs...)
 	}
 	return queryCount, nil
 }
