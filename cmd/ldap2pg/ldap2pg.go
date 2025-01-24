@@ -278,15 +278,12 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 	// synchronize ACL one at a time
 	for _, acl := range acls {
 		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
-		wantedGrants := privileges.Expand(allWantedGrants[acl], acl, postgres.Databases[dbname])
-
 		if err != nil {
-			return 0, fmt.Errorf("privileges: %w", err)
+			return 0, fmt.Errorf("inspect: %w", err)
 		}
-		queries := privileges.Diff(currentGrants, wantedGrants)
-		count, err := postgres.Apply(ctx, queries, controller.Real)
+		count, err := privileges.Sync(ctx, controller.Real, dbname, acl, currentGrants, allWantedGrants[acl])
 		if err != nil {
-			return 0, fmt.Errorf("apply: %w", err)
+			return 0, fmt.Errorf("sync: %w", err)
 		}
 		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
 		queryCount += count

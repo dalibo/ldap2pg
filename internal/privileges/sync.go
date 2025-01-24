@@ -1,11 +1,18 @@
 package privileges
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 )
+
+func Sync(ctx context.Context, really bool, dbname, acl string, current, wanted []Grant) (int, error) {
+	wanted = Expand(wanted, acl, postgres.Databases[dbname])
+	queries := diff(current, wanted)
+	return postgres.Apply(ctx, queries, really)
+}
 
 type granter interface {
 	Grant(Grant) postgres.SyncQuery
@@ -15,7 +22,7 @@ type revoker interface {
 	Revoke(Grant) postgres.SyncQuery
 }
 
-func Diff(current, wanted []Grant) <-chan postgres.SyncQuery {
+func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
 		defer close(ch)
