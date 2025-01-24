@@ -81,7 +81,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist, conf.Privileges)
+	privileges.RegisterProfiles(conf.Postgres.PrivilegesProfiles)
+	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist)
 	if err != nil {
 		return
 	}

@@ -114,6 +114,12 @@ func checkPrivilegesACL(profiles map[string][]interface{}) error {
 // Profiles holds privilege groups
 type Profiles map[string][]Privilege
 
+var profiles Profiles
+
+func RegisterProfiles(p Profiles) {
+	profiles = p
+}
+
 func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
 	all := make(TypeMap)
 	other = make(TypeMap)

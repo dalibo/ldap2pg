@@ -44,7 +44,7 @@ func (m Rules) DropGrants() (out Rules) {
 	return
 }
 
-func (m Rules) Run(blacklist lists.Blacklist, profiles privileges.Profiles) (roles role.Map, grants map[string][]privileges.Grant, err error) {
+func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string][]privileges.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
@@ -102,7 +102,7 @@ func (m Rules) Run(blacklist lists.Blacklist, profiles privileges.Profiles) (rol
 				roles[role.Name] = role
 			}
 
-			for grant := range item.generateGrants(&res.result, profiles) {
+			for grant := range item.generateGrants(&res.result) {
 				pattern := blacklist.MatchString(grant.Grantee)
 				if pattern != "" {
 					slog.Debug(
