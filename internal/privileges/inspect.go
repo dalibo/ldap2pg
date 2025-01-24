@@ -23,6 +23,13 @@ func InspectGrants(ctx context.Context, db postgres.Database, acl string, roles 
 		}
 
 		grant.Normalize()
+		// Special case: ignore database grants on unmanaged databases.
+		if "DATABASE" == grant.ACLName() {
+			_, exists := postgres.Databases[grant.Object]
+			if !exists {
+				continue
+			}
+		}
 
 		slog.Debug("Found grant in Postgres instance.", "grant", grant)
 		out = append(out, grant)

@@ -18,7 +18,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/role"
@@ -278,16 +277,8 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 	queryCount := 0
 	// synchronize ACL one at a time
 	for _, acl := range acls {
-		wantedGrants := privileges.Expand(allWantedGrants[acl], acl, postgres.Databases[dbname])
 		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
-		// Special case: ignore database grants on unmanaged databases.
-		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
-			if "DATABASE" != g.ACLName() {
-				return true
-			}
-			_, ok := postgres.Databases[g.Object]
-			return ok
-		})
+		wantedGrants := privileges.Expand(allWantedGrants[acl], acl, postgres.Databases[dbname])
 
 		if err != nil {
 			return 0, fmt.Errorf("privileges: %w", err)
