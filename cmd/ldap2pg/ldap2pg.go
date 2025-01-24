@@ -168,10 +168,14 @@ func ldap2pg(ctx context.Context) (err error) {
 		return syncErrors
 	}
 
+	grantCount := 0
+	for _, grants := range wantedGrants {
+		grantCount += len(grants)
+	}
 	exitCode := controller.Finalize(
 		start,
 		len(wantedRoles),
-		len(wantedGrants),
+		grantCount,
 		queryCount,
 	)
 	os.Exit(exitCode)
@@ -271,17 +275,17 @@ func configure() (controller Controller, c config.Config, err error) {
 }
 
 // syncPrivileges for a given database.
-func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privileges.Grant, dbname string, privs privileges.TypeMap) (int, error) {
+func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], allWantedGrants map[string][]privileges.Grant, dbname string, privs privileges.TypeMap) (int, error) {
 	queryCount := 0
 	allDatabases := maps.Keys(instance.Databases)
 	acls := maps.Keys(privs)
 	slices.Sort(acls)
+	// synchronize ACL one at a time
 	for _, acl := range acls {
-		// synchronize ACL one at a time
 		privs := privileges.TypeMap{acl: privs[acl]}
-		expandedGrants := privileges.Expand(wantedGrants, privs, instance.Databases[dbname], allDatabases)
+		wantedGrants := privileges.Expand(allWantedGrants[acl], privs, instance.Databases[dbname], allDatabases)
 		currentGrants, err := privileges.InspectGrants(ctx, instance.Databases[dbname], privs, roles)
-		// Special case, ignore grants on unmanaged databases.
+		// Special case: ignore database grants on unmanaged databases.
 		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
 			if "DATABASE" != g.ACLName() {
 				return true
@@ -293,7 +297,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, instance *inspe
 		if err != nil {
 			return 0, fmt.Errorf("privileges: %w", err)
 		}
-		queries := privileges.Diff(currentGrants, expandedGrants)
+		queries := privileges.Diff(currentGrants, wantedGrants)
 		count, err := postgres.Apply(ctx, queries, controller.Real)
 		if err != nil {
 			return 0, fmt.Errorf("apply: %w", err)
