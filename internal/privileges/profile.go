@@ -114,19 +114,6 @@ func checkPrivilegesACL(profiles map[string][]interface{}) error {
 // Profiles holds privilege groups
 type Profiles map[string][]Privilege
 
-// BuildDefaultArg returns the list of (Type, On) couple referenced.
-func (rm Profiles) BuildDefaultArg(def string) (out [][]string) {
-	for _, refs := range rm {
-		for _, ref := range refs {
-			if ref.Default != def {
-				continue
-			}
-			out = append(out, []string{ref.On, ref.Type})
-		}
-	}
-	return
-}
-
 func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
 	all := make(TypeMap)
 	other = make(TypeMap)
