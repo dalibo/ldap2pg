@@ -18,15 +18,17 @@ version 5.7, this looks like:
 $ ldap2pg --help
 usage: ldap2pg [OPTIONS] [dbname]
 
-      --check             Check mode: exits with 1 if Postgres instance is unsynchronized.
-      --color             Force color output.
-  -c, --config string     Path to YAML configuration file. Use - for stdin.
-  -?, --help              Show this help message and exit. (default true)
-  -q, --quiet count       Decrease log verbosity.
-  -R, --real              Real mode. Apply changes to Postgres instance.
-  -P, --skip-privileges   Turn off privilege synchronisation.
-  -v, --verbose count     Increase log verbosity.
-  -V, --version           Show version and exit. (default true)
+      --check                     Check mode: exits with 1 if Postgres instance is unsynchronized.
+      --color                     Force color output.
+  -c, --config string             Path to YAML configuration file. Use - for stdin.
+  -C, --directory string          Path to directory containing configuration files.
+  -?, --help                      Show this help message and exit. (default true)
+  -y, --ldappassword-file string  Path to LDAP password file.
+  -q, --quiet count               Decrease log verbosity.
+  -R, --real                      Real mode. Apply changes to Postgres instance.
+  -P, --skip-privileges           Turn off privilege synchronisation.
+  -v, --verbose count             Increase log verbosity.
+  -V, --version                   Show version and exit. (default true)
 
 Optional argument dbname is alternatively the database name or a conninfo string or an URI.
 See man psql(1) for more information.

@@ -14,7 +14,9 @@ import (
 	"github.com/knadh/koanf/maps"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
+	"github.com/spf13/pflag"
 )
 
 var k = koanf.New("_")
@@ -38,6 +40,18 @@ func Initialize() error {
 	_ = k.Load(env.Provider("LDAP", "_", func(key string) string {
 		slog.Debug("Loading LDAP environment var.", "var", key)
 		return strings.TrimPrefix(key, "LDAP")
+	}), nil)
+
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, ".", k, func(f *pflag.Flag) (string, interface{}) {
+		if !strings.HasPrefix(f.Name, "ldap") {
+			return "", nil
+		}
+		// Rename LDAP flags
+		// e.g. --ldapppassword_file -> PASSWORD_FILE
+		key := strings.ToUpper(f.Name)
+		key = strings.TrimPrefix(key, "LDAP")
+		key = strings.ReplaceAll(key, "-", "_")
+		return key, posflag.FlagVal(pflag.CommandLine, f)
 	}), nil)
 
 	passwordFilePath := k.String("PASSWORD_FILE")

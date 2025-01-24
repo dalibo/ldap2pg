@@ -21,6 +21,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix panic on syntax error in ldaprc.
 - Accept `types` as a list of privileges type in config.
 - Use `LDAPPASSWORD_FILE` env var to store the path to the ldap password file.
+- Accept the `-y` CLI option to specify the path to the ldap password file.
 
 
 # ldap2pg 6.2
