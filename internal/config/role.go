@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dalibo/ldap2pg/internal/normalize"
 	"golang.org/x/exp/maps"
 )
 
@@ -20,11 +21,11 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		rule["names"] = []string{yaml.(string)}
 	case map[string]interface{}:
 		yamlMap := yaml.(map[string]interface{})
-		err = NormalizeAlias(&yamlMap, "names", "name")
+		err = normalize.Alias(yamlMap, "names", "name")
 		if err != nil {
 			return
 		}
-		err = NormalizeAlias(&yamlMap, "parents", "parent")
+		err = normalize.Alias(yamlMap, "parents", "parent")
 		if err != nil {
 			return
 		}
@@ -33,7 +34,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 
 		names, ok := rule["names"]
 		if ok {
-			rule["names"], err = NormalizeStringList(names)
+			rule["names"], err = normalize.StringList(names)
 			if err != nil {
 				return
 			}
@@ -52,7 +53,7 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
-	err = CheckSpuriousKeys(&rule, "names", "comment", "parents", "options", "config", "before_create", "after_create")
+	err = normalize.SpuriousKeys(rule, "names", "comment", "parents", "options", "config", "before_create", "after_create")
 	return
 }
 
@@ -101,7 +102,7 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 	case map[string]interface{}:
 		yamlMap := yaml.(map[string]interface{})
 		for k, v := range yamlMap {
-			yamlMap[k] = NormalizeBoolean(v)
+			yamlMap[k] = normalize.Boolean(v)
 		}
 		maps.Copy(value, yamlMap)
 	case nil:
@@ -110,12 +111,12 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
 
-	err = CheckSpuriousKeys(&value, knownKeys...)
+	err = normalize.SpuriousKeys(value, knownKeys...)
 	return
 }
 
 func NormalizeMemberships(raw interface{}) (memberships []map[string]interface{}, err error) {
-	list := NormalizeList(raw)
+	list := normalize.List(raw)
 	memberships = make([]map[string]interface{}, 0, len(list))
 	for i, raw := range list {
 		membership, err := NormalizeMembership(raw)
@@ -136,7 +137,7 @@ func NormalizeMembership(raw interface{}) (value map[string]interface{}, err err
 		value["name"] = raw
 	case map[string]interface{}:
 		for k, v := range raw {
-			value[k] = NormalizeBoolean(v)
+			value[k] = normalize.Boolean(v)
 		}
 	default:
 		return nil, fmt.Errorf("bad type: %T", raw)
@@ -146,6 +147,6 @@ func NormalizeMembership(raw interface{}) (value map[string]interface{}, err err
 		return nil, errors.New("missing name")
 	}
 
-	err = CheckSpuriousKeys(&value, "name", "inherit", "set", "admin")
+	err = normalize.SpuriousKeys(value, "name", "inherit", "set", "admin")
 	return
 }

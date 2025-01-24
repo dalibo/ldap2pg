@@ -1,5 +1,5 @@
 // Default privileges for object owners.
-package privilege
+package privileges
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type GlobalDefault struct {
+type globalDefault struct {
 	object, inspect, grant, revoke string
 }
 
-func NewGlobalDefault(object, inspect, grant, revoke string) GlobalDefault {
-	return GlobalDefault{
+func newGlobalDefault(object, inspect, grant, revoke string) globalDefault {
+	return globalDefault{
 		object:  object,
 		inspect: inspect,
 		grant:   grant,
@@ -22,36 +22,36 @@ func NewGlobalDefault(object, inspect, grant, revoke string) GlobalDefault {
 	}
 }
 
-func (p GlobalDefault) String() string {
+func (p globalDefault) String() string {
 	return p.object
 }
 
-func (p GlobalDefault) IsGlobal() bool {
+func (p globalDefault) IsGlobal() bool {
 	return false
 }
 
-func (p GlobalDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
+func (p globalDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
 	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $target TO $grantee;
 	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Grantee)
 	return
 }
 
-func (p GlobalDefault) Inspect() string {
+func (p globalDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p GlobalDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (p globalDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		out = append(out, g.ExpandOwners(database)...)
 	}
 	return
 }
 
-func (p GlobalDefault) Normalize(_ *Grant) {
+func (p globalDefault) Normalize(_ *Grant) {
 }
 
-func (p GlobalDefault) Grant(g Grant) (q postgres.SyncQuery) {
+func (p globalDefault) Grant(g Grant) (q postgres.SyncQuery) {
 	// ALTER DEFAULT PRIVILEGES ... [GRANT|REVOKE] {type} ON {target} ...
 	// Unlike regular privileges, object is a keyword parameterized by grant.
 	q.Query = fmt.Sprintf(p.grant, g.Type, g.Target)
@@ -60,7 +60,7 @@ func (p GlobalDefault) Grant(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-func (p GlobalDefault) Revoke(g Grant) (q postgres.SyncQuery) {
+func (p globalDefault) Revoke(g Grant) (q postgres.SyncQuery) {
 	// ALTER DEFAULT PRIVILEGES ... [GRANT|REVOKE] {type} ON {target} ...
 	// Unlike regular privileges, object is a keyword parameterized by grant.
 	q.Query = fmt.Sprintf(p.revoke, g.Type, g.Target)
@@ -69,12 +69,12 @@ func (p GlobalDefault) Revoke(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-type SchemaDefault struct {
+type schemaDefault struct {
 	object, inspect, grant, revoke string
 }
 
-func NewSchemaDefault(object, inspect, grant, revoke string) SchemaDefault {
-	return SchemaDefault{
+func newSchemaDefault(object, inspect, grant, revoke string) schemaDefault {
+	return schemaDefault{
 		object:  object,
 		inspect: inspect,
 		grant:   grant,
@@ -82,26 +82,26 @@ func NewSchemaDefault(object, inspect, grant, revoke string) SchemaDefault {
 	}
 }
 
-func (p SchemaDefault) IsGlobal() bool {
+func (p schemaDefault) IsGlobal() bool {
 	return false
 }
 
-func (p SchemaDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
+func (p schemaDefault) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
 	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $object IN $schema TO $grantee;
 	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Schema, &g.Grantee)
 	return
 }
 
-func (p SchemaDefault) String() string {
+func (p schemaDefault) String() string {
 	return p.object
 }
 
-func (p SchemaDefault) Inspect() string {
+func (p schemaDefault) Inspect() string {
 	return p.inspect
 }
 
-func (p SchemaDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
+func (p schemaDefault) Expand(g Grant, database postgres.Database, _ []string) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		for _, g := range g.ExpandSchemas(maps.Keys(database.Schemas)) {
 			out = append(out, g.ExpandOwners(database)...)
@@ -110,10 +110,10 @@ func (p SchemaDefault) Expand(g Grant, database postgres.Database, _ []string) (
 	return
 }
 
-func (p SchemaDefault) Normalize(_ *Grant) {
+func (p schemaDefault) Normalize(_ *Grant) {
 }
 
-func (p SchemaDefault) Grant(g Grant) (q postgres.SyncQuery) {
+func (p schemaDefault) Grant(g Grant) (q postgres.SyncQuery) {
 	// ALTER DEFAULT PRIVILEGES ... GRANT {type} ON {object} ...
 	// Unlike regular privileges, object is a keyword parameterized by grant.
 	q.Query = fmt.Sprintf(p.grant, g.Type, g.Target)
@@ -122,7 +122,7 @@ func (p SchemaDefault) Grant(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-func (p SchemaDefault) Revoke(g Grant) (q postgres.SyncQuery) {
+func (p schemaDefault) Revoke(g Grant) (q postgres.SyncQuery) {
 	// ALTER DEFAULT PRIVILEGES ... REVOKE {type} ON {object} ...
 	// Unlike regular privileges, object is a keyword parameterized by grant.
 	q.Query = fmt.Sprintf(p.revoke, g.Type, g.Target)

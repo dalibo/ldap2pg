@@ -7,7 +7,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/role"
 )
 
@@ -44,7 +44,7 @@ func (m Rules) DropGrants() (out Rules) {
 	return
 }
 
-func (m Rules) Run(blacklist lists.Blacklist, privileges privilege.RefMap) (roles role.Map, grants []privilege.Grant, err error) {
+func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (roles role.Map, grants []privileges.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {

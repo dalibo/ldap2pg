@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"context"
@@ -11,8 +11,14 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// TypeMap lists managed privilege types for each ACL
+//
+// e.g.: SELECT, UPDATE for TABLES, EXECUTE for FUNCTIONS, etc.
 type TypeMap map[string][]string
 
+// Inspector orchestrates privilege inspection
+//
+// Delegates querying and scanning to ACL.
 type Inspector struct {
 	database          postgres.Database
 	defaultDatabase   string
@@ -24,7 +30,7 @@ type Inspector struct {
 	grant     Grant
 }
 
-func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges map[string][]string) Inspector {
+func NewInspector(database postgres.Database, defaultDatabase string, managedPrivileges TypeMap) Inspector {
 	return Inspector{
 		database:          database,
 		defaultDatabase:   defaultDatabase,
@@ -60,7 +66,10 @@ func (i Inspector) Err() error {
 	return i.err
 }
 
-type Inspecter interface {
+// Implemented by ACL types
+//
+// e.g. datacl, nspacl, etc.
+type inspecter interface {
 	IsGlobal() bool
 	Inspect() string
 	RowTo(pgx.CollectableRow) (Grant, error)
@@ -71,7 +80,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	go func() {
 		defer close(ch)
 		runGlobal := i.database.Name == i.defaultDatabase
-		names := maps.Keys(Builtins)
+		names := maps.Keys(acls)
 		slices.Sort(names)
 		for _, object := range names {
 			arg, ok := i.managedPrivileges[object]
@@ -79,7 +88,7 @@ func (i *Inspector) iterGrants() chan Grant {
 				continue
 			}
 
-			p := Builtins[object]
+			p := acls[object]
 			if p.IsGlobal() && !runGlobal {
 				continue
 			}
@@ -91,7 +100,7 @@ func (i *Inspector) iterGrants() chan Grant {
 	return ch
 }
 
-func (i *Inspector) inspect1(object string, p Privilege, types []string, ch chan Grant) {
+func (i *Inspector) inspect1(object string, p acl, types []string, ch chan Grant) {
 	pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 	if err != nil {
 		i.err = err

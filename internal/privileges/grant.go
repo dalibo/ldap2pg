@@ -1,4 +1,4 @@
-package privilege
+package privileges
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ import (
 // SEQUENCES, etc. instead of the name of an object.
 type Grant struct {
 	Target   string // Name of the referenced privilege object: DATABASE, TABLES, etc.
-	Owner    string // For default privilege. Empty otherwise.
+	Owner    string // For default privileges. Empty otherwise.
 	Grantee  string
 	Type     string // Privilege type (USAGE, SELECT, etc.)
 	Database string // "" for instance grant.
@@ -37,7 +37,7 @@ func (g Grant) IsRelevant() bool {
 	return g.Type != ""
 }
 
-type Normalizer interface {
+type normalizer interface {
 	Normalize(g *Grant)
 }
 
@@ -48,7 +48,7 @@ func (g *Grant) Normalize() {
 	g.Privilege().Normalize(g)
 }
 
-func (g Grant) PrivilegeKey() string {
+func (g Grant) ACL() string {
 	if !g.IsDefault() {
 		return g.Target
 	} else if g.Schema == "" {
@@ -57,8 +57,8 @@ func (g Grant) PrivilegeKey() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) Privilege() Privilege {
-	return Builtins[g.PrivilegeKey()]
+func (g Grant) Privilege() acl {
+	return acls[g.ACL()]
 }
 
 func (g Grant) String() string {
@@ -178,5 +178,23 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 		out = append(out, g)
 	}
 
+	return
+}
+
+// Expand grants from rules.
+//
+// e.g.: instantiate a grant on all databases for each database.
+// Same for schemas.
+func Expand(in []Grant, privileges TypeMap, database postgres.Database, databases []string) (out []Grant) {
+	for _, grant := range in {
+		k := grant.ACL()
+		_, ok := privileges[k]
+		if !ok {
+			continue
+		}
+
+		e := acls[k]
+		out = append(out, e.Expand(grant, database, databases)...)
+	}
 	return
 }

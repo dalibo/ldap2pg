@@ -6,84 +6,10 @@ import (
 	"fmt"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/internal/normalize"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"golang.org/x/exp/maps"
 )
-
-type KeyConflict struct {
-	Key      string
-	Conflict string
-}
-
-func (err *KeyConflict) Error() string {
-	return fmt.Sprintf("key conflict between %s and %s", err.Key, err.Conflict)
-}
-
-func NormalizeBoolean(v interface{}) interface{} {
-	// Replace YAML 1.1 booleans to mapstructure weak boolean.
-	switch v {
-	case "y", "Y", "yes", "Yes", "YES", "on", "On", "ON":
-		return "true"
-	case "n", "N", "no", "No", "NO", "off", "Off", "OFF":
-		return "false"
-	default:
-		return v
-	}
-}
-
-func NormalizeAlias(yaml *map[string]interface{}, key, alias string) (err error) {
-	value, hasAlias := (*yaml)[alias]
-	if !hasAlias {
-		return
-	}
-
-	_, hasKey := (*yaml)[key]
-	if hasKey {
-		return &KeyConflict{
-			Key:      key,
-			Conflict: alias,
-		}
-	}
-
-	delete(*yaml, alias)
-	(*yaml)[key] = value
-	return
-}
-
-func NormalizeList(yaml interface{}) (list []interface{}) {
-	switch v := yaml.(type) {
-	case []interface{}:
-		list = v
-	case []string:
-		for _, s := range v {
-			list = append(list, s)
-		}
-	default:
-		list = append(list, yaml)
-	}
-	return
-}
-
-func NormalizeStringList(yaml interface{}) (list []string, err error) {
-	switch yaml.(type) {
-	case nil:
-		return
-	case string:
-		list = append(list, yaml.(string))
-	case []interface{}:
-		for _, iItem := range yaml.([]interface{}) {
-			item, ok := iItem.(string)
-			if !ok {
-				return nil, errors.New("must be string")
-			}
-			list = append(list, item)
-		}
-	case []string:
-		list = yaml.([]string)
-	default:
-		return nil, fmt.Errorf("must be string or list of string, got %v", yaml)
-	}
-	return
-}
 
 func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
 	config, ok := yaml.(map[string]interface{})
@@ -101,14 +27,14 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 
 	section, ok = config["privileges"]
 	if ok {
-		privileges, err := NormalizePrivileges(section)
+		privileges, err := privileges.NormalizeProfiles(section)
 		if err != nil {
 			return config, fmt.Errorf("privileges: %w", err)
 		}
 		config["privileges"] = privileges
 	}
 
-	err = NormalizeAlias(&config, "rules", "sync_map")
+	err = normalize.Alias(config, "rules", "sync_map")
 	if err != nil {
 		return
 	}
@@ -125,26 +51,21 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 }
 
 func NormalizePostgres(yaml interface{}) error {
-	yamlMap, ok := yaml.(map[string]interface{})
+	_, ok := yaml.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("bad type: %T, must be a map", yaml)
-	}
-
-	err := CheckIsString(yamlMap["fallback_owner"])
-	if err != nil {
-		return fmt.Errorf("fallback_owner: %w", err)
 	}
 	return nil
 }
 
 func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
-	rawItems, ok := yaml.([]interface{})
+	rawRules, ok := yaml.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T, must be a list", yaml)
 	}
-	for i, rawItem := range rawItems {
+	for i, rawRule := range rawRules {
 		var item interface{}
-		item, err = NormalizeSyncItem(rawItem)
+		item, err = NormalizeWantRule(rawRule)
 		if err != nil {
 			return syncMap, fmt.Errorf("item[%d]: %w", i, err)
 		}
@@ -153,8 +74,8 @@ func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
 	return
 }
 
-func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error) {
-	item = map[string]interface{}{
+func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error) {
+	rule = map[string]interface{}{
 		"description": "",
 		"ldapsearch":  map[string]interface{}{},
 		"roles":       []interface{}{},
@@ -166,32 +87,28 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 		return nil, fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 
-	err = NormalizeAlias(&yamlMap, "ldapsearch", "ldap")
+	err = normalize.Alias(yamlMap, "ldapsearch", "ldap")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "roles", "role")
+	err = normalize.Alias(yamlMap, "roles", "role")
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&yamlMap, "grants", "grant")
+	err = normalize.Alias(yamlMap, "grants", "grant")
 	if err != nil {
 		return
 	}
 
-	maps.Copy(item, yamlMap)
+	maps.Copy(rule, yamlMap)
 
-	err = CheckIsString(item["description"])
-	if err != nil {
-		return
-	}
-	search, err := NormalizeLdapSearch(item["ldapsearch"])
+	search, err := NormalizeLdapSearch(rule["ldapsearch"])
 	if err != nil {
 		return nil, fmt.Errorf("ldapsearch: %w", err)
 	}
-	item["ldapsearch"] = search
+	rule["ldapsearch"] = search
 
-	list := NormalizeList(item["roles"])
+	list := normalize.List(rule["roles"])
 	rules := []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
@@ -203,23 +120,21 @@ func NormalizeSyncItem(yaml interface{}) (item map[string]interface{}, err error
 			rules = append(rules, rule)
 		}
 	}
-	item["roles"] = rules
+	rule["roles"] = rules
 
-	list = NormalizeList(item["grants"])
+	list = normalize.List(rule["grants"])
 	rules = []interface{}{}
 	for i, rawRule := range list {
 		var rule map[string]interface{}
-		rule, err = NormalizeGrantRule(rawRule)
+		rule, err = privileges.NormalizeGrantRule(rawRule)
 		if err != nil {
 			return nil, fmt.Errorf("grants[%d]: %w", i, err)
 		}
-		for _, rule := range DuplicateGrantRules(rule) {
-			rules = append(rules, rule)
-		}
+		rules = append(rules, privileges.DuplicateGrantRules(rule)...)
 	}
-	item["grants"] = rules
+	rule["grants"] = rules
 
-	err = CheckSpuriousKeys(&item, "description", "ldapsearch", "roles", "grants")
+	err = normalize.SpuriousKeys(rule, "description", "ldapsearch", "roles", "grants")
 	return
 }
 
@@ -228,11 +143,11 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 	if err != nil {
 		return
 	}
-	err = NormalizeAlias(&search, "subsearches", "joins")
+	err = normalize.Alias(search, "subsearches", "joins")
 	if err != nil {
 		return
 	}
-	err = CheckSpuriousKeys(&search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
+	err = normalize.SpuriousKeys(search, "base", "filter", "scope", "subsearches", "on_unexpected_dn")
 	if err != nil {
 		return
 	}
@@ -248,7 +163,7 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 			return
 		}
 		subsearches[attr] = subsearch
-		err = CheckSpuriousKeys(&subsearch, "filter", "scope")
+		err = normalize.SpuriousKeys(subsearch, "filter", "scope")
 		if err != nil {
 			return
 		}

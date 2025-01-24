@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/privilege"
+	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/pyfmt"
 	"github.com/dalibo/ldap2pg/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -16,8 +16,8 @@ import (
 type Step struct {
 	Description string
 	LdapSearch  ldap.Search
-	RoleRules   []RoleRule  `mapstructure:"roles"`
-	GrantRules  []GrantRule `mapstructure:"grants"`
+	RoleRules   []RoleRule             `mapstructure:"roles"`
+	GrantRules  []privileges.GrantRule `mapstructure:"grants"`
 }
 
 func (s Step) HasLDAPSearch() bool {
@@ -135,7 +135,7 @@ func (s Step) SplitStaticItems() (items []Step) {
 			dynamicRoles = append(dynamicRoles, rule)
 		}
 	}
-	var staticGrants, dynamicGrants []GrantRule
+	var staticGrants, dynamicGrants []privileges.GrantRule
 	for _, rule := range s.GrantRules {
 		if rule.IsStatic() {
 			staticGrants = append(staticGrants, rule)
@@ -233,12 +233,12 @@ func (s Step) generateRoles(results *ldap.Result) <-chan role.Role {
 	return ch
 }
 
-func (s Step) generateGrants(results *ldap.Result, privileges privilege.RefMap) <-chan privilege.Grant {
-	ch := make(chan privilege.Grant)
+func (s Step) generateGrants(results *ldap.Result, privs privileges.Profiles) <-chan privileges.Grant {
+	ch := make(chan privileges.Grant)
 	go func() {
 		defer close(ch)
 		for _, rule := range s.GrantRules {
-			for grant := range rule.Generate(results, privileges) {
+			for grant := range rule.Generate(results, privs) {
 				grant.Normalize()
 				ch <- grant
 			}
