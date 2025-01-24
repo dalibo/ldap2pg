@@ -19,9 +19,9 @@ import (
 // meansing of Object field change to hold the privilege class : TABLES,
 // SEQUENCES, etc. instead of the name of an object.
 type Grant struct {
-	Target   string // Name of the referenced privilege object: DATABASE, TABLES, etc.
 	Owner    string // For default privileges. Empty otherwise.
 	Grantee  string
+	Target   string // Name of the referenced ACL: DATABASE, TABLES, etc.
 	Type     string // Privilege type (USAGE, SELECT, etc.)
 	Database string // "" for instance grant.
 	Schema   string // "" for database grant.
@@ -184,7 +184,7 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 // Expand grants from rules.
 //
 // e.g.: instantiate a grant on all databases for each database.
-// Same for schemas.
+// Same for schemas and owners.
 func Expand(in []Grant, privileges TypeMap, database postgres.Database, databases []string) (out []Grant) {
 	for _, grant := range in {
 		k := grant.ACL()

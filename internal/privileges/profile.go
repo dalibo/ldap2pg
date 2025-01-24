@@ -14,6 +14,8 @@ import (
 // Profile lists privileges to grant.
 //
 // e.g. readonly Profile lists SELECT on TABLES, USAGE on SCHEMAS, etc.
+//
+// Rules references profiles by name and generates grant for each privileges in the profile.
 type Profile []Privilege
 
 func NormalizeProfiles(value interface{}) (out map[string][]interface{}, err error) {
