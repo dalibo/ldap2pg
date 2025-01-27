@@ -81,7 +81,6 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	privileges.RegisterProfiles(conf.Postgres.PrivilegesProfiles)
 	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist)
 	if err != nil {
 		return
@@ -251,6 +250,8 @@ func configure() (controller Controller, c config.Config, err error) {
 
 	if controller.SkipPrivileges {
 		c.DropPrivileges()
+	} else {
+		c.RegisterPrivileges()
 	}
 
 	envpath := config.FindDotEnvFile(configPath)

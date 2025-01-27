@@ -2,7 +2,6 @@ package privileges
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/normalize"
@@ -15,6 +14,20 @@ import (
 //
 // Rules references profiles by name and generates grant for each privileges in the profile.
 type Profile []Privilege
+
+func (p Profile) Register(name string) {
+	for _, priv := range p {
+		on := priv.On
+		t := priv.Type
+		if priv.IsDefault() {
+			on = fmt.Sprintf("%s DEFAULT", strings.ToUpper(priv.Default))
+			t = fmt.Sprintf("%s--%s", priv.On, strings.ToUpper(t))
+		}
+		managedACLs[on] = append(managedACLs[on], t)
+	}
+
+	profiles[name] = p
+}
 
 func NormalizeProfiles(value interface{}) (out map[string][]interface{}, err error) {
 	rawMap, ok := value.(map[string]interface{})
@@ -41,7 +54,6 @@ func NormalizeProfiles(value interface{}) (out map[string][]interface{}, err err
 		rawMap[key] = privilegeRefs
 	}
 	out = flattenProfiles(rawMap)
-	err = checkPrivilegesACL(out)
 
 	return
 }
@@ -88,50 +100,4 @@ func flattenProfiles(value map[string]interface{}) map[string][]interface{} {
 	return refMap
 }
 
-func checkPrivilegesACL(profiles map[string][]interface{}) error {
-	for name, profile := range profiles {
-		for i, ref := range profile {
-			refMap := ref.(map[string]interface{})
-			on, ok := refMap["on"].(string)
-			if !ok {
-				return fmt.Errorf("%s[%d]: missing ACL", name, i)
-			}
-			_, ok = refMap["default"]
-			if ok {
-				continue
-			}
-			_, ok = acls[on]
-			if !ok {
-				return fmt.Errorf("%s[%d]: unknown ACL: %s", name, i, on)
-			}
-		}
-	}
-	return nil
-}
-
-// Profiles holds privilege groups
-type Profiles map[string][]Privilege
-
-var profiles Profiles
-
-func RegisterProfiles(p Profiles) {
-	profiles = p
-
-	for _, privs := range p {
-		for _, priv := range privs {
-			on := priv.On
-			t := priv.Type
-			if priv.IsDefault() {
-				on = fmt.Sprintf("%s DEFAULT", strings.ToUpper(priv.Default))
-				t = fmt.Sprintf("%s--%s", priv.On, strings.ToUpper(t))
-			}
-			if _, ok := acls[on]; !ok {
-				panic(fmt.Sprintf("unknown ACL: %s", on))
-			}
-			managedACLs[on] = append(managedACLs[on], t)
-		}
-	}
-	for acl, types := range managedACLs {
-		slog.Debug("Managing privileges.", "types", types, "on", acl)
-	}
-}
+var profiles = make(map[string]Profile)

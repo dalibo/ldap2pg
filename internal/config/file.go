@@ -79,7 +79,7 @@ type Config struct {
 	Version    int
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
-	Privileges privileges.Profiles
+	Privileges map[string]privileges.Profile
 	Rules      wanted.Rules `mapstructure:"rules"`
 }
 
@@ -149,7 +149,6 @@ func (c *Config) Load(path string) (err error) {
 		return
 	}
 
-	c.Postgres.PrivilegesProfiles = c.Privileges
 	c.Rules = c.Rules.SplitStaticRules()
 	return
 }
