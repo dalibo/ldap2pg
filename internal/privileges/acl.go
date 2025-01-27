@@ -1,10 +1,60 @@
 package privileges
 
 import (
-	"strings"
+	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 )
+
+// ACL holds an ACL definition.
+//
+// An ACL is defined by a Scope and queries to inspect, grant and revoke items.
+type ACL struct {
+	Name    string
+	Scope   string
+	Inspect string
+	Grant   string
+	Revoke  string
+}
+
+// Register ACL
+//
+// scope is one of instance, database, schema.
+// Determines de granularity and relevant fields of the privilege.
+//
+// Grant and Revoke queries may be generated from Name.
+func (a ACL) Register() {
+	if a.Grant == "" {
+		slog.Debug("Building GRANT query.", "acl", a.Name)
+		a.Grant = `GRANT %s ON ` + a.Name + ` %%s TO %%s;`
+	}
+
+	if a.Revoke == "" {
+		slog.Debug("Building REVOKE query.", "acl", a.Name)
+		a.Revoke = `REVOKE %s ON ` + a.Name + ` %%s FROM %%s;`
+	}
+
+	var impl acl
+
+	if "GLOBAL DEFAULT" == a.Name {
+		impl = newGlobalDefault(a.Name, a.Inspect, a.Grant, a.Revoke)
+	} else if "SCHEMA DEFAULT" == a.Name {
+		impl = newSchemaDefaultACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+	} else if "instance" == a.Scope {
+		impl = newInstanceACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+	} else if "database" == a.Scope {
+		impl = newDatabaseACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+	} else if a.Scope == "schema" {
+		impl = newSchemaAllACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+	} else {
+		panic("unsupported acl scope")
+	}
+	acls[a.Name] = impl
+}
+
+func NormalizeACLs(yaml interface{}) (interface{}, error) {
+	return yaml, nil
+}
 
 type acl interface {
 	inspecter
@@ -16,51 +66,6 @@ type acl interface {
 
 // ACLs registry
 var acls map[string]acl
-
-// registerACL an ACL
-//
-// scope is one of instance, database, namespace.
-// Determines de granularity and relevant fields of the privilege.
-//
-// grant and revoke queries may be generated from object.
-func registerACL(scope, object, inspect string, queries ...string) {
-	var grant, revoke string
-
-	if 0 < len(queries) {
-		grant = queries[0]
-		queries = queries[1:]
-	} else {
-		grant = `GRANT %s ON ` + object + ` %%s TO %%s;`
-	}
-
-	if 0 < len(queries) {
-		revoke = queries[0]
-		queries = queries[1:]
-	} else {
-		revoke = `REVOKE %s ON ` + object + ` %%s FROM %%s;`
-	}
-
-	if 0 < len(queries) {
-		panic("too many queries")
-	}
-
-	var p acl
-
-	if "GLOBAL DEFAULT" == object {
-		p = newGlobalDefault(object, inspect, grant, revoke)
-	} else if "SCHEMA DEFAULT" == object {
-		p = newSchemaDefaultACL(object, inspect, grant, revoke)
-	} else if strings.HasPrefix(object, "ALL ") {
-		p = newSchemaACL(object, inspect, grant, revoke)
-	} else if "instance" == scope {
-		p = newInstanceACL(object, inspect, grant, revoke)
-	} else if "database" == scope {
-		p = newDatabaseACL(object, inspect, grant, revoke)
-	} else {
-		panic("unsupported acl scope")
-	}
-	acls[object] = p
-}
 
 // managedACLs registry
 //

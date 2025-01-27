@@ -148,15 +148,15 @@ func (a databaseACL) Revoke(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-// schemaACL holds privileges on schemaACL objects in a schema.
+// schemaAllACL holds privileges on ALL objects in a schema.
 //
 // Like tables, sequences, etc.
-type schemaACL struct {
+type schemaAllACL struct {
 	object, inspect, grant, revoke string
 }
 
-func newSchemaACL(object, inspect, grant, revoke string) schemaACL {
-	return schemaACL{
+func newSchemaAllACL(object, inspect, grant, revoke string) schemaAllACL {
+	return schemaAllACL{
 		object:  object,
 		inspect: inspect,
 		grant:   grant,
@@ -164,31 +164,31 @@ func newSchemaACL(object, inspect, grant, revoke string) schemaACL {
 	}
 }
 
-func (a schemaACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
+func (a schemaAllACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
 	g.Target = a.object
 	return
 }
 
-func (a schemaACL) String() string {
+func (a schemaAllACL) String() string {
 	return a.object
 }
 
-func (a schemaACL) Inspect() string {
+func (a schemaAllACL) Inspect() string {
 	return a.inspect
 }
 
-func (schemaACL) Normalize(_ *Grant) {
+func (schemaAllACL) Normalize(_ *Grant) {
 }
 
-func (schemaACL) Expand(g Grant, database postgres.Database) (out []Grant) {
+func (schemaAllACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		out = append(out, g.ExpandSchemas(maps.Keys(database.Schemas))...)
 	}
 	return
 }
 
-func (a schemaACL) Grant(g Grant) (q postgres.SyncQuery) {
+func (a schemaAllACL) Grant(g Grant) (q postgres.SyncQuery) {
 	// GRANT {type} ON ALL ...
 	q.Query = fmt.Sprintf(a.grant, g.Type)
 	// GRANT ... ON ALL ... IN SCHEMA {schema} ... TO {grantee}
@@ -196,7 +196,7 @@ func (a schemaACL) Grant(g Grant) (q postgres.SyncQuery) {
 	return
 }
 
-func (a schemaACL) Revoke(g Grant) (q postgres.SyncQuery) {
+func (a schemaAllACL) Revoke(g Grant) (q postgres.SyncQuery) {
 	// REVOKE {type} ON ALL ...
 	q.Query = fmt.Sprintf(a.revoke, g.Type)
 	// REVOKE ... ON ... IN SCHEMA {schema} ... FROM {grantee}

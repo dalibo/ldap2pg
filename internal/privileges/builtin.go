@@ -28,23 +28,56 @@ func init() {
 	// ACLs
 	acls = make(map[string]acl)
 
-	registerACL("instance", "DATABASE", inspectDatabase)
-	registerACL("instance", "LANGUAGE", inspectLanguage)
+	ACL{
+		Name:    "DATABASE",
+		Scope:   "instance",
+		Inspect: inspectDatabase,
+	}.Register()
 
-	registerACL("database", "SCHEMA", inspectSchema)
-	registerACL(
-		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
-	)
-	registerACL(
-		"schema", "SCHEMA DEFAULT", inspectSchemaDefault,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
-	)
-	registerACL("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
-	registerACL("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
-	registerACL("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
+	ACL{
+		Name:    "LANGUAGE",
+		Scope:   "instance",
+		Inspect: inspectLanguage,
+	}.Register()
+
+	ACL{
+		Name:    "SCHEMA",
+		Scope:   "database",
+		Inspect: inspectSchema,
+	}.Register()
+	ACL{
+		// implementation is chosed by name instead of scope.
+		Name:    "GLOBAL DEFAULT",
+		Scope:   "database",
+		Inspect: inspectGlobalDefault,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
+	}.Register()
+
+	ACL{
+		// implementation is chosed by name instead of scope.
+		Name:    "SCHEMA DEFAULT",
+		Scope:   "schema",
+		Inspect: inspectSchemaDefault,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
+	}.Register()
+
+	ACL{
+		Name:    "ALL FUNCTIONS IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllFunctions,
+	}.Register()
+	ACL{
+		Name:    "ALL SEQUENCES IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllSequences,
+	}.Register()
+	ACL{
+		Name:    "ALL TABLES IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllTables,
+	}.Register()
 
 	// profiles
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")
