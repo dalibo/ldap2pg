@@ -251,7 +251,10 @@ func configure() (controller Controller, c config.Config, err error) {
 	if controller.SkipPrivileges {
 		c.DropPrivileges()
 	} else {
-		c.RegisterPrivileges()
+		err = c.RegisterPrivileges()
+		if err != nil {
+			return
+		}
 	}
 
 	envpath := config.FindDotEnvFile(configPath)

@@ -16,12 +16,21 @@ The process is the same as for roles synchronization, including the three follow
 3. Compare the two sets of grants and update the Postgres cluster using
    `GRANT`, `REVOKE`.
 
-ldap2pg synchronizes privileges one at a time, database by database.
+ldap2pg represents privileges with four core objects:
+
+- *Privilege*: An action on an object. e.g. *CONNECT ON DATABASE*.
+- *Grant*: a privilege granted to a role on an object.
+- *ACL*: a list of grants.
+- *profile*: a list of privileges.
+- *rule*: a template to generate wanted grants.
+
+ldap2pg.yml holds profiles and grant rule.
+ldap2pg synchronizes ACL one at a time, database by database.
 ldap2pg synchronizes default privileges last.
 
 By default, ldap2pg does not manage any privileges.
-To enable privilege management, you must define at least one active privilege profile in [privileges] section.
-The simplest way is to reuse [builtin privilege profiless] shipped with ldap2pg in an active group of privileges.
+To enable privilege management, you must define at least one active profile in [privileges] section.
+The simplest way is to reuse [builtin privilege profiles] shipped with ldap2pg in an active custom profile.
 
 [privileges]: config.md#privileges
 [builtin privilege profiles]: builtins.md
@@ -31,19 +40,18 @@ The simplest way is to reuse [builtin privilege profiless] shipped with ldap2pg 
 
 A privilege profile is a list of references to either a privilege type on an ACL or another profile.
 ldap2pg ships several predefined ACL like `DATABASE`, `LANGUAGE`, etc.
-A privilege type is `USAGE`, `CONNECT` and so on as describe in as documented in PostgreSQL documentation, [section 5.7].
+A privilege type is `USAGE`, `CONNECT` and so on as described in PostgreSQL documentation, [section 5.7].
 See [privileges] YAML section documentation for details on privilege profile format.
 
 [section 5.7]: https://www.postgresql.org/docs/current/ddl-priv.html
-[privileges]: config.md#privileges
 
 ldap2pg loads referenced ACL by inspecting PostgreSQL cluster with carefully crafted queries.
-An unreferenced ACL is ignored.
+ldap2pg inspect only ACL referenced in at least one profile.
 Inspected grants are supposed to revokation unless explicitly wanted by a `grant` rule.
 
 !!! warning "If it's not granted, revoke it!"
 
-    Once a privilege is enabled,
+    Once an ACL is inspected,
     ldap2pg **revokes** all grants found in Postgres instance and not required by a `grant` rule in `rules`.
 
 
@@ -56,8 +64,6 @@ An object owner is a role having `CREATE` privilege on a schema.
 
 
 ## Granting Privilege Profile
-
-[grant rules]: config.md#rules-grant
 
 Inspecting privileges may consume a lot of resources on PostgreSQL instance.
 Revoking privileges is known to be slow in PostgreSQL.
@@ -72,8 +78,10 @@ If the privilege profile includes default privileges, you may define the owners 
 By default, a grant applies to all managed databases as returned by [databases\_query],
 to all schema of each database as returned by [schemas\_query].
 
+[grant rules]: config.md#rules-grant
 [databases\_query]: config.md#postgres-databases-query
 [schemas\_query]: config.md#postgres-schemas-query
+
 
 ## Example
 

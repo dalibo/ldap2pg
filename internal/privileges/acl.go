@@ -1,6 +1,9 @@
 package privileges
 
 import (
+	"fmt"
+
+	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 )
 
@@ -21,26 +24,71 @@ type ACL struct {
 // Determines de granularity and relevant fields of the privilege.
 //
 // Grant and Revoke queries may be generated from Name.
-func (a ACL) Register() {
+func (a ACL) Register() error {
 	var impl acl
 
+	g := Grant{
+		Target:  a.Name,
+		Type:    "PRIV",
+		Grantee: "_grantee_",
+	}
+
 	if "GLOBAL DEFAULT" == a.Name {
+		g.Owner = "_owner_"
 		impl = newGlobalDefault(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else if "SCHEMA DEFAULT" == a.Name {
+		g.Owner = "_owner_"
 		impl = newSchemaDefaultACL(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else if "instance" == a.Scope {
+		g.Object = "_object_" // e.g. plpgsql
 		impl = newInstanceACL(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else if "database" == a.Scope {
+		g.Object = "_object_" // e.g. pg_catalog
 		impl = newDatabaseACL(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else if a.Scope == "schema" {
+		g.Schema = "_schema_"
 		impl = newSchemaAllACL(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else {
-		panic("unsupported ACL scope")
+		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
+
+	impl.Normalize(&g)
+
+	if g.FormatQuery(a.Grant).IsZero() {
+		return fmt.Errorf("grant query is invalid")
+	}
+	if g.FormatQuery(a.Revoke).IsZero() {
+		return fmt.Errorf("revoke query is invalid")
+	}
+
 	acls[a.Name] = impl
+	return nil
+}
+
+// MustRegister ACL
+func (a ACL) MustRegister() {
+	if err := a.Register(); err != nil {
+		panic(fmt.Errorf("ACL: %s: %w", a.Name, err))
+	}
 }
 
 func NormalizeACLs(yaml interface{}) (interface{}, error) {
+	m, ok := yaml.(map[string]interface{})
+	if !ok {
+		return yaml, fmt.Errorf("must be a map")
+	}
+
+	for k, v := range m {
+		acl, ok := v.(map[string]interface{})
+		if !ok {
+			return yaml, fmt.Errorf("%s: must be a map", k)
+		}
+		err := normalize.SpuriousKeys(acl, "scope", "inspect", "grant", "revoke")
+		if err != nil {
+			return yaml, fmt.Errorf("%s: %w", k, err)
+		}
+	}
+
 	return yaml, nil
 }
 

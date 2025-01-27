@@ -79,6 +79,7 @@ type Config struct {
 	Version    int
 	Ldap       LdapConfig
 	Postgres   PostgresConfig
+	ACLs       map[string]privileges.ACL `mapstructure:"acls"`
 	Privileges map[string]privileges.Profile
 	Rules      wanted.Rules `mapstructure:"rules"`
 }

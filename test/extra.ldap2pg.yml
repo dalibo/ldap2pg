@@ -35,11 +35,36 @@ postgres:
   fallback_owner: extra
 
 acls:
-  PROCEDURES:
-    type: nspacl
-    inspect: ...
-    grant: ...
-    revoke: ...
+  FUNCTION get_random:
+    scope: database
+    inspect: |
+      WITH acls AS (
+        SELECT pronamespace::regnamespace::text AS schema, proname,
+               coalesce(proacl, acldefault('f', proowner)) AS proacl
+          FROM pg_catalog.pg_proc
+         WHERE proname = 'get_random'
+           AND pronamespace::regnamespace NOT IN ('pg_catalog', 'information_schema')
+         ORDER BY 1, 2
+      ), grants AS (
+       	SELECT schema, proname,
+               (aclexplode(proacl)).privilege_type,
+       				 (aclexplode(proacl)).grantee::regrole::text AS grantee
+       	  FROM acls
+      )
+      SELECT privilege_type,
+             schema,
+             CASE grantee WHEN '-' THEN 'public' ELSE grantee END AS grantee,
+             FALSE AS partial
+        FROM grants
+       WHERE privilege_type = ANY ($1)
+      ;
+    grant: GRANT <privilege> ON FUNCTION <schema>.get_random() TO <grantee>;
+    revoke: REVOKE <privilege> ON FUNCTION <schema>.get_random() FROM <grantee>;
+
+profiles:
+  random:
+    - type: EXECUTE
+      on: FUNCTION get_random
 
 rules:
 - description: "Static groups"
@@ -98,3 +123,8 @@ rules:
     parent: ldap_roles
     before_create: "CREATE SCHEMA {cn.identifier()};"
     after_create: "CREATE TABLE {cn.identifier()}.username AS SELECT {cn.string()}::regrole AS username;"
+
+- description: "Custom ACL"
+  grant:
+    - role: nicolas
+      privilege: random

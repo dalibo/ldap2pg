@@ -37,7 +37,7 @@ func init() {
 		Inspect: inspectDatabase,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 
 	ACL{
 		Name:    "LANGUAGE",
@@ -45,7 +45,7 @@ func init() {
 		Inspect: inspectLanguage,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 
 	ACL{
 		Name:    "SCHEMA",
@@ -53,7 +53,7 @@ func init() {
 		Inspect: inspectSchema,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 
 	ACL{
 		// implementation is chosed by name instead of scope.
@@ -62,8 +62,7 @@ func init() {
 		Inspect: inspectGlobalDefault,
 		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> GRANT <privilege> ON <acl> TO <grantee>;`,
 		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> REVOKE <privilege> ON <acl> FROM <grantee>;`,
-	}.Register()
-
+	}.MustRegister()
 	ACL{
 		// implementation is chosed by name instead of scope.
 		Name:    "SCHEMA DEFAULT",
@@ -71,7 +70,7 @@ func init() {
 		Inspect: inspectSchemaDefault,
 		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <acl> TO <grantee>;`,
 		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <acl> FROM <grantee>;`,
-	}.Register()
+	}.MustRegister()
 
 	g = `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
 	r = `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
@@ -82,21 +81,21 @@ func init() {
 		Inspect: inspectAllFunctions,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 	ACL{
 		Name:    "ALL SEQUENCES IN SCHEMA",
 		Scope:   "schema",
 		Inspect: inspectAllSequences,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 	ACL{
 		Name:    "ALL TABLES IN SCHEMA",
 		Scope:   "schema",
 		Inspect: inspectAllTables,
 		Grant:   g,
 		Revoke:  r,
-	}.Register()
+	}.MustRegister()
 
 	// profiles
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")

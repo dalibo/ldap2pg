@@ -25,6 +25,15 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 		}
 	}
 
+	section, ok = config["acls"]
+	if ok {
+		acls, err := privileges.NormalizeACLs(section)
+		if err != nil {
+			return config, fmt.Errorf("acls: %w", err)
+		}
+		config["acls"] = acls
+	}
+
 	section, ok = config["privileges"]
 	if ok {
 		privileges, err := privileges.NormalizeProfiles(section)
