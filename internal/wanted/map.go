@@ -44,7 +44,7 @@ func (m Rules) DropGrants() (out Rules) {
 	return
 }
 
-func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (roles role.Map, grants []privileges.Grant, err error) {
+func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string][]privileges.Grant, err error) {
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
@@ -61,6 +61,7 @@ func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (r
 	}
 
 	roles = make(map[string]role.Role)
+	grants = make(map[string][]privileges.Grant)
 	for i, item := range m {
 		if item.Description != "" {
 			slog.Info(item.Description)
@@ -101,7 +102,7 @@ func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (r
 				roles[role.Name] = role
 			}
 
-			for grant := range item.generateGrants(&res.result, privileges) {
+			for grant := range item.generateGrants(&res.result) {
 				pattern := blacklist.MatchString(grant.Grantee)
 				if pattern != "" {
 					slog.Debug(
@@ -109,17 +110,16 @@ func (m Rules) Run(blacklist lists.Blacklist, privileges privileges.Profiles) (r
 						"to", grant.Grantee, "pattern", pattern)
 					continue
 				}
-				slog.Debug("Wants grant.", "grant", grant)
-				grants = append(grants, grant)
+				_, exists := roles[grant.Grantee]
+				if !exists {
+					slog.Error("Generated grant on unwanted role.", "grant", grant, "role", grant.Grantee)
+					errList = append(errList, fmt.Errorf("grant on unknown role"))
+					continue
+				}
+				acl := grant.ACLName()
+				slog.Debug("Wants grant.", "grant", grant, "acl", acl)
+				grants[acl] = append(grants[acl], grant)
 			}
-		}
-	}
-
-	for _, g := range grants {
-		_, ok := roles[g.Grantee]
-		if !ok {
-			slog.Info("Generated grant on unwanted role.", "grant", g)
-			return nil, nil, fmt.Errorf("grant on unwanted role")
 		}
 	}
 

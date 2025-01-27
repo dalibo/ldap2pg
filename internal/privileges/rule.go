@@ -113,13 +113,13 @@ func (r GrantRule) Formats() []pyfmt.Format {
 	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
 }
 
-func (r GrantRule) Generate(results *ldap.Result, privs Profiles) <-chan Grant {
+func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
 		if nil == results.Entry {
-			alias := r.Privilege.Input
-			for _, priv := range privs[alias] {
+			profile := r.Privilege.Input
+			for _, priv := range profiles[profile] {
 				// Case static rule.
 				grant := Grant{
 					Target:   priv.On,
@@ -144,8 +144,8 @@ func (r GrantRule) Generate(results *ldap.Result, privs Profiles) <-chan Grant {
 		} else {
 			// Case dynamic rule.
 			for values := range results.GenerateValues(r.Privilege, r.Database, r.Schema, r.Object, r.To) {
-				alias := r.Privilege.Format(values)
-				for _, priv := range privs[alias] {
+				profile := r.Privilege.Format(values)
+				for _, priv := range profiles[profile] {
 					grant := Grant{
 						Target:   priv.On,
 						Grantee:  r.To.Format(values),

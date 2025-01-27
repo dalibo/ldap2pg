@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -18,7 +19,6 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/lists"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/role"
@@ -81,7 +81,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist, conf.Privileges)
+	privileges.RegisterProfiles(conf.Postgres.PrivilegesProfiles)
+	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist)
 	if err != nil {
 		return
 	}
@@ -94,8 +95,8 @@ func ldap2pg(ctx context.Context) (err error) {
 	syncErrors := errorlist.New("synchronization errors")
 
 	// Synchronize roles.
-	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner, &instance.Databases)
-	queries = postgres.GroupByDatabase(instance.Databases, instance.DefaultDatabase, queries)
+	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner)
+	queries = postgres.GroupByDatabase(instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
 	err = syncErrors.Extend(err)
 	if err != nil {
@@ -116,26 +117,24 @@ func ldap2pg(ctx context.Context) (err error) {
 			managedRoles.Add("public")
 		}
 
-		instancePrivileges, objectPrivileges, defaultPrivileges := conf.Postgres.PrivilegesProfiles.BuildTypeMaps()
+		instanceACLs, databaseACLs, defaultACLs := privileges.SplitManagedACLs()
 
 		// Start by default database. This allow to reuse the last
 		// connexion openned when synchronizing roles.
-		for _, dbname := range instance.Databases.SyncOrder(instance.DefaultDatabase, true) {
+		for _, dbname := range postgres.SyncOrder(instance.DefaultDatabase, true) {
 			slog.Debug("Stage 2: privileges.", "database", dbname)
 			err := instance.InspectStage2(ctx, dbname, pc.SchemasQuery)
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			var privs privileges.TypeMap
+			var acls []string
 			if dbname == instance.DefaultDatabase {
 				slog.Debug("Managing instance wide privileges.", "database", dbname)
-				privs = make(privileges.TypeMap)
-				maps.Copy(privs, instancePrivileges)
-				maps.Copy(privs, objectPrivileges)
-			} else {
-				privs = objectPrivileges
+				acls = instanceACLs
 			}
-			stageCount, err := syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, privs)
+			acls = append(acls, databaseACLs...)
+
+			stageCount, err := syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, acls)
 			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 2: %w", err)
@@ -150,7 +149,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("inspect: %w", err)
 			}
-			stageCount, err = syncPrivileges(ctx, &controller, &instance, managedRoles, wantedGrants, dbname, defaultPrivileges)
+			stageCount, err = syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, defaultACLs)
 			err = syncErrors.Extend(err)
 			if err != nil {
 				return fmt.Errorf("stage 3: %w", err)
@@ -168,10 +167,14 @@ func ldap2pg(ctx context.Context) (err error) {
 		return syncErrors
 	}
 
+	grantCount := 0
+	for _, grants := range wantedGrants {
+		grantCount += len(grants)
+	}
 	exitCode := controller.Finalize(
 		start,
 		len(wantedRoles),
-		len(wantedGrants),
+		grantCount,
 		queryCount,
 	)
 	os.Exit(exitCode)
@@ -271,35 +274,28 @@ func configure() (controller Controller, c config.Config, err error) {
 }
 
 // syncPrivileges for a given database.
-func syncPrivileges(ctx context.Context, controller *Controller, instance *inspect.Instance, roles mapset.Set[string], wantedGrants []privileges.Grant, dbname string, privs privileges.TypeMap) (int, error) {
+func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Set[string], allWantedGrants map[string][]privileges.Grant, dbname string, acls []string) (int, error) {
 	queryCount := 0
-	allDatabases := maps.Keys(instance.Databases)
-	acls := maps.Keys(privs)
-	slices.Sort(acls)
+	var errs []error
+	// synchronize ACL one at a time
 	for _, acl := range acls {
-		// synchronize ACL one at a time
-		privs := privileges.TypeMap{acl: privs[acl]}
-		expandedGrants := privileges.Expand(wantedGrants, privs, instance.Databases[dbname], allDatabases)
-		currentGrants, err := instance.InspectGrants(ctx, dbname, privs, roles)
-		// Special case, ignore grants on unmanaged databases.
-		currentGrants = lists.Filter(currentGrants, func(g privileges.Grant) bool {
-			if "DATABASE" != g.ACL() {
-				return true
-			}
-			_, ok := instance.Databases[g.Object]
-			return ok
-		})
-
+		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
 		if err != nil {
-			return 0, fmt.Errorf("privileges: %w", err)
+			slog.Error("Failed to inspect privileges.", "acl", acl, "database", dbname, "err", err)
+			errs = append(errs, fmt.Errorf("inspect: %w", err))
+			continue
 		}
-		queries := privileges.Diff(currentGrants, expandedGrants)
-		count, err := postgres.Apply(ctx, queries, controller.Real)
+		count, err := privileges.Sync(ctx, controller.Real, dbname, acl, currentGrants, allWantedGrants[acl])
+		queryCount += count
 		if err != nil {
-			return 0, fmt.Errorf("apply: %w", err)
+			slog.Error("Failed to synchronize privileges", "acl", acl, "database", dbname, "err", err)
+			errs = append(errs, fmt.Errorf("sync: %w", err))
+			continue
 		}
 		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
-		queryCount += count
+	}
+	if 0 < len(errs) {
+		return queryCount, errors.Join(errs...)
 	}
 	return queryCount, nil
 }

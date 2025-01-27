@@ -56,13 +56,13 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 	}
 
 	slog.Debug("Inspecting database owners.")
-	instance.Databases = make(postgres.DBMap)
+	postgres.Databases = make(postgres.DBMap)
 	dbq := &SQLQuery[postgres.Database]{SQL: databasesQuery, RowTo: postgres.RowToDatabase}
 	for dbq.Query(ctx, pgconn); dbq.Next(); {
 		db := dbq.Row()
 		if instance.ManagedDatabases.Contains(db.Name) {
 			slog.Debug("Found database.", "name", db.Name, "owner", db.Owner)
-			instance.Databases[db.Name] = db
+			postgres.Databases[db.Name] = db
 		} else {
 			slog.Debug("Ignoring unmanaged database.", "name", db.Name)
 		}
@@ -71,7 +71,7 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 		return err
 	}
 
-	_, ok := instance.Databases[instance.DefaultDatabase]
+	_, ok := postgres.Databases[instance.DefaultDatabase]
 	if !ok {
 		return fmt.Errorf("default database not listed")
 	}

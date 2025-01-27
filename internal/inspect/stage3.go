@@ -36,7 +36,7 @@ func RowToCreators(rows pgx.CollectableRow) (c Creators, err error) {
 func (instance *Instance) InspectCreators(ctx context.Context, dbname string, managedRoles mapset.Set[string]) error {
 	cq := &SQLQuery[Creators]{SQL: creatorsQuery, RowTo: RowToCreators}
 
-	database := instance.Databases[dbname]
+	database := postgres.Databases[dbname]
 	slog.Debug("Inspecting objects creators.", "database", dbname)
 	conn, err := postgres.GetConn(ctx, dbname)
 	if err != nil {
@@ -64,7 +64,7 @@ func (instance *Instance) InspectCreators(ctx context.Context, dbname string, ma
 		return err
 	}
 
-	instance.Databases[dbname] = database
+	postgres.Databases[dbname] = database
 
 	return nil
 }

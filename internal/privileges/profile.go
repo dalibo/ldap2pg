@@ -7,13 +7,13 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/tree"
-	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/slices"
 )
 
 // Profile lists privileges to grant.
 //
 // e.g. readonly Profile lists SELECT on TABLES, USAGE on SCHEMAS, etc.
+//
+// Rules references profiles by name and generates grant for each privileges in the profile.
 type Profile []Privilege
 
 func NormalizeProfiles(value interface{}) (out map[string][]interface{}, err error) {
@@ -112,53 +112,26 @@ func checkPrivilegesACL(profiles map[string][]interface{}) error {
 // Profiles holds privilege groups
 type Profiles map[string][]Privilege
 
-// BuildDefaultArg returns the list of (Type, On) couple referenced.
-func (rm Profiles) BuildDefaultArg(def string) (out [][]string) {
-	for _, refs := range rm {
-		for _, ref := range refs {
-			if ref.Default != def {
-				continue
+var profiles Profiles
+
+func RegisterProfiles(p Profiles) {
+	profiles = p
+
+	for _, privs := range p {
+		for _, priv := range privs {
+			on := priv.On
+			t := priv.Type
+			if priv.IsDefault() {
+				on = fmt.Sprintf("%s DEFAULT", strings.ToUpper(priv.Default))
+				t = fmt.Sprintf("%s--%s", priv.On, strings.ToUpper(t))
 			}
-			out = append(out, []string{ref.On, ref.Type})
-		}
-	}
-	return
-}
-
-func (rm Profiles) BuildTypeMaps() (instance, other, defaults TypeMap) {
-	all := make(TypeMap)
-	other = make(TypeMap)
-	defaults = make(TypeMap)
-	instance = make(TypeMap)
-
-	for _, privList := range rm {
-		for _, priv := range privList {
-			var k, t string
-			if "" != priv.Default {
-				k = strings.ToUpper(priv.Default) + " DEFAULT"
-				t = priv.On + "--" + priv.Type
-			} else {
-				k = priv.On
-				t = priv.Type
+			if _, ok := acls[on]; !ok {
+				panic(fmt.Sprintf("unknown ACL: %s", on))
 			}
-
-			all[k] = append(all[k], t)
+			managedACLs[on] = append(managedACLs[on], t)
 		}
 	}
-
-	for target, types := range all {
-		set := mapset.NewSet(types...)
-		types := set.ToSlice()
-		slices.Sort(types)
-		if strings.HasSuffix(target, " DEFAULT") {
-			defaults[target] = types
-		} else if acls[target].IsGlobal() {
-			instance[target] = types
-		} else {
-			other[target] = types
-		}
-		slog.Debug("Managing privileges.", "types", types, "on", target)
+	for acl, types := range managedACLs {
+		slog.Debug("Managing privileges.", "types", types, "on", acl)
 	}
-
-	return
 }

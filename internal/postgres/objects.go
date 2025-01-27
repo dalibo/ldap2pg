@@ -13,9 +13,13 @@ type Database struct {
 	Owner   string
 	Schemas map[string]Schema
 }
+
 type DBMap map[string]Database
 
-func (m DBMap) SyncOrder(defaultName string, defaultFirst bool) (out []string) {
+var Databases = make(DBMap)
+
+func SyncOrder(defaultName string, defaultFirst bool) (out []string) {
+	m := Databases
 	names := maps.Keys(m)
 	slices.Sort(names)
 	_, ok := m[defaultName]
