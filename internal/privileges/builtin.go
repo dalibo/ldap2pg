@@ -78,9 +78,6 @@ var BuiltinsProfiles = map[string]interface{}{
 	},
 }
 
-func init() {
-}
-
 // registerRelationBuiltinProfile generates dunder privileges profiles and privilege groups.
 //
 // example: __all_on_tables__, __select_on_tables_, etc.
