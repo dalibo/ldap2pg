@@ -279,7 +279,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 	var errs []error
 	// synchronize ACL one at a time
 	for _, acl := range acls {
-		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
+		currentGrants, err := privileges.Inspect(ctx, postgres.Databases[dbname], acl, roles)
 		if err != nil {
 			slog.Error("Failed to inspect privileges.", "acl", acl, "database", dbname, "err", err)
 			errs = append(errs, fmt.Errorf("inspect: %w", err))

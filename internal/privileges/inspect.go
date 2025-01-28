@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// InspectGrants returns ACL items from Postgres instance.
-func InspectGrants(ctx context.Context, db postgres.Database, acl string, roles mapset.Set[string]) (out []Grant, err error) {
-	inspector := newInspector(db, acl)
+// Inspect returns ACL items from Postgres instance.
+func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset.Set[string]) (out []Grant, err error) {
+	inspector := inspector{database: db, acl: acl}
 	for inspector.Run(ctx); inspector.Next(); {
 		grant := inspector.Grant()
 		// Drop wildcard on public if public is not managed.
@@ -50,13 +50,6 @@ type inspector struct {
 	grantChan chan Grant
 	err       error
 	grant     Grant
-}
-
-func newInspector(database postgres.Database, acl string) inspector {
-	return inspector{
-		database: database,
-		acl:      acl,
-	}
 }
 
 func (i *inspector) Run(ctx context.Context) {
