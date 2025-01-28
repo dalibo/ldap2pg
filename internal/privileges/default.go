@@ -8,14 +8,12 @@ import (
 )
 
 type globalDefaultACL struct {
-	object, grant, revoke string
+	object string
 }
 
-func newGlobalDefault(object, grant, revoke string) globalDefaultACL {
+func newGlobalDefault(object string) globalDefaultACL {
 	return globalDefaultACL{
 		object: object,
-		grant:  grant,
-		revoke: revoke,
 	}
 }
 
@@ -40,23 +38,13 @@ func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 func (globalDefaultACL) Normalize(_ *Grant) {
 }
 
-func (a globalDefaultACL) Grant(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.grant)
-}
-
-func (a globalDefaultACL) Revoke(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.revoke)
-}
-
 type schemaDefaultACL struct {
-	object, grant, revoke string
+	object string
 }
 
-func newSchemaDefaultACL(object, grant, revoke string) schemaDefaultACL {
+func newSchemaDefaultACL(object string) schemaDefaultACL {
 	return schemaDefaultACL{
 		object: object,
-		grant:  grant,
-		revoke: revoke,
 	}
 }
 
@@ -81,12 +69,4 @@ func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 }
 
 func (schemaDefaultACL) Normalize(_ *Grant) {
-}
-
-func (a schemaDefaultACL) Grant(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.grant)
-}
-
-func (a schemaDefaultACL) Revoke(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.revoke)
 }

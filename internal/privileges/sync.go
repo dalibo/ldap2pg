@@ -14,14 +14,6 @@ func Sync(ctx context.Context, really bool, dbname, acl string, current, wanted 
 	return postgres.Apply(ctx, queries, really)
 }
 
-type granter interface {
-	Grant(Grant) postgres.SyncQuery
-}
-
-type revoker interface {
-	Revoke(Grant) postgres.SyncQuery
-}
-
 func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 	ch := make(chan postgres.SyncQuery)
 	go func() {
@@ -39,8 +31,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 				continue
 			}
 
-			acl := grant.ACL()
-			q := acl.Revoke(grant)
+			q := grant.FormatQuery(acls[grant.ACLName()].Revoke)
 			q.Description = "Revoke privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}
@@ -63,8 +54,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			}
 
 			slog.Debug("Wants grant.", "grant", grant)
-			p := grant.ACL()
-			q := p.Grant(grant)
+			q := grant.FormatQuery(acls[grant.ACLName()].Grant)
 			q.Description = "Grant privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}

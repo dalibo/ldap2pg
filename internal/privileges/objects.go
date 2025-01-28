@@ -10,14 +10,12 @@ import (
 //
 // like databases, roles, parameters, languages, etc.
 type instanceACL struct {
-	object, grant, revoke string
+	object string
 }
 
-func newInstanceACL(object, grant, revoke string) instanceACL {
+func newInstanceACL(object string) instanceACL {
 	return instanceACL{
 		object: object,
-		grant:  grant,
-		revoke: revoke,
 	}
 }
 
@@ -56,26 +54,16 @@ func (instanceACL) Normalize(g *Grant) {
 	g.Schema = ""
 }
 
-func (a instanceACL) Grant(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.grant)
-}
-
-func (a instanceACL) Revoke(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.revoke)
-}
-
 // databaseACL handles privileges on databaseACL-wide objects.
 //
 // Like schema.
 type databaseACL struct {
-	object, grant, revoke string
+	object string
 }
 
-func newDatabaseACL(object, grant, revoke string) databaseACL {
+func newDatabaseACL(object string) databaseACL {
 	return databaseACL{
 		object: object,
-		grant:  grant,
-		revoke: revoke,
 	}
 }
 
@@ -112,26 +100,16 @@ func (databaseACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	return
 }
 
-func (a databaseACL) Grant(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.grant)
-}
-
-func (a databaseACL) Revoke(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.revoke)
-}
-
 // schemaAllACL holds privileges on ALL objects in a schema.
 //
 // Like tables, sequences, etc.
 type schemaAllACL struct {
-	object, grant, revoke string
+	object string
 }
 
-func newSchemaAllACL(object, grant, revoke string) schemaAllACL {
+func newSchemaAllACL(object string) schemaAllACL {
 	return schemaAllACL{
 		object: object,
-		grant:  grant,
-		revoke: revoke,
 	}
 }
 
@@ -153,12 +131,4 @@ func (schemaAllACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 		out = append(out, g.ExpandSchemas(maps.Keys(database.Schemas))...)
 	}
 	return
-}
-
-func (a schemaAllACL) Grant(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.grant)
-}
-
-func (a schemaAllACL) Revoke(g Grant) postgres.SyncQuery {
-	return g.FormatQuery(a.revoke)
 }
