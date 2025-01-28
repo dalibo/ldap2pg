@@ -9,15 +9,7 @@ import (
 // instanceACL handle privilege on instanceACL-wide objects.
 //
 // like databases, roles, parameters, languages, etc.
-type instanceACL struct {
-	object string
-}
-
-func newInstanceACL(object string) instanceACL {
-	return instanceACL{
-		object: object,
-	}
-}
+type instanceACL struct{}
 
 func (a instanceACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
@@ -25,10 +17,6 @@ func (a instanceACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Object, &g.Grantee)
 	g.Target = a.object
 	return
-}
-
-func (a instanceACL) String() string {
-	return a.object
 }
 
 func (instanceACL) Expand(g Grant, _ postgres.Database) (out []Grant) {
@@ -57,24 +45,12 @@ func (instanceACL) Normalize(g *Grant) {
 // databaseACL handles privileges on databaseACL-wide objects.
 //
 // Like schema.
-type databaseACL struct {
-	object string
-}
-
-func newDatabaseACL(object string) databaseACL {
-	return databaseACL{
-		object: object,
-	}
-}
+type databaseACL struct{}
 
 func (a databaseACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Object, &g.Grantee)
 	g.Target = a.object
 	return
-}
-
-func (a databaseACL) String() string {
-	return a.object
 }
 
 func (databaseACL) Normalize(g *Grant) {
@@ -103,24 +79,12 @@ func (databaseACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 // schemaAllACL holds privileges on ALL objects in a schema.
 //
 // Like tables, sequences, etc.
-type schemaAllACL struct {
-	object string
-}
-
-func newSchemaAllACL(object string) schemaAllACL {
-	return schemaAllACL{
-		object: object,
-	}
-}
+type schemaAllACL struct{}
 
 func (a schemaAllACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
 	g.Target = a.object
 	return
-}
-
-func (a schemaAllACL) String() string {
-	return a.object
 }
 
 func (schemaAllACL) Normalize(_ *Grant) {

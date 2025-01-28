@@ -7,19 +7,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type globalDefaultACL struct {
-	object string
-}
-
-func newGlobalDefault(object string) globalDefaultACL {
-	return globalDefaultACL{
-		object: object,
-	}
-}
-
-func (a globalDefaultACL) String() string {
-	return a.object
-}
+type globalDefaultACL struct{}
 
 func (globalDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
@@ -38,25 +26,13 @@ func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 func (globalDefaultACL) Normalize(_ *Grant) {
 }
 
-type schemaDefaultACL struct {
-	object string
-}
-
-func newSchemaDefaultACL(object string) schemaDefaultACL {
-	return schemaDefaultACL{
-		object: object,
-	}
-}
+type schemaDefaultACL struct{}
 
 func (schemaDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
 	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $object IN $schema TO $grantee;
 	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Schema, &g.Grantee)
 	return
-}
-
-func (a schemaDefaultACL) String() string {
-	return a.object
 }
 
 func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant) {

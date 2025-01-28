@@ -18,6 +18,10 @@ type ACL struct {
 	Revoke  string
 }
 
+func (a ACL) String() string {
+	return a.Name
+}
+
 // Register ACL
 //
 // scope is one of instance, database, schema.
@@ -35,19 +39,19 @@ func (a ACL) Register() error {
 
 	if "GLOBAL DEFAULT" == a.Name {
 		g.Owner = "_owner_"
-		impl = newGlobalDefault(a.Name)
+		impl = globalDefaultACL{}
 	} else if "SCHEMA DEFAULT" == a.Name {
 		g.Owner = "_owner_"
-		impl = newSchemaDefaultACL(a.Name)
+		impl = schemaDefaultACL{}
 	} else if "instance" == a.Scope {
 		g.Object = "_object_" // e.g. plpgsql
-		impl = newInstanceACL(a.Name)
+		impl = instanceACL{}
 	} else if "database" == a.Scope {
 		g.Object = "_object_" // e.g. pg_catalog
-		impl = newDatabaseACL(a.Name)
+		impl = databaseACL{}
 	} else if a.Scope == "schema" {
 		g.Schema = "_schema_"
-		impl = newSchemaAllACL(a.Name)
+		impl = schemaAllACL{}
 	} else {
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
