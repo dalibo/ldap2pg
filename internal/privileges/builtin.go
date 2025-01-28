@@ -26,31 +26,29 @@ var (
 
 func init() {
 	// ACLs
-	g := `GRANT <privilege> ON <acl> <object> TO <grantee>;`
-	r := `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`
 
 	ACL{
 		Name:    "DATABASE",
 		Scope:   "instance",
 		Inspect: inspectDatabase,
-		Grant:   g,
-		Revoke:  r,
+		Grant:   `GRANT <privilege> ON <acl> <database> TO <grantee>;`,
+		Revoke:  `REVOKE <privilege> ON <acl> <database> FROM <grantee>;`,
 	}.MustRegister()
 
 	ACL{
 		Name:    "LANGUAGE",
 		Scope:   "instance",
 		Inspect: inspectLanguage,
-		Grant:   g,
-		Revoke:  r,
+		Grant:   `GRANT <privilege> ON <acl> <object> TO <grantee>;`,
+		Revoke:  `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`,
 	}.MustRegister()
 
 	ACL{
 		Name:    "SCHEMA",
 		Scope:   "database",
 		Inspect: inspectSchema,
-		Grant:   g,
-		Revoke:  r,
+		Grant:   `GRANT <privilege> ON <acl> <schema> TO <grantee>;`,
+		Revoke:  `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`,
 	}.MustRegister()
 
 	ACL{
@@ -70,8 +68,8 @@ func init() {
 		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <acl> FROM <grantee>;`,
 	}.MustRegister()
 
-	g = `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
-	r = `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
+	g := `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
+	r := `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
 
 	ACL{
 		Name:    "ALL FUNCTIONS IN SCHEMA",

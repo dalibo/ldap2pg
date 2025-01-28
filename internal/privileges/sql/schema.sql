@@ -8,10 +8,9 @@ WITH grants AS (
 )
 SELECT
 	grants.priv AS "privilege",
-	grants.nspname AS "schema",
-	'' AS "object",								-- No object means schema itself.
+	grants.nspname AS "object",
 	COALESCE(grantee.rolname, 'public') AS grantee
 FROM grants
 LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
 WHERE "priv" = ANY ($1)
-ORDER BY 2, 3, 4, 1
+ORDER BY 2, 3, 1

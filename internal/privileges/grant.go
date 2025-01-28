@@ -91,10 +91,6 @@ func (g Grant) ACLName() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) ACL() acl {
-	return aclImplentations[g.ACLName()]
-}
-
 func (g Grant) String() string {
 	b := strings.Builder{}
 	if g.Partial {

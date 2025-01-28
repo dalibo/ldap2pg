@@ -22,14 +22,6 @@ func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset
 			continue
 		}
 
-		// Special case: ignore database grants on unmanaged databases.
-		if "DATABASE" == grant.ACLName() {
-			_, exists := postgres.Databases[grant.Object]
-			if !exists {
-				continue
-			}
-		}
-
 		slog.Debug("Found grant in Postgres instance.", "grant", grant, "database", grant.Database)
 		out = append(out, grant)
 	}
@@ -82,8 +74,8 @@ func (i *inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		acl := aclImplentations[i.acl]
-		sql := acls[i.acl].Inspect
+		acl := acls[i.acl]
+		sql := acl.Inspect
 		types := managedACLs[i.acl]
 		slog.Debug("Inspecting grants.", "acl", i.acl, "database", i.database.Name)
 		pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
@@ -105,7 +97,17 @@ func (i *inspector) iterGrants() chan Grant {
 				return
 			}
 
-			if "" != grant.Schema {
+			if grant.Database != "" {
+				// GRANT ON DATABASE, filter out unmanaged databases.
+				_, exists := postgres.Databases[grant.Database]
+				if !exists {
+					continue
+				}
+			} else if acl.Scope != "instance" {
+				grant.Database = i.database.Name
+			}
+
+			if grant.Schema != "" {
 				_, known := i.database.Schemas[grant.Schema]
 				if !known {
 					continue
