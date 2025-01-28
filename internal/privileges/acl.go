@@ -35,19 +35,19 @@ func (a ACL) Register() error {
 
 	if "GLOBAL DEFAULT" == a.Name {
 		g.Owner = "_owner_"
-		impl = newGlobalDefault(a.Name, a.Inspect, a.Grant, a.Revoke)
+		impl = newGlobalDefault(a.Name, a.Grant, a.Revoke)
 	} else if "SCHEMA DEFAULT" == a.Name {
 		g.Owner = "_owner_"
-		impl = newSchemaDefaultACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+		impl = newSchemaDefaultACL(a.Name, a.Grant, a.Revoke)
 	} else if "instance" == a.Scope {
 		g.Object = "_object_" // e.g. plpgsql
-		impl = newInstanceACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+		impl = newInstanceACL(a.Name, a.Grant, a.Revoke)
 	} else if "database" == a.Scope {
 		g.Object = "_object_" // e.g. pg_catalog
-		impl = newDatabaseACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+		impl = newDatabaseACL(a.Name, a.Grant, a.Revoke)
 	} else if a.Scope == "schema" {
 		g.Schema = "_schema_"
-		impl = newSchemaAllACL(a.Name, a.Inspect, a.Grant, a.Revoke)
+		impl = newSchemaAllACL(a.Name, a.Grant, a.Revoke)
 	} else {
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}

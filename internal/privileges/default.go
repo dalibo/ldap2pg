@@ -8,15 +8,14 @@ import (
 )
 
 type globalDefaultACL struct {
-	object, inspect, grant, revoke string
+	object, grant, revoke string
 }
 
-func newGlobalDefault(object, inspect, grant, revoke string) globalDefaultACL {
+func newGlobalDefault(object, grant, revoke string) globalDefaultACL {
 	return globalDefaultACL{
-		object:  object,
-		inspect: inspect,
-		grant:   grant,
-		revoke:  revoke,
+		object: object,
+		grant:  grant,
+		revoke: revoke,
 	}
 }
 
@@ -29,10 +28,6 @@ func (globalDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $target TO $grantee;
 	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Grantee)
 	return
-}
-
-func (a globalDefaultACL) Inspect() string {
-	return a.inspect
 }
 
 func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant) {
@@ -54,15 +49,14 @@ func (a globalDefaultACL) Revoke(g Grant) postgres.SyncQuery {
 }
 
 type schemaDefaultACL struct {
-	object, inspect, grant, revoke string
+	object, grant, revoke string
 }
 
-func newSchemaDefaultACL(object, inspect, grant, revoke string) schemaDefaultACL {
+func newSchemaDefaultACL(object, grant, revoke string) schemaDefaultACL {
 	return schemaDefaultACL{
-		object:  object,
-		inspect: inspect,
-		grant:   grant,
-		revoke:  revoke,
+		object: object,
+		grant:  grant,
+		revoke: revoke,
 	}
 }
 
@@ -75,10 +69,6 @@ func (schemaDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 
 func (a schemaDefaultACL) String() string {
 	return a.object
-}
-
-func (a schemaDefaultACL) Inspect() string {
-	return a.inspect
 }
 
 func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant) {

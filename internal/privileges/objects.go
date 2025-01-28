@@ -10,15 +10,14 @@ import (
 //
 // like databases, roles, parameters, languages, etc.
 type instanceACL struct {
-	object, inspect, grant, revoke string
+	object, grant, revoke string
 }
 
-func newInstanceACL(object, inspect, grant, revoke string) instanceACL {
+func newInstanceACL(object, grant, revoke string) instanceACL {
 	return instanceACL{
-		object:  object,
-		inspect: inspect,
-		grant:   grant,
-		revoke:  revoke,
+		object: object,
+		grant:  grant,
+		revoke: revoke,
 	}
 }
 
@@ -32,10 +31,6 @@ func (a instanceACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 
 func (a instanceACL) String() string {
 	return a.object
-}
-
-func (a instanceACL) Inspect() string {
-	return a.inspect
 }
 
 func (instanceACL) Expand(g Grant, _ postgres.Database) (out []Grant) {
@@ -73,15 +68,14 @@ func (a instanceACL) Revoke(g Grant) postgres.SyncQuery {
 //
 // Like schema.
 type databaseACL struct {
-	object, inspect, grant, revoke string
+	object, grant, revoke string
 }
 
-func newDatabaseACL(object, inspect, grant, revoke string) databaseACL {
+func newDatabaseACL(object, grant, revoke string) databaseACL {
 	return databaseACL{
-		object:  object,
-		inspect: inspect,
-		grant:   grant,
-		revoke:  revoke,
+		object: object,
+		grant:  grant,
+		revoke: revoke,
 	}
 }
 
@@ -93,10 +87,6 @@ func (a databaseACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 
 func (a databaseACL) String() string {
 	return a.object
-}
-
-func (a databaseACL) Inspect() string {
-	return a.inspect
 }
 
 func (databaseACL) Normalize(g *Grant) {
@@ -134,15 +124,14 @@ func (a databaseACL) Revoke(g Grant) postgres.SyncQuery {
 //
 // Like tables, sequences, etc.
 type schemaAllACL struct {
-	object, inspect, grant, revoke string
+	object, grant, revoke string
 }
 
-func newSchemaAllACL(object, inspect, grant, revoke string) schemaAllACL {
+func newSchemaAllACL(object, grant, revoke string) schemaAllACL {
 	return schemaAllACL{
-		object:  object,
-		inspect: inspect,
-		grant:   grant,
-		revoke:  revoke,
+		object: object,
+		grant:  grant,
+		revoke: revoke,
 	}
 }
 
@@ -154,10 +143,6 @@ func (a schemaAllACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 
 func (a schemaAllACL) String() string {
 	return a.object
-}
-
-func (a schemaAllACL) Inspect() string {
-	return a.inspect
 }
 
 func (schemaAllACL) Normalize(_ *Grant) {

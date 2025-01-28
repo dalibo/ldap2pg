@@ -7,7 +7,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/jackc/pgx/v5"
 )
 
 // Inspect returns ACL items from Postgres instance.
@@ -80,19 +79,12 @@ func (i inspector) Err() error {
 	return i.err
 }
 
-// Implemented by ACL types
-//
-// e.g. datacl, nspacl, etc.
-type inspecter interface {
-	Inspect() string
-	RowTo(pgx.CollectableRow) (Grant, error)
-}
-
 func (i *inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
 		acl := aclImplentations[i.acl]
+		sql := acls[i.acl].Inspect
 		types := managedACLs[i.acl]
 		slog.Debug("Inspecting grants.", "acl", i.acl, "database", i.database.Name)
 		pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
@@ -101,7 +93,6 @@ func (i *inspector) iterGrants() chan Grant {
 			return
 		}
 
-		sql := acl.Inspect()
 		slog.Debug("Executing SQL query:\n"+sql, "arg", types)
 		rows, err := pgconn.Query(i.ctx, sql, types)
 		if err != nil {
