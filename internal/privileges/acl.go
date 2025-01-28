@@ -2,6 +2,7 @@ package privileges
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/postgres"
@@ -31,32 +32,29 @@ func (a ACL) String() string {
 func (a ACL) Register() error {
 	var impl acl
 
-	g := Grant{
-		Target:  a.Name,
-		Type:    "PRIV",
-		Grantee: "_grantee_",
-	}
-
 	if "GLOBAL DEFAULT" == a.Name {
-		g.Owner = "_owner_"
 		impl = globalDefaultACL{}
 	} else if "SCHEMA DEFAULT" == a.Name {
-		g.Owner = "_owner_"
 		impl = schemaDefaultACL{}
 	} else if "instance" == a.Scope {
-		g.Object = "_object_" // e.g. plpgsql
 		impl = instanceACL{}
 	} else if "database" == a.Scope {
-		g.Object = "_object_" // e.g. pg_catalog
 		impl = databaseACL{}
 	} else if a.Scope == "schema" {
-		g.Schema = "_schema_"
 		impl = schemaAllACL{}
 	} else {
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
 
-	impl.Normalize(&g)
+	g := Grant{
+		Target:   a.Name,
+		Type:     "PRIV",
+		Grantee:  "_grantee_",
+		Owner:    "_owner_",
+		Database: "_database_",
+		Schema:   "_schema_",
+		Object:   "_object_",
+	}
 
 	if g.FormatQuery(a.Grant).IsZero() {
 		return fmt.Errorf("grant query is invalid")
@@ -75,6 +73,11 @@ func (a ACL) MustRegister() {
 	if err := a.Register(); err != nil {
 		panic(fmt.Errorf("ACL: %s: %w", a.Name, err))
 	}
+}
+
+func (a ACL) Uses(k string) bool {
+	k = fmt.Sprintf("<%s>", k)
+	return strings.Contains(a.Grant, k)
 }
 
 func NormalizeACLs(yaml interface{}) (interface{}, error) {
@@ -99,7 +102,6 @@ func NormalizeACLs(yaml interface{}) (interface{}, error) {
 
 type acl interface {
 	inspecter
-	normalizer
 	Expand(Grant, postgres.Database) []Grant
 }
 

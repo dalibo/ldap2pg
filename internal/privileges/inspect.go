@@ -22,7 +22,6 @@ func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset
 			continue
 		}
 
-		grant.Normalize()
 		// Special case: ignore database grants on unmanaged databases.
 		if "DATABASE" == grant.ACLName() {
 			_, exists := postgres.Databases[grant.Object]
@@ -105,7 +104,6 @@ func (i *inspector) iterGrants() chan Grant {
 				i.err = fmt.Errorf("bad row: %w", err)
 				return
 			}
-			grant.Database = i.database.Name
 
 			if "" != grant.Schema {
 				_, known := i.database.Schemas[grant.Schema]

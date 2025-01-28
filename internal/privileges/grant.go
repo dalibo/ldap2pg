@@ -39,10 +39,6 @@ func (g Grant) IsWildcard() bool {
 	return g.Type != ""
 }
 
-type normalizer interface {
-	Normalize(g *Grant)
-}
-
 var qArgRe = regexp.MustCompile(`<[a-z]+>`)
 
 // FormatQuery replaces placeholders in query
@@ -83,13 +79,6 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 	q.Query = s
 	q.QueryArgs = args
 	return
-}
-
-// Normalize ensures grant fields are consistent with privilege scope.
-//
-// This way grants from wanted state and from inspect are comparables.
-func (g *Grant) Normalize() {
-	g.ACL().Normalize(g)
 }
 
 func (g Grant) ACLName() string {

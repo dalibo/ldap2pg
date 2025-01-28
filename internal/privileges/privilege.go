@@ -1,5 +1,10 @@
 package privileges
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Privilege references a privilege type and an ACL
 //
 // Example: {Type: "CONNECT", To: "DATABASE"}
@@ -11,6 +16,13 @@ type Privilege struct {
 
 func (p Privilege) IsDefault() bool {
 	return "" != p.Default
+}
+
+func (p Privilege) ACL() string {
+	if p.IsDefault() {
+		return fmt.Sprintf("%s DEFAULT", strings.ToUpper(p.Default))
+	}
+	return p.On
 }
 
 func DuplicatePrivilege(yaml map[string]interface{}) (privileges []interface{}) {

@@ -23,9 +23,6 @@ func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 	return
 }
 
-func (globalDefaultACL) Normalize(_ *Grant) {
-}
-
 type schemaDefaultACL struct{}
 
 func (schemaDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -42,7 +39,4 @@ func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 		}
 	}
 	return
-}
-
-func (schemaDefaultACL) Normalize(_ *Grant) {
 }

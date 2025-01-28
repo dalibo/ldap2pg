@@ -33,15 +33,6 @@ func (instanceACL) Expand(g Grant, _ postgres.Database) (out []Grant) {
 	return
 }
 
-func (instanceACL) Normalize(g *Grant) {
-	// Grant rule sets Database instead of Object.
-	if "" == g.Object {
-		g.Object = g.Database
-	}
-	g.Database = ""
-	g.Schema = ""
-}
-
 // databaseACL handles privileges on databaseACL-wide objects.
 //
 // Like schema.
@@ -51,14 +42,6 @@ func (a databaseACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Object, &g.Grantee)
 	g.Target = a.object
 	return
-}
-
-func (databaseACL) Normalize(g *Grant) {
-	// Grant rule sets Schema instead of Object.
-	if "" == g.Object {
-		g.Object = g.Schema
-	}
-	g.Schema = ""
 }
 
 func (databaseACL) Expand(g Grant, database postgres.Database) (out []Grant) {
@@ -85,9 +68,6 @@ func (a schemaAllACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
 	g.Target = a.object
 	return
-}
-
-func (schemaAllACL) Normalize(_ *Grant) {
 }
 
 func (schemaAllACL) Expand(g Grant, database postgres.Database) (out []Grant) {
