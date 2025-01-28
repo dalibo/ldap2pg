@@ -24,10 +24,6 @@ func newInstanceACL(object, inspect, grant, revoke string) instanceACL {
 	}
 }
 
-func (instanceACL) IsGlobal() bool {
-	return true
-}
-
 func (a instanceACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
 	// GRANT $type ON $object TO $grantee;
@@ -99,10 +95,6 @@ func newDatabaseACL(object, inspect, grant, revoke string) databaseACL {
 	}
 }
 
-func (databaseACL) IsGlobal() bool {
-	return false
-}
-
 func (a databaseACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Object, &g.Grantee)
 	g.Target = a.object
@@ -170,10 +162,6 @@ func newSchemaACL(object, inspect, grant, revoke string) schemaACL {
 		grant:   grant,
 		revoke:  revoke,
 	}
-}
-
-func (schemaACL) IsGlobal() bool {
-	return false
 }
 
 func (a schemaACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {

@@ -90,7 +90,6 @@ func (i inspector) Err() error {
 //
 // e.g. datacl, nspacl, etc.
 type inspecter interface {
-	IsGlobal() bool
 	Inspect() string
 	RowTo(pgx.CollectableRow) (Grant, error)
 }

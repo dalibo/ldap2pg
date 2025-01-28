@@ -26,10 +26,6 @@ func (a globalDefaultACL) String() string {
 	return a.object
 }
 
-func (globalDefaultACL) IsGlobal() bool {
-	return false
-}
-
 func (globalDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	// column order comes from statement:
 	// ALTER DEFAULT PRIVILEGES FOR $owner GRANT $type ON $target TO $grantee;
@@ -80,10 +76,6 @@ func newSchemaDefaultACL(object, inspect, grant, revoke string) schemaDefaultACL
 		grant:   grant,
 		revoke:  revoke,
 	}
-}
-
-func (schemaDefaultACL) IsGlobal() bool {
-	return false
 }
 
 func (schemaDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
