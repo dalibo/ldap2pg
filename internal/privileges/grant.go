@@ -102,7 +102,7 @@ func (g Grant) ACLName() string {
 }
 
 func (g Grant) ACL() acl {
-	return acls[g.ACLName()]
+	return aclImplentations[g.ACLName()]
 }
 
 func (g Grant) String() string {
@@ -228,7 +228,7 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 // e.g.: instantiate a grant on all databases for each database.
 // Same for schemas and owners.
 func Expand(in []Grant, acl string, database postgres.Database) (out []Grant) {
-	e := acls[acl]
+	e := aclImplentations[acl]
 	for _, grant := range in {
 		if grant.ACLName() != acl {
 			continue

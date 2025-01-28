@@ -61,7 +61,8 @@ func (a ACL) Register() error {
 		return fmt.Errorf("revoke query is invalid")
 	}
 
-	acls[a.Name] = impl
+	acls[a.Name] = a
+	aclImplentations[a.Name] = impl
 	return nil
 }
 
@@ -100,8 +101,9 @@ type acl interface {
 	granter
 }
 
-// ACLs registry
-var acls map[string]acl
+// ACLs registries
+var acls = make(map[string]ACL)
+var aclImplentations map[string]acl = make(map[string]acl)
 
 // managedACLs registry
 //
@@ -116,14 +118,14 @@ var managedACLs = map[string][]string{}
 
 // SplitManagedACLs by scope
 func SplitManagedACLs() (instancesACLs, databaseACLs, defaultACLs []string) {
-	for object := range managedACLs {
-		switch acls[object].(type) {
-		case instanceACL:
-			instancesACLs = append(instancesACLs, object)
-		case globalDefaultACL, schemaDefaultACL:
-			defaultACLs = append(defaultACLs, object)
-		default:
-			databaseACLs = append(databaseACLs, object)
+	for n := range managedACLs {
+		acl := acls[n]
+		if strings.HasSuffix(n, " DEFAULT") {
+			defaultACLs = append(defaultACLs, n)
+		} else if acl.Scope == "instance" {
+			instancesACLs = append(instancesACLs, n)
+		} else {
+			databaseACLs = append(databaseACLs, n)
 		}
 	}
 	return

@@ -92,7 +92,7 @@ func (i *inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
-		acl := acls[i.acl]
+		acl := aclImplentations[i.acl]
 		types := managedACLs[i.acl]
 		slog.Debug("Inspecting grants.", "acl", i.acl, "database", i.database.Name)
 		pgconn, err := postgres.GetConn(i.ctx, i.database.Name)

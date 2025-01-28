@@ -26,8 +26,6 @@ var (
 
 func init() {
 	// ACLs
-	acls = make(map[string]acl)
-
 	g := `GRANT <privilege> ON <acl> <object> TO <grantee>;`
 	r := `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`
 
