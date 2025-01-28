@@ -1,6 +1,7 @@
 package privileges
 
 import (
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -216,13 +217,27 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 //
 // e.g.: instantiate a grant on all databases for each database.
 // Same for schemas and owners.
-func Expand(in []Grant, acl string, database postgres.Database) (out []Grant) {
-	e := aclImplentations[acl]
+func Expand(in []Grant, database postgres.Database) (out []Grant) {
 	for _, grant := range in {
-		if grant.ACLName() != acl {
-			continue
-		}
-		out = append(out, e.Expand(grant, database)...)
+		out = append(out, grant.ExpandDatabase(database.Name)...)
 	}
+
+	in = out
+	out = nil
+	schemas := maps.Keys(database.Schemas)
+	for _, grant := range in {
+		out = append(out, grant.ExpandSchemas(schemas)...)
+	}
+
+	in = out
+	out = nil
+	for _, grant := range in {
+		for _, expansion := range grant.ExpandOwners(database) {
+			out = append(out, expansion)
+			// Log full expansion.
+			slog.Debug("Wants grant.", "grant", expansion, "database", grant.Database)
+		}
+	}
+
 	return
 }

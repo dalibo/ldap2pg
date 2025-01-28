@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/normalize"
-	"github.com/dalibo/ldap2pg/internal/postgres"
 )
 
 // ACL holds an ACL definition.
@@ -102,7 +101,6 @@ func NormalizeACLs(yaml interface{}) (interface{}, error) {
 
 type acl interface {
 	inspecter
-	Expand(Grant, postgres.Database) []Grant
 }
 
 // ACLs registries

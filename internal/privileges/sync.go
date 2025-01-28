@@ -2,14 +2,13 @@ package privileges
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-func Sync(ctx context.Context, really bool, dbname, acl string, current, wanted []Grant) (int, error) {
-	wanted = Expand(wanted, acl, postgres.Databases[dbname])
+func Sync(ctx context.Context, really bool, dbname string, current, wanted []Grant) (int, error) {
+	wanted = Expand(wanted, postgres.Databases[dbname])
 	queries := diff(current, wanted)
 	return postgres.Apply(ctx, queries, really)
 }
@@ -53,7 +52,6 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 				continue
 			}
 
-			slog.Debug("Wants grant.", "grant", grant)
 			q := grant.FormatQuery(acls[grant.ACLName()].Grant)
 			q.Description = "Grant privileges."
 			q.Database = grant.Database

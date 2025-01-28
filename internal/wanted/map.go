@@ -112,7 +112,6 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 					continue
 				}
 				acl := grant.ACLName()
-				slog.Debug("Wants grant.", "grant", grant, "acl", acl)
 				grants[acl] = append(grants[acl], grant)
 			}
 		}
