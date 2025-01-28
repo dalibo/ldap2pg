@@ -9,8 +9,8 @@ type Privilege struct {
 	On      string // Object class (DATABASE, TABLES, etc)
 }
 
-func (r Privilege) IsDefault() bool {
-	return "" != r.Default
+func (p Privilege) IsDefault() bool {
+	return "" != p.Default
 }
 
 func DuplicatePrivilege(yaml map[string]interface{}) (privileges []interface{}) {
