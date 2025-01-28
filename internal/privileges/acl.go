@@ -1,8 +1,6 @@
 package privileges
 
 import (
-	"log/slog"
-
 	"github.com/dalibo/ldap2pg/internal/postgres"
 )
 
@@ -24,16 +22,6 @@ type ACL struct {
 //
 // Grant and Revoke queries may be generated from Name.
 func (a ACL) Register() {
-	if a.Grant == "" {
-		slog.Debug("Building GRANT query.", "acl", a.Name)
-		a.Grant = `GRANT %s ON ` + a.Name + ` %%s TO %%s;`
-	}
-
-	if a.Revoke == "" {
-		slog.Debug("Building REVOKE query.", "acl", a.Name)
-		a.Revoke = `REVOKE %s ON ` + a.Name + ` %%s FROM %%s;`
-	}
-
 	var impl acl
 
 	if "GLOBAL DEFAULT" == a.Name {
@@ -47,7 +35,7 @@ func (a ACL) Register() {
 	} else if a.Scope == "schema" {
 		impl = newSchemaAllACL(a.Name, a.Inspect, a.Grant, a.Revoke)
 	} else {
-		panic("unsupported acl scope")
+		panic("unsupported ACL scope")
 	}
 	acls[a.Name] = impl
 }

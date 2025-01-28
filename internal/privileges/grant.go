@@ -1,10 +1,12 @@
 package privileges
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -39,6 +41,48 @@ func (g Grant) IsWildcard() bool {
 
 type normalizer interface {
 	Normalize(g *Grant)
+}
+
+var qArgRe = regexp.MustCompile(`<[a-z]+>`)
+
+// FormatQuery replaces placeholders in query
+//
+// Replace keywords as-is prepare arguments for postgres.SyncQuery.
+//
+// A placeholder is an identifier wrapped in angle brackets. We use a custom format
+// to manage multi-stage formatting: keywords, then identifiers.
+//
+// Returns a SyncQuery with query and arguments.
+// SyncQuery is zero if a placeholder can't be replaced.
+func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
+	// Protect like patterns.
+	s = strings.ReplaceAll(s, "%", "%%")
+
+	// Replace keywords in query.
+	s = strings.ReplaceAll(s, "<privilege>", g.Type)
+	s = strings.ReplaceAll(s, "<acl>", g.Target)
+
+	var args []interface{}
+	for _, m := range qArgRe.FindAllString(s, -1) {
+		s = strings.Replace(s, m, "%s", 1)
+		switch m {
+		case "<database>":
+			args = append(args, pgx.Identifier{g.Database})
+		case "<grantee>":
+			args = append(args, pgx.Identifier{g.Grantee})
+		case "<object>":
+			args = append(args, pgx.Identifier{g.Object})
+		case "<owner>":
+			args = append(args, pgx.Identifier{g.Owner})
+		case "<schema>":
+			args = append(args, pgx.Identifier{g.Schema})
+		default:
+			return
+		}
+	}
+	q.Query = s
+	q.QueryArgs = args
+	return
 }
 
 // Normalize ensures grant fields are consistent with privilege scope.

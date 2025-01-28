@@ -28,30 +28,40 @@ func init() {
 	// ACLs
 	acls = make(map[string]acl)
 
+	g := `GRANT <privilege> ON <acl> <object> TO <grantee>;`
+	r := `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`
+
 	ACL{
 		Name:    "DATABASE",
 		Scope:   "instance",
 		Inspect: inspectDatabase,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
 
 	ACL{
 		Name:    "LANGUAGE",
 		Scope:   "instance",
 		Inspect: inspectLanguage,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
 
 	ACL{
 		Name:    "SCHEMA",
 		Scope:   "database",
 		Inspect: inspectSchema,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
+
 	ACL{
 		// implementation is chosed by name instead of scope.
 		Name:    "GLOBAL DEFAULT",
 		Scope:   "database",
 		Inspect: inspectGlobalDefault,
-		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
-		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> GRANT <privilege> ON <acl> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> REVOKE <privilege> ON <acl> FROM <grantee>;`,
 	}.Register()
 
 	ACL{
@@ -59,24 +69,33 @@ func init() {
 		Name:    "SCHEMA DEFAULT",
 		Scope:   "schema",
 		Inspect: inspectSchemaDefault,
-		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
-		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <acl> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <acl> FROM <grantee>;`,
 	}.Register()
+
+	g = `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
+	r = `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
 
 	ACL{
 		Name:    "ALL FUNCTIONS IN SCHEMA",
 		Scope:   "schema",
 		Inspect: inspectAllFunctions,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
 	ACL{
 		Name:    "ALL SEQUENCES IN SCHEMA",
 		Scope:   "schema",
 		Inspect: inspectAllSequences,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
 	ACL{
 		Name:    "ALL TABLES IN SCHEMA",
 		Scope:   "schema",
 		Inspect: inspectAllTables,
+		Grant:   g,
+		Revoke:  r,
 	}.Register()
 
 	// profiles
