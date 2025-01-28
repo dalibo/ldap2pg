@@ -33,7 +33,7 @@ func (g Grant) IsDefault() bool {
 	return g.Owner != ""
 }
 
-func (g Grant) IsRelevant() bool {
+func (g Grant) IsWildcard() bool {
 	return g.Type != ""
 }
 

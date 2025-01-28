@@ -55,10 +55,10 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 
 			// Test if a GRANT ON ALL ... IN SCHEMA is irrelevant.
 			// To avoid regranting each run.
-			irrelevantGrant := grant
-			irrelevantGrant.Grantee = "public"
-			irrelevantGrant.Type = ""
-			if currentSet.Contains(irrelevantGrant) {
+			wildcardGrant := grant
+			wildcardGrant.Grantee = "public"
+			wildcardGrant.Type = ""
+			if currentSet.Contains(wildcardGrant) {
 				continue
 			}
 

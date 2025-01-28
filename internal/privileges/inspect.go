@@ -15,7 +15,8 @@ func InspectGrants(ctx context.Context, db postgres.Database, acl string, roles 
 	inspector := newInspector(db, acl)
 	for inspector.Run(ctx); inspector.Next(); {
 		grant := inspector.Grant()
-		if grant.IsRelevant() && !roles.Contains(grant.Grantee) {
+		// Drop wildcard on public if public is not managed.
+		if grant.IsWildcard() && !roles.Contains(grant.Grantee) {
 			continue
 		}
 		if grant.IsDefault() && !roles.Contains(grant.Owner) {
