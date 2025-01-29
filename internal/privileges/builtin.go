@@ -43,12 +43,36 @@ func init() {
 		Revoke:  `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`,
 	}.MustRegister()
 
+	g := `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
+	r := `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
+
 	ACL{
 		Name:    "SCHEMA",
 		Scope:   "database",
 		Inspect: inspectSchema,
-		Grant:   `GRANT <privilege> ON <acl> <schema> TO <grantee>;`,
-		Revoke:  `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL FUNCTIONS IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllFunctions,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL SEQUENCES IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllSequences,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL TABLES IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllTables,
+		Grant:   g,
+		Revoke:  r,
 	}.MustRegister()
 
 	ACL{
@@ -66,31 +90,6 @@ func init() {
 		Inspect: inspectSchemaDefault,
 		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <object> TO <grantee>;`,
 		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <object> FROM <grantee>;`,
-	}.MustRegister()
-
-	g := `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
-	r := `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
-
-	ACL{
-		Name:    "ALL FUNCTIONS IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllFunctions,
-		Grant:   g,
-		Revoke:  r,
-	}.MustRegister()
-	ACL{
-		Name:    "ALL SEQUENCES IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllSequences,
-		Grant:   g,
-		Revoke:  r,
-	}.MustRegister()
-	ACL{
-		Name:    "ALL TABLES IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllTables,
-		Grant:   g,
-		Revoke:  r,
 	}.MustRegister()
 
 	// profiles

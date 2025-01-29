@@ -40,8 +40,6 @@ func (a ACL) Register() error {
 		a.rowTo = rowToInstanceGrant
 	} else if "database" == a.Scope {
 		a.rowTo = rowToDatabaseGrant
-	} else if a.Scope == "schema" {
-		a.rowTo = rowToAllInSchemaGrant
 	} else {
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
@@ -126,11 +124,6 @@ func rowToInstanceGrant(r pgx.Row) (g Grant, err error) {
 }
 
 func rowToDatabaseGrant(r pgx.Row) (g Grant, err error) {
-	err = r.Scan(&g.Type, &g.Object, &g.Grantee)
-	return
-}
-
-func rowToAllInSchemaGrant(r pgx.Row) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Object, &g.Grantee, &g.Partial)
 	return
 }
