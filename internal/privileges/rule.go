@@ -129,7 +129,7 @@ func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
 			for _, priv := range profiles[profile] {
 				acl := acls[priv.ACL()]
 				grant := Grant{
-					Target:  priv.On,
+					ACL:     priv.On,
 					Grantee: r.To.Format(values),
 					Type:    priv.Type,
 				}

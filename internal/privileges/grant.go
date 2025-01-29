@@ -15,16 +15,16 @@ import (
 // Grant holds privilege informations from Postgres inspection or Grant rule.
 //
 // Not to confuse with Privilege. A Grant references an object, a role and a
-// privilege via the Target field. It's somewhat like aclitem object in
+// privilege via the Type field. It's somewhat like aclitem object in
 // PostgreSQL.
 //
 // When Owner is non-zero, the grant represent a default privilege grant. The
-// meansing of Object field change to hold the privilege class : TABLES,
+// meaning of Object field changes to hold the privilege class : TABLES,
 // SEQUENCES, etc. instead of the name of an object.
 type Grant struct {
 	Owner    string // For default privileges. Empty otherwise.
 	Grantee  string
-	Target   string // Name of the referenced ACL: DATABASE, TABLES, etc.
+	ACL      string // Name of the referenced ACL: DATABASE, TABLES, etc.
 	Type     string // Privilege type (USAGE, SELECT, etc.)
 	Database string // "" for instance grant.
 	Schema   string // "" for database grant.
@@ -57,7 +57,7 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 
 	// Replace keywords in query.
 	s = strings.ReplaceAll(s, "<privilege>", g.Type)
-	s = strings.ReplaceAll(s, "<acl>", g.Target)
+	s = strings.ReplaceAll(s, "<acl>", g.ACL)
 	if strings.Contains(s, "<owner>") {
 		// default privileges are by design on keywords like TABLES, not identiers.
 		s = strings.ReplaceAll(s, "<object>", g.Object)
@@ -114,7 +114,7 @@ func (g Grant) String() string {
 	if g.Owner != "" {
 		b.WriteString(g.Object)
 	} else {
-		b.WriteString(g.Target)
+		b.WriteString(g.ACL)
 		b.WriteByte(' ')
 		o := strings.Builder{}
 		if g.Database != "" && g.Schema == "" && g.Object == "" {

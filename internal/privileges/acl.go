@@ -47,7 +47,7 @@ func (a ACL) Register() error {
 	}
 
 	g := Grant{
-		Target:   a.Name,
+		ACL:      a.Name,
 		Type:     "PRIV",
 		Grantee:  "_grantee_",
 		Owner:    "_owner_",
@@ -82,8 +82,8 @@ func (a ACL) Uses(k string) bool {
 func (a ACL) RowTo(r pgx.Row) (Grant, error) {
 	g, err := a.rowTo(r)
 
-	if g.Target == "" {
-		g.Target = a.Name
+	if g.ACL == "" {
+		g.ACL = a.Name
 	}
 
 	if a.Uses("object") {
