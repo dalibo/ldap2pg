@@ -44,7 +44,7 @@ var qArgRe = regexp.MustCompile(`<[a-z]+>`)
 
 // FormatQuery replaces placeholders in query
 //
-// Replace keywords as-is prepare arguments for postgres.SyncQuery.
+// Replace keywords as-is, prepare arguments for postgres.SyncQuery.
 //
 // A placeholder is an identifier wrapped in angle brackets. We use a custom format
 // to manage multi-stage formatting: keywords, then identifiers.
@@ -58,6 +58,10 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 	// Replace keywords in query.
 	s = strings.ReplaceAll(s, "<privilege>", g.Type)
 	s = strings.ReplaceAll(s, "<acl>", g.Target)
+	if strings.Contains(s, "<owner>") {
+		// default privileges are by design on keywords like TABLES, not identiers.
+		s = strings.ReplaceAll(s, "<object>", g.Object)
+	}
 
 	var args []interface{}
 	for _, m := range qArgRe.FindAllString(s, -1) {
@@ -82,20 +86,12 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 	return
 }
 
-func (g Grant) ACLName() string {
-	if !g.IsDefault() {
-		return g.Target
-	} else if g.Schema == "" {
-		return "GLOBAL DEFAULT"
-	}
-	return "SCHEMA DEFAULT"
-}
-
 func (g Grant) String() string {
 	b := strings.Builder{}
 	if g.Partial {
 		b.WriteString("PARTIAL ")
 	}
+
 	if g.Owner != "" {
 		if g.Schema == "" {
 			b.WriteString("GLOBAL ")
@@ -108,14 +104,17 @@ func (g Grant) String() string {
 		}
 		b.WriteByte(' ')
 	}
+
 	if g.Type == "" {
 		b.WriteString("ANY")
 	} else {
 		b.WriteString(g.Type)
 	}
 	b.WriteString(" ON ")
-	b.WriteString(g.Target)
-	if g.Owner == "" {
+	if g.Owner != "" {
+		b.WriteString(g.Object)
+	} else {
+		b.WriteString(g.Target)
 		b.WriteByte(' ')
 		o := strings.Builder{}
 		if g.Database != "" && g.Schema == "" && g.Object == "" {

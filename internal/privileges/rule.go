@@ -55,14 +55,10 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 	if err != nil {
 		return
 	}
-	err = normalize.Alias(yamlMap, "objects", "object")
-	if err != nil {
-		return
-	}
 
 	maps.Copy(rule, yamlMap)
 
-	keys := []string{"owners", "privileges", "databases", "schemas", "roles", "objects"}
+	keys := []string{"owners", "privileges", "databases", "schemas", "roles"}
 	for _, k := range keys {
 		rule[k], err = normalize.StringList(rule[k])
 		if err != nil {
@@ -75,7 +71,7 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 
 // DuplicateGrantRules split plurals for mapstructure
 func DuplicateGrantRules(yaml map[string]interface{}) (rules []interface{}) {
-	keys := []string{"owners", "databases", "schemas", "roles", "objects", "privileges"}
+	keys := []string{"owners", "databases", "schemas", "roles", "privileges"}
 	keys = lists.Filter(keys, func(s string) bool {
 		return len(yaml[s].([]string)) > 0
 	})
@@ -101,7 +97,6 @@ type GrantRule struct {
 	Privilege pyfmt.Format
 	Database  pyfmt.Format
 	Schema    pyfmt.Format
-	Object    pyfmt.Format
 	To        pyfmt.Format `mapstructure:"role"`
 }
 
@@ -110,7 +105,7 @@ func (r GrantRule) IsStatic() bool {
 }
 
 func (r GrantRule) Formats() []pyfmt.Format {
-	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To}
+	return []pyfmt.Format{r.Owner, r.Privilege, r.Database, r.Schema, r.To}
 }
 
 func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
@@ -126,7 +121,7 @@ func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
 			close(vchanw)
 			vchan = vchanw
 		} else {
-			vchan = results.GenerateValues(r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To)
+			vchan = results.GenerateValues(r.Owner, r.Privilege, r.Database, r.Schema, r.To)
 		}
 
 		for values := range vchan {
@@ -145,6 +140,10 @@ func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
 
 				if acl.Uses("schema") {
 					grant.Schema = r.Schema.Format(values)
+				}
+
+				if acl.Uses("object") {
+					grant.Object = priv.Object
 				}
 
 				if acl.Scope != "instance" || acl.Uses("database") {

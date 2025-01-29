@@ -217,21 +217,19 @@ privileges:
 A privilege profile whose name starts with `_` is inactive unless included in an active profile.
 
 
-### `default` { #privileges-default }
+### `object` { #privileges-object }
 
-Defines the scope of default privileges.
-Can be undefined or either `global` or `schema`.
-`global` scope references default privileges for any schemas,
-including future schemas.
-`schema` scope references default privileges on specific schemas.
-Target schema is defined by [grant rule].
+Defines the target object for object-grained ACL.
+Actually useful only for `GLOBAL DEFAULT` and `SCHEMA DEFAULT` ACL
+where the object is the target object class like `TABLES`, `SEQUENCES`, etc.
+[grant rule] defines target schema for `SCHEMA DEFAULT`.
 
 ``` yaml
 privileges:
   reading:
-  - default: global
-    type: SELECT
-    on: TABLES
+  - type: SELECT
+    on: GLOBAL DEFAULT
+    object: TABLES
 ```
 
 

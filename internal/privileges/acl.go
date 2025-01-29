@@ -106,15 +106,15 @@ func (a ACL) RowTo(r pgx.Row) (Grant, error) {
 
 func rowToGlobalDefaultGrant(r pgx.Row) (g Grant, err error) {
 	// column order comes from statement:
-	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <target> TO <grantee>;
-	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Grantee)
+	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <object> TO <grantee>;
+	err = r.Scan(&g.Owner, &g.Type, &g.Object, &g.Grantee)
 	return
 }
 
 func rowToSchemaDefaultGrant(r pgx.Row) (g Grant, err error) {
 	// column order comes from statement:
-	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <object> IN <schema> TO <grantee>;
-	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Schema, &g.Grantee)
+	// ALTER DEFAULT PRIVILEGES FOR <owner> IN <schema> GRANT <type> ON <object> TO <grantee>;
+	err = r.Scan(&g.Owner, &g.Schema, &g.Type, &g.Object, &g.Grantee)
 	return
 }
 

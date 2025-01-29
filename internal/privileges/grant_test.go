@@ -37,16 +37,18 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `SELECT ON TABLE public.table1 TO public`, g.String())
 
 	g = privileges.Grant{
-		Target: "TABLES",
+		Target: "GLOBAL DEFAULT",
 		Owner:  "postgres",
 		Type:   "SELECT",
+		Object: "TABLES",
 	}
 	r.Equal(t, `GLOBAL DEFAULT FOR postgres SELECT ON TABLES`, g.String())
 
 	g = privileges.Grant{
-		Target: "TABLES",
+		Target: "SCHEMA DEFAULT",
 		Owner:  "postgres",
 		Type:   "SELECT",
+		Object: "TABLES",
 		Schema: "public",
 	}
 	r.Equal(t, `DEFAULT FOR postgres IN SCHEMA public SELECT ON TABLES`, g.String())

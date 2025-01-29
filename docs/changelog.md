@@ -23,6 +23,8 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Use `LDAPPASSWORD_FILE` env var to store the path to the ldap password file.
 - Accept the `-y` CLI option to specify the path to the ldap password file.
 - Make known RDNs customizable in ldap2pg configuration.
+- Dropped privileges `default` field in config. Compatibility is assured.
+- Added `object` to privilege definition.
 
 
 # ldap2pg 6.2
