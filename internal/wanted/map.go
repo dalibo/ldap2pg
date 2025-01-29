@@ -48,11 +48,6 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 	var errList []error
 	var ldapc ldap.Client
 	if m.HasLDAPSearches() {
-		err := ldap.Initialize()
-		if err != nil {
-			return nil, nil, err
-		}
-
 		ldapc, err = ldap.Connect()
 		if err != nil {
 			return nil, nil, err

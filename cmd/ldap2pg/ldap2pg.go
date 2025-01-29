@@ -19,6 +19,7 @@ import (
 	"github.com/dalibo/ldap2pg/internal/config"
 	"github.com/dalibo/ldap2pg/internal/errorlist"
 	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/role"
@@ -274,6 +275,17 @@ func configure() (controller Controller, c config.Config, err error) {
 	}
 
 	err = postgres.Configure(controller.Dsn)
+	if err != nil {
+		return
+	}
+
+	if c.Rules.HasLDAPSearches() {
+		err = ldap.Initialize()
+		if err != nil {
+			return
+		}
+	}
+
 	return
 }
 

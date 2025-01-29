@@ -61,6 +61,7 @@ func loadEnvAndFlags() {
 	pflag.BoolP("version", "V", false, "Show version and exit.")
 	pflag.CountP("quiet", "q", "Decrease log verbosity.")
 	pflag.CountP("verbose", "v", "Increase log verbosity.")
+	pflag.StringP("ldappassword-file", "y", "", "Path to LDAP password file.")
 	pflag.Parse()
 
 	// posflag.Provider does not return error.
