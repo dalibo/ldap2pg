@@ -18,7 +18,7 @@ func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset
 		if grant.IsWildcard() && !roles.Contains(grant.Grantee) {
 			continue
 		}
-		if grant.IsDefault() && !roles.Contains(grant.Owner) {
+		if grant.Owner != "" && !roles.Contains(grant.Owner) {
 			continue
 		}
 

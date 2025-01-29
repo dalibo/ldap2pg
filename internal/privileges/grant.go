@@ -32,10 +32,6 @@ type Grant struct {
 	Partial  bool   // Used for ALL TABLES permissions.
 }
 
-func (g Grant) IsDefault() bool {
-	return g.Owner != ""
-}
-
 func (g Grant) IsWildcard() bool {
 	return g.Type != ""
 }
