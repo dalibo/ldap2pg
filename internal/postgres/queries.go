@@ -20,6 +20,10 @@ type SyncQuery struct {
 	QueryArgs   []interface{}
 }
 
+func (q SyncQuery) IsZero() bool {
+	return q.Query == ""
+}
+
 func (q SyncQuery) String() string {
 	return q.Description
 }

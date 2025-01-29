@@ -28,23 +28,74 @@ func init() {
 	// ACLs
 	acls = make(map[string]acl)
 
-	registerACL("instance", "DATABASE", inspectDatabase)
-	registerACL("instance", "LANGUAGE", inspectLanguage)
+	g := `GRANT <privilege> ON <acl> <object> TO <grantee>;`
+	r := `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`
 
-	registerACL("database", "SCHEMA", inspectSchema)
-	registerACL(
-		"database", "GLOBAL DEFAULT", inspectGlobalDefault,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s GRANT %s ON %s TO %%s;`,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s REVOKE %s ON %s FROM %%s;`,
-	)
-	registerACL(
-		"schema", "SCHEMA DEFAULT", inspectSchemaDefault,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s GRANT %s ON %s TO %%s;`,
-		`ALTER DEFAULT PRIVILEGES FOR ROLE %%s IN SCHEMA %%s REVOKE %s ON %s FROM %%s;`,
-	)
-	registerACL("schema", "ALL FUNCTIONS IN SCHEMA", inspectAllFunctions)
-	registerACL("schema", "ALL SEQUENCES IN SCHEMA", inspectAllSequences)
-	registerACL("schema", "ALL TABLES IN SCHEMA", inspectAllTables)
+	ACL{
+		Name:    "DATABASE",
+		Scope:   "instance",
+		Inspect: inspectDatabase,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+
+	ACL{
+		Name:    "LANGUAGE",
+		Scope:   "instance",
+		Inspect: inspectLanguage,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+
+	ACL{
+		Name:    "SCHEMA",
+		Scope:   "database",
+		Inspect: inspectSchema,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+
+	ACL{
+		// implementation is chosed by name instead of scope.
+		Name:    "GLOBAL DEFAULT",
+		Scope:   "database",
+		Inspect: inspectGlobalDefault,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> GRANT <privilege> ON <acl> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> REVOKE <privilege> ON <acl> FROM <grantee>;`,
+	}.MustRegister()
+	ACL{
+		// implementation is chosed by name instead of scope.
+		Name:    "SCHEMA DEFAULT",
+		Scope:   "schema",
+		Inspect: inspectSchemaDefault,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <acl> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <acl> FROM <grantee>;`,
+	}.MustRegister()
+
+	g = `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
+	r = `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
+
+	ACL{
+		Name:    "ALL FUNCTIONS IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllFunctions,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL SEQUENCES IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllSequences,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL TABLES IN SCHEMA",
+		Scope:   "schema",
+		Inspect: inspectAllTables,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
 
 	// profiles
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")
@@ -76,9 +127,6 @@ var BuiltinsProfiles = map[string]interface{}{
 		"__create_on_schemas__",
 		"__usage_on_schemas__",
 	},
-}
-
-func init() {
 }
 
 // registerRelationBuiltinProfile generates dunder privileges profiles and privilege groups.

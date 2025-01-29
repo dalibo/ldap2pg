@@ -66,7 +66,7 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 		if item.Description != "" {
 			slog.Info(item.Description)
 		} else {
-			slog.Debug(fmt.Sprintf("Processing sync map item %d.", i))
+			slog.Debug("Processing sync map item.", "item", i)
 		}
 
 		for res := range item.search(ldapc) {

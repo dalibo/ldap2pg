@@ -143,3 +143,37 @@ func TestExpandSchema(t *testing.T) {
 	r.Equal(t, "nsp0", grants[0].Schema)
 	r.Equal(t, "nsp1", grants[1].Schema)
 }
+
+func TestFormatQuery(t *testing.T) {
+	g := privileges.Grant{
+		Target:   "DATABASE",
+		Type:     "CONNECT",
+		Grantee:  "public",
+		Database: "template1",
+		Object:   "object",
+		Schema:   "nsp",
+	}
+
+	q := g.FormatQuery(`GRANT <privilege> ON <acl> <database> TO <grantee>;`)
+	r.Equal(t, `GRANT CONNECT ON DATABASE %s TO %s;`, q.Query)
+	r.Len(t, q.QueryArgs, 2)
+
+	q = g.FormatQuery(`REVOKE <privilege> ON <acl> <schema>.<object> TO <grantee>;`)
+	r.Equal(t, `REVOKE CONNECT ON DATABASE %s.%s TO %s;`, q.Query)
+	r.Len(t, q.QueryArgs, 3)
+}
+
+func TestFormatDefaultQuery(t *testing.T) {
+	g := privileges.Grant{
+		Owner:    "alice",
+		Target:   "TABLES",
+		Type:     "SELECT",
+		Grantee:  "public",
+		Database: "template1",
+		Schema:   "nsp",
+	}
+
+	q := g.FormatQuery(`ADP FOR <owner> IN SCHEMA <schema> GRANT <privilege> ON <acl> TO <grantee>;`)
+	r.Equal(t, `ADP FOR %s IN SCHEMA %s GRANT SELECT ON TABLES TO %s;`, q.Query)
+	r.Len(t, q.QueryArgs, 3)
+}

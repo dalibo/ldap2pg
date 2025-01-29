@@ -33,3 +33,11 @@ CREATE DATABASE "extra0" WITH OWNER "extra";
 CREATE ROLE "damien" SUPERUSER IN ROLE "ldap_roles";
 CREATE DATABASE "extra1" WITH OWNER "damien";
 EOSQL
+
+PGUSER=postgres PGDATABASE=extra0 "${psql[@]}" <<'EOSQL'
+CREATE FUNCTION get_random() RETURNS integer AS $$
+BEGIN
+  RETURN 4; -- chosen by fair dice roll.
+END;
+$$ LANGUAGE plpgsql;
+EOSQL

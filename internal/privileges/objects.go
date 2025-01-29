@@ -1,8 +1,6 @@
 package privileges
 
 import (
-	"fmt"
-
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
@@ -22,10 +20,6 @@ func newInstanceACL(object, inspect, grant, revoke string) instanceACL {
 		grant:   grant,
 		revoke:  revoke,
 	}
-}
-
-func (instanceACL) IsGlobal() bool {
-	return true
 }
 
 func (a instanceACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -67,20 +61,12 @@ func (instanceACL) Normalize(g *Grant) {
 	g.Schema = ""
 }
 
-func (a instanceACL) Grant(g Grant) (q postgres.SyncQuery) {
-	// GRANT {type} ON ...
-	q.Query = fmt.Sprintf(a.grant, g.Type)
-	// GRANT ... ON ... {object} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
-	return
+func (a instanceACL) Grant(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.grant)
 }
 
-func (a instanceACL) Revoke(g Grant) (q postgres.SyncQuery) {
-	// REVOKE {type} ON ...
-	q.Query = fmt.Sprintf(a.revoke, g.Type)
-	// REVOKE ... ON ... {object} ... FROM {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
-	return
+func (a instanceACL) Revoke(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.revoke)
 }
 
 // databaseACL handles privileges on databaseACL-wide objects.
@@ -97,10 +83,6 @@ func newDatabaseACL(object, inspect, grant, revoke string) databaseACL {
 		grant:   grant,
 		revoke:  revoke,
 	}
-}
-
-func (databaseACL) IsGlobal() bool {
-	return false
 }
 
 func (a databaseACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -140,31 +122,23 @@ func (databaseACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	return
 }
 
-func (a databaseACL) Grant(g Grant) (q postgres.SyncQuery) {
-	// GRANT {type} ON ...
-	q.Query = fmt.Sprintf(a.grant, g.Type)
-	// GRANT ... ON ... {object} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
-	return
+func (a databaseACL) Grant(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.grant)
 }
 
-func (a databaseACL) Revoke(g Grant) (q postgres.SyncQuery) {
-	// REVOKE {type} ON ALL ...
-	q.Query = fmt.Sprintf(a.revoke, g.Type)
-	// REVOKE ... ON ... {object} ... FROM {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Object}, pgx.Identifier{g.Grantee})
-	return
+func (a databaseACL) Revoke(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.revoke)
 }
 
-// schemaACL holds privileges on schemaACL objects in a schema.
+// schemaAllACL holds privileges on ALL objects in a schema.
 //
 // Like tables, sequences, etc.
-type schemaACL struct {
+type schemaAllACL struct {
 	object, inspect, grant, revoke string
 }
 
-func newSchemaACL(object, inspect, grant, revoke string) schemaACL {
-	return schemaACL{
+func newSchemaAllACL(object, inspect, grant, revoke string) schemaAllACL {
+	return schemaAllACL{
 		object:  object,
 		inspect: inspect,
 		grant:   grant,
@@ -172,46 +146,34 @@ func newSchemaACL(object, inspect, grant, revoke string) schemaACL {
 	}
 }
 
-func (schemaACL) IsGlobal() bool {
-	return false
-}
-
-func (a schemaACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
+func (a schemaAllACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Schema, &g.Grantee, &g.Partial)
 	g.Target = a.object
 	return
 }
 
-func (a schemaACL) String() string {
+func (a schemaAllACL) String() string {
 	return a.object
 }
 
-func (a schemaACL) Inspect() string {
+func (a schemaAllACL) Inspect() string {
 	return a.inspect
 }
 
-func (schemaACL) Normalize(_ *Grant) {
+func (schemaAllACL) Normalize(_ *Grant) {
 }
 
-func (schemaACL) Expand(g Grant, database postgres.Database) (out []Grant) {
+func (schemaAllACL) Expand(g Grant, database postgres.Database) (out []Grant) {
 	for _, g := range g.ExpandDatabase(database.Name) {
 		out = append(out, g.ExpandSchemas(maps.Keys(database.Schemas))...)
 	}
 	return
 }
 
-func (a schemaACL) Grant(g Grant) (q postgres.SyncQuery) {
-	// GRANT {type} ON ALL ...
-	q.Query = fmt.Sprintf(a.grant, g.Type)
-	// GRANT ... ON ALL ... IN SCHEMA {schema} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
-	return
+func (a schemaAllACL) Grant(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.grant)
 }
 
-func (a schemaACL) Revoke(g Grant) (q postgres.SyncQuery) {
-	// REVOKE {type} ON ALL ...
-	q.Query = fmt.Sprintf(a.revoke, g.Type)
-	// REVOKE ... ON ... IN SCHEMA {schema} ... FROM {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
-	return
+func (a schemaAllACL) Revoke(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.revoke)
 }

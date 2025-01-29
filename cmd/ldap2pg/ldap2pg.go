@@ -81,7 +81,6 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	privileges.RegisterProfiles(conf.Postgres.PrivilegesProfiles)
 	wantedRoles, wantedGrants, err := conf.Rules.Run(instance.RolesBlacklist)
 	if err != nil {
 		return
@@ -251,6 +250,11 @@ func configure() (controller Controller, c config.Config, err error) {
 
 	if controller.SkipPrivileges {
 		c.DropPrivileges()
+	} else {
+		err = c.RegisterPrivileges()
+		if err != nil {
+			return
+		}
 	}
 
 	envpath := config.FindDotEnvFile(configPath)
@@ -279,7 +283,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 	var errs []error
 	// synchronize ACL one at a time
 	for _, acl := range acls {
-		currentGrants, err := privileges.InspectGrants(ctx, postgres.Databases[dbname], acl, roles)
+		currentGrants, err := privileges.Inspect(ctx, postgres.Databases[dbname], acl, roles)
 		if err != nil {
 			slog.Error("Failed to inspect privileges.", "acl", acl, "database", dbname, "err", err)
 			errs = append(errs, fmt.Errorf("inspect: %w", err))

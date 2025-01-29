@@ -2,8 +2,6 @@
 package privileges
 
 import (
-	"fmt"
-
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/maps"
@@ -24,10 +22,6 @@ func newGlobalDefault(object, inspect, grant, revoke string) globalDefaultACL {
 
 func (a globalDefaultACL) String() string {
 	return a.object
-}
-
-func (globalDefaultACL) IsGlobal() bool {
-	return false
 }
 
 func (globalDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -51,22 +45,12 @@ func (globalDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 func (globalDefaultACL) Normalize(_ *Grant) {
 }
 
-func (a globalDefaultACL) Grant(g Grant) (q postgres.SyncQuery) {
-	// ALTER DEFAULT PRIVILEGES ... [GRANT|REVOKE] {type} ON {target} ...
-	// Unlike regular privileges, object is a keyword parameterized by grant.
-	q.Query = fmt.Sprintf(a.grant, g.Type, g.Target)
-	// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner}, pgx.Identifier{g.Grantee})
-	return
+func (a globalDefaultACL) Grant(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.grant)
 }
 
-func (a globalDefaultACL) Revoke(g Grant) (q postgres.SyncQuery) {
-	// ALTER DEFAULT PRIVILEGES ... [GRANT|REVOKE] {type} ON {target} ...
-	// Unlike regular privileges, object is a keyword parameterized by grant.
-	q.Query = fmt.Sprintf(a.revoke, g.Type, g.Target)
-	// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner}, pgx.Identifier{g.Grantee})
-	return
+func (a globalDefaultACL) Revoke(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.revoke)
 }
 
 type schemaDefaultACL struct {
@@ -80,10 +64,6 @@ func newSchemaDefaultACL(object, inspect, grant, revoke string) schemaDefaultACL
 		grant:   grant,
 		revoke:  revoke,
 	}
-}
-
-func (schemaDefaultACL) IsGlobal() bool {
-	return false
 }
 
 func (schemaDefaultACL) RowTo(r pgx.CollectableRow) (g Grant, err error) {
@@ -113,20 +93,10 @@ func (schemaDefaultACL) Expand(g Grant, database postgres.Database) (out []Grant
 func (schemaDefaultACL) Normalize(_ *Grant) {
 }
 
-func (a schemaDefaultACL) Grant(g Grant) (q postgres.SyncQuery) {
-	// ALTER DEFAULT PRIVILEGES ... GRANT {type} ON {object} ...
-	// Unlike regular privileges, object is a keyword parameterized by grant.
-	q.Query = fmt.Sprintf(a.grant, g.Type, g.Target)
-	// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} ... IN SCHEMA {schema} ... TO {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner}, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
-	return
+func (a schemaDefaultACL) Grant(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.grant)
 }
 
-func (a schemaDefaultACL) Revoke(g Grant) (q postgres.SyncQuery) {
-	// ALTER DEFAULT PRIVILEGES ... REVOKE {type} ON {object} ...
-	// Unlike regular privileges, object is a keyword parameterized by grant.
-	q.Query = fmt.Sprintf(a.revoke, g.Type, g.Target)
-	// ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} ... FROM {grantee}
-	q.QueryArgs = append(q.QueryArgs, pgx.Identifier{g.Owner}, pgx.Identifier{g.Schema}, pgx.Identifier{g.Grantee})
-	return
+func (a schemaDefaultACL) Revoke(g Grant) postgres.SyncQuery {
+	return g.FormatQuery(a.revoke)
 }

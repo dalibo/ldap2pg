@@ -59,22 +59,6 @@ func TestBuiltinPrivilege(t *testing.T) {
 	r.Len(ro, 3)
 }
 
-func TestUnknownACL(t *testing.T) {
-	r := require.New(t)
-
-	rawYaml := strings.TrimSpace(dedent.Dedent(`
-	rewinder:
-	- type: EXECUTE
-	  on: function pg_catalog.pg_ls_dir(text, boolean, boolean)
-	`))
-	var raw interface{}
-	err := yaml.Unmarshal([]byte(rawYaml), &raw)
-	r.Nil(err, rawYaml)
-
-	_, err = privileges.NormalizeProfiles(raw)
-	r.ErrorContains(err, "unknown ACL")
-}
-
 func TestPrivilegeTypes(t *testing.T) {
 	r := require.New(t)
 

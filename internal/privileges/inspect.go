@@ -10,12 +10,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// InspectGrants returns ACL items from Postgres instance.
-func InspectGrants(ctx context.Context, db postgres.Database, acl string, roles mapset.Set[string]) (out []Grant, err error) {
-	inspector := newInspector(db, acl)
+// Inspect returns ACL items from Postgres instance.
+func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset.Set[string]) (out []Grant, err error) {
+	inspector := inspector{database: db, acl: acl}
 	for inspector.Run(ctx); inspector.Next(); {
 		grant := inspector.Grant()
-		if grant.IsRelevant() && !roles.Contains(grant.Grantee) {
+		// Drop wildcard on public if public is not managed.
+		if grant.IsWildcard() && !roles.Contains(grant.Grantee) {
 			continue
 		}
 		if grant.IsDefault() && !roles.Contains(grant.Owner) {
@@ -51,13 +52,6 @@ type inspector struct {
 	grant     Grant
 }
 
-func newInspector(database postgres.Database, acl string) inspector {
-	return inspector{
-		database: database,
-		acl:      acl,
-	}
-}
-
 func (i *inspector) Run(ctx context.Context) {
 	i.ctx = ctx
 	i.grantChan = i.iterGrants()
@@ -90,7 +84,6 @@ func (i inspector) Err() error {
 //
 // e.g. datacl, nspacl, etc.
 type inspecter interface {
-	IsGlobal() bool
 	Inspect() string
 	RowTo(pgx.CollectableRow) (Grant, error)
 }
