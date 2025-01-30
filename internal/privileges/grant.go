@@ -110,7 +110,7 @@ func (g Grant) String() string {
 	if g.Partial {
 		b.WriteString("PARTIAL ")
 	}
-	if g.IsDefault() {
+	if g.Owner != "" {
 		if g.Schema == "" {
 			b.WriteString("GLOBAL ")
 		}
@@ -129,21 +129,19 @@ func (g Grant) String() string {
 	}
 	b.WriteString(" ON ")
 	b.WriteString(g.Target)
-	if !g.IsDefault() {
+	if g.Owner == "" {
 		b.WriteByte(' ')
 		o := strings.Builder{}
-		o.WriteString(g.Database)
-		if g.Schema != "" {
-			if o.Len() > 0 {
-				o.WriteByte('.')
-			}
+		if g.Database != "" && g.Schema == "" && g.Object == "" {
+			o.WriteString(g.Database)
+		} else {
 			o.WriteString(g.Schema)
-		}
-		if g.Object != "" {
-			if o.Len() > 0 {
-				o.WriteByte('.')
+			if g.Object != "" {
+				if o.Len() > 0 {
+					o.WriteByte('.')
+				}
+				o.WriteString(g.Object)
 			}
-			o.WriteString(g.Object)
 		}
 		b.WriteString(o.String())
 	}

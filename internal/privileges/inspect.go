@@ -32,7 +32,7 @@ func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset
 			}
 		}
 
-		slog.Debug("Found grant in Postgres instance.", "grant", grant)
+		slog.Debug("Found grant in Postgres instance.", "grant", grant, "database", grant.Database)
 		out = append(out, grant)
 	}
 	err = inspector.Err()
