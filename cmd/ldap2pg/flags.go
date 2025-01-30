@@ -65,7 +65,7 @@ func loadEnvAndFlags() {
 	pflag.Parse()
 
 	// posflag.Provider does not return error.
-	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, ".", k, func(f *pflag.Flag) (string, interface{}) {
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, interface{}) {
 		// remove hyphen from e.g. skip-privileges.
 		key := strings.ReplaceAll(f.Name, "-", "")
 		return key, posflag.FlagVal(pflag.CommandLine, f)

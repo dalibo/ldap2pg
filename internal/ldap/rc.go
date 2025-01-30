@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var k = koanf.New("_")
+var k = koanf.New(".")
 
 // cf. https://git.openldap.org/openldap/openldap/-/blob/bf01750381726db3052d94514eec4048c90a616a/libraries/libldap/init.c#L640
 func Initialize() error {
@@ -35,14 +35,14 @@ func Initialize() error {
 		"RC":              "ldaprc",
 		"TLS_REQCERT":     "try",
 		"TIMEOUT":         "30",
-	}, "_"), nil)
+	}, k.Delim()), nil)
 
-	_ = k.Load(env.Provider("LDAP", "_", func(key string) string {
+	_ = k.Load(env.Provider("LDAP", k.Delim(), func(key string) string {
 		slog.Debug("Loading LDAP environment var.", "var", key)
 		return strings.TrimPrefix(key, "LDAP")
 	}), nil)
 
-	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, ".", k, func(f *pflag.Flag) (string, interface{}) {
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, interface{}) {
 		if !strings.HasPrefix(f.Name, "ldap") {
 			return "", nil
 		}
