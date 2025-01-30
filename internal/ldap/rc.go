@@ -83,7 +83,7 @@ func Initialize() error {
 			continue
 		}
 
-		err := k.Load(newLooseFileProvider(candidate), parser{})
+		err := k.Load(newLooseFileProvider(candidate), parser{k.Delim()})
 		if err != nil {
 			return fmt.Errorf("%s: %w", candidate, err)
 		}
@@ -108,7 +108,7 @@ func readSecretFromFile(path string) (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-// looseFileProvider reads a file if it exists.
+// Avoid error if file does not exist.
 type looseFileProvider struct {
 	path string
 }
@@ -134,9 +134,12 @@ func (looseFileProvider) Read() (map[string]interface{}, error) {
 }
 
 // parser returns ldaprc as plain map for koanf.
-type parser struct{}
+// delim defines the nesting hierarchy of keys.
+type parser struct {
+	delim string
+}
 
-func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
+func (p parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 	out := make(map[string]interface{})
 	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	re := regexp.MustCompile(`\s+`)
@@ -155,7 +158,7 @@ func (parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 		}
 		out[fields[0]] = fields[1]
 	}
-	return maps.Unflatten(out, "_"), nil
+	return maps.Unflatten(out, p.delim), nil
 }
 
 func (parser) Marshal(map[string]interface{}) ([]byte, error) {
