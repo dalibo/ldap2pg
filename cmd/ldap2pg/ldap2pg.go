@@ -301,7 +301,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 			errs = append(errs, fmt.Errorf("inspect: %w", err))
 			continue
 		}
-		count, err := privileges.Sync(ctx, controller.Real, dbname, acl, currentGrants, allWantedGrants[acl])
+		count, err := privileges.Sync(ctx, controller.Real, dbname, currentGrants, allWantedGrants[acl])
 		queryCount += count
 		if err != nil {
 			slog.Error("Failed to synchronize privileges", "acl", acl, "database", dbname, "err", err)

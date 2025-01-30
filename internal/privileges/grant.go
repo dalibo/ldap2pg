@@ -1,6 +1,7 @@
 package privileges
 
 import (
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -37,10 +38,6 @@ func (g Grant) IsDefault() bool {
 
 func (g Grant) IsWildcard() bool {
 	return g.Type != ""
-}
-
-type normalizer interface {
-	Normalize(g *Grant)
 }
 
 var qArgRe = regexp.MustCompile(`<[a-z]+>`)
@@ -85,13 +82,6 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 	return
 }
 
-// Normalize ensures grant fields are consistent with privilege scope.
-//
-// This way grants from wanted state and from inspect are comparables.
-func (g *Grant) Normalize() {
-	g.ACL().Normalize(g)
-}
-
 func (g Grant) ACLName() string {
 	if !g.IsDefault() {
 		return g.Target
@@ -101,16 +91,12 @@ func (g Grant) ACLName() string {
 	return "SCHEMA DEFAULT"
 }
 
-func (g Grant) ACL() acl {
-	return acls[g.ACLName()]
-}
-
 func (g Grant) String() string {
 	b := strings.Builder{}
 	if g.Partial {
 		b.WriteString("PARTIAL ")
 	}
-	if g.IsDefault() {
+	if g.Owner != "" {
 		if g.Schema == "" {
 			b.WriteString("GLOBAL ")
 		}
@@ -129,21 +115,19 @@ func (g Grant) String() string {
 	}
 	b.WriteString(" ON ")
 	b.WriteString(g.Target)
-	if !g.IsDefault() {
+	if g.Owner == "" {
 		b.WriteByte(' ')
 		o := strings.Builder{}
-		o.WriteString(g.Database)
-		if g.Schema != "" {
-			if o.Len() > 0 {
-				o.WriteByte('.')
-			}
+		if g.Database != "" && g.Schema == "" && g.Object == "" {
+			o.WriteString(g.Database)
+		} else {
 			o.WriteString(g.Schema)
-		}
-		if g.Object != "" {
-			if o.Len() > 0 {
-				o.WriteByte('.')
+			if g.Object != "" {
+				if o.Len() > 0 {
+					o.WriteByte('.')
+				}
+				o.WriteString(g.Object)
 			}
-			o.WriteString(g.Object)
 		}
 		b.WriteString(o.String())
 	}
@@ -229,13 +213,27 @@ func (g Grant) ExpandSchemas(schemas []string) (out []Grant) {
 //
 // e.g.: instantiate a grant on all databases for each database.
 // Same for schemas and owners.
-func Expand(in []Grant, acl string, database postgres.Database) (out []Grant) {
-	e := acls[acl]
+func Expand(in []Grant, database postgres.Database) (out []Grant) {
 	for _, grant := range in {
-		if grant.ACLName() != acl {
-			continue
-		}
-		out = append(out, e.Expand(grant, database)...)
+		out = append(out, grant.ExpandDatabase(database.Name)...)
 	}
+
+	in = out
+	out = nil
+	schemas := maps.Keys(database.Schemas)
+	for _, grant := range in {
+		out = append(out, grant.ExpandSchemas(schemas)...)
+	}
+
+	in = out
+	out = nil
+	for _, grant := range in {
+		for _, expansion := range grant.ExpandOwners(database) {
+			out = append(out, expansion)
+			// Log full expansion.
+			slog.Debug("Wants grant.", "grant", expansion, "database", grant.Database)
+		}
+	}
+
 	return
 }

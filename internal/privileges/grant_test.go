@@ -24,7 +24,7 @@ func TestGrantString(t *testing.T) {
 		Database: "template1",
 		Schema:   "public",
 	}
-	r.Equal(t, `CREATE ON SCHEMA template1.public TO public`, g.String())
+	r.Equal(t, `CREATE ON SCHEMA public TO public`, g.String())
 
 	g = privileges.Grant{
 		Target:   "TABLE",
@@ -34,7 +34,7 @@ func TestGrantString(t *testing.T) {
 		Object:   "table1",
 		Schema:   "public",
 	}
-	r.Equal(t, `SELECT ON TABLE template1.public.table1 TO public`, g.String())
+	r.Equal(t, `SELECT ON TABLE public.table1 TO public`, g.String())
 
 	g = privileges.Grant{
 		Target: "TABLES",
@@ -60,7 +60,7 @@ func TestGrantString(t *testing.T) {
 		Schema:   "public",
 		Partial:  true,
 	}
-	r.Equal(t, `PARTIAL SELECT ON TABLE template1.public.table1 TO public`, g.String())
+	r.Equal(t, `PARTIAL SELECT ON TABLE public.table1 TO public`, g.String())
 
 	g = privileges.Grant{
 		Target:  "LANGUAGE",

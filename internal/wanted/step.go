@@ -239,7 +239,6 @@ func (s Step) generateGrants(results *ldap.Result) <-chan privileges.Grant {
 		defer close(ch)
 		for _, rule := range s.GrantRules {
 			for grant := range rule.Generate(results) {
-				grant.Normalize()
 				ch <- grant
 			}
 		}

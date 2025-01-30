@@ -117,55 +117,41 @@ func (r GrantRule) Generate(results *ldap.Result) <-chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
+
+		var vchan <-chan map[string]string
 		if nil == results.Entry {
-			profile := r.Privilege.Input
-			for _, priv := range profiles[profile] {
-				// Case static rule.
-				grant := Grant{
-					Target:   priv.On,
-					Grantee:  r.To.Input,
-					Type:     priv.Type,
-					Database: r.Database.Input,
-					Schema:   r.Schema.Input,
-					Object:   r.Object.Input,
-				}
-				if priv.IsDefault() {
-					grant.Owner = r.Owner.Input
-					grant.Object = ""
-					if "global" == priv.Default {
-						grant.Schema = ""
-					} else if "__all__" == grant.Schema {
-						// Use global default instead
-						continue
-					}
-				}
-				ch <- grant
-			}
+			// Create a single-value chan.
+			vchanw := make(chan map[string]string, 1)
+			vchanw <- nil
+			close(vchanw)
+			vchan = vchanw
 		} else {
-			// Case dynamic rule.
-			for values := range results.GenerateValues(r.Privilege, r.Database, r.Schema, r.Object, r.To) {
-				profile := r.Privilege.Format(values)
-				for _, priv := range profiles[profile] {
-					grant := Grant{
-						Target:   priv.On,
-						Grantee:  r.To.Format(values),
-						Type:     priv.Type,
-						Database: r.Database.Format(values),
-						Schema:   r.Schema.Format(values),
-						Object:   r.Object.Format(values),
-					}
-					if priv.IsDefault() {
-						grant.Owner = r.Owner.Input
-						grant.Object = ""
-						if "global" == priv.Default {
-							grant.Schema = ""
-						} else if "__all__" == grant.Schema {
-							// Use global default instead
-							continue
-						}
-					}
-					ch <- grant
+			vchan = results.GenerateValues(r.Owner, r.Privilege, r.Database, r.Schema, r.Object, r.To)
+		}
+
+		for values := range vchan {
+			profile := r.Privilege.Format(values)
+			for _, priv := range profiles[profile] {
+				acl := acls[priv.ACL()]
+				grant := Grant{
+					Target:  priv.On,
+					Grantee: r.To.Format(values),
+					Type:    priv.Type,
 				}
+
+				if acl.Uses("owner") {
+					grant.Owner = r.Owner.Format(values)
+				}
+
+				if acl.Uses("schema") {
+					grant.Schema = r.Schema.Format(values)
+				}
+
+				if acl.Scope != "instance" || acl.Uses("database") {
+					grant.Database = r.Database.Format(values)
+				}
+
+				ch <- grant
 			}
 		}
 	}()

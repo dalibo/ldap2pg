@@ -7,7 +7,6 @@ import (
 
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/jackc/pgx/v5"
 )
 
 // Inspect returns ACL items from Postgres instance.
@@ -23,16 +22,7 @@ func Inspect(ctx context.Context, db postgres.Database, acl string, roles mapset
 			continue
 		}
 
-		grant.Normalize()
-		// Special case: ignore database grants on unmanaged databases.
-		if "DATABASE" == grant.ACLName() {
-			_, exists := postgres.Databases[grant.Object]
-			if !exists {
-				continue
-			}
-		}
-
-		slog.Debug("Found grant in Postgres instance.", "grant", grant)
+		slog.Debug("Found grant in Postgres instance.", "grant", grant, "database", grant.Database)
 		out = append(out, grant)
 	}
 	err = inspector.Err()
@@ -80,19 +70,12 @@ func (i inspector) Err() error {
 	return i.err
 }
 
-// Implemented by ACL types
-//
-// e.g. datacl, nspacl, etc.
-type inspecter interface {
-	Inspect() string
-	RowTo(pgx.CollectableRow) (Grant, error)
-}
-
 func (i *inspector) iterGrants() chan Grant {
 	ch := make(chan Grant)
 	go func() {
 		defer close(ch)
 		acl := acls[i.acl]
+		sql := acl.Inspect
 		types := managedACLs[i.acl]
 		slog.Debug("Inspecting grants.", "acl", i.acl, "database", i.database.Name)
 		pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
@@ -101,7 +84,6 @@ func (i *inspector) iterGrants() chan Grant {
 			return
 		}
 
-		sql := acl.Inspect()
 		slog.Debug("Executing SQL query:\n"+sql, "arg", types)
 		rows, err := pgconn.Query(i.ctx, sql, types)
 		if err != nil {
@@ -114,9 +96,18 @@ func (i *inspector) iterGrants() chan Grant {
 				i.err = fmt.Errorf("bad row: %w", err)
 				return
 			}
-			grant.Database = i.database.Name
 
-			if "" != grant.Schema {
+			if grant.Database != "" {
+				// GRANT ON DATABASE, filter out unmanaged databases.
+				_, exists := postgres.Databases[grant.Database]
+				if !exists {
+					continue
+				}
+			} else if acl.Scope != "instance" {
+				grant.Database = i.database.Name
+			}
+
+			if grant.Schema != "" {
 				_, known := i.database.Schemas[grant.Schema]
 				if !known {
 					continue
