@@ -111,8 +111,7 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 					errList = append(errList, fmt.Errorf("grant on unknown role"))
 					continue
 				}
-				acl := grant.ACLName()
-				grants[acl] = append(grants[acl], grant)
+				grants[grant.ACL] = append(grants[grant.ACL], grant)
 			}
 		}
 	}

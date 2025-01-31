@@ -30,7 +30,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 				continue
 			}
 
-			q := grant.FormatQuery(acls[grant.ACLName()].Revoke)
+			q := grant.FormatQuery(acls[grant.ACL].Revoke)
 			q.Description = "Revoke privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}
@@ -52,7 +52,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 				continue
 			}
 
-			q := grant.FormatQuery(acls[grant.ACLName()].Grant)
+			q := grant.FormatQuery(acls[grant.ACL].Grant)
 			q.Description = "Grant privileges."
 			q.Database = grant.Database
 			q.LogArgs = []interface{}{"grant", grant}

@@ -10,7 +10,7 @@ import (
 
 func TestGrantString(t *testing.T) {
 	g := privileges.Grant{
-		Target:   "DATABASE",
+		ACL:      "DATABASE",
 		Grantee:  "public",
 		Type:     "CONNECT",
 		Database: "template1",
@@ -18,7 +18,7 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `CONNECT ON DATABASE template1 TO public`, g.String())
 
 	g = privileges.Grant{
-		Target:   "SCHEMA",
+		ACL:      "SCHEMA",
 		Grantee:  "public",
 		Type:     "CREATE",
 		Database: "template1",
@@ -27,7 +27,7 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `CREATE ON SCHEMA public TO public`, g.String())
 
 	g = privileges.Grant{
-		Target:   "TABLE",
+		ACL:      "TABLE",
 		Grantee:  "public",
 		Type:     "SELECT",
 		Database: "template1",
@@ -37,22 +37,24 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `SELECT ON TABLE public.table1 TO public`, g.String())
 
 	g = privileges.Grant{
-		Target: "TABLES",
+		ACL:    "GLOBAL DEFAULT",
 		Owner:  "postgres",
 		Type:   "SELECT",
+		Object: "TABLES",
 	}
 	r.Equal(t, `GLOBAL DEFAULT FOR postgres SELECT ON TABLES`, g.String())
 
 	g = privileges.Grant{
-		Target: "TABLES",
+		ACL:    "SCHEMA DEFAULT",
 		Owner:  "postgres",
 		Type:   "SELECT",
+		Object: "TABLES",
 		Schema: "public",
 	}
 	r.Equal(t, `DEFAULT FOR postgres IN SCHEMA public SELECT ON TABLES`, g.String())
 
 	g = privileges.Grant{
-		Target:   "TABLE",
+		ACL:      "TABLE",
 		Grantee:  "public",
 		Type:     "SELECT",
 		Database: "template1",
@@ -63,7 +65,7 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `PARTIAL SELECT ON TABLE public.table1 TO public`, g.String())
 
 	g = privileges.Grant{
-		Target:  "LANGUAGE",
+		ACL:     "LANGUAGE",
 		Grantee: "public",
 		Type:    "USAGE",
 		Object:  "plpgsql",
@@ -71,7 +73,7 @@ func TestGrantString(t *testing.T) {
 	r.Equal(t, `USAGE ON LANGUAGE plpgsql TO public`, g.String())
 
 	g = privileges.Grant{
-		Target:  "ALL TABLES IN SCHEMA",
+		ACL:     "ALL TABLES IN SCHEMA",
 		Grantee: "dave",
 		Schema:  "public",
 		Type:    "",
@@ -146,7 +148,7 @@ func TestExpandSchema(t *testing.T) {
 
 func TestFormatQuery(t *testing.T) {
 	g := privileges.Grant{
-		Target:   "DATABASE",
+		ACL:      "DATABASE",
 		Type:     "CONNECT",
 		Grantee:  "public",
 		Database: "template1",
@@ -166,7 +168,7 @@ func TestFormatQuery(t *testing.T) {
 func TestFormatDefaultQuery(t *testing.T) {
 	g := privileges.Grant{
 		Owner:    "alice",
-		Target:   "TABLES",
+		ACL:      "TABLES",
 		Type:     "SELECT",
 		Grantee:  "public",
 		Database: "template1",

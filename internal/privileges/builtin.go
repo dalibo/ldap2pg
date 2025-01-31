@@ -43,12 +43,36 @@ func init() {
 		Revoke:  `REVOKE <privilege> ON <acl> <object> FROM <grantee>;`,
 	}.MustRegister()
 
+	g := `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
+	r := `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
+
 	ACL{
 		Name:    "SCHEMA",
 		Scope:   "database",
 		Inspect: inspectSchema,
-		Grant:   `GRANT <privilege> ON <acl> <schema> TO <grantee>;`,
-		Revoke:  `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL FUNCTIONS IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllFunctions,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL SEQUENCES IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllSequences,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
+		Name:    "ALL TABLES IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllTables,
+		Grant:   g,
+		Revoke:  r,
 	}.MustRegister()
 
 	ACL{
@@ -56,41 +80,16 @@ func init() {
 		Name:    "GLOBAL DEFAULT",
 		Scope:   "database",
 		Inspect: inspectGlobalDefault,
-		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> GRANT <privilege> ON <acl> TO <grantee>;`,
-		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> REVOKE <privilege> ON <acl> FROM <grantee>;`,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> GRANT <privilege> ON <object> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> REVOKE <privilege> ON <object> FROM <grantee>;`,
 	}.MustRegister()
 	ACL{
 		// implementation is chosed by name instead of scope.
 		Name:    "SCHEMA DEFAULT",
 		Scope:   "schema",
 		Inspect: inspectSchemaDefault,
-		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <acl> TO <grantee>;`,
-		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <acl> FROM <grantee>;`,
-	}.MustRegister()
-
-	g := `GRANT <privilege> ON <acl> <schema> TO <grantee>;`
-	r := `REVOKE <privilege> ON <acl> <schema> FROM <grantee>;`
-
-	ACL{
-		Name:    "ALL FUNCTIONS IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllFunctions,
-		Grant:   g,
-		Revoke:  r,
-	}.MustRegister()
-	ACL{
-		Name:    "ALL SEQUENCES IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllSequences,
-		Grant:   g,
-		Revoke:  r,
-	}.MustRegister()
-	ACL{
-		Name:    "ALL TABLES IN SCHEMA",
-		Scope:   "schema",
-		Inspect: inspectAllTables,
-		Grant:   g,
-		Revoke:  r,
+		Grant:   `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> GRANT <privilege> ON <object> TO <grantee>;`,
+		Revoke:  `ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA <schema> REVOKE <privilege> ON <object> FROM <grantee>;`,
 	}.MustRegister()
 
 	// profiles
@@ -134,13 +133,13 @@ func registerRelationBuiltinProfile(class string, types ...string) {
 	for _, privType := range types {
 		TYPE := strings.ToUpper(privType)
 		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]interface{}{
-			"default": "global",
-			"type":    TYPE,
-			"on":      CLASS,
+			"type":   TYPE,
+			"on":     "GLOBAL DEFAULT",
+			"object": CLASS,
 		}, map[string]interface{}{
-			"default": "schema",
-			"type":    TYPE,
-			"on":      CLASS,
+			"type":   TYPE,
+			"on":     "SCHEMA DEFAULT",
+			"object": CLASS,
 		}}
 		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]interface{}{
 			"type": TYPE,

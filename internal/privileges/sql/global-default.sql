@@ -63,5 +63,5 @@ SELECT COALESCE(owner.rolname, 'public') AS owner,
        LEFT OUTER JOIN pg_catalog.pg_roles AS owner ON owner.oid = grants.owner
        LEFT OUTER JOIN pg_catalog.pg_roles AS grantee ON grantee.oid = grants.grantee
 WHERE nsp = 0  -- Handle global default privileges only.
-   AND grants.object || '--' || priv = ANY ($1)
+   AND priv || ' ON ' || grants.object = ANY ($1)
  ORDER BY 1, 3, 4, 2

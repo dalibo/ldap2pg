@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/normalize"
 	"github.com/dalibo/ldap2pg/internal/tree"
 )
 
@@ -19,9 +18,12 @@ func (p Profile) Register(name string) {
 	for _, priv := range p {
 		on := priv.On
 		t := priv.Type
-		if priv.IsDefault() {
-			on = fmt.Sprintf("%s DEFAULT", strings.ToUpper(priv.Default))
-			t = fmt.Sprintf("%s--%s", priv.On, strings.ToUpper(t))
+		if priv.Object != "" {
+			// Couple type and object in type. This is hacky.
+			// A more elegant way would be to send an array of couple type/object.
+			// Not sure if this is worth the effort.
+			// See global-default.sql and schema-default.sql for other side.
+			t = fmt.Sprintf("%s ON %s", t, priv.Object)
 		}
 		managedACLs[on] = append(managedACLs[on], t)
 	}
@@ -29,33 +31,31 @@ func (p Profile) Register(name string) {
 	profiles[name] = p
 }
 
-func NormalizeProfiles(value interface{}) (out map[string][]interface{}, err error) {
-	rawMap, ok := value.(map[string]interface{})
+func NormalizeProfiles(value interface{}) (map[string][]interface{}, error) {
+	m, ok := value.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("bad type")
 	}
-	for key, value := range rawMap {
-		privilegeRefs := []interface{}{}
-		for _, rawPrivilegeRef := range value.([]interface{}) {
-			privilegeRef, ok := rawPrivilegeRef.(map[string]interface{})
-			if !ok {
-				// should be a string, referencing another profile for inclusion.
-				privilegeRefs = append(privilegeRefs, rawPrivilegeRef)
+	for key, value := range m {
+		privileges := []interface{}{}
+		for _, rawPrivilege := range value.([]interface{}) {
+			_, ok := rawPrivilege.(string)
+			if ok {
+				// profile inclusion
+				privileges = append(privileges, rawPrivilege)
 				continue
 			}
-
-			err := normalize.Alias(privilegeRef, "types", "type")
+			privilege, err := NormalizePrivilege(rawPrivilege)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", key, err)
 			}
-			privilegeRef["types"] = normalize.List(privilegeRef["types"])
-			privilegeRefs = append(privilegeRefs, DuplicatePrivilege(privilegeRef)...)
+			privileges = append(privileges, DuplicatePrivilege(privilege.(map[string]interface{}))...)
 		}
-		rawMap[key] = privilegeRefs
+		m[key] = privileges
 	}
-	out = flattenProfiles(rawMap)
+	out := flattenProfiles(m)
 
-	return
+	return out, nil
 }
 
 func flattenProfiles(value map[string]interface{}) map[string][]interface{} {

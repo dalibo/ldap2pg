@@ -40,14 +40,12 @@ func (a ACL) Register() error {
 		a.rowTo = rowToInstanceGrant
 	} else if "database" == a.Scope {
 		a.rowTo = rowToDatabaseGrant
-	} else if a.Scope == "schema" {
-		a.rowTo = rowToAllInSchemaGrant
 	} else {
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
 
 	g := Grant{
-		Target:   a.Name,
+		ACL:      a.Name,
 		Type:     "PRIV",
 		Grantee:  "_grantee_",
 		Owner:    "_owner_",
@@ -82,8 +80,8 @@ func (a ACL) Uses(k string) bool {
 func (a ACL) RowTo(r pgx.Row) (Grant, error) {
 	g, err := a.rowTo(r)
 
-	if g.Target == "" {
-		g.Target = a.Name
+	if g.ACL == "" {
+		g.ACL = a.Name
 	}
 
 	if a.Uses("object") {
@@ -106,15 +104,15 @@ func (a ACL) RowTo(r pgx.Row) (Grant, error) {
 
 func rowToGlobalDefaultGrant(r pgx.Row) (g Grant, err error) {
 	// column order comes from statement:
-	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <target> TO <grantee>;
-	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Grantee)
+	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <object> TO <grantee>;
+	err = r.Scan(&g.Owner, &g.Type, &g.Object, &g.Grantee)
 	return
 }
 
 func rowToSchemaDefaultGrant(r pgx.Row) (g Grant, err error) {
 	// column order comes from statement:
-	// ALTER DEFAULT PRIVILEGES FOR <owner> GRANT <type> ON <object> IN <schema> TO <grantee>;
-	err = r.Scan(&g.Owner, &g.Type, &g.Target, &g.Schema, &g.Grantee)
+	// ALTER DEFAULT PRIVILEGES FOR <owner> IN <schema> GRANT <type> ON <object> TO <grantee>;
+	err = r.Scan(&g.Owner, &g.Schema, &g.Type, &g.Object, &g.Grantee)
 	return
 }
 
@@ -126,11 +124,6 @@ func rowToInstanceGrant(r pgx.Row) (g Grant, err error) {
 }
 
 func rowToDatabaseGrant(r pgx.Row) (g Grant, err error) {
-	err = r.Scan(&g.Type, &g.Object, &g.Grantee)
-	return
-}
-
-func rowToAllInSchemaGrant(r pgx.Row) (g Grant, err error) {
 	err = r.Scan(&g.Type, &g.Object, &g.Grantee, &g.Partial)
 	return
 }
