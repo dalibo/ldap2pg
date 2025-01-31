@@ -224,7 +224,7 @@ This will feed directory with a lot of users and groups, several databases with 
 Synchronize this setup with:
 
 ``` console
-$ test/genperfconfig.sh | PGDATABASE=big0 go run ./cmd/ldap2pg -c -
+$ test/genbigconfig.sh | PGDATABASE=big0 go run ./cmd/ldap2pg -c -
 ```
 
 
