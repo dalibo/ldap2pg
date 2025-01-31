@@ -16,16 +16,15 @@ type Profile []Privilege
 
 func (p Profile) Register(name string) {
 	for _, priv := range p {
-		on := priv.On
 		t := priv.Type
-		if priv.Object != "" {
+		if acls[priv.On].Uses("owner") {
 			// Couple type and object in type. This is hacky.
 			// A more elegant way would be to send an array of couple type/object.
 			// Not sure if this is worth the effort.
 			// See global-default.sql and schema-default.sql for other side.
 			t = fmt.Sprintf("%s ON %s", t, priv.Object)
 		}
-		managedACLs[on] = append(managedACLs[on], t)
+		managedACLs[priv.On] = append(managedACLs[priv.On], t)
 	}
 
 	profiles[name] = p
