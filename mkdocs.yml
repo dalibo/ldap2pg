@@ -49,6 +49,7 @@ nav:
   - Builtins Privileges: builtins.md
 - Guides:
   - Cookbook: guides/cookbook.md
+  - Custom ACL: guides/acls.md
   - Hacking: hacking.md
 
 site_dir: dist/docs/

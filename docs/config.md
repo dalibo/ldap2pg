@@ -642,3 +642,67 @@ Special value `__auto__` fallbacks to managed roles having `CREATE` privilege on
 May be a list of names.
 Plural form `owners` is valid.
 Accepts LDAP attribute injection using curly braces.
+
+
+## PostgreSQL ACLs Section  { #acls }
+
+An ACL is set of queries to list GRANTs in the cluster and to manage them by granting or revoking item in the list.
+ACL is scoped to instance or database.
+Reference ACL in privileges profiles.
+Writing [custom ACL] is tricky,
+ensure you understand both PostgreSQL and ldap2pg before.
+
+
+### `acls`  { #acls-acls }
+
+The `acls` top level section is a mapping defining ACLs.
+All fields are mandatory.
+
+``` yaml
+acls:
+  PROCEDURE:
+    scope: database
+    inspect: |
+      WITH ...
+    grant: GRANT ...
+    revoke: REVOKE ...
+```
+
+
+#### `scope`  { #acls-scope }
+
+Scope of the ACL.
+Can be `instance` or `database`.
+
+
+#### `inspect`  { #acls-inspect }
+
+SQL query to list GRANTs in the cluster.
+The signature of the query depends on the scope.
+See [Custom ACLs] for details.
+
+
+#### `grant`  { #acls-grant }
+
+SQL query to grant a privilege.
+The query accepts templating using angle brackets.
+Some parameters are injected as keyword, i.e. as raw SQL.
+Other parameters are quoted as identifiers.
+
+Available parameters:
+
+- `<acl>` name of the ACL. Raw SQL.
+- `<database>` name of database to grant on. Quoted identifier.
+- `<grantee>` name of role to grant on. Quoted identifier.
+- `<object>` name of object to grant on. Quoted identifier.
+- `<owner>` name of role to grant to. Quoted identifier.
+- `<privilege>` type of privilege. Raw SQL.
+- `<schema>` name of schema to grant on. Quoted identifier.
+
+
+#### `revoke`  { #acls-revoke }
+
+SQL query to revoke a privilege.
+Like `grant`, the query accepts templating using angle brackets.
+Accepts same parameters as grant.
+Having different paramenter between GRANT and REVOKE leads to unexpected behaviour.

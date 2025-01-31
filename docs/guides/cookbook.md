@@ -1,8 +1,3 @@
----
-hide:
-  - navigation
----
-
 <h1>Cookbook</h1>
 
 Here in this cookbook, you'll find some recipes for various use case of
