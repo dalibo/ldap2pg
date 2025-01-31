@@ -13,8 +13,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var KnownRDNs = []string{"cn", "l", "st", "o", "ou", "c", "street", "dc", "uid"}
-
 // Holds a consistent set of entry and sub-search entries.
 type Result struct {
 	// Is nil for static generation

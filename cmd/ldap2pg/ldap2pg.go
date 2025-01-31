@@ -280,7 +280,7 @@ func configure() (controller Controller, c config.Config, err error) {
 	}
 
 	if c.Rules.HasLDAPSearches() {
-		err = ldap.Initialize()
+		err = ldap.Initialize(c.Ldap)
 		if err != nil {
 			return
 		}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dalibo/ldap2pg/internal/ldap"
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	"github.com/dalibo/ldap2pg/internal/privileges"
 	"github.com/dalibo/ldap2pg/internal/wanted"
@@ -77,17 +78,11 @@ func FindFile(userValue string, candidates []string) (configpath string) {
 // Config holds the YAML configuration. Not the flags.
 type Config struct {
 	Version    int
-	Ldap       LdapConfig
+	Ldap       ldap.Config
 	Postgres   PostgresConfig
 	ACLs       map[string]privileges.ACL `mapstructure:"acls"`
 	Privileges map[string]privileges.Profile
 	Rules      wanted.Rules `mapstructure:"rules"`
-}
-
-type LdapConfig struct {
-	URI      string
-	BindDn   string
-	Password string
 }
 
 // New initiate a config structure with defaults.
