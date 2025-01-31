@@ -31,6 +31,7 @@ This is helpful to feed ldap2pg with dynamic configuration.
 `ldap2pg.yml` is split in several sections :
 
 - `postgres` : setup Postgres connexion and inspection queries.
+- `ldap`: configuration for ldap search optimisation.
 - `privileges` : the definition of privileges profiles.
 - `rules` : the list of LDAP searches and associated mapping to roles and
   grants.
@@ -169,6 +170,23 @@ ldap2pg loops on objects in theses schemas when inspecting GRANTs in the cluster
 postgres:
   schemas_query: |
     SELECT nspname FROM pg_catalog.pg_namespace
+```
+
+
+## Ldap Parameter
+
+The `ldap`section define configuratio for LDAP search optimisation.
+
+### `known_rdns`  { #ldap-known-rdns }
+
+Known_rdns is used to optimise LDAP search.
+It's a list of attributes that are known to be part of the DN.
+ldap2pg will use these attributes to avoid searching the directory for them.
+If nil, default value is `[n, l, st, o, ou, c, street, dc, uid]`.
+
+``` yaml
+ldap:
+  known_rdns: [cn, uid]
 ```
 
 
