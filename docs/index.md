@@ -7,7 +7,7 @@ hide:
 
 ![ldap2pg](https://github.com/dalibo/ldap2pg/raw/master/docs/img/logo-phrase.png)
 
-Postgres is able to check password of an existing role using the LDAP protocol out of the box.
+Out of the box, PostgreSQL is able to check password of an existing role using the LDAP protocol.
 ldap2pg automates the creation, update and removal of PostgreSQL roles and users from an entreprise directory.
 
 Managing roles is close to managing privileges as you expect roles to have proper default privileges.
@@ -32,7 +32,9 @@ ldap2pg can grant and revoke privileges too.
 ldap2pg **requires** a configuration file called `ldap2pg.yaml`.
 Project ships a [tested ldap2pg.yml](https://github.com/dalibo/ldap2pg/blob/master/ldap2pg.yml) as a starting point.
 
-`ldap2pg` is reported to work with [OpenLDAP](https://www.openldap.org/),
+`ldap2pg` is reported to work with
+[Samba DC](https://www.samba.org/),
+[OpenLDAP](https://www.openldap.org/),
 [FreeIPA](https://www.freeipa.org/),
 Oracle Internet Directory and
 Microsoft Active Directory.
@@ -42,8 +44,8 @@ Microsoft Active Directory.
 
 If you need support
 and you didn't found it in [documentation](https://ldap2pg.readthedocs.io/),
-just drop a question in a [GitHub issue](https://github.com/dalibo/ldap2pg/issues/new)!
-French accepted.
+just drop a question in a [GitHub discussions](https://github.com/dalibo/ldap2pg/discussions)!
+🇫🇷 Possible en français.
 Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) for advanced use cases.
 
 
@@ -51,7 +53,7 @@ Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) fo
 
 ldap2pg is a [Dalibo Labs](https://labs.dalibo.com/) project.
 
-- [Étienne BERSAC](https://github.com/bersace) is the maintainer.
+- [Étienne BERSAC](https://github.com/bersace) and [Pierre-Louis GONON](https://github.com/pirlgon) develop.
 - [Damien Cazeils](https://www.damiencazeils.com) designed the logo.
 - [Harold le CLÉMENT de SAINT-MARCQ](https://github.com/hlecleme) implemented LDAP sub searches.
 - [Randolph Voorhies](https://github.com/randvoorhies) implemented role configuration synchronization.

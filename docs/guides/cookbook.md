@@ -8,9 +8,10 @@ hide:
 Here in this cookbook, you'll find some recipes for various use case of
 ldap2pg.
 
-If you struggle to find a way to setup ldap2pg for your needs, please [file an
-issue](https://github.com/dalibo/ldap2pg/issues/new) so that we can update
-*Cookbook* with new recipes! Your contribution is welcome!
+If you struggle to find a way to setup ldap2pg for your needs,
+please [open a discussion](https://github.com/dalibo/ldap2pg/discussions) so that we can update
+*Cookbook* with new recipes!
+Your contribution is welcome!
 
 
 ## Configure `pg_hba.conf` with LDAP
@@ -37,7 +38,7 @@ move to automate role creation from the LDAP directory using ldap2pg:
   in dry mode by default, so you can safely loop ldap2pg execution until you
   get it right.
 - Then, complete `ldap2pg.yaml` to fit your needs following [ldap2pg
-  documentation](cli.md). Run ldap2pg for real and check that ldap2pg maintain
+  documentation](../cli.md). Run ldap2pg for real and check that ldap2pg maintain
   your single test role, and that you can still connect to the cluster with it.
 - Finally, you must decide when and how you want to trigger synchronization: a
   regular cron tab ? An ansible task ? Manually ? Other ? Ensure ldap2pg
@@ -123,7 +124,7 @@ $
 ```
 
 Read further on how to control role creation from LDAP entry in
-[Configuration](config.md). Once you're satisfied with the comparison output, go
+[Configuration](../config.md). Once you're satisfied with the comparison output, go
 real with `--real`.
 
 
@@ -187,7 +188,7 @@ To run the container simply use the command:
 $ docker run --rm dalibo/ldap2pg --help
 ```
 
-The Docker image of ldap2pg use the same configuration options as explained in the [cli](cli.md) and [ldap2pg.yml](config.md) sections.
+The Docker image of ldap2pg use the same configuration options as explained in the [cli](../cli.md) and [ldap2pg.yml](../config.md) sections.
 You can mount the ldap2pg.yml configuration file.
 
 ``` console

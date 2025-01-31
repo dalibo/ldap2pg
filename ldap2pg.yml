@@ -40,16 +40,7 @@ postgres:
   databases_query: [nominal]
 
 #
-#       2.   L D A P   C O N F I G U R A T I O N
-#
-#   Known_rdns is used to optimise LDAP search. It's a list of attributes that
-#   are known to be part of the DN. See default value above.
-#
-# ldap:
-#   known_rdns: [cn, l, st, o, ou, c, street, dc, uid]
-
-#
-#       3.   P R I V I L E G E S   D E F I N I T I O N
+#       2.   P R I V I L E G E S   D E F I N I T I O N
 #
 # See https://ldap2pg.readthedocs.io/en/latest/privileges/. Privileges wrapped
 # in double underscores are builtin privilege profiles. See
@@ -78,7 +69,7 @@ privileges:
 
 
 #
-#       4.   S Y N C H R O N I S A T I O N   M A P
+#       3.   S Y N C H R O N I S A T I O N   M A P
 #
 # This list contains rules to declare roles and grants. Each role or grant rule
 # can be templated with attributes from LDAP entries returned by a search

@@ -1,4 +1,4 @@
-<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.2-beta1 -->
+<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.2-106-gead5bf0 -->
 <!--*- markdown -*-->
 
 <h1>Builtins Privileges</h1>
@@ -74,18 +74,12 @@ For effective privileges:
 - `ALL FUNCTIONS IN SCHEMA`: manage `EXECUTE` on all functions per schema.
 - `ALL SEQUENCES IN SCHEMA`: like above but for sequences.
 - `ALL TABLES IN SCHEMA`: like above but for tables and views.
+- `GLOBAL DEFAULT`: manage default privileges on database.
+- `SCHEMA DEFAULT`: manage default privileges per schema.
 
 `ALL ... IN SCHEMA` ACL inspects whether a privilege is granted to only a subset of objects.
 This is a *partial* grant.
 A partial grant is either revoked if unwanted or regranted if expected.
-
-ACL for default privileges:
-
-- `SEQUENCES`
-- `FUNCTIONS`
-- `TABLES`
-
-Theses ACL must be referenced with `global` set to either `schema` or `global`.
 
 You can reference these ACL using [privileges:on] parameter in YAML. Like this:
 
@@ -97,6 +91,17 @@ privileges:
 ```
 
 [privileges:on]: config.md#privileges-on
+
+Default privileges references a privilege type and a class of objects.
+ldap2pg inspect default privileges for the following object classes:
+
+- `SEQUENCES`
+- `FUNCTIONS`
+- `TABLES`
+
+You must reference object class in privilege profile using [object] parameter in YAML.
+
+[object]: config.md#privileges-object
 
 You cannot (yet) configure custom ACL.
 
@@ -204,21 +209,21 @@ Here is the list of predefined privileges:
 
 | Name | Manages |
 |------|---------|
-| `__connect__`                            | `CONNECT ON DATABASE` |
-| `__create_on_schemas__`                  | `CREATE ON SCHEMA` |
-| `__delete_on_all_tables__`               | `DELETE ON ALL TABLES IN SCHEMA` |
-| `__execute_on_all_functions__`           | `EXECUTE ON ALL FUNCTIONS IN SCHEMA` |
-| `__insert_on_all_tables__`               | `INSERT ON ALL TABLES IN SCHEMA` |
-| `__references_on_all_tables__`           | `REFERENCES ON ALL TABLES IN SCHEMA` |
-| `__select_on_all_sequences__`            | `SELECT ON ALL SEQUENCES IN SCHEMA` |
-| `__select_on_all_tables__`               | `SELECT ON ALL TABLES IN SCHEMA` |
-| `__temporary__`                          | `TEMPORARY ON DATABASE` |
-| `__trigger_on_all_tables__`              | `TRIGGER ON ALL TABLES IN SCHEMA` |
-| `__truncate_on_all_tables__`             | `TRUNCATE ON ALL TABLES IN SCHEMA` |
-| `__update_on_all_sequences__`            | `UPDATE ON ALL SEQUENCES IN SCHEMA` |
-| `__update_on_all_tables__`               | `UPDATE ON ALL TABLES IN SCHEMA` |
-| `__usage_on_all_sequences__`             | `USAGE ON ALL SEQUENCES IN SCHEMA` |
-| `__usage_on_schemas__`                   | `USAGE ON SCHEMA` |
+| <a name="connect"></a> `__connect__`                            | `CONNECT ON DATABASE` |
+| <a name="create-on-schemas"></a> `__create_on_schemas__`                  | `CREATE ON SCHEMA` |
+| <a name="delete-on-all-tables"></a> `__delete_on_all_tables__`               | `DELETE ON ALL TABLES IN SCHEMA` |
+| <a name="execute-on-all-functions"></a> `__execute_on_all_functions__`           | `EXECUTE ON ALL FUNCTIONS IN SCHEMA` |
+| <a name="insert-on-all-tables"></a> `__insert_on_all_tables__`               | `INSERT ON ALL TABLES IN SCHEMA` |
+| <a name="references-on-all-tables"></a> `__references_on_all_tables__`           | `REFERENCES ON ALL TABLES IN SCHEMA` |
+| <a name="select-on-all-sequences"></a> `__select_on_all_sequences__`            | `SELECT ON ALL SEQUENCES IN SCHEMA` |
+| <a name="select-on-all-tables"></a> `__select_on_all_tables__`               | `SELECT ON ALL TABLES IN SCHEMA` |
+| <a name="temporary"></a> `__temporary__`                          | `TEMPORARY ON DATABASE` |
+| <a name="trigger-on-all-tables"></a> `__trigger_on_all_tables__`              | `TRIGGER ON ALL TABLES IN SCHEMA` |
+| <a name="truncate-on-all-tables"></a> `__truncate_on_all_tables__`             | `TRUNCATE ON ALL TABLES IN SCHEMA` |
+| <a name="update-on-all-sequences"></a> `__update_on_all_sequences__`            | `UPDATE ON ALL SEQUENCES IN SCHEMA` |
+| <a name="update-on-all-tables"></a> `__update_on_all_tables__`               | `UPDATE ON ALL TABLES IN SCHEMA` |
+| <a name="usage-on-all-sequences"></a> `__usage_on_all_sequences__`             | `USAGE ON ALL SEQUENCES IN SCHEMA` |
+| <a name="usage-on-schemas"></a> `__usage_on_schemas__`                   | `USAGE ON SCHEMA` |
 
 
 
