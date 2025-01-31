@@ -135,7 +135,7 @@ func ldap2pg(ctx context.Context) (err error) {
 				return fmt.Errorf("inspect: %w", err)
 			}
 			var acls []string
-			if dbname == instance.DefaultDatabase {
+			if dbname == instance.DefaultDatabase && len(instanceACLs) > 0 {
 				slog.Debug("Managing instance wide privileges.", "database", dbname)
 				acls = instanceACLs
 			}
