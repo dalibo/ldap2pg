@@ -77,7 +77,7 @@ func (i *inspector) iterGrants() chan Grant {
 		acl := acls[i.acl]
 		sql := acl.Inspect
 		types := managedACLs[i.acl]
-		slog.Debug("Inspecting grants.", "acl", i.acl, "database", i.database.Name)
+		slog.Debug("Inspecting grants.", "acl", i.acl, "scope", acl.Scope, "database", i.database.Name)
 		pgconn, err := postgres.GetConn(i.ctx, i.database.Name)
 		if err != nil {
 			i.err = err
