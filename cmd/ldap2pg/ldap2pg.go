@@ -151,6 +151,10 @@ func ldap2pg(ctx context.Context) (err error) {
 			}
 			queryCount += stageCount
 
+			if len(defaultACLs) == 0 {
+				continue
+			}
+
 			slog.Debug("Stage 3: default privileges.")
 			err = instance.InspectStage3(ctx, dbname, managedRoles)
 			if err != nil {
