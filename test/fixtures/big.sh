@@ -25,7 +25,10 @@ for i in {0..255} ; do
 		queries+=("CREATE VIEW nsp$i.v$j AS SELECT * FROM nsp$i.t$j")
 	done
 	queries+=(";") # End CREATE SCHEMA
-	queries+=("CREATE FUNCTION nsp$i.f() RETURNS INTEGER LANGUAGE SQL AS \$\$ SELECT 0 \$\$;")
+	# Randomly create a function
+	if (( RANDOM % 2 == 0 )) ; then
+		queries+=("CREATE FUNCTION nsp$i.f() RETURNS INTEGER LANGUAGE SQL AS \$\$ SELECT 0 \$\$;")
+	fi
 done
 
 "${psql[@]}" --echo-queries -d "big0" <<-EOSQL
