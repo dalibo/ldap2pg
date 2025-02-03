@@ -1,6 +1,7 @@
 package privileges
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,10 +15,16 @@ import (
 // Rules references profiles by name and generates grant for each privileges in the profile.
 type Profile []Privilege
 
-func (p Profile) Register(name string) {
+func (p Profile) Register(name string) error {
+	var errs []error
 	for _, priv := range p {
 		t := priv.Type
-		if acls[priv.On].Uses("owner") {
+		a, ok := acls[priv.On]
+		if !ok {
+			errs = append(errs, fmt.Errorf("ACL %s not found", priv.On))
+			continue
+		}
+		if a.Uses("owner") {
 			// Couple type and object in type. This is hacky.
 			// A more elegant way would be to send an array of couple type/object.
 			// Not sure if this is worth the effort.
@@ -28,6 +35,8 @@ func (p Profile) Register(name string) {
 	}
 
 	profiles[name] = p
+
+	return errors.Join(errs...)
 }
 
 func NormalizeProfiles(value interface{}) (map[string][]interface{}, error) {
