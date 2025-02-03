@@ -4,6 +4,11 @@ go 1.23.0
 
 toolchain go1.23.4
 
+// https://pkg.go.dev/crypto/x509#ParseCertificate
+godebug (
+    x509negativeserial=1
+)
+
 require (
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/deckarep/golang-set/v2 v2.7.0
