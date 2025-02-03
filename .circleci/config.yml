@@ -44,7 +44,7 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
-    - image: goreleaser/goreleaser:v2.3.2
+    - image: goreleaser/goreleaser:v2.6.1
     steps:
     - checkout
     - restore_cache:
@@ -74,7 +74,7 @@ jobs:
   lint:
     working_directory: *workspace
     docker:
-    - image: golangci/golangci-lint:v1.56.2
+    - image: golangci/golangci-lint:v1.63.4
     steps:
     - checkout
     - restore_cache:
