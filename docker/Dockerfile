@@ -1,4 +1,4 @@
-FROM goreleaser/goreleaser:v2.3.2 AS builder
+FROM goreleaser/goreleaser:v2.6.1 AS builder
 
 WORKDIR /workspace
 COPY . .
