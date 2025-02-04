@@ -27,21 +27,22 @@ func NormalizePrivilege(rawPrivilege interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("bad type")
 	}
 
+	// DEPRECATED: v6.2 compat
+	def, _ := m["default"].(string)
+	if def != "" {
+		// 6.2 has only scalar type.
+		m["object"] = m["type"]
+		m["on"] = fmt.Sprintf("%s DEFAULT", strings.ToUpper(def))
+		delete(m, "default")
+		slog.Warn("Deprecated default scope.")
+		slog.Warn("Use 'object' instead of 'default' in privilege definition.", "on", m["on"], "object", m["object"])
+	}
+
 	err := normalize.Alias(m, "types", "type")
 	if err != nil {
 		return m, err
 	}
-
 	m["types"] = normalize.List(m["types"])
-
-	// DEPRECATED: v6.2 compat
-	def, _ := m["default"].(string)
-	if def != "" {
-		m["object"] = "TABLES"
-		m["on"] = fmt.Sprintf("%s DEFAULT", strings.ToUpper(def))
-		slog.Warn("Deprecated default scope.")
-		slog.Warn("Use 'object' instead of 'default' in privilege definition.", "on", m["on"], "object", m["object"])
-	}
 
 	err = normalize.SpuriousKeys(m, "types", "on", "object")
 
