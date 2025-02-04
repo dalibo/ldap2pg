@@ -3,19 +3,12 @@ package config
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"golang.org/x/exp/maps"
 )
 
 func (c Config) RegisterPrivileges() error {
 	for name, acl := range c.ACLs {
-		// We have built-in handling for DEFAULT ACLs.
-		// Don't trigger default code for custom ACL.
-		if strings.HasSuffix(name, " DEFAULT") {
-			return fmt.Errorf("ACL: %s: reserved name", name)
-		}
-
 		acl.Name = name
 		slog.Debug("Registering ACL.", "name", acl.Name)
 		err := acl.Register()
@@ -24,7 +17,10 @@ func (c Config) RegisterPrivileges() error {
 		}
 	}
 	for name, profile := range c.Privileges {
-		profile.Register(name)
+		err := profile.Register(name)
+		if err != nil {
+			return fmt.Errorf("privileges: %s: %w", name, err)
+		}
 	}
 	return nil
 }

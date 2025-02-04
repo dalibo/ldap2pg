@@ -43,7 +43,9 @@ func NormalizePrivilege(rawPrivilege interface{}) (interface{}, error) {
 		slog.Warn("Use 'object' instead of 'default' in privilege definition.", "on", m["on"], "object", m["object"])
 	}
 
-	return m, nil
+	err = normalize.SpuriousKeys(m, "types", "on", "object")
+
+	return m, err
 }
 
 func DuplicatePrivilege(yaml map[string]interface{}) (privileges []interface{}) {

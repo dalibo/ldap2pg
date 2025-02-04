@@ -166,7 +166,7 @@ var managedACLs = map[string][]string{}
 func SplitManagedACLs() (instancesACLs, databaseACLs, defaultACLs []string) {
 	for n := range managedACLs {
 		acl := acls[n]
-		if strings.HasSuffix(n, " DEFAULT") {
+		if acl.Uses("owner") {
 			defaultACLs = append(defaultACLs, n)
 		} else if acl.Scope == "instance" {
 			instancesACLs = append(instancesACLs, n)

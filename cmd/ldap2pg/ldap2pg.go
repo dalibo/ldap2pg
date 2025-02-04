@@ -135,7 +135,7 @@ func ldap2pg(ctx context.Context) (err error) {
 				return fmt.Errorf("inspect: %w", err)
 			}
 			var acls []string
-			if dbname == instance.DefaultDatabase {
+			if dbname == instance.DefaultDatabase && len(instanceACLs) > 0 {
 				slog.Debug("Managing instance wide privileges.", "database", dbname)
 				acls = instanceACLs
 			}
@@ -150,6 +150,10 @@ func ldap2pg(ctx context.Context) (err error) {
 				slog.Info("All privileges configured.", "database", dbname)
 			}
 			queryCount += stageCount
+
+			if len(defaultACLs) == 0 {
+				continue
+			}
 
 			slog.Debug("Stage 3: default privileges.")
 			err = instance.InspectStage3(ctx, dbname, managedRoles)
