@@ -39,13 +39,13 @@ func main() {
 	}
 
 	data := struct {
-		Groups   map[string][]interface{}
-		Refs     map[string]map[string]interface{}
-		Defaults map[string]map[string]interface{}
+		Groups     map[string][]interface{}
+		Privileges map[string]map[string]interface{}
+		Defaults   map[string]map[string]interface{}
 	}{
-		Groups:   make(map[string][]interface{}),
-		Refs:     make(map[string]map[string]interface{}),
-		Defaults: make(map[string]map[string]interface{}),
+		Groups:     make(map[string][]interface{}),
+		Privileges: make(map[string]map[string]interface{}),
+		Defaults:   make(map[string]map[string]interface{}),
 	}
 
 	for key, items := range privileges.BuiltinsProfiles {
@@ -58,7 +58,7 @@ func main() {
 			if strings.HasPrefix(key, "__default") {
 				data.Defaults[key] = item.(map[string]interface{})
 			} else {
-				data.Refs[key] = item.(map[string]interface{})
+				data.Privileges[key] = item.(map[string]interface{})
 			}
 		}
 	}

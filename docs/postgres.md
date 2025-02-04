@@ -8,7 +8,7 @@ You can customize all these queries in the `postgres` YAML section
 with parameters ending with `_query`.
 See [ldap2pg.yaml reference] for details.
 
-[ldap2pg.yaml reference]: config.md#postgres-parameters
+[ldap2pg.yaml reference]: config.md#postgres
 
 
 ## What databases to synchronize ?

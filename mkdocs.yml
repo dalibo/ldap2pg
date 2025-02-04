@@ -36,7 +36,9 @@ extra_css:
 
 nav:
 - Home: index.md
-- Installation: install.md
+- Installation:
+  - Installation: install.md
+  - Changelog: changelog.md
 - Configuration:
   - CLI: cli.md
   - ldap2pg.yml: config.md
@@ -45,9 +47,10 @@ nav:
   - Searching Directory: ldap.md
   - Managing Privileges: privileges.md
   - Builtins Privileges: builtins.md
-- Cookbook: cookbook.md
-- Changelog: changelog.md
-- Hacking: hacking.md
+- Guides:
+  - Cookbook: guides/cookbook.md
+  - Custom ACL: guides/acls.md
+  - Hacking: hacking.md
 
 site_dir: dist/docs/
 
@@ -55,16 +58,18 @@ site_dir: dist/docs/
 markdown_extensions:
 - admonition
 - attr_list
-- sane_lists
-- smarty
-- toc:
-    permalink: yes
-- wikilinks
 - pymdownx.highlight:
     anchor_linenums: true
 - pymdownx.inlinehilite
 - pymdownx.snippets
 - pymdownx.superfences
+- pymdownx.blocks.tab:
+    alternate_style: true
+- sane_lists
+- smarty
+- toc:
+    permalink: yes
+- wikilinks
 
 
 plugins:

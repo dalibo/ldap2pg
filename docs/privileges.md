@@ -65,7 +65,7 @@ An object owner is a role having `CREATE` privilege on a schema.
 
 ## Granting Privilege Profile
 
-Inspecting privileges may consume a lot of resources on PostgreSQL instance.
+Inspecting millions of privileges may consume a lot of resources on PostgreSQL instance.
 Revoking privileges is known to be slow in PostgreSQL.
 The best practice is to grant privileges to a group role and let user inherit privileges.
 With ldap2pg, you can define static groups in YAML and inherit them when creating roles from directory.
@@ -166,8 +166,8 @@ A creator is a role with LOGIN option and CREATE privilege on a schema.
 You can manually set the target owner of a grant to any managed roles.
 
 ldap2pg does not configure privileges on `__all__` schemas.
-You are supposed to use `global` scope instead.
-If you want to grant/revoke default privilege per schema, you must reference `schema` default.
+You are supposed to use `GLOBAL DEFAULT` ACL instead.
+If you want to grant/revoke default privilege per schema, you must reference `SCHEMA DEFAULT` ACL.
 
 The following example configures default privileges for alice to allow bob to SELECT on future tables created by alice.
 
@@ -175,9 +175,9 @@ The following example configures default privileges for alice to allow bob to SE
 ``` yaml
 privileges:
   reading:
-  - default: global
-    type: SELECT
-    on: TABLES
+  - type: SELECT
+    on: SCHEMA DEFAULT
+    object: TABLES
   owning:
   - type: CREATE
     on: SCHEMAS

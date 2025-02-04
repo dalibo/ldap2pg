@@ -31,7 +31,7 @@ This is helpful to feed ldap2pg with dynamic configuration.
 `ldap2pg.yml` is split in several sections :
 
 - `postgres` : setup Postgres connexion and inspection queries.
-- `ldap`: configuration for ldap search optimisation.
+- `ldap`: configuration for LDAP client.
 - `privileges` : the definition of privileges profiles.
 - `rules` : the list of LDAP searches and associated mapping to roles and
   grants.
@@ -43,7 +43,7 @@ If you don't know how to begin, it is a good starting point.
 !!! note
 
     If you have trouble finding the right configuration for your needs, feel free to
-    [file an issue](https://github.com/dalibo/ldap2pg/issues/new) to get help.
+    [start a discussion](https://github.com/dalibo/ldap2pg/discussions) to get help.
 
 
 ### About YAML
@@ -56,8 +56,14 @@ See [this YAML cheatsheet](https://medium.com/@kenichishibata/yaml-to-json-cheat
 In `ldap2pg.yaml` file, you will likely use wildcard for glob pattern and curly brace for LDAP attribute injection.
 Take care of protecting these characters with quotes.
 
+``` yaml
+rules:
+  - role: {cn}  # It's an invalid YAML dict.
+  - role: "{cn}"  # It's a string with LDAP attribute injection
+```
 
-## Postgres Parameters
+
+## Postgres Parameters  { #postgres }
 
 The `postgres` section defines custom SQL queries for Postgres inspection.
 
@@ -173,16 +179,21 @@ postgres:
 ```
 
 
-## Ldap Parameter
+## LDAP Section { #ldap }
 
-The `ldap`section define configuratio for LDAP search optimisation.
+The `ldap` section customizes LDAP client behaviour.
+Configure connection using `ldap.conf` and `LDAP*` environment variables.
+
 
 ### `known_rdns`  { #ldap-known-rdns }
 
-Known_rdns is used to optimise LDAP search.
-It's a list of attributes that are known to be part of the DN.
-ldap2pg will use these attributes to avoid searching the directory for them.
-If nil, default value is `[n, l, st, o, ou, c, street, dc, uid]`.
+List of attributes known to be part of the DN.
+
+ldap2pg skips sub-search for attributes in this list.
+e.g. `{member.cn}` wont trigger a sub-search on all members if `cn` is in `known_rdns`.
+Default value is `[n, l, st, o, ou, c, street, dc, uid]`.
+Add a value to fasten synchronization.
+Remove a value if an attribute is not part of the DN.
 
 ``` yaml
 ldap:
@@ -203,15 +214,15 @@ See [Managing Privileges] for details.
 ``` yaml
 privileges:
   reading:
-  - default: global
+  - on: GLOBAL DEFAULT
     type: SELECT
-    on: TABLES
+    object: TABLES
 
   writing:
   - reading
-  - default: global
+  - on: GLOBAL
     type: SELECT
-    on: TABLES
+    object: TABLES
 ```
 
 A privilege profile whose name starts with `_` is inactive unless included in an active profile.
@@ -220,6 +231,7 @@ A privilege profile whose name starts with `_` is inactive unless included in an
 ### `object` { #privileges-object }
 
 Defines the target object for object-grained ACL.
+
 Actually useful only for `GLOBAL DEFAULT` and `SCHEMA DEFAULT` ACL
 where the object is the target object class like `TABLES`, `SEQUENCES`, etc.
 [grant rule] defines target schema for `SCHEMA DEFAULT`.
@@ -235,14 +247,15 @@ privileges:
 
 ### `type`  { #privileges-type }
 
-Type of privilege as described in [Section 5.7 of PostgreSQL documentation].
+Type of privilege as described in [Section 5.8 of PostgreSQL documentation].
 e.g. SELECT, REFERENCES, USAGE, etc.
+
 The value can be either a single string or a list of strings.
 Plural form `types` is valid.
 When multiple types are defined, a new privilege is defined for each type,
 each with the same attributes such as `on`.
 
-[Section 5.7 of PostgreSQL documentation]: https://www.postgresql.org/docs/current/ddl-priv.html
+[Section 5.8 of PostgreSQL documentation]: https://www.postgresql.org/docs/current/ddl-priv.html
 
 ``` yaml
 privileges:
@@ -316,7 +329,7 @@ See [Searching directory] for details.
 
 #### `base`, `scope` and `filter`  { #ldapsearch-parameters }
 
-These parameters have the same meaning, definition and default as searchbase, scope and filter arguments of ldapsearch CLI utility.
+These parameters have the same meaning, definition and default as base, scope and filter arguments of ldapsearch CLI utility.
 
 ``` yaml
 rules:
@@ -333,9 +346,10 @@ rules:
 
 #### `joins`  { #ldapsearch-joins }
 
-Customizes LDAP sub-searches.
+Customizes LDAP sub-search.
 The `joins` section is a dictionary with attribute name as key and LDAP search parameters as value.
 LDAP search parameters are the same as for top LDAP search.
+Actually, a single sub-search is supported.
 
 ``` yaml
 rules:
@@ -628,3 +642,67 @@ Special value `__auto__` fallbacks to managed roles having `CREATE` privilege on
 May be a list of names.
 Plural form `owners` is valid.
 Accepts LDAP attribute injection using curly braces.
+
+
+## PostgreSQL ACLs Section  { #acls }
+
+An ACL is set of queries to list GRANTs in the cluster and to manage them by granting or revoking item in the list.
+ACL is scoped to instance or database.
+Reference ACL in privileges profiles.
+Writing [custom ACL] is tricky,
+ensure you understand both PostgreSQL and ldap2pg before.
+
+
+### `acls`  { #acls-acls }
+
+The `acls` top level section is a mapping defining ACLs.
+All fields are mandatory.
+
+``` yaml
+acls:
+  PROCEDURE:
+    scope: database
+    inspect: |
+      WITH ...
+    grant: GRANT ...
+    revoke: REVOKE ...
+```
+
+
+#### `scope`  { #acls-scope }
+
+Scope of the ACL.
+Can be `instance` or `database`.
+
+
+#### `inspect`  { #acls-inspect }
+
+SQL query to list GRANTs in the cluster.
+The signature of the query depends on the scope.
+See [Custom ACLs] for details.
+
+
+#### `grant`  { #acls-grant }
+
+SQL query to grant a privilege.
+The query accepts templating using angle brackets.
+Some parameters are injected as keyword, i.e. as raw SQL.
+Other parameters are quoted as identifiers.
+
+Available parameters:
+
+- `<acl>` name of the ACL. Raw SQL.
+- `<database>` name of database to grant on. Quoted identifier.
+- `<grantee>` name of role to grant on. Quoted identifier.
+- `<object>` name of object to grant on. Quoted identifier.
+- `<owner>` name of role to grant to. Quoted identifier.
+- `<privilege>` type of privilege. Raw SQL.
+- `<schema>` name of schema to grant on. Quoted identifier.
+
+
+#### `revoke`  { #acls-revoke }
+
+SQL query to revoke a privilege.
+Like `grant`, the query accepts templating using angle brackets.
+Accepts same parameters as grant.
+Having different paramenter between GRANT and REVOKE leads to unexpected behaviour.

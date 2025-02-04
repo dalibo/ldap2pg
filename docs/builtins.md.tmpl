@@ -73,18 +73,12 @@ For effective privileges:
 - `ALL FUNCTIONS IN SCHEMA`: manage `EXECUTE` on all functions per schema.
 - `ALL SEQUENCES IN SCHEMA`: like above but for sequences.
 - `ALL TABLES IN SCHEMA`: like above but for tables and views.
+- `GLOBAL DEFAULT`: manage default privileges on database.
+- `SCHEMA DEFAULT`: manage default privileges per schema.
 
 `ALL ... IN SCHEMA` ACL inspects whether a privilege is granted to only a subset of objects.
 This is a *partial* grant.
 A partial grant is either revoked if unwanted or regranted if expected.
-
-ACL for default privileges:
-
-- `SEQUENCES`
-- `FUNCTIONS`
-- `TABLES`
-
-Theses ACL must be referenced with `global` set to either `schema` or `global`.
 
 You can reference these ACL using [privileges:on] parameter in YAML. Like this:
 
@@ -96,6 +90,17 @@ privileges:
 ```
 
 [privileges:on]: config.md#privileges-on
+
+Default privileges references a privilege type and a class of objects.
+ldap2pg inspect default privileges for the following object classes:
+
+- `SEQUENCES`
+- `FUNCTIONS`
+- `TABLES`
+
+You must reference object class in privilege profile using [object] parameter in YAML.
+
+[object]: config.md#privileges-object
 
 You cannot (yet) configure custom ACL.
 
@@ -119,8 +124,8 @@ Here is the list of predefined privileges:
 
 | Name | Manages |
 |------|---------|
-{{ range $key, $ref := .Refs -}}
-| {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $ref "type" }} ON {{ index $ref "on" }}` |
+{{ range $key, $priv := .Privileges -}}
+| <a name="{{ $key | slugify }}"></a> {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $priv "type" }} ON {{ index $priv "on" }}` |
 {{ end }}
 
 
@@ -131,6 +136,6 @@ Default privilege profile references both global and schema defaults.
 
 | Name | Manages |
 |------|---------|
-{{ range $key, $ref := .Defaults -}}
-| <a name="{{ $key | slugify }}"></a> {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $ref "type" }} ON {{ index $ref "on" }}` |
+{{ range $key, $priv := .Defaults -}}
+| <a name="{{ $key | slugify }}"></a> {{ $key | printf "`%s`" | printf "%-40s" }} | `{{ index $priv "type" }} ON {{ index $priv "object" }}` |
 {{ end -}}

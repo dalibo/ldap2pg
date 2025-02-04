@@ -15,16 +15,16 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix drop all builtin privileges for the role `PUBLIC` on the first execution.
 - Build for ARM64v8.
+- Gracefully handle syntax error in ldaprc.
 - Gracefully handle missing configuration file.
 - Gracefully handle passing file as DSN.
-- Add new default configuration location in `/etc/ldap2pg/`.
-- Fix panic on syntax error in ldaprc.
-- Accept `types` as a list of privileges type in config.
+- Search for configuration file `/etc/ldap2pg/ldap2pg.yml`.
 - Use `LDAPPASSWORD_FILE` env var to store the path to the ldap password file.
 - Accept the `-y` CLI option to specify the path to the ldap password file.
-- Make known RDNs customizable in ldap2pg configuration.
-- Dropped privileges `default` field in config. Compatibility is assured.
+- Customize known RDNs globally in configuration file.
+- Dropped privileges `default` field in config. Compatibility is preserved.
 - Added `object` to privilege definition.
+- Accept `types` as a list of privileges type.
 
 
 # ldap2pg 6.2
