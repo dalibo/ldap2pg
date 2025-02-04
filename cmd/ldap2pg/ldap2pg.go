@@ -44,7 +44,14 @@ func main() {
 		showVersion()
 		return
 	}
+
 	err := ldap2pg(ctx)
+
+	exit, ok := err.(interface{ Exit() })
+	if ok {
+		exit.Exit()
+	}
+
 	if err != nil {
 		if errs, ok := err.(interface{ Len() int }); ok {
 			// Assume error are already logged before.
@@ -177,8 +184,7 @@ func ldap2pg(ctx context.Context) (err error) {
 		grantCount,
 		queryCount,
 	)
-	os.Exit(exitCode)
-	return
+	return errorCode{code: exitCode}
 }
 
 func showVersion() {
