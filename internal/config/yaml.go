@@ -139,7 +139,7 @@ func (c *Config) checkVersion(yaml any) (err error) {
 	}
 	c.Version, ok = version.(int)
 	if !ok {
-		return errors.New("Configuration version must be integer")
+		return errors.New("configuration version must be integer")
 	}
 	if c.Version != 6 {
 		slog.Debug("Unsupported configuration version. Minimum version is 6.", "version", c.Version)
