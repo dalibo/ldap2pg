@@ -49,11 +49,11 @@ func FindConfigFile(userValue string) string {
 }
 
 func FindFile(userValue string, candidates []string) (configpath string) {
-	if "-" == userValue {
+	if userValue == "-" {
 		return "<stdin>"
 	}
 
-	if "" != userValue {
+	if userValue != "" {
 		return userValue
 	}
 

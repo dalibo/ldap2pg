@@ -66,7 +66,7 @@ func buildTintOptions(level slog.Level) *tint.Options {
 				case error: // Automatic tint.Err()
 					a = tint.Err(v)
 				case nil:
-					if "err" == a.Key {
+					if a.Key == "err" {
 						a.Key = "" // Drop nil error.
 						return a
 					}

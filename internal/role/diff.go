@@ -31,7 +31,7 @@ func Diff(all, managed, wanted Map, fallbackOwner string) <-chan postgres.SyncQu
 				continue
 			}
 
-			if "public" == name {
+			if name == "public" {
 				continue
 			}
 

@@ -54,7 +54,7 @@ func DuplicatePrivilege(yaml map[string]any) (privileges []any) {
 		privilege := make(map[string]any)
 		privilege["type"] = singleType
 		for key, value := range yaml {
-			if "types" == key {
+			if key == "types" {
 				continue
 			}
 			privilege[key] = value

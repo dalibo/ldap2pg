@@ -26,7 +26,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			// grant loop.
 			wantedGrant.Partial = false
 			// Don't revoke irrelevant ANY ... IN SCHEMA
-			if wantedSet.Contains(wantedGrant) || "" == grant.Type {
+			if wantedSet.Contains(wantedGrant) || grant.Type == "" {
 				continue
 			}
 

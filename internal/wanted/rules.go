@@ -35,7 +35,7 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 		defer close(ch)
 		parents := []role.Membership{}
 		for _, m := range r.Parents {
-			if nil == results.Entry || 0 == len(m.Name.Fields) {
+			if results.Entry == nil || len(m.Name.Fields) == 0 {
 				// Static case.
 				parents = append(parents, m.Generate(nil))
 			} else {

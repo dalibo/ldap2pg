@@ -72,7 +72,7 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 			}
 
 			for role := range item.generateRoles(&res.result) {
-				if "" == role.Name {
+				if role.Name == "" {
 					continue
 				}
 				pattern := blacklist.MatchString(role.Name)

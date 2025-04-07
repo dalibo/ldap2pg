@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	if 2 != len(os.Args) {
+	if len(os.Args) != 2 {
 		slog.Error("missing template path")
 		os.Exit(1)
 	}

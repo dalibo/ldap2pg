@@ -109,7 +109,7 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 	if rows.Next() {
 		panic("Multiple row returned.")
 	}
-	if "" == fallbackOwner {
+	if fallbackOwner == "" {
 		instance.FallbackOwner = instance.Me.Name
 	} else {
 		instance.FallbackOwner = fallbackOwner

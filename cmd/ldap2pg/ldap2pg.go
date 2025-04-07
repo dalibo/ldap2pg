@@ -109,7 +109,7 @@ func ldap2pg(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	if 0 == stageCount {
+	if stageCount == 0 {
 		slog.Info("All roles synchronized.")
 	}
 	queryCount := stageCount
@@ -146,7 +146,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("stage 2: %w", err)
 			}
-			if 0 == stageCount {
+			if stageCount == 0 {
 				slog.Info("All privileges configured.", "database", dbname)
 			}
 			queryCount += stageCount
@@ -165,7 +165,7 @@ func ldap2pg(ctx context.Context) (err error) {
 			if err != nil {
 				return fmt.Errorf("stage 3: %w", err)
 			}
-			if 0 == stageCount {
+			if stageCount == 0 {
 				slog.Info("All default privileges configured.", "database", dbname)
 			}
 			queryCount += stageCount
@@ -320,7 +320,7 @@ func syncPrivileges(ctx context.Context, controller *Controller, roles mapset.Se
 		}
 		slog.Debug("Privileges synchronized.", "acl", acl, "database", dbname)
 	}
-	if 0 < len(errs) {
+	if len(errs) > 0 {
 		return queryCount, errors.Join(errs...)
 	}
 	return queryCount, nil

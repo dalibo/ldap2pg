@@ -56,7 +56,7 @@ func (p parser) Unmarshal(data []byte) (map[string]any, error) {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		if "" == line {
+		if line == "" {
 			continue
 		}
 		fields := re.Split(line, 2)

@@ -4,14 +4,14 @@ func Product[T any](lists ...[]T) <-chan []T {
 	ch := make(chan []T)
 	go func() {
 		defer close(ch)
-		if 0 == len(lists) {
+		if len(lists) == 0 {
 			return
 		}
 
 		indices := make([]int, len(lists))
 		combination := make([]T, len(lists))
 		for i, list := range lists {
-			if 0 == len(list) {
+			if len(list) == 0 {
 				// Multiplying by empty breaks everything.
 				return
 			}
@@ -29,7 +29,7 @@ func Product[T any](lists ...[]T) <-chan []T {
 			// increment the position in the list. We loop on
 			// previous list only if the previous is exhausted.
 			for i := last; i >= -1; i-- {
-				if -1 == i {
+				if i == -1 {
 					// We have rolled over all lists. Stop here.
 					return
 				}

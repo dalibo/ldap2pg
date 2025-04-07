@@ -12,7 +12,7 @@ type Search struct {
 
 func (s Search) SubsearchAttribute() string {
 	keys := maps.Keys(s.Subsearches)
-	if 0 == len(keys) {
+	if len(keys) == 0 {
 		return ""
 	}
 	return keys[0]

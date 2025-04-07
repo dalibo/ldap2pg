@@ -35,7 +35,7 @@ func (s *Step) InferAttributes() {
 	for field := range s.IterFields() {
 		attribute, field, found := strings.Cut(field.FieldName, ".")
 		// dn is the primary key of the entry, not a real attribute.
-		if "dn" == attribute {
+		if attribute == "dn" {
 			continue
 		}
 		attributes.Add(attribute)
@@ -54,7 +54,7 @@ func (s *Step) InferAttributes() {
 		subsearchAttributes[attribute] = subAttributes
 	}
 
-	if 0 == attributes.Cardinality() {
+	if attributes.Cardinality() == 0 {
 		return
 	}
 
@@ -62,11 +62,11 @@ func (s *Step) InferAttributes() {
 	slog.Debug("Collected LDAP search attributes.",
 		"item", s.Description, "base", s.LdapSearch.Base, "attributes", s.LdapSearch.Attributes)
 
-	if 0 == len(subsearchAttributes) {
+	if len(subsearchAttributes) == 0 {
 		return
 	}
 
-	if nil == s.LdapSearch.Subsearches {
+	if s.LdapSearch.Subsearches == nil {
 		s.LdapSearch.Subsearches = make(map[string]ldap.Subsearch)
 	}
 	for attribute, subAttributes := range subsearchAttributes {
@@ -144,8 +144,8 @@ func (s Step) SplitStaticItems() (items []Step) {
 		}
 	}
 
-	if (0 == len(staticRoles) && 0 == len(staticGrants)) ||
-		(0 == len(dynamicRoles) && 0 == len(dynamicGrants)) {
+	if (len(staticRoles) == 0 && len(staticGrants) == 0) ||
+		(len(dynamicRoles) == 0 && len(dynamicGrants) == 0) {
 		items = append(items, s)
 		return
 	}
@@ -197,7 +197,7 @@ func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
 				Entry:              entry,
 				SubsearchAttribute: subsearchAttr,
 			}
-			if "" == subsearchAttr {
+			if subsearchAttr == "" {
 				ch <- SearchResult{result: result}
 				continue
 			}

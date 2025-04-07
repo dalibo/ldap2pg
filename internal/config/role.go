@@ -63,7 +63,7 @@ func DuplicateRoleRules(yaml map[string]any) (rules []map[string]any) {
 		rule := make(map[string]any)
 		rule["name"] = name
 		for key, value := range yaml {
-			if "names" == key {
+			if key == "names" {
 				continue
 			}
 			rule[key] = value
@@ -92,7 +92,7 @@ func NormalizeRoleOptions(yaml any) (value map[string]any, err error) {
 	case string:
 		tokens := strings.Split(yaml, " ")
 		for _, token := range tokens {
-			if "" == token {
+			if token == "" {
 				continue
 			}
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")

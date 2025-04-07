@@ -32,15 +32,16 @@ func (a ACL) String() string {
 //
 // Grant and Revoke queries may be generated from Name.
 func (a ACL) Register() error {
-	if "GLOBAL DEFAULT" == a.Name {
+	switch {
+	case a.Name == "GLOBAL DEFAULT":
 		a.rowTo = rowToGlobalDefaultGrant
-	} else if "SCHEMA DEFAULT" == a.Name {
+	case a.Name == "SCHEMA DEFAULT":
 		a.rowTo = rowToSchemaDefaultGrant
-	} else if "instance" == a.Scope {
+	case a.Scope == "instance":
 		a.rowTo = rowToInstanceGrant
-	} else if "database" == a.Scope {
+	case a.Scope == "database":
 		a.rowTo = rowToDatabaseGrant
-	} else {
+	default:
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
 
