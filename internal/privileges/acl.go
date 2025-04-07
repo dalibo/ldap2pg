@@ -32,15 +32,16 @@ func (a ACL) String() string {
 //
 // Grant and Revoke queries may be generated from Name.
 func (a ACL) Register() error {
-	if "GLOBAL DEFAULT" == a.Name {
+	switch {
+	case a.Name == "GLOBAL DEFAULT":
 		a.rowTo = rowToGlobalDefaultGrant
-	} else if "SCHEMA DEFAULT" == a.Name {
+	case a.Name == "SCHEMA DEFAULT":
 		a.rowTo = rowToSchemaDefaultGrant
-	} else if "instance" == a.Scope {
+	case a.Scope == "instance":
 		a.rowTo = rowToInstanceGrant
-	} else if "database" == a.Scope {
+	case a.Scope == "database":
 		a.rowTo = rowToDatabaseGrant
-	} else {
+	default:
 		return fmt.Errorf("unknown scope %q", a.Scope)
 	}
 
@@ -128,14 +129,14 @@ func rowToDatabaseGrant(r pgx.Row) (g Grant, err error) {
 	return
 }
 
-func NormalizeACLs(yaml interface{}) (interface{}, error) {
-	m, ok := yaml.(map[string]interface{})
+func NormalizeACLs(yaml any) (any, error) {
+	m, ok := yaml.(map[string]any)
 	if !ok {
 		return yaml, fmt.Errorf("must be a map")
 	}
 
 	for k, v := range m {
-		acl, ok := v.(map[string]interface{})
+		acl, ok := v.(map[string]any)
 		if !ok {
 			return yaml, fmt.Errorf("%s: must be a map", k)
 		}

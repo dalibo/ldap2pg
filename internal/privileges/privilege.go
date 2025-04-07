@@ -21,8 +21,8 @@ func (p Privilege) ACL() string {
 	return p.On
 }
 
-func NormalizePrivilege(rawPrivilege interface{}) (interface{}, error) {
-	m, ok := rawPrivilege.(map[string]interface{})
+func NormalizePrivilege(rawPrivilege any) (any, error) {
+	m, ok := rawPrivilege.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type")
 	}
@@ -49,12 +49,12 @@ func NormalizePrivilege(rawPrivilege interface{}) (interface{}, error) {
 	return m, err
 }
 
-func DuplicatePrivilege(yaml map[string]interface{}) (privileges []interface{}) {
-	for _, singleType := range yaml["types"].([]interface{}) {
-		privilege := make(map[string]interface{})
+func DuplicatePrivilege(yaml map[string]any) (privileges []any) {
+	for _, singleType := range yaml["types"].([]any) {
+		privilege := make(map[string]any)
 		privilege["type"] = singleType
 		for key, value := range yaml {
-			if "types" == key {
+			if key == "types" {
 				continue
 			}
 			privilege[key] = value

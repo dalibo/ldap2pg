@@ -35,7 +35,7 @@ func (c PostgresConfig) Build() inspect.Config {
 }
 
 type QueryConfig[T any] struct {
-	Value   interface{}
+	Value   any
 	Querier inspect.Querier[T]
 }
 
@@ -63,8 +63,8 @@ func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo YamlToFunc[
 			SQL:   strings.TrimSpace(qc.Value.(string)),
 			RowTo: rowTo,
 		}
-	case []interface{}: // YAML values case.
-		rawList := qc.Value.([]interface{})
+	case []any: // YAML values case.
+		rawList := qc.Value.([]any)
 		rows := make([]T, 0)
 		for _, rawRow := range rawList {
 			row, err := yamlTo(rawRow)
@@ -82,8 +82,8 @@ func (qc *QueryConfig[T]) Instantiate(rowTo pgx.RowToFunc[T], yamlTo YamlToFunc[
 	return nil
 }
 
-type YamlToFunc[T any] func(row interface{}) (T, error)
+type YamlToFunc[T any] func(row any) (T, error)
 
-func YamlTo[T any](raw interface{}) (T, error) {
+func YamlTo[T any](raw any) (T, error) {
 	return raw.(T), nil
 }

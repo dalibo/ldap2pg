@@ -5,7 +5,7 @@ import "fmt"
 // Alias rename a key in a map.
 //
 // Returns an error if alias and key already co-exists.
-func Alias(yaml map[string]interface{}, key, alias string) (err error) {
+func Alias(yaml map[string]any, key, alias string) (err error) {
 	value, hasAlias := yaml[alias]
 	if !hasAlias {
 		return

@@ -122,7 +122,7 @@ func (instance *Instance) InspectRoles(ctx context.Context, pgconn *pgx.Conn, ma
 	for managedRolesQ.Query(ctx, pgconn); managedRolesQ.Next(); {
 		name := managedRolesQ.Row()
 		match := instance.RolesBlacklist.MatchString(name)
-		if "" != match {
+		if match != "" {
 			slog.Debug("Ignoring blacklisted role name.", "role", name, "pattern", match)
 			continue
 		}

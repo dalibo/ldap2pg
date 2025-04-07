@@ -15,14 +15,14 @@ import (
 //
 // Sets default values. Checks some conflicts.
 // Hormonize types for DuplicateGrantRules.
-func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err error) {
-	rule = map[string]interface{}{
+func NormalizeGrantRule(yaml any) (rule map[string]any, err error) {
+	rule = map[string]any{
 		"owners":    "__auto__",
 		"schemas":   "__all__",
 		"databases": "__all__",
 	}
 
-	yamlMap, ok := yaml.(map[string]interface{})
+	yamlMap, ok := yaml.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type")
 	}
@@ -70,7 +70,7 @@ func NormalizeGrantRule(yaml interface{}) (rule map[string]interface{}, err erro
 }
 
 // DuplicateGrantRules split plurals for mapstructure
-func DuplicateGrantRules(yaml map[string]interface{}) (rules []interface{}) {
+func DuplicateGrantRules(yaml map[string]any) (rules []any) {
 	keys := []string{"owners", "databases", "schemas", "roles", "privileges"}
 	keys = lists.Filter(keys, func(s string) bool {
 		return len(yaml[s].([]string)) > 0
@@ -80,7 +80,7 @@ func DuplicateGrantRules(yaml map[string]interface{}) (rules []interface{}) {
 		fields = append(fields, yaml[k].([]string))
 	}
 	for combination := range lists.Product(fields...) {
-		rule := map[string]interface{}{}
+		rule := map[string]any{}
 		for i, k := range keys {
 			rule[strings.TrimSuffix(k, "s")] = combination[i]
 		}

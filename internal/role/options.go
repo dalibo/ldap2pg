@@ -72,7 +72,7 @@ func (o Options) Diff(wanted Options) string {
 	return b.String()
 }
 
-func (o *Options) LoadRow(row []interface{}) {
+func (o *Options) LoadRow(row []any) {
 	for i, value := range row {
 		colName := getColumnNameByOrder(i)
 		switch colName {
@@ -109,7 +109,7 @@ func ProcessColumns(columns []string, super bool) []string {
 		instanceColumns.availability[f.Tag.Get("column")] = false
 	}
 	for _, name := range columns {
-		if !super && ("rolsuper" == name || "rolreplication" == name || "rolbypassrls" == name) {
+		if !super && (name == "rolsuper" || name == "rolreplication" || name == "rolbypassrls") {
 			slog.Debug("Ignoring privileged role column", "column", name)
 			continue
 		}

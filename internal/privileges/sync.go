@@ -26,14 +26,14 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			// grant loop.
 			wantedGrant.Partial = false
 			// Don't revoke irrelevant ANY ... IN SCHEMA
-			if wantedSet.Contains(wantedGrant) || "" == grant.Type {
+			if wantedSet.Contains(wantedGrant) || grant.Type == "" {
 				continue
 			}
 
 			q := grant.FormatQuery(acls[grant.ACL].Revoke)
 			q.Description = "Revoke privileges."
 			q.Database = grant.Database
-			q.LogArgs = []interface{}{"grant", grant}
+			q.LogArgs = []any{"grant", grant}
 			ch <- q
 		}
 
@@ -55,7 +55,7 @@ func diff(current, wanted []Grant) <-chan postgres.SyncQuery {
 			q := grant.FormatQuery(acls[grant.ACL].Grant)
 			q.Description = "Grant privileges."
 			q.Database = grant.Database
-			q.LogArgs = []interface{}{"grant", grant}
+			q.LogArgs = []any{"grant", grant}
 			ch <- q
 		}
 	}()

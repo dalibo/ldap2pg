@@ -18,7 +18,7 @@ func TestLoadPrivilege(t *testing.T) {
 	  - type: CONNECT
 	    on: DATABASE
 	`)
-	var value map[string]interface{}
+	var value map[string]any
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	c := config.New()

@@ -7,24 +7,24 @@ import (
 
 func (c Client) Command(name string, args ...string) string {
 	cmd := []string{name}
-	if "" != c.URI {
+	if c.URI != "" {
 		cmd = append(cmd, "-H", c.URI)
 	}
-	if 0 != c.Timeout && "ldapsearch" == name {
+	if c.Timeout != 0 && name == "ldapsearch" {
 		cmd = append(cmd, "-l", fmt.Sprintf("%.0f", c.Timeout.Seconds()))
 	}
-	if "" != c.BindDN {
+	if c.BindDN != "" {
 		cmd = append(cmd, "-D", c.BindDN)
 	}
-	if "" == c.SaslMech {
+	if c.SaslMech == "" {
 		cmd = append(cmd, "-x")
 	} else {
 		cmd = append(cmd, "-Y", c.SaslMech)
 	}
-	if "" != c.SaslAuthCID {
+	if c.SaslAuthCID != "" {
 		cmd = append(cmd, "-U", c.SaslAuthCID)
 	}
-	if "" != c.Password {
+	if c.Password != "" {
 		cmd = append(cmd, "-w", "$LDAPPASSWORD")
 	}
 	cmd = append(cmd, args...)
@@ -37,7 +37,7 @@ func (c Client) Command(name string, args ...string) string {
 var specialChars = ` "*!()[]{}` + "`"
 
 func NeedsQuote(s string) bool {
-	if "" == s {
+	if s == "" {
 		return true
 	}
 	for i := range s {
@@ -49,18 +49,18 @@ func NeedsQuote(s string) bool {
 }
 
 func ShellQuote(arg string) string {
-	if "" == arg {
+	if arg == "" {
 		return `''`
 	}
 
 	quoteParts := strings.Split(arg, `'`)
 	b := strings.Builder{}
 	for i, part := range quoteParts {
-		if 0 < i {
+		if i > 0 {
 			b.WriteString(`"'"`)
 		}
 
-		if "" == part {
+		if part == "" {
 			continue
 		}
 

@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	if 2 != len(os.Args) {
+	if len(os.Args) != 2 {
 		slog.Error("missing template path")
 		os.Exit(1)
 	}
@@ -39,26 +39,26 @@ func main() {
 	}
 
 	data := struct {
-		Groups     map[string][]interface{}
-		Privileges map[string]map[string]interface{}
-		Defaults   map[string]map[string]interface{}
+		Groups     map[string][]any
+		Privileges map[string]map[string]any
+		Defaults   map[string]map[string]any
 	}{
-		Groups:     make(map[string][]interface{}),
-		Privileges: make(map[string]map[string]interface{}),
-		Defaults:   make(map[string]map[string]interface{}),
+		Groups:     make(map[string][]any),
+		Privileges: make(map[string]map[string]any),
+		Defaults:   make(map[string]map[string]any),
 	}
 
 	for key, items := range privileges.BuiltinsProfiles {
-		l := items.([]interface{})
+		l := items.([]any)
 		item := l[0]
 		switch item.(type) {
 		case string:
 			data.Groups[key] = l
 		default:
 			if strings.HasPrefix(key, "__default") {
-				data.Defaults[key] = item.(map[string]interface{})
+				data.Defaults[key] = item.(map[string]any)
 			} else {
-				data.Privileges[key] = item.(map[string]interface{})
+				data.Privileges[key] = item.(map[string]any)
 			}
 		}
 	}

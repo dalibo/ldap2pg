@@ -101,24 +101,24 @@ func init() {
 // BuiltinsProfiles holds yaml rewrite for BuiltinsProfiles privileges from v5 format to v6.
 //
 // Exported for doc generation.
-var BuiltinsProfiles = map[string]interface{}{
-	"__connect__": []interface{}{map[string]interface{}{
+var BuiltinsProfiles = map[string]any{
+	"__connect__": []any{map[string]any{
 		"type": "CONNECT",
 		"on":   "DATABASE",
 	}},
-	"__temporary__": []interface{}{map[string]interface{}{
+	"__temporary__": []any{map[string]any{
 		"type": "TEMPORARY",
 		"on":   "DATABASE",
 	}},
-	"__create_on_schemas__": []interface{}{map[string]interface{}{
+	"__create_on_schemas__": []any{map[string]any{
 		"type": "CREATE",
 		"on":   "SCHEMA",
 	}},
-	"__usage_on_schemas__": []interface{}{map[string]interface{}{
+	"__usage_on_schemas__": []any{map[string]any{
 		"type": "USAGE",
 		"on":   "SCHEMA",
 	}},
-	"__all_on_schemas__": []interface{}{
+	"__all_on_schemas__": []any{
 		"__create_on_schemas__",
 		"__usage_on_schemas__",
 	},
@@ -129,23 +129,23 @@ var BuiltinsProfiles = map[string]interface{}{
 // example: __all_on_tables__, __select_on_tables_, etc.
 func registerRelationBuiltinProfile(class string, types ...string) {
 	CLASS := strings.ToUpper(class)
-	all := []interface{}{}
+	all := []any{}
 	for _, privType := range types {
 		TYPE := strings.ToUpper(privType)
-		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []interface{}{map[string]interface{}{
+		BuiltinsProfiles["__default_"+privType+"_on_"+class+"__"] = []any{map[string]any{
 			"type":   TYPE,
 			"on":     "GLOBAL DEFAULT",
 			"object": CLASS,
-		}, map[string]interface{}{
+		}, map[string]any{
 			"type":   TYPE,
 			"on":     "SCHEMA DEFAULT",
 			"object": CLASS,
 		}}
-		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []interface{}{map[string]interface{}{
+		BuiltinsProfiles["__"+privType+"_on_all_"+class+"__"] = []any{map[string]any{
 			"type": TYPE,
 			"on":   "ALL " + CLASS + " IN SCHEMA",
 		}}
-		BuiltinsProfiles["__"+privType+"_on_"+class+"__"] = []interface{}{
+		BuiltinsProfiles["__"+privType+"_on_"+class+"__"] = []any{
 			"__default_" + privType + "_on_" + class + "__",
 			"__" + privType + "_on_all_" + class + "__",
 		}

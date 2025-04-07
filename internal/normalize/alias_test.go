@@ -10,7 +10,7 @@ import (
 func TestAlias(t *testing.T) {
 	r := require.New(t)
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"role": "alice",
 	}
 	err := normalize.Alias(m, "roles", "role")
@@ -24,7 +24,7 @@ func TestAlias(t *testing.T) {
 func TestAliasEmpty(t *testing.T) {
 	r := require.New(t)
 
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	err := normalize.Alias(m, "roles", "role")
 	r.Nil(err)
 	_, found := m["roles"]
@@ -34,7 +34,7 @@ func TestAliasEmpty(t *testing.T) {
 func TestAliasConflict(t *testing.T) {
 	r := require.New(t)
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"key0":   "alice",
 		"alias0": "alice",
 	}

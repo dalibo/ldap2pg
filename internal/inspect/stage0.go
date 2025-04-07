@@ -94,7 +94,7 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 		slog.Warn("Running as unprivileged user on Postgres 15 and lower.", "version", serverVersion)
 		slog.Warn("Unprivileged user is flawed before Postgres 16.")
 		slog.Warn("Upgrade to Postgres 16 or later, switch to superuser or stick to ldap2pg 6.0.")
-		return fmt.Errorf("Unprivileged user on pre-16 Postgres")
+		return fmt.Errorf("unprivileged user on pre-16 Postgres")
 	} else {
 		msg = "Running as unprivileged user."
 	}
@@ -109,7 +109,7 @@ func (instance *Instance) InspectSession(ctx context.Context, fallbackOwner stri
 	if rows.Next() {
 		panic("Multiple row returned.")
 	}
-	if "" == fallbackOwner {
+	if fallbackOwner == "" {
 		instance.FallbackOwner = instance.Me.Name
 	} else {
 		instance.FallbackOwner = fallbackOwner

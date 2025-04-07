@@ -15,7 +15,7 @@ func TestList(t *testing.T) {
 	rawYaml := dedent.Dedent(`
 	role: alice
 	`)
-	var value interface{}
+	var value any
 	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
 
 	values := normalize.List(value)
@@ -28,7 +28,7 @@ func TestList(t *testing.T) {
 func TestStringList(t *testing.T) {
 	r := require.New(t)
 
-	value := interface{}("alice")
+	value := any("alice")
 	values, err := normalize.StringList(value)
 	r.Nil(err)
 	r.Equal(1, len(values))

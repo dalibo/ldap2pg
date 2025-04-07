@@ -27,7 +27,7 @@ func TestRoleRulesSingle(t *testing.T) {
 	rawYaml := dedent.Dedent(`
 	name: alice
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeRoleRule(raw)
@@ -48,7 +48,7 @@ func TestRolesComment(t *testing.T) {
 	name: alice
 	comment: au pays des merveilles.
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeRoleRule(raw)
@@ -60,7 +60,7 @@ func TestRolesComment(t *testing.T) {
 func TestRoleOptionsString(t *testing.T) {
 	r := require.New(t)
 
-	raw := interface{}("SUPERUSER LOGIN")
+	raw := any("SUPERUSER LOGIN")
 
 	value, err := config.NormalizeRoleOptions(raw)
 	r.Nil(err)
@@ -75,7 +75,7 @@ func TestRoleParents(t *testing.T) {
 	name: toto
 	parents: groupe
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeRoleRule(raw)
@@ -93,7 +93,7 @@ func TestMembership(t *testing.T) {
 	rawYaml := dedent.Dedent(`
 	name: owners
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	membership, err = config.NormalizeMembership(raw)

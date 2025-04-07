@@ -33,7 +33,7 @@ func (r *Result) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 	//
 	// subMap["subentry0-comb0"] = {"cn": "toto"}
 	var subMap map[string]map[string]string
-	if "" != r.SubsearchAttribute {
+	if r.SubsearchAttribute != "" {
 		subMap = r.GenerateSubsearchValues(expressions)
 	}
 
@@ -79,7 +79,7 @@ func (r *Result) GenerateCombinations(attributes, subKeys []string) <-chan map[s
 	valuesList := make([][]string, len(attributes))
 	for i, attr := range attributes {
 		lowerAttr := strings.ToLower(attr)
-		if "dn" == lowerAttr {
+		if lowerAttr == "dn" {
 			valuesList[i] = []string{r.Entry.DN}
 		} else if slices.Contains(KnownRDNs, lowerAttr) {
 			value0, err := ResolveFirstRDN(r.Entry.DN, attr)

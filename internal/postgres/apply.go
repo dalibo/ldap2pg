@@ -25,7 +25,7 @@ func Apply(ctx context.Context, diff <-chan SyncQuery, really bool) (count int, 
 
 	errs := errorlist.New("synchronisation errors")
 	for query := range diff {
-		if !slices.ContainsFunc(query.LogArgs, func(i interface{}) bool {
+		if !slices.ContainsFunc(query.LogArgs, func(i any) bool {
 			return i == "database"
 		}) {
 			query.LogArgs = append(query.LogArgs, "database", query.Database)

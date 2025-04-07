@@ -11,7 +11,7 @@ import (
 type Format struct {
 	Input string
 	// List of either literal or field, in order.
-	Sections []interface{}
+	Sections []any
 	Fields   []*Field
 }
 
@@ -44,7 +44,7 @@ func (f *Format) Parse(s string) (err error) {
 		start = i // Track the start of the section. i will move to the end.
 		if inField {
 			loc := strings.IndexByte(s[i:], '}')
-			if -1 == loc {
+			if loc == -1 {
 				err = fmt.Errorf("end of string before end of field")
 				i = end // End loop at end of step.
 			} else {
@@ -57,7 +57,7 @@ func (f *Format) Parse(s string) (err error) {
 			}
 		} else {
 			loc := strings.IndexByte(s[i:], '{')
-			if -1 == loc {
+			if loc == -1 {
 				// toto
 				//     ^
 				i = end // End loop at end of step.
@@ -70,7 +70,7 @@ func (f *Format) Parse(s string) (err error) {
 				} else {
 					next = 0
 				}
-				if i < end && '{' == next {
+				if i < end && next == '{' {
 					// To escape {{, send two strings, the one before the second { and the rest after on next iteration.
 					//
 					// toto{{titi

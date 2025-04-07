@@ -60,7 +60,7 @@ func (g Grant) FormatQuery(s string) (q postgres.SyncQuery) {
 		s = strings.ReplaceAll(s, "<object>", g.Object)
 	}
 
-	var args []interface{}
+	var args []any
 	for _, m := range qArgRe.FindAllString(s, -1) {
 		s = strings.Replace(s, m, "%s", 1)
 		switch m {

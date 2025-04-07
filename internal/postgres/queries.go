@@ -14,10 +14,10 @@ import (
 
 type SyncQuery struct {
 	Description string
-	LogArgs     []interface{}
+	LogArgs     []any
 	Database    string
 	Query       string
-	QueryArgs   []interface{}
+	QueryArgs   []any
 }
 
 func (q SyncQuery) IsZero() bool {
@@ -32,7 +32,7 @@ type FmtQueryRewriter struct{}
 
 func (q FmtQueryRewriter) RewriteQuery(_ context.Context, conn *pgx.Conn, sql string, args []any) (newSQL string, newArgs []any, err error) {
 	sql = strings.TrimSpace(dedent.Dedent(sql))
-	var fmtArgs []interface{}
+	var fmtArgs []any
 	for _, arg := range args {
 		arg, err = formatArg(conn, arg)
 		if err != nil {
@@ -44,19 +44,19 @@ func (q FmtQueryRewriter) RewriteQuery(_ context.Context, conn *pgx.Conn, sql st
 	return
 }
 
-func formatArg(conn *pgx.Conn, arg interface{}) (newArg any, err error) {
-	switch arg.(type) {
+func formatArg(conn *pgx.Conn, arg any) (newArg any, err error) {
+	switch arg := arg.(type) {
 	case pgx.Identifier:
-		newArg = arg.(pgx.Identifier).Sanitize()
+		newArg = arg.Sanitize()
 	case string:
-		s, err := conn.PgConn().EscapeString(arg.(string))
+		s, err := conn.PgConn().EscapeString(arg)
 		if err != nil {
 			return newArg, err
 		}
 		newArg = "'" + s + "'"
-	case []interface{}:
+	case []any:
 		b := strings.Builder{}
-		for _, item := range arg.([]interface{}) {
+		for _, item := range arg {
 			item, err := formatArg(conn, item)
 			if err != nil {
 				return newArg, err
@@ -81,10 +81,11 @@ func GroupByDatabase(defaultDatabase string, in <-chan SyncQuery) chan SyncQuery
 		databases := SyncOrder(defaultDatabase, false)
 
 		for q := range in {
-			if "<first>" == q.Database {
-				q.Database = databases[0]
-			} else if "" == q.Database {
+			switch q.Database {
+			case "":
 				q.Database = defaultDatabase
+			case "<first>":
+				q.Database = databases[0]
 			}
 			queries = append(queries, q)
 		}

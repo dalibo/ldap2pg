@@ -62,11 +62,10 @@ func RowToSchema(row pgx.CollectableRow) (s Schema, err error) {
 	return
 }
 
-func YamlToSchema(in interface{}) (out Schema, err error) {
-	switch in.(type) {
-	case string:
-		out.Name = in.(string)
-	default:
+func YamlToSchema(in any) (out Schema, err error) {
+	var ok bool
+	out.Name, ok = in.(string)
+	if !ok {
 		panic("Unsupported schema value.")
 	}
 	return
