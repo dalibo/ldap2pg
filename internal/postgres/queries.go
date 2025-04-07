@@ -45,18 +45,18 @@ func (q FmtQueryRewriter) RewriteQuery(_ context.Context, conn *pgx.Conn, sql st
 }
 
 func formatArg(conn *pgx.Conn, arg any) (newArg any, err error) {
-	switch arg.(type) {
+	switch arg := arg.(type) {
 	case pgx.Identifier:
-		newArg = arg.(pgx.Identifier).Sanitize()
+		newArg = arg.Sanitize()
 	case string:
-		s, err := conn.PgConn().EscapeString(arg.(string))
+		s, err := conn.PgConn().EscapeString(arg)
 		if err != nil {
 			return newArg, err
 		}
 		newArg = "'" + s + "'"
 	case []any:
 		b := strings.Builder{}
-		for _, item := range arg.([]any) {
+		for _, item := range arg {
 			item, err := formatArg(conn, item)
 			if err != nil {
 				return newArg, err

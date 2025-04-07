@@ -16,21 +16,20 @@ func NormalizeRoleRule(yaml any) (rule map[string]any, err error) {
 		"parents": []string{},
 	}
 
-	switch yaml.(type) {
+	switch yaml := yaml.(type) {
 	case string:
-		rule["names"] = []string{yaml.(string)}
+		rule["names"] = []string{yaml}
 	case map[string]any:
-		yamlMap := yaml.(map[string]any)
-		err = normalize.Alias(yamlMap, "names", "name")
+		err = normalize.Alias(yaml, "names", "name")
 		if err != nil {
 			return
 		}
-		err = normalize.Alias(yamlMap, "parents", "parent")
+		err = normalize.Alias(yaml, "parents", "parent")
 		if err != nil {
 			return
 		}
 
-		maps.Copy(rule, yamlMap)
+		maps.Copy(rule, yaml)
 
 		names, ok := rule["names"]
 		if ok {
@@ -89,10 +88,9 @@ func NormalizeRoleOptions(yaml any) (value map[string]any, err error) {
 	}
 	knownKeys := maps.Keys(value)
 
-	switch yaml.(type) {
+	switch yaml := yaml.(type) {
 	case string:
-		s := yaml.(string)
-		tokens := strings.Split(s, " ")
+		tokens := strings.Split(yaml, " ")
 		for _, token := range tokens {
 			if "" == token {
 				continue
@@ -100,11 +98,10 @@ func NormalizeRoleOptions(yaml any) (value map[string]any, err error) {
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
 	case map[string]any:
-		yamlMap := yaml.(map[string]any)
-		for k, v := range yamlMap {
-			yamlMap[k] = normalize.Boolean(v)
+		for k, v := range yaml {
+			yaml[k] = normalize.Boolean(v)
 		}
-		maps.Copy(value, yamlMap)
+		maps.Copy(value, yaml)
 	case nil:
 		return
 	default:
