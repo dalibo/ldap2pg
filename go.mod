@@ -1,13 +1,11 @@
 module github.com/dalibo/ldap2pg
 
-go 1.23.0
+go 1.24
 
 toolchain go1.23.4
 
 // https://pkg.go.dev/crypto/x509#ParseCertificate
-godebug (
-    x509negativeserial=1
-)
+godebug x509negativeserial=1
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
