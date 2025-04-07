@@ -81,22 +81,71 @@ func TestGrantString(t *testing.T) {
 }
 
 func TestExpandDatabase(t *testing.T) {
+	ACL{
+		Name:   "DATABASE-WIDE",
+		Scope:  "database",
+		Grant:  "GRANT <acl> ON <database> TO <grantee>",
+		Revoke: "REVOKE <acl> ON <database> FROM <grantee>",
+	}.MustRegister()
+	defer func() {
+		delete(acls, "DATABASE-WIDE")
+	}()
+
 	g := Grant{
+		ACL:      "DATABASE-WIDE",
 		Database: "db0",
 	}
 	grants := g.ExpandDatabase("db0")
 	r.Len(t, grants, 1)
 	r.Equal(t, "db0", grants[0].Database)
 
-	grants = g.ExpandDatabase("db1")
+	grants = g.ExpandDatabase("other-b1")
 	r.Len(t, grants, 0)
 
-	g = privileges.Grant{
-		Database: "__all__",
-	}
+	postgres.Databases["db0"] = postgres.Database{}
+	defer func() {
+		delete(postgres.Databases, "db0")
+	}()
+
+	g.Database = "__all__"
 	grants = g.ExpandDatabase("db0")
 	r.Len(t, grants, 1)
 	r.Equal(t, "db0", grants[0].Database)
+}
+
+func TestExpandDatabaseInstanceWide(t *testing.T) {
+	ACL{
+		Name:   "INSTANCE-WIDE",
+		Scope:  "instance",
+		Grant:  "GRANT <acl> ON <database> TO <grantee>",
+		Revoke: "REVOKE <acl> ON <database> FROM <grantee>",
+	}.MustRegister()
+	defer func() {
+		delete(acls, "INSTANCE-WIDE")
+	}()
+
+	g := Grant{
+		ACL:      "INSTANCE-WIDE",
+		Database: "db0",
+	}
+	grants := g.ExpandDatabase("db0")
+	r.Len(t, grants, 1)
+	r.Equal(t, "db0", grants[0].Database)
+
+	grants = g.ExpandDatabase("other-db1")
+	r.Len(t, grants, 1)
+	r.Equal(t, "db0", grants[0].Database)
+
+	postgres.Databases["db0"] = postgres.Database{}
+	defer func() {
+		delete(postgres.Databases, "db0")
+	}()
+
+	g.Database = "__all__"
+	grants = g.ExpandDatabase("db0")
+	r.Len(t, grants, 1)
+	r.Equal(t, "db0", grants[0].Database)
+	acls = nil
 }
 
 func TestExpandOwners(t *testing.T) {
