@@ -192,29 +192,6 @@ func ldap2pg() (err error) {
 	return errorCode{code: exitCode}
 }
 
-func showVersion() {
-	fmt.Printf("ldap2pg %s\n", version)
-
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return
-	}
-	modmap := make(map[string]string)
-	for _, mod := range bi.Deps {
-		modmap[mod.Path] = mod.Version
-	}
-	modules := []string{
-		"github.com/jackc/pgx/v5",
-		"github.com/go-ldap/ldap/v3",
-		"gopkg.in/yaml.v3",
-	}
-	for _, mod := range modules {
-		fmt.Printf("%s %s\n", mod, modmap[mod])
-	}
-
-	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
-}
-
 func changeDirectory(directory string) (err error) {
 	if directory == "" {
 		return
@@ -234,12 +211,12 @@ func configure() (controller Controller, c config.Config, err error) {
 
 	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
-		"version", version,
+		"version", version(),
+		"commit", commit[:8],
 		"runtime", runtime.Version(),
-		"commit", commit,
 		"pid", os.Getpid(),
 	)
-	if strings.Contains(version, "-") {
+	if strings.Contains(version(), "-") {
 		slog.Warn("Running a prerelease! Use at your own risks!")
 	}
 
