@@ -1,6 +1,7 @@
 package privileges
 
 import (
+	"fmt"
 	"log/slog"
 	"regexp"
 	"strings"
@@ -136,17 +137,32 @@ func (g Grant) String() string {
 }
 
 func (g Grant) ExpandDatabase(database string) (out []Grant) {
-	if database == g.Database {
+	instanceWide := acls[g.ACL].Scope == "instance"
+
+	if g.Database == "__all__" {
+		// Needs to substitute to one or all (instance-wide acl) databases.
+		for name := range postgres.Databases {
+			if name != database && !instanceWide {
+				// filter database-wide grant to current database only.
+				continue
+			}
+			g := g // copy
+			g.Database = name
+			out = append(out, g)
+		}
+		if len(out) == 0 {
+			panic(fmt.Sprintf("%s not in inspected databases", database))
+		}
+		return
+	}
+
+	if instanceWide || g.Database == database {
+		// Accept grant on explicit database if instance-wide or for current database.
+		// Since main synchronize instanceWide ACL on default database, we cant have
+		// twice an explicit GRANT on default database and on target database. e.g. we
+		// wont have GRANT CONNECT on extra0 executed on both postgres and extra0 database.
 		out = append(out, g)
-		return
 	}
-
-	if g.Database != "__all__" {
-		return
-	}
-
-	g.Database = database
-	out = append(out, g)
 
 	return
 }

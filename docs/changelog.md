@@ -11,6 +11,12 @@ Here is a highlight of changes in each versions. If you need further details,
 follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
+# Unreleased
+
+- Fix instance-wide privilege expansion of `__all__` database. (*CONNECT* revoked)
+- Fix targeting database-wide grant.
+
+
 # ldap2pg 6.3
 
 - Fix drop all builtin privileges for the role `PUBLIC` on the first execution.

@@ -61,7 +61,7 @@ acls:
     grant: GRANT <privilege> ON FUNCTION <schema>.get_random() TO <grantee>;
     revoke: REVOKE <privilege> ON FUNCTION <schema>.get_random() FROM <grantee>;
 
-profiles:
+privileges:
   random:
     - type: EXECUTE
       on: FUNCTION get_random
@@ -126,5 +126,7 @@ rules:
 
 - description: "Custom ACL"
   grant:
-    - role: nicolas
-      privilege: random
+    - privilege: random
+      role: nicolas
+      database: extra0
+      schema: public
