@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -29,23 +29,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	defer logPanic()
-
-	// Bootstrap logging first to log in setup.
+func Main() {
+	// Bootstrap logging first to log in setup and early errors.
 	internal.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
-	loadEnvAndFlags()
-	if k.Bool("help") {
-		pflag.Usage()
-		return
-	} else if k.Bool("version") {
-		showVersion()
-		return
-	}
 
-	err := ldap2pg(ctx)
+	err := ldap2pg()
 
 	exit, ok := err.(interface{ Exit() })
 	if ok {
@@ -66,7 +54,20 @@ func main() {
 	}
 }
 
-func ldap2pg(ctx context.Context) (err error) {
+func ldap2pg() (err error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	defer logPanic()
+
+	loadEnvAndFlags()
+	if k.Bool("help") {
+		pflag.Usage()
+		return
+	} else if k.Bool("version") {
+		showVersion()
+		return
+	}
+
 	start := time.Now()
 
 	stop, err := startProfiling()

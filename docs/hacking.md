@@ -100,7 +100,7 @@ Use `PGHOST=localhost` and `LDAPURI=ldaps://localhost`.
 Now you can run ldap2pg from source and test your changes!
 
 ``` console
-$ go run ./cmd/ldap2pg
+$ go run .
 09:54:27 INFO   Starting ldap2pg                                 version=v6.0-alpha5 runtime=go1.20.3 commit=<none>
 09:54:27 WARN   Running a prerelease! Use at your own risks!
 09:54:27 INFO   Using YAML configuration file.                   path=./ldap2pg.yml
@@ -145,7 +145,6 @@ Run unit tests as usual go tests.
 
 ``` console
 $ go test ./...
-?       github.com/dalibo/ldap2pg/cmd/ldap2pg   [no test files]
 ?       github.com/dalibo/ldap2pg/cmd/render-doc        [no test files]
 ok      github.com/dalibo/ldap2pg/cmd/mon-dojo  0.002s
 ok      github.com/dalibo/ldap2pg/internal      0.003s
@@ -224,7 +223,7 @@ This will feed directory with a lot of users and groups, several databases with 
 Synchronize this setup with:
 
 ``` console
-$ test/genbigconfig.sh | PGDATABASE=big0 go run ./cmd/ldap2pg -c -
+$ test/genbigconfig.sh | PGDATABASE=big0 go run . -c -
 ```
 
 

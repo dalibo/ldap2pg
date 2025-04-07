@@ -4,7 +4,7 @@ version: 2
 project_name: ldap2pg
 
 builds:
-- main: ./cmd/ldap2pg
+- main: .
   env:
   - CGO_ENABLED=0
   flags:
