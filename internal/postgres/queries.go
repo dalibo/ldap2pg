@@ -81,10 +81,11 @@ func GroupByDatabase(defaultDatabase string, in <-chan SyncQuery) chan SyncQuery
 		databases := SyncOrder(defaultDatabase, false)
 
 		for q := range in {
-			if "<first>" == q.Database {
-				q.Database = databases[0]
-			} else if "" == q.Database {
+			switch q.Database {
+			case "":
 				q.Database = defaultDatabase
+			case "<first>":
+				q.Database = databases[0]
 			}
 			queries = append(queries, q)
 		}
