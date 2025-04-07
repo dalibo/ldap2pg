@@ -1,15 +1,34 @@
+version: "2"
 linters:
   enable:
-  - gofumpt
-  - goimports
-  - misspell
-  - revive
-
-linters-settings:
-  gofumpt:
-    extra-rules: true
-  gosimple:
-    checks:
-    - "all"
-    # This check is poorly documented: https://staticcheck.io/docs/checks#S1034
-    - "-S1034"
+    - misspell
+    - revive
+  settings:
+    staticcheck:
+      checks:
+        - -S1034
+        - all
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
