@@ -145,8 +145,17 @@ func (g Grant) ExpandDatabase(database string) (out []Grant) {
 		return
 	}
 
-	g.Database = database
-	out = append(out, g)
+	if acls[g.ACL].Scope != "instance" {
+		g.Database = database
+		out = append(out, g)
+		return
+	}
+
+	for name := range postgres.Databases {
+		g := g // copy
+		g.Database = name
+		out = append(out, g)
+	}
 
 	return
 }
