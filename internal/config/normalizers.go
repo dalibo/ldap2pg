@@ -11,8 +11,8 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err error) {
-	config, ok := yaml.(map[string]interface{})
+func NormalizeConfigRoot(yaml any) (config map[string]any, err error) {
+	config, ok := yaml.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}
@@ -59,21 +59,21 @@ func NormalizeConfigRoot(yaml interface{}) (config map[string]interface{}, err e
 	return
 }
 
-func NormalizePostgres(yaml interface{}) error {
-	_, ok := yaml.(map[string]interface{})
+func NormalizePostgres(yaml any) error {
+	_, ok := yaml.(map[string]any)
 	if !ok {
 		return fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
 	return nil
 }
 
-func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
-	rawRules, ok := yaml.([]interface{})
+func NormalizeRules(yaml any) (syncMap []any, err error) {
+	rawRules, ok := yaml.([]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T, must be a list", yaml)
 	}
 	for i, rawRule := range rawRules {
-		var item interface{}
+		var item any
 		item, err = NormalizeWantRule(rawRule)
 		if err != nil {
 			return syncMap, fmt.Errorf("item[%d]: %w", i, err)
@@ -83,15 +83,15 @@ func NormalizeRules(yaml interface{}) (syncMap []interface{}, err error) {
 	return
 }
 
-func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error) {
-	rule = map[string]interface{}{
+func NormalizeWantRule(yaml any) (rule map[string]any, err error) {
+	rule = map[string]any{
 		"description": "",
-		"ldapsearch":  map[string]interface{}{},
-		"roles":       []interface{}{},
-		"grants":      []interface{}{},
+		"ldapsearch":  map[string]any{},
+		"roles":       []any{},
+		"grants":      []any{},
 	}
 
-	yamlMap, ok := yaml.(map[string]interface{})
+	yamlMap, ok := yaml.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T, must be a map", yaml)
 	}
@@ -118,9 +118,9 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	rule["ldapsearch"] = search
 
 	list := normalize.List(rule["roles"])
-	rules := []interface{}{}
+	rules := []any{}
 	for i, rawRule := range list {
-		var rule map[string]interface{}
+		var rule map[string]any
 		rule, err = NormalizeRoleRule(rawRule)
 		if err != nil {
 			return nil, fmt.Errorf("roles[%d]: %w", i, err)
@@ -132,9 +132,9 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	rule["roles"] = rules
 
 	list = normalize.List(rule["grants"])
-	rules = []interface{}{}
+	rules = []any{}
 	for i, rawRule := range list {
-		var rule map[string]interface{}
+		var rule map[string]any
 		rule, err = privileges.NormalizeGrantRule(rawRule)
 		if err != nil {
 			return nil, fmt.Errorf("grants[%d]: %w", i, err)
@@ -147,7 +147,7 @@ func NormalizeWantRule(yaml interface{}) (rule map[string]interface{}, err error
 	return
 }
 
-func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
+func NormalizeLdapSearch(yaml any) (search map[string]any, err error) {
 	search, err = NormalizeCommonLdapSearch(yaml)
 	if err != nil {
 		return
@@ -161,12 +161,12 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 		return
 	}
 
-	subsearches, ok := search["subsearches"].(map[string]interface{})
+	subsearches, ok := search["subsearches"].(map[string]any)
 	if !ok {
 		return
 	}
 	for attr := range subsearches {
-		var subsearch map[string]interface{}
+		var subsearch map[string]any
 		subsearch, err = NormalizeCommonLdapSearch(subsearches[attr])
 		if err != nil {
 			return
@@ -180,12 +180,12 @@ func NormalizeLdapSearch(yaml interface{}) (search map[string]interface{}, err e
 	return
 }
 
-func NormalizeCommonLdapSearch(yaml interface{}) (search map[string]interface{}, err error) {
-	search = map[string]interface{}{
+func NormalizeCommonLdapSearch(yaml any) (search map[string]any, err error) {
+	search = map[string]any{
 		"filter": "(objectClass=*)",
 		"scope":  "sub",
 	}
-	yamlMap, ok := yaml.(map[string]interface{})
+	yamlMap, ok := yaml.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type: %T", yaml)
 	}

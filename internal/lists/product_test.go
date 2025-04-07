@@ -32,20 +32,20 @@ func (suite *Suite) TestProductAny() {
 	var combinations [][]any
 	s0 := dumbStruct{A: "s0"}
 	s1 := dumbStruct{A: "s1"}
-	for item := range lists.Product[interface{}](
-		[]interface{}{"1", "2", "3"},
-		[]interface{}{s0, s1},
+	for item := range lists.Product[any](
+		[]any{"1", "2", "3"},
+		[]any{s0, s1},
 	) {
 		combinations = append(combinations, item)
 	}
 
 	r.Equal(3*2, len(combinations))
-	r.Equal([]interface{}{"1", s0}, combinations[0])
-	r.Equal([]interface{}{"1", s1}, combinations[1])
-	r.Equal([]interface{}{"2", s0}, combinations[2])
-	r.Equal([]interface{}{"2", s1}, combinations[3])
-	r.Equal([]interface{}{"3", s0}, combinations[4])
-	r.Equal([]interface{}{"3", s1}, combinations[5])
+	r.Equal([]any{"1", s0}, combinations[0])
+	r.Equal([]any{"1", s1}, combinations[1])
+	r.Equal([]any{"2", s0}, combinations[2])
+	r.Equal([]any{"2", s1}, combinations[3])
+	r.Equal([]any{"3", s0}, combinations[4])
+	r.Equal([]any{"3", s1}, combinations[5])
 }
 
 func (suite *Suite) TestProductString() {

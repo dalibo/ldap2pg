@@ -39,14 +39,14 @@ func (p Profile) Register(name string) error {
 	return errors.Join(errs...)
 }
 
-func NormalizeProfiles(value interface{}) (map[string][]interface{}, error) {
-	m, ok := value.(map[string]interface{})
+func NormalizeProfiles(value any) (map[string][]any, error) {
+	m, ok := value.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("bad type")
 	}
 	for key, value := range m {
-		privileges := []interface{}{}
-		for _, rawPrivilege := range value.([]interface{}) {
+		privileges := []any{}
+		for _, rawPrivilege := range value.([]any) {
 			_, ok := rawPrivilege.(string)
 			if ok {
 				// profile inclusion
@@ -57,7 +57,7 @@ func NormalizeProfiles(value interface{}) (map[string][]interface{}, error) {
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", key, err)
 			}
-			privileges = append(privileges, DuplicatePrivilege(privilege.(map[string]interface{}))...)
+			privileges = append(privileges, DuplicatePrivilege(privilege.(map[string]any))...)
 		}
 		m[key] = privileges
 	}
@@ -66,16 +66,16 @@ func NormalizeProfiles(value interface{}) (map[string][]interface{}, error) {
 	return out, nil
 }
 
-func flattenProfiles(value map[string]interface{}) map[string][]interface{} {
+func flattenProfiles(value map[string]any) map[string][]any {
 	// Map privilege name -> list of privileges to include.
 	heritance := make(map[string][]string)
 	// Map privilege name -> list of map[type:... on:...] without inclusion.
-	refMap := make(map[string][]interface{})
+	refMap := make(map[string][]any)
 
 	// copyRefs moves string items in heritance map and ref maps in refMap.
-	copyRefs := func(refs map[string]interface{}) {
+	copyRefs := func(refs map[string]any) {
 		for key, item := range refs {
-			list := item.([]interface{})
+			list := item.([]any)
 			for _, item := range list {
 				s, ok := item.(string)
 				if ok {

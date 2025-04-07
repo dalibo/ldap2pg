@@ -19,7 +19,7 @@ import (
 )
 
 // Marshall YAML from file path or stdin if path is -.
-func ReadYaml(path string) (values interface{}, err error) {
+func ReadYaml(path string) (values any, err error) {
 	var fo io.ReadCloser
 	if path == "<stdin>" {
 		slog.Info("Reading configuration from standard input.")
@@ -37,7 +37,7 @@ func ReadYaml(path string) (values interface{}, err error) {
 }
 
 // Fill configuration from YAML data.
-func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
+func (c *Config) LoadYaml(root map[string]any) (err error) {
 	err = c.DecodeYaml(root)
 	if err != nil {
 		return
@@ -59,7 +59,7 @@ func (c *Config) LoadYaml(root map[string]interface{}) (err error) {
 	return
 }
 
-func Dump(root interface{}) {
+func Dump(root any) {
 	var buf bytes.Buffer
 	encoder := yaml.NewEncoder(&buf)
 	encoder.SetIndent(2)
@@ -92,7 +92,7 @@ func (c *Config) DecodeYaml(yaml any) (err error) {
 }
 
 // Decode custom types for mapstructure. Implements mapstructure.DecodeHookFuncValue.
-func decodeMapHook(from, to reflect.Value) (interface{}, error) {
+func decodeMapHook(from, to reflect.Value) (any, error) {
 	switch to.Type() {
 	case reflect.TypeOf(pyfmt.Format{}):
 		f := to.Interface().(pyfmt.Format)
@@ -127,8 +127,8 @@ func decodeMapHook(from, to reflect.Value) (interface{}, error) {
 	return from.Interface(), nil
 }
 
-func (c *Config) checkVersion(yaml interface{}) (err error) {
-	yamlMap, ok := yaml.(map[string]interface{})
+func (c *Config) checkVersion(yaml any) (err error) {
+	yamlMap, ok := yaml.(map[string]any)
 	if !ok {
 		return errors.New("YAML is not a map")
 	}

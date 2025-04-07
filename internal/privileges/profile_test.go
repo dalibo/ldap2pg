@@ -28,7 +28,7 @@ func TestPrivilegeAlias(t *testing.T) {
 	- type: CREATE
 	  on: SCHEMA
 	`))
-	var raw interface{}
+	var raw any
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
@@ -47,7 +47,7 @@ func TestBuiltinPrivilege(t *testing.T) {
 	ro:
 	- __select_on_tables__
 	`))
-	var raw interface{}
+	var raw any
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 
@@ -75,7 +75,7 @@ func TestPrivilegeTypes(t *testing.T) {
 	- type: USAGE
 	  on: SCHEMA
 	  `))
-	var raw interface{}
+	var raw any
 	err := yaml.Unmarshal([]byte(rawYaml), &raw)
 	r.Nil(err, rawYaml)
 

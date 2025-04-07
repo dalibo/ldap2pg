@@ -65,7 +65,7 @@ func loadEnvAndFlags() {
 	pflag.Parse()
 
 	// posflag.Provider does not return error.
-	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, interface{}) {
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, any) {
 		// remove hyphen from e.g. skip-privileges.
 		key := strings.ReplaceAll(f.Name, "-", "")
 		return key, posflag.FlagVal(pflag.CommandLine, f)
@@ -97,7 +97,7 @@ type Controller struct {
 
 // Finalize logs the end of ldap2pg execution and determine exit code.
 func (controller Controller) Finalize(start time.Time, roles, grants, queries int) int {
-	logAttrs := []interface{}{
+	logAttrs := []any{
 		"searches", ldap.Watch.Count,
 		"roles", roles,
 		"queries", queries, // Don't use Watch.Count for dry run case.

@@ -9,18 +9,18 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error) {
-	rule = map[string]interface{}{
+func NormalizeRoleRule(yaml any) (rule map[string]any, err error) {
+	rule = map[string]any{
 		"comment": "Managed by ldap2pg",
-		"options": map[string]interface{}{},
+		"options": map[string]any{},
 		"parents": []string{},
 	}
 
 	switch yaml.(type) {
 	case string:
 		rule["names"] = []string{yaml.(string)}
-	case map[string]interface{}:
-		yamlMap := yaml.(map[string]interface{})
+	case map[string]any:
+		yamlMap := yaml.(map[string]any)
 		err = normalize.Alias(yamlMap, "names", "name")
 		if err != nil {
 			return
@@ -59,9 +59,9 @@ func NormalizeRoleRule(yaml interface{}) (rule map[string]interface{}, err error
 
 // Normalize one rule with a list of names to a list of rules with a single
 // name.
-func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interface{}) {
+func DuplicateRoleRules(yaml map[string]any) (rules []map[string]any) {
 	for _, name := range yaml["names"].([]string) {
-		rule := make(map[string]interface{})
+		rule := make(map[string]any)
 		rule["name"] = name
 		for key, value := range yaml {
 			if "names" == key {
@@ -74,10 +74,10 @@ func DuplicateRoleRules(yaml map[string]interface{}) (rules []map[string]interfa
 	return
 }
 
-func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err error) {
+func NormalizeRoleOptions(yaml any) (value map[string]any, err error) {
 	// Normal form of role options is a map with SQL token as key and
 	// boolean or int value.
-	value = map[string]interface{}{
+	value = map[string]any{
 		"SUPERUSER":        false,
 		"INHERIT":          true,
 		"CREATEROLE":       false,
@@ -99,8 +99,8 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 			}
 			value[strings.TrimPrefix(token, "NO")] = !strings.HasPrefix(token, "NO")
 		}
-	case map[string]interface{}:
-		yamlMap := yaml.(map[string]interface{})
+	case map[string]any:
+		yamlMap := yaml.(map[string]any)
 		for k, v := range yamlMap {
 			yamlMap[k] = normalize.Boolean(v)
 		}
@@ -115,9 +115,9 @@ func NormalizeRoleOptions(yaml interface{}) (value map[string]interface{}, err e
 	return
 }
 
-func NormalizeMemberships(raw interface{}) (memberships []map[string]interface{}, err error) {
+func NormalizeMemberships(raw any) (memberships []map[string]any, err error) {
 	list := normalize.List(raw)
-	memberships = make([]map[string]interface{}, 0, len(list))
+	memberships = make([]map[string]any, 0, len(list))
 	for i, raw := range list {
 		membership, err := NormalizeMembership(raw)
 		if err != nil {
@@ -128,14 +128,14 @@ func NormalizeMemberships(raw interface{}) (memberships []map[string]interface{}
 	return
 }
 
-func NormalizeMembership(raw interface{}) (value map[string]interface{}, err error) {
-	value = make(map[string]interface{})
+func NormalizeMembership(raw any) (value map[string]any, err error) {
+	value = make(map[string]any)
 	// We could add admin, inherit and set to the map
 
 	switch raw := raw.(type) {
 	case string:
 		value["name"] = raw
-	case map[string]interface{}:
+	case map[string]any:
 		for k, v := range raw {
 			value[k] = normalize.Boolean(v)
 		}

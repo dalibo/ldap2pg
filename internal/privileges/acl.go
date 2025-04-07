@@ -128,14 +128,14 @@ func rowToDatabaseGrant(r pgx.Row) (g Grant, err error) {
 	return
 }
 
-func NormalizeACLs(yaml interface{}) (interface{}, error) {
-	m, ok := yaml.(map[string]interface{})
+func NormalizeACLs(yaml any) (any, error) {
+	m, ok := yaml.(map[string]any)
 	if !ok {
 		return yaml, fmt.Errorf("must be a map")
 	}
 
 	for k, v := range m {
-		acl, ok := v.(map[string]interface{})
+		acl, ok := v.(map[string]any)
 		if !ok {
 			return yaml, fmt.Errorf("%s: must be a map", k)
 		}

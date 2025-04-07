@@ -11,7 +11,7 @@ import (
 type Format struct {
 	Input string
 	// List of either literal or field, in order.
-	Sections []interface{}
+	Sections []any
 	Fields   []*Field
 }
 

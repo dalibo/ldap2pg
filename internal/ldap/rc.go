@@ -36,7 +36,7 @@ func (p looseFileProvider) ReadBytes() ([]byte, error) {
 	return data, err
 }
 
-func (looseFileProvider) Read() (map[string]interface{}, error) {
+func (looseFileProvider) Read() (map[string]any, error) {
 	panic("not implemented")
 }
 
@@ -46,8 +46,8 @@ type parser struct {
 	delim string
 }
 
-func (p parser) Unmarshal(data []byte) (map[string]interface{}, error) {
-	out := make(map[string]interface{})
+func (p parser) Unmarshal(data []byte) (map[string]any, error) {
+	out := make(map[string]any)
 	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	re := regexp.MustCompile(`\s+`)
 	for scanner.Scan() {
@@ -68,6 +68,6 @@ func (p parser) Unmarshal(data []byte) (map[string]interface{}, error) {
 	return maps.Unflatten(out, p.delim), nil
 }
 
-func (parser) Marshal(map[string]interface{}) ([]byte, error) {
+func (parser) Marshal(map[string]any) ([]byte, error) {
 	panic("not implemented")
 }

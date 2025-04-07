@@ -39,7 +39,7 @@ func Initialize(conf Config) error {
 		return nil
 	}
 
-	_ = k.Load(confmap.Provider(map[string]interface{}{
+	_ = k.Load(confmap.Provider(map[string]any{
 		"URI":             "ldap://localhost",
 		"NETWORK_TIMEOUT": "30",
 		"RC":              "ldaprc",
@@ -52,7 +52,7 @@ func Initialize(conf Config) error {
 		return strings.TrimPrefix(key, "LDAP")
 	}), nil)
 
-	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, interface{}) {
+	_ = k.Load(posflag.ProviderWithFlag(pflag.CommandLine, k.Delim(), k, func(f *pflag.Flag) (string, any) {
 		if !strings.HasPrefix(f.Name, "ldap") {
 			return "", nil
 		}

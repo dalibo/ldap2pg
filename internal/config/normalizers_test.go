@@ -16,7 +16,7 @@ func TestNormalizeWantRule(t *testing.T) {
 	description: Desc
 	role: alice
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeWantRule(raw)
@@ -28,7 +28,7 @@ func TestNormalizeWantRule(t *testing.T) {
 	untypedRoles, exists := value["roles"]
 	r.True(exists, "role key must be renamed to roles")
 
-	roles := untypedRoles.([]interface{})
+	roles := untypedRoles.([]any)
 	r.Len(roles, 1)
 }
 
@@ -42,7 +42,7 @@ func TestNormalizeRules(t *testing.T) {
 	  roles:
 	  - bob
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	value, err := config.NormalizeRules(raw)
@@ -61,11 +61,11 @@ func TestNormalizeConfig(t *testing.T) {
 	  roles:
 	  - bob
 	`)
-	var raw interface{}
+	var raw any
 	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
 
 	config, err := config.NormalizeConfigRoot(raw)
 	r.Nil(err)
-	syncMap := config["rules"].([]interface{})
+	syncMap := config["rules"].([]any)
 	r.Len(syncMap, 2)
 }

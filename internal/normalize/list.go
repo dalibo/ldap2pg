@@ -8,9 +8,9 @@ import (
 // List ensure yaml is a list.
 //
 // Wraps scalar or map in a list. Returns list as is.
-func List(yaml interface{}) (list []interface{}) {
+func List(yaml any) (list []any) {
 	switch v := yaml.(type) {
-	case []interface{}:
+	case []any:
 		list = v
 	case []string:
 		for _, s := range v {
@@ -25,14 +25,14 @@ func List(yaml interface{}) (list []interface{}) {
 // StringList ensure yaml is a list of string.
 //
 // Like List, but enforce string type for items.
-func StringList(yaml interface{}) (list []string, err error) {
+func StringList(yaml any) (list []string, err error) {
 	switch yaml.(type) {
 	case nil:
 		return
 	case string:
 		list = append(list, yaml.(string))
-	case []interface{}:
-		for _, iItem := range yaml.([]interface{}) {
+	case []any:
+		for _, iItem := range yaml.([]any) {
 			item, ok := iItem.(string)
 			if !ok {
 				return nil, errors.New("must be string")

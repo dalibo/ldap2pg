@@ -11,7 +11,7 @@ import (
 // rawYAML MUST BE NORMALIZED. No alias, no single entries, etc.
 func configFromYAML(rawYAML string) (c config.Config) {
 	rawYAML = dedent.Dedent(rawYAML)
-	var out interface{}
+	var out any
 	_ = yaml.Unmarshal([]byte(rawYAML), &out)
 	_ = c.DecodeYaml(out)
 	return
