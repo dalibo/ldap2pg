@@ -125,7 +125,7 @@ def ldap():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def resetpostgres():
+def resetpostgres(sh_errout):
     from sh import Command
 
     Command('test/fixtures/postgres/reset.sh')()
@@ -135,7 +135,7 @@ def resetpostgres():
 
 def lazy_write(attr, data):
     # Lazy access sys.{stderr,stdout} to mix with capsys.
-    getattr(sys, attr).write(data)
+    getattr(sys, attr).write(data.replace(r"\n", "\n"))
     return False  # should_quit
 
 
@@ -173,7 +173,7 @@ def loggername_factory(ran, call_args, pid=None):
 
 
 @pytest.fixture(scope='session')
-def ldap2pg(request):
+def ldap2pg(request, sh_errout):
     return sh.Command(request.config.getoption("--ldap2pg")) \
              .bake(_log_msg=loggername_factory)
 
