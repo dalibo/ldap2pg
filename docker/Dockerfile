@@ -4,7 +4,7 @@ WORKDIR /workspace
 COPY . .
 # Clean directory of untracked files, even those in developer ~/.config/git/ignore
 RUN git clean -df
-RUN goreleaser build --clean --single-target --auto-snapshot ; \
+RUN goreleaser build --clean --single-target --auto-snapshot ;
 
 FROM alpine:3.18
 
