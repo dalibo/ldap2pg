@@ -212,7 +212,7 @@ func configure() (controller Controller, c config.Config, err error) {
 	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
 		"version", version(),
-		"commit", commit[:8],
+		"commit", commit,
 		"runtime", runtime.Version(),
 		"pid", os.Getpid(),
 	)

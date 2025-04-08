@@ -27,3 +27,18 @@ func TestMissingParents(t *testing.T) {
 	missing := current.MissingParents(wanted.Parents)
 	r.Len(missing, 1)
 }
+
+func TestLoop(t *testing.T) {
+	r := require.New(t)
+
+	toto := role.Role{
+		Name: "toto",
+		Parents: []role.Membership{
+			{Name: "toto"},
+		},
+	}
+	m := make(role.Map)
+	m[toto.Name] = toto
+	err := m.Check()
+	r.Error(err)
+}

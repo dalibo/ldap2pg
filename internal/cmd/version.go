@@ -39,7 +39,7 @@ func init() {
 
 	for i := range bi.Settings {
 		if bi.Settings[i].Key == "vcs.revision" {
-			commit = bi.Settings[i].Value
+			commit = bi.Settings[i].Value[:8]
 			break
 		}
 	}

@@ -8,37 +8,40 @@ import (
 
 type Map map[string]Role
 
+func (m Map) Check() error {
+	for _, role := range m {
+		err := role.Check(m, nil)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m Map) Flatten() []string {
 	var names []string
 	seen := mapset.NewSet[string]()
 	for _, role := range m {
-		for name := range m.flattenRole(role, &seen) {
-			names = append(names, name)
-		}
+		names = append(names, m.flattenRole(role, &seen)...)
 	}
 	return names
 }
 
-func (m Map) flattenRole(r Role, seen *mapset.Set[string]) (ch chan string) {
-	ch = make(chan string)
-	go func() {
-		defer close(ch)
-		if (*seen).Contains(r.Name) {
-			return
+func (m Map) flattenRole(r Role, seen *mapset.Set[string]) []string {
+	var names []string
+	if (*seen).Contains(r.Name) {
+		return names
+	}
+	for _, membership := range r.Parents {
+		parent, ok := m[membership.Name]
+		if !ok {
+			slog.Debug("Role inherits unmanaged parent.", "role", r.Name, "parent", membership.Name)
+			continue
 		}
-		for _, membership := range r.Parents {
-			parent, ok := m[membership.Name]
-			if !ok {
-				slog.Debug("Role herits unmanaged parent.", "role", r.Name, "parent", membership.Name)
-				continue
-			}
-			for deepName := range m.flattenRole(parent, seen) {
-				ch <- deepName
-			}
-		}
+		names = append(names, m.flattenRole(parent, seen)...)
 
 		(*seen).Add(r.Name)
-		ch <- r.Name
-	}()
-	return
+	}
+	names = append(names, r.Name)
+	return names
 }
