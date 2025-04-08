@@ -52,6 +52,8 @@ CREATE SCHEMA "nominal"
 AUTHORIZATION "nominal"
 CREATE TABLE "t0" (id serial PRIMARY KEY)
 CREATE TABLE "t1" (id serial PRIMARY KEY);
+CREATE MATERIALIZED VIEW "nominal"."mv0" AS SELECT 1;
+ALTER MATERIALIZED VIEW "nominal"."mv0" OWNER TO "nominal";
 
 -- Partial grant on all tables, for regrant
 GRANT SELECT ON TABLE "nominal"."t0" TO "readers";
