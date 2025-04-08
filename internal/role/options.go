@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"slices"
 	"strings"
 )
 
@@ -102,14 +103,25 @@ var instanceColumns struct {
 	order        []string
 }
 
+var privilegedColumns = []string{"rolsuper", "rolreplication", "rolbypassrls"}
+
 func ProcessColumns(columns []string, super bool) []string {
 	instanceColumns.availability = make(map[string]bool)
+	var knownColumns []string
+
 	t := reflect.TypeOf(Options{})
 	for _, f := range reflect.VisibleFields(t) {
-		instanceColumns.availability[f.Tag.Get("column")] = false
+		name := f.Tag.Get("column")
+		knownColumns = append(knownColumns, name)
+		instanceColumns.availability[name] = false
 	}
+
 	for _, name := range columns {
-		if !super && (name == "rolsuper" || name == "rolreplication" || name == "rolbypassrls") {
+		if !slices.Contains(knownColumns, name) {
+			slog.Debug("Ignoring unhandled role option.", "column", name)
+			continue
+		}
+		if !super && slices.Contains(privilegedColumns, name) {
 			slog.Debug("Ignoring privileged role column", "column", name)
 			continue
 		}

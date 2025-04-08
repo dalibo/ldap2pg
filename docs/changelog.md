@@ -17,6 +17,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Fix targeting database-wide grant.
 - Drop LOGIN before dropping role.
 - Refuse membership loops.
+- Gracefully skip unhandled role option from future Postgres or fork.
 
 
 # ldap2pg 6.3
