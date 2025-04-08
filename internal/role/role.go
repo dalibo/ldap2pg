@@ -1,6 +1,9 @@
 package role
 
 import (
+	"fmt"
+	"slices"
+
 	"github.com/dalibo/ldap2pg/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
@@ -46,6 +49,26 @@ func RowTo(row pgx.CollectableRow) (r Role, err error) {
 	r.Options.LoadRow(variableRow.([]any))
 	(*r.Config).Parse(config)
 	return
+}
+
+func (r Role) Check(m Map, genealogy []string) error {
+	if slices.Contains(genealogy, r.Name) {
+		return fmt.Errorf("membership loop: %s is member of %s", genealogy[0], r.Name)
+	}
+
+	genealogy = append([]string{r.Name}, genealogy...)
+	for _, ms := range r.Parents {
+		p, ok := m[ms.Name]
+		if !ok {
+			continue
+		}
+		err := p.Check(m, genealogy)
+		if err != nil {
+			return fmt.Errorf("%s: %w", r.Name, err)
+		}
+	}
+
+	return nil
 }
 
 func (r *Role) String() string {

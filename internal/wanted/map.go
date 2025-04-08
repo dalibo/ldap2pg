@@ -116,6 +116,11 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 		}
 	}
 
+	err = roles.Check()
+	if err != nil {
+		errList = append(errList, err)
+	}
+
 	if 0 < len(errList) {
 		err = errors.Join(errList...)
 	}
