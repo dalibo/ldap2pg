@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -29,23 +29,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	defer logPanic()
-
-	// Bootstrap logging first to log in setup.
+func Main() {
+	// Bootstrap logging first to log in setup and early errors.
 	internal.SetLoggingHandler(slog.LevelInfo, isatty.IsTerminal(os.Stderr.Fd()))
-	loadEnvAndFlags()
-	if k.Bool("help") {
-		pflag.Usage()
-		return
-	} else if k.Bool("version") {
-		showVersion()
-		return
-	}
 
-	err := ldap2pg(ctx)
+	err := ldap2pg()
 
 	exit, ok := err.(interface{ Exit() })
 	if ok {
@@ -66,7 +54,20 @@ func main() {
 	}
 }
 
-func ldap2pg(ctx context.Context) (err error) {
+func ldap2pg() (err error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	defer logPanic()
+
+	loadEnvAndFlags()
+	if k.Bool("help") {
+		pflag.Usage()
+		return
+	} else if k.Bool("version") {
+		showVersion()
+		return
+	}
+
 	start := time.Now()
 
 	stop, err := startProfiling()
@@ -191,29 +192,6 @@ func ldap2pg(ctx context.Context) (err error) {
 	return errorCode{code: exitCode}
 }
 
-func showVersion() {
-	fmt.Printf("ldap2pg %s\n", version)
-
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return
-	}
-	modmap := make(map[string]string)
-	for _, mod := range bi.Deps {
-		modmap[mod.Path] = mod.Version
-	}
-	modules := []string{
-		"github.com/jackc/pgx/v5",
-		"github.com/go-ldap/ldap/v3",
-		"gopkg.in/yaml.v3",
-	}
-	for _, mod := range modules {
-		fmt.Printf("%s %s\n", mod, modmap[mod])
-	}
-
-	fmt.Printf("%s %s %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)
-}
-
 func changeDirectory(directory string) (err error) {
 	if directory == "" {
 		return
@@ -233,12 +211,12 @@ func configure() (controller Controller, c config.Config, err error) {
 
 	internal.SetLoggingHandler(controller.LogLevel, controller.Color)
 	slog.Info("Starting ldap2pg",
-		"version", version,
+		"version", version(),
+		"commit", commit[:8],
 		"runtime", runtime.Version(),
-		"commit", commit,
 		"pid", os.Getpid(),
 	)
-	if strings.Contains(version, "-") {
+	if strings.Contains(version(), "-") {
 		slog.Warn("Running a prerelease! Use at your own risks!")
 	}
 
