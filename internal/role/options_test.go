@@ -1,16 +1,15 @@
-package role_test
+package role
 
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/role"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOptionsDiff(t *testing.T) {
 	r := require.New(t)
 
-	role.ProcessColumns([]string{
+	ProcessColumns([]string{
 		"rolsuper",
 		"rolcreatedb",
 		"rolcreaterole",
@@ -21,7 +20,28 @@ func TestOptionsDiff(t *testing.T) {
 		"rolcanlogin",
 	}, true)
 
-	o := role.Options{Super: true}
-	diff := o.Diff(role.Options{ConnLimit: -1})
+	o := Options{Super: true}
+	diff := o.Diff(Options{ConnLimit: -1})
 	r.Equal("NOSUPERUSER CONNECTION LIMIT -1", diff)
+}
+
+func TestUnhandledOptions(t *testing.T) {
+	r := require.New(t)
+
+	ProcessColumns([]string{
+		"rolsuper",
+		"rolcreatedb",
+		"rolcreaterole",
+		"rolinherit",
+		"rolreplication",
+		"rolconnlimit",
+		"rolbypassrls",
+		"rolcanlogin",
+		"rolcustomopt",
+	}, false)
+
+	r.NotContains(instanceColumns.order, "rolcustomopt")
+	o := Options{Super: true}
+	diff := o.Diff(Options{ConnLimit: -1})
+	r.Equal("CONNECTION LIMIT -1", diff)
 }
