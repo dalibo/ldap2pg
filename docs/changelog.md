@@ -15,6 +15,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix instance-wide privilege expansion of `__all__` database. (*CONNECT* revoked)
 - Fix targeting database-wide grant.
+- Drop LOGIN before dropping role.
 
 
 # ldap2pg 6.3
