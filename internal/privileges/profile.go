@@ -45,6 +45,9 @@ func NormalizeProfiles(value any) (map[string][]any, error) {
 		return nil, fmt.Errorf("bad type")
 	}
 	for key, value := range m {
+		if value == nil {
+			return nil, fmt.Errorf(" %s is nil", key)
+		}
 		privileges := []any{}
 		for _, rawPrivilege := range value.([]any) {
 			_, ok := rawPrivilege.(string)
