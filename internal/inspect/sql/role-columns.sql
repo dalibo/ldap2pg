@@ -5,4 +5,5 @@ JOIN pg_catalog.pg_class AS tables
 JOIN pg_catalog.pg_attribute AS attrs
   ON attrs.attrelid = tables.oid AND attrs.attname LIKE 'rol%'
 WHERE nsp.nspname = 'pg_catalog'
+  AND attrs.attname NOT IN ('rolconfig', 'rolname', 'rolpassword', 'rolvaliduntil')
 ORDER BY 1
