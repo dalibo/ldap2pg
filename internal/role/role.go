@@ -292,6 +292,11 @@ func (r *Role) Drop(fallbackOwner string) (out []postgres.SyncQuery) {
 		})
 	}
 	out = append(out, postgres.SyncQuery{
+		Description: "Drop LOGIN.",
+		LogArgs:     []any{"role", r.Name},
+		Query:       `ALTER ROLE %s NOLOGIN;`,
+		QueryArgs:   []any{identifier},
+	}, postgres.SyncQuery{
 		Description: "Drop role.",
 		LogArgs:     []any{"role", r.Name},
 		Query:       `DROP ROLE %s;`,
