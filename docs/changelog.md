@@ -11,6 +11,10 @@ Here is a highlight of changes in each versions. If you need further details,
 follow [merged Pull request
 pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Amerged).
 
+# UNRELEASED
+
+- Fix panic when privilege is not a list in ldap2pg.yml.
+
 # ldap2pg 6.4.0
 
 - Fix instance-wide privilege expansion of `__all__` database. (*CONNECT* revoked)
