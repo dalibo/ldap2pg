@@ -193,10 +193,6 @@ func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
 	slices.Sort(creatorsList)
 
 	for _, role := range creatorsList {
-		if role == g.Grantee {
-			// Avoid granting on self.
-			continue
-		}
 		g := g // copy
 		g.Owner = role
 		out = append(out, g)
