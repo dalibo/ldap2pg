@@ -13,6 +13,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # UNRELEASED
 
+- Fix --version showing a pseudo-version.
 - Fix panic when privilege is not a list in ldap2pg.yml.
 
 # ldap2pg 6.4.0
