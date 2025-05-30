@@ -9,6 +9,7 @@ import (
 
 var (
 	commit   string
+	Version  string // set by main
 	versions = make(map[string]string)
 	mainDeps = []string{
 		"github.com/jackc/pgx/v5",
@@ -18,7 +19,10 @@ var (
 )
 
 func version() string {
-	return versions["github.com/dalibo/ldap2pg/v6"]
+	if Version == "" {
+		return versions["github.com/dalibo/ldap2pg/v6"]
+	}
+	return Version
 }
 
 func init() {
