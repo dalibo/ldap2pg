@@ -3,7 +3,7 @@ package inspect_test
 import (
 	"context"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
+	"github.com/dalibo/ldap2pg/v6/internal/inspect"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )

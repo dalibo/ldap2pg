@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/tree"
+	"github.com/dalibo/ldap2pg/v6/internal/tree"
 )
 
 // Profile lists privileges to grant.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/errorlist"
+	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
 	"github.com/stretchr/testify/require"
 )
 

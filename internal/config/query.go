@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/inspect"
-	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/inspect"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	"github.com/jackc/pgx/v5"
 	"github.com/lithammer/dedent"
 )

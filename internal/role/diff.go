@@ -3,7 +3,7 @@ package role
 import (
 	"log/slog"
 
-	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 )
 
 func Diff(all, managed, wanted Map, fallbackOwner string) <-chan postgres.SyncQuery {

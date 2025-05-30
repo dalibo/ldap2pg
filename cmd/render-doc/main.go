@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/dalibo/ldap2pg/internal/privileges"
+	"github.com/dalibo/ldap2pg/v6/internal/privileges"
 	"github.com/gosimple/slug"
 )
 

@@ -9,9 +9,9 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/mapstructure"

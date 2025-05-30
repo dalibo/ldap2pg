@@ -3,7 +3,7 @@ package normalize_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/normalize"
+	"github.com/dalibo/ldap2pg/v6/internal/normalize"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,7 +1,7 @@
 package inspect
 
 import (
-	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 )
 
 type Config struct {

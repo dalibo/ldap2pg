@@ -3,7 +3,7 @@ package privileges
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	r "github.com/stretchr/testify/require"
 )
 

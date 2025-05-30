@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	"github.com/jackc/pgx/v5"
 )
 

@@ -147,18 +147,18 @@ Run unit tests as usual go tests.
 $ go test ./...
 ?       github.com/dalibo/ldap2pg/cmd/render-doc        [no test files]
 ok      github.com/dalibo/ldap2pg/cmd/mon-dojo  0.002s
-ok      github.com/dalibo/ldap2pg/internal      0.003s
-ok      github.com/dalibo/ldap2pg/internal/config       0.007s
-ok      github.com/dalibo/ldap2pg/internal/inspect      0.005s
-ok      github.com/dalibo/ldap2pg/internal/ldap 0.005s
-ok      github.com/dalibo/ldap2pg/internal/lists        0.005s
-?       github.com/dalibo/ldap2pg/internal/postgres     [no test files]
-ok      github.com/dalibo/ldap2pg/internal/perf 0.004s
-ok      github.com/dalibo/ldap2pg/internal/privileges    0.003s
-?       github.com/dalibo/ldap2pg/internal/role [no test files]
-ok      github.com/dalibo/ldap2pg/internal/pyfmt        0.004s
-ok      github.com/dalibo/ldap2pg/internal/tree 0.002s
-ok      github.com/dalibo/ldap2pg/internal/wanted       0.003s
+ok      github.com/dalibo/ldap2pg/v6/internal      0.003s
+ok      github.com/dalibo/ldap2pg/v6/internal/config       0.007s
+ok      github.com/dalibo/ldap2pg/v6/internal/inspect      0.005s
+ok      github.com/dalibo/ldap2pg/v6/internal/ldap 0.005s
+ok      github.com/dalibo/ldap2pg/v6/internal/lists        0.005s
+?       github.com/dalibo/ldap2pg/v6/internal/postgres     [no test files]
+ok      github.com/dalibo/ldap2pg/v6/internal/perf 0.004s
+ok      github.com/dalibo/ldap2pg/v6/internal/privileges    0.003s
+?       github.com/dalibo/ldap2pg/v6/internal/role [no test files]
+ok      github.com/dalibo/ldap2pg/v6/internal/pyfmt        0.004s
+ok      github.com/dalibo/ldap2pg/v6/internal/tree 0.002s
+ok      github.com/dalibo/ldap2pg/v6/internal/wanted       0.003s
 $
 ```
 

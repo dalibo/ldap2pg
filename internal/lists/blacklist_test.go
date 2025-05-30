@@ -3,7 +3,7 @@ package lists_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
 	"github.com/stretchr/testify/require"
 )
 

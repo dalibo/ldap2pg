@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/normalize"
-	"github.com/dalibo/ldap2pg/internal/privileges"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/normalize"
+	"github.com/dalibo/ldap2pg/v6/internal/privileges"
 	"golang.org/x/exp/maps"
 )
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/v6/internal"
 )
 
 func TestMain(m *testing.M) {

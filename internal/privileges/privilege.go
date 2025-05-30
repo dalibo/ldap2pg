@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/normalize"
+	"github.com/dalibo/ldap2pg/v6/internal/normalize"
 )
 
 // Privilege references a privilege type and an ACL

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/normalize"
+	"github.com/dalibo/ldap2pg/v6/internal/normalize"
 	"github.com/jackc/pgx/v5"
 )
 

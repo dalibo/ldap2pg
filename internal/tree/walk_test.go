@@ -3,7 +3,7 @@ package tree_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/tree"
+	"github.com/dalibo/ldap2pg/v6/internal/tree"
 	"github.com/stretchr/testify/require"
 )
 
