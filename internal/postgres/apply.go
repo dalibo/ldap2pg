@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/dalibo/ldap2pg/internal"
-	"github.com/dalibo/ldap2pg/internal/errorlist"
-	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/v6/internal"
+	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
+	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/exp/slices"
 )

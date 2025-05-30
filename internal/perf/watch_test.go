@@ -3,7 +3,7 @@ package perf_test
 import (
 	"time"
 
-	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/v6/internal/perf"
 )
 
 func (suite *Suite) TestStopwatch() {

@@ -1,4 +1,4 @@
-module github.com/dalibo/ldap2pg
+module github.com/dalibo/ldap2pg/v6
 
 go 1.24
 

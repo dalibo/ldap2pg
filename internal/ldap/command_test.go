@@ -1,6 +1,6 @@
 package ldap_test
 
-import "github.com/dalibo/ldap2pg/internal/ldap"
+import "github.com/dalibo/ldap2pg/v6/internal/ldap"
 
 func (suite *Suite) TestCommandSearch() {
 	r := suite.Require()

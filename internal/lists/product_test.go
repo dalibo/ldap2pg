@@ -1,7 +1,7 @@
 package lists_test
 
 import (
-	"github.com/dalibo/ldap2pg/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
 )
 
 func (suite *Suite) TestProductNoLists() {

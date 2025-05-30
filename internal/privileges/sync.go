@@ -3,7 +3,7 @@ package privileges
 import (
 	"context"
 
-	"github.com/dalibo/ldap2pg/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 

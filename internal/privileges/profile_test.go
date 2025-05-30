@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/privileges"
+	"github.com/dalibo/ldap2pg/v6/internal/privileges"
 	"github.com/lithammer/dedent"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/privileges"
-	"github.com/dalibo/ldap2pg/internal/role"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/privileges"
+	"github.com/dalibo/ldap2pg/v6/internal/role"
 )
 
 // Rules holds a set of rules to generate wanted state.

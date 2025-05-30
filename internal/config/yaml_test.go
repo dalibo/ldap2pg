@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/config"
+	"github.com/dalibo/ldap2pg/v6/internal/config"
 	"github.com/lithammer/dedent"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"

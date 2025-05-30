@@ -18,7 +18,7 @@ var (
 )
 
 func version() string {
-	return versions["github.com/dalibo/ldap2pg"]
+	return versions["github.com/dalibo/ldap2pg/v6"]
 }
 
 func init() {

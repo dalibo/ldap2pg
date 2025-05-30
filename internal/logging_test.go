@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/dalibo/ldap2pg/internal"
+	"github.com/dalibo/ldap2pg/v6/internal"
 	"github.com/lmittmann/tint"
 )
 

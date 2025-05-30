@@ -1,10 +1,10 @@
 package wanted
 
 import (
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
-	"github.com/dalibo/ldap2pg/internal/role"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/v6/internal/role"
 )
 
 type RoleRule struct {

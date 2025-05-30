@@ -3,7 +3,7 @@ package role_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/role"
+	"github.com/dalibo/ldap2pg/v6/internal/role"
 	"github.com/stretchr/testify/require"
 )
 

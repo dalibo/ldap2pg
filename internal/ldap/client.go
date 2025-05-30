@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/dalibo/ldap2pg/internal/perf"
+	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
 )
 

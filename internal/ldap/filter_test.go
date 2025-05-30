@@ -1,7 +1,7 @@
 package ldap_test
 
 import (
-	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	ldap3 "github.com/go-ldap/ldap/v3"
 )
 

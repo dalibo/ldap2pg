@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
 	ldap3 "github.com/go-ldap/ldap/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"

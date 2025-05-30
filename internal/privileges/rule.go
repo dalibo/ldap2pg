@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/lists"
-	"github.com/dalibo/ldap2pg/internal/normalize"
-	"github.com/dalibo/ldap2pg/internal/pyfmt"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/lists"
+	"github.com/dalibo/ldap2pg/v6/internal/normalize"
+	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
 	"golang.org/x/exp/maps"
 )
 

@@ -7,10 +7,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
-	"github.com/dalibo/ldap2pg/internal/postgres"
-	"github.com/dalibo/ldap2pg/internal/privileges"
-	"github.com/dalibo/ldap2pg/internal/wanted"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/postgres"
+	"github.com/dalibo/ldap2pg/v6/internal/privileges"
+	"github.com/dalibo/ldap2pg/v6/internal/wanted"
 	"github.com/jackc/pgx/v5"
 )
 

@@ -3,7 +3,7 @@ package ldap_test
 import (
 	"testing"
 
-	"github.com/dalibo/ldap2pg/internal/ldap"
+	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/stretchr/testify/require"
 )
 
