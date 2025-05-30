@@ -73,6 +73,7 @@ publish-deb:
 	$(MAKE) dist/$(PKGBASE)_buster.changes
 	$(MAKE) dist/$(PKGBASE)_stretch.changes
 	$(MAKE) dist/$(PKGBASE)_jammy.changes
+	$(MAKE) dist/$(PKGBASE)_noble.changes
 	@if expr match "$(VERSION)" ".*[a-z]\+" >/dev/null; then echo 'Refusing to publish prerelease $(VERSION) in APT repository.'; false ; fi
 	dput labs dist/*.changes
 
