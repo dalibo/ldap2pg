@@ -12,7 +12,7 @@ type RoleRule struct {
 	Options      role.Options
 	Comment      pyfmt.Format
 	Parents      []MembershipRule
-	Config       *role.Config
+	Config       role.Config
 	BeforeCreate pyfmt.Format `mapstructure:"before_create"`
 	AfterCreate  pyfmt.Format `mapstructure:"after_create"`
 }
