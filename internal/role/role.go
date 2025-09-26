@@ -2,6 +2,7 @@ package role
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
@@ -334,5 +335,10 @@ func (r *Role) Merge(o Role) {
 			continue
 		}
 		r.Parents = append(r.Parents, membership)
+	}
+	if r.Config == nil {
+		r.Config = o.Config
+	} else if o.Config != nil {
+		maps.Copy(r.Config, o.Config)
 	}
 }
