@@ -48,9 +48,10 @@ grants AS (
            WHEN 'S' THEN 'SEQUENCES'
            WHEN 'r' THEN 'TABLES'
            END AS object,
-           (aclexplode(defaclacl)).grantee AS grantee,
-           (aclexplode(defaclacl)).privilege_type AS priv
-      FROM pg_catalog.pg_default_acl
+           grt.grantee AS grantee,
+           grt.privilege_type AS priv
+      FROM pg_catalog.pg_default_acl AS defacl
+      NATURAL JOIN aclexplode(defacl.defaclacl) AS grt
      WHERE defaclnamespace = 0
 )
 -- column order comes from statement:

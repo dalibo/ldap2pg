@@ -1,10 +1,11 @@
 WITH grants AS (
 	SELECT
 		datname,
-		(aclexplode(COALESCE(datacl, acldefault('d', datdba)))).grantor AS grantor,
-		(aclexplode(COALESCE(datacl, acldefault('d', datdba)))).grantee AS grantee,
-		(aclexplode(COALESCE(datacl, acldefault('d', datdba)))).privilege_type AS priv
-	FROM pg_catalog.pg_database
+		grt.grantor AS grantor,
+		grt.grantee AS grantee,
+		grt.privilege_type AS priv
+	FROM pg_catalog.pg_database AS db
+  NATURAL JOIN  aclexplode(COALESCE(db.datacl, acldefault('d', db.datdba))) AS grt
 )
 SELECT
 	grants.priv AS "privilege",

@@ -6,11 +6,11 @@ grants AS (SELECT
 		SELECT
 			pronamespace,
 			proname,
-			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).grantee,
-			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).privilege_type
-		FROM pg_catalog.pg_proc
-		JOIN pg_catalog.pg_type AS rettype ON rettype.oid = pg_proc.prorettype
-		WHERE rettype.typname <> 'void'  -- skip procedures
+			grt.grantee,
+			grt.privilege_type
+		FROM pg_catalog.pg_proc AS pro
+    NATURAL JOIN aclexplode(COALESCE(pro.proacl, acldefault('f', pro.proowner))) AS grt
+    WHERE rettype.typname <> 'void'  -- skip procedures
 	) AS grants
 	GROUP BY 1, 2, 3
 ),

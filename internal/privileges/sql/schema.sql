@@ -1,10 +1,11 @@
 WITH grants AS (
 	SELECT
 		nspname,
-		(aclexplode(COALESCE(nspacl, acldefault('n', nspowner)))).grantor AS grantor,
-		(aclexplode(COALESCE(nspacl, acldefault('n', nspowner)))).grantee AS grantee,
-		(aclexplode(COALESCE(nspacl, acldefault('n', nspowner)))).privilege_type AS priv
-	FROM pg_catalog.pg_namespace
+		grt.grantor AS grantor,
+		grt.grantee AS grantee,
+		grt.privilege_type AS priv
+	FROM pg_catalog.pg_namespace AS nsp
+  NATURAL JOIN aclexplode(COALESCE(nsp.nspacl, acldefault('n', nsp.nspowner))) AS grt
 )
 SELECT
 	grants.priv AS "privilege",
