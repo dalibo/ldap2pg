@@ -1,4 +1,4 @@
-<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.2-106-gead5bf0 -->
+<!-- GENERATED FROM docs/builtins.md.tmpl FOR v6.4.2-2-gbe45f4b -->
 <!--*- markdown -*-->
 
 <h1>Builtins Privileges</h1>
@@ -113,6 +113,11 @@ You cannot (yet) configure custom ACL.
 - [`__execute_on_functions__`](#execute-on-functions)
 
 
+### Profile `__all_on_routines__` { #all-on-routines  data-toc-label="&#95;&#95;all&#95;on&#95;routines&#95;&#95;" }
+
+- [`__execute_on_routines__`](#execute-on-routines)
+
+
 ### Profile `__all_on_schemas__` { #all-on-schemas  data-toc-label="&#95;&#95;all&#95;on&#95;schemas&#95;&#95;" }
 
 - [`__create_on_schemas__`](#create-on-schemas)
@@ -147,6 +152,12 @@ You cannot (yet) configure custom ACL.
 
 - [`__default_execute_on_functions__`](#default-execute-on-functions)
 - [`__execute_on_all_functions__`](#execute-on-all-functions)
+
+
+### Profile `__execute_on_routines__` { #execute-on-routines  data-toc-label="&#95;&#95;execute&#95;on&#95;routines&#95;&#95;" }
+
+- [`__default_execute_on_routines__`](#default-execute-on-routines)
+- [`__execute_on_all_routines__`](#execute-on-all-routines)
 
 
 ### Profile `__insert_on_tables__` { #insert-on-tables  data-toc-label="&#95;&#95;insert&#95;on&#95;tables&#95;&#95;" }
@@ -213,6 +224,7 @@ Here is the list of predefined privileges:
 | <a name="create-on-schemas"></a> `__create_on_schemas__`                  | `CREATE ON SCHEMA` |
 | <a name="delete-on-all-tables"></a> `__delete_on_all_tables__`               | `DELETE ON ALL TABLES IN SCHEMA` |
 | <a name="execute-on-all-functions"></a> `__execute_on_all_functions__`           | `EXECUTE ON ALL FUNCTIONS IN SCHEMA` |
+| <a name="execute-on-all-routines"></a> `__execute_on_all_routines__`            | `EXECUTE ON ALL ROUTINES IN SCHEMA` |
 | <a name="insert-on-all-tables"></a> `__insert_on_all_tables__`               | `INSERT ON ALL TABLES IN SCHEMA` |
 | <a name="references-on-all-tables"></a> `__references_on_all_tables__`           | `REFERENCES ON ALL TABLES IN SCHEMA` |
 | <a name="select-on-all-sequences"></a> `__select_on_all_sequences__`            | `SELECT ON ALL SEQUENCES IN SCHEMA` |
@@ -236,6 +248,7 @@ Default privilege profile references both global and schema defaults.
 |------|---------|
 | <a name="default-delete-on-tables"></a> `__default_delete_on_tables__`           | `DELETE ON TABLES` |
 | <a name="default-execute-on-functions"></a> `__default_execute_on_functions__`       | `EXECUTE ON FUNCTIONS` |
+| <a name="default-execute-on-routines"></a> `__default_execute_on_routines__`        | `EXECUTE ON ROUTINES` |
 | <a name="default-insert-on-tables"></a> `__default_insert_on_tables__`           | `INSERT ON TABLES` |
 | <a name="default-references-on-tables"></a> `__default_references_on_tables__`       | `REFERENCES ON TABLES` |
 | <a name="default-select-on-sequences"></a> `__default_select_on_sequences__`        | `SELECT ON SEQUENCES` |

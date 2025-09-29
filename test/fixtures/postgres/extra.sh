@@ -40,4 +40,12 @@ BEGIN
   RETURN 4; -- chosen by fair dice roll.
 END;
 $$ LANGUAGE plpgsql;
+
+-- In Postgres, a procedure is a function returning void.
+-- CREATE PROCEDURE is a shorthand syntax available from Postgres 11 and later.
+CREATE FUNCTION hello() RETURNS void AS $$
+BEGIN
+  RAISE NOTICE 'Hello, world!';
+END;
+$$ LANGUAGE plpgsql;
 EOSQL

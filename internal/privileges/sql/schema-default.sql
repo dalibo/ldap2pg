@@ -5,7 +5,7 @@ WITH grants AS (
 		CASE defaclobjtype
 		WHEN 'r' THEN 'TABLES'
 		WHEN 'S' THEN 'SEQUENCES'
-		WHEN 'f' THEN 'FUNCTIONS'
+		WHEN 'f' THEN 'ROUTINES'
 		END AS "object",
 		defaclobjtype AS objtype,
 		(aclexplode(defaclacl)).grantee AS grantee,

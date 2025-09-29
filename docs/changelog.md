@@ -14,8 +14,11 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # UNRELEASED
 
 - Fix role config not applied to dynamic role rule. Thanks @astentx1.
+- Fix privileges on procedures returned with privileges on functions.
+- *DEPRECATED*: Prefer managing privileges on *ROUTINES* instead of *FUNCTIONS*.
 - Configure default privileges on self.
 - Merge multiple role config definition.
+- Manage privileges on routines.
 
 
 # ldap2pg 6.4.2

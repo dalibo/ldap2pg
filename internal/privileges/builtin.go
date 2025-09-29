@@ -18,6 +18,8 @@ var (
 	inspectSchema string
 	//go:embed sql/all-functions.sql
 	inspectAllFunctions string
+	//go:embed sql/all-routines.sql
+	inspectAllRoutines string
 	//go:embed sql/all-sequences.sql
 	inspectAllSequences string
 	//go:embed sql/all-tables.sql
@@ -61,6 +63,13 @@ func init() {
 		Revoke:  r,
 	}.MustRegister()
 	ACL{
+		Name:    "ALL ROUTINES IN SCHEMA",
+		Scope:   "database",
+		Inspect: inspectAllRoutines,
+		Grant:   g,
+		Revoke:  r,
+	}.MustRegister()
+	ACL{
 		Name:    "ALL SEQUENCES IN SCHEMA",
 		Scope:   "database",
 		Inspect: inspectAllSequences,
@@ -96,6 +105,7 @@ func init() {
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")
 	registerRelationBuiltinProfile("tables", "delete", "insert", "select", "truncate", "update", "references", "trigger")
 	registerRelationBuiltinProfile("functions", "execute")
+	registerRelationBuiltinProfile("routines", "execute")
 }
 
 // BuiltinsProfiles holds yaml rewrite for BuiltinsProfiles privileges from v5 format to v6.
