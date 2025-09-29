@@ -91,8 +91,10 @@ postgres:
 
 !!! note
 
-    Configuring a _query parameter with a YAML list skip querying the cluster
-    for inspection and forces ldap2pg to use a static value.
+    ldap2pg must connect to one of the databases in this query.
+
+    Configuring ldap2pg to connect to a database not returned by `databases_query` fails
+    with *databases: connected to an unmanaged database*.
 
 
 ### `fallback_owner`  { #postgres-fallback-owner }
