@@ -20,6 +20,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Update dependencies.
 - Fix --version showing (devel) with go build.
+- Access to database without USAGE privilege.
 
 
 # ldap2pg 6.4.1
