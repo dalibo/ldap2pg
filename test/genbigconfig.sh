@@ -29,7 +29,7 @@ privileges:
 
   write:
   - __temporary__
-  - __execute_on_functions__
+  - __execute_on_routines__
   - __insert_on_tables__
   - __delete_on_tables__
   - __update_on_tables__

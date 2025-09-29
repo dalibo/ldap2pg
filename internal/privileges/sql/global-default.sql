@@ -1,6 +1,6 @@
 WITH hardwired(object, priv) AS (
     -- Postgres hardwire the following default privileges on self.
-    VALUES ('FUNCTIONS', 'EXECUTE'),
+    VALUES ('ROUTINES', 'EXECUTE'),
            ('SEQUENCES', 'USAGE'),
            ('SEQUENCES', 'UPDATE'),
            ('SEQUENCES', 'SELECT'),
