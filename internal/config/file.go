@@ -12,6 +12,7 @@ import (
 	"github.com/dalibo/ldap2pg/v6/internal/privileges"
 	"github.com/dalibo/ldap2pg/v6/internal/wanted"
 	"github.com/jackc/pgx/v5"
+	"github.com/lithammer/dedent"
 )
 
 func FindDotEnvFile(configpath string) string {
@@ -89,10 +90,12 @@ type Config struct {
 func New() Config {
 	return Config{
 		Postgres: PostgresConfig{
-			DatabasesQuery: NewSQLQuery[string](`
+			DatabasesQuery: NewSQLQuery[string](dedent.Dedent(`
 				SELECT datname FROM pg_catalog.pg_database
-				WHERE datallowconn IS TRUE
-				ORDER BY 1;`, pgx.RowTo[string]),
+				 WHERE datallowconn IS TRUE
+				   -- Ensure ldap2pg can reassign to owner.
+				   AND pg_has_role(CURRENT_USER, datdba, 'USAGE')
+				 ORDER BY 1;`)[1:], pgx.RowTo[string]),
 			ManagedRolesQuery: NewSQLQuery[string](`
 				SELECT 'public'
 				UNION

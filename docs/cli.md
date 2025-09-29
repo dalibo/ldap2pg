@@ -50,6 +50,14 @@ See [psql(1)] for details on libpq env vars.
 
 [psql(1)]: https://www.postgresql.org/docs/current/app-psql.html#APP-PSQL-ENVIRONMENT
 
+!!! warning "Connect to managed Database"
+
+    ldap2pg manage ownerships and privileges in a configurable set of database.
+    You must connect to one of those.
+
+    e.g. If you don't want ldap2pg te execute `DROP OWNED BY` in `postgres` database,
+    don't connect ldap2pg to this database.
+
 The same goes for LDAP, ldap2pg supports standard `LDAP*` env vars and `ldaprc` files.
 See `ldap.conf(5)` for further details on how to configure.
 ldap2pg accepts two extra variables: `LDAPPASSWORD` and `LDAPPASSWORD_FILE`.

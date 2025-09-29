@@ -73,7 +73,7 @@ func (instance *Instance) InspectManagedDatabases(ctx context.Context, pgconn *p
 
 	_, ok := postgres.Databases[instance.DefaultDatabase]
 	if !ok {
-		return fmt.Errorf("default database not listed")
+		return fmt.Errorf("connected to an unmanaged database")
 	}
 	return nil
 }
