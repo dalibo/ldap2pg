@@ -22,7 +22,7 @@ namespaces AS (
 	LEFT OUTER JOIN pg_catalog.pg_proc AS pro
 		ON pro.pronamespace = nsp.oid
 	LEFT OUTER JOIN pg_catalog.pg_type AS rettype
-    ON rettype.oid = pg_proc.prorettype AND rettype.typname <> 'void'
+    ON rettype.oid = pro.prorettype AND rettype.typname <> 'void'
 	WHERE nspname NOT LIKE 'pg\_%temp\_%' AND nspname <> 'pg_toast'
 	  AND rettype.oid IS NOT NULL -- exclude procedures.
 	GROUP BY 1, 2
