@@ -9,6 +9,8 @@ grants AS (SELECT
 			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).grantee,
 			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).privilege_type
 		FROM pg_catalog.pg_proc
+		JOIN pg_catalog.pg_type AS rettype ON rettype.oid = pg_proc.prorettype
+		WHERE rettype.typname <> 'void'  -- skip procedures
 	) AS grants
 	GROUP BY 1, 2, 3
 ),
@@ -19,7 +21,10 @@ namespaces AS (
 	FROM pg_catalog.pg_namespace nsp
 	LEFT OUTER JOIN pg_catalog.pg_proc AS pro
 		ON pro.pronamespace = nsp.oid
+	LEFT OUTER JOIN pg_catalog.pg_type AS rettype
+    ON rettype.oid = pg_proc.prorettype AND rettype.typname <> 'void'
 	WHERE nspname NOT LIKE 'pg\_%temp\_%' AND nspname <> 'pg_toast'
+	  AND rettype.oid IS NOT NULL -- exclude procedures.
 	GROUP BY 1, 2
 )
 SELECT
