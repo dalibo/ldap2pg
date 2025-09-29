@@ -2,6 +2,7 @@ package role
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
@@ -15,14 +16,14 @@ type Role struct {
 	Comment      string
 	Parents      []Membership
 	Options      Options
-	Config       *Config
+	Config       Config
 	BeforeCreate string
 	AfterCreate  string
 }
 
 func New() Role {
 	r := Role{}
-	r.Config = &Config{}
+	r.Config = make(Config)
 	return r
 }
 
@@ -47,7 +48,7 @@ func RowTo(row pgx.CollectableRow) (r Role, err error) {
 		r.Parents = append(r.Parents, m)
 	}
 	r.Options.LoadRow(variableRow.([]any))
-	(*r.Config).Parse(config)
+	r.Config.Parse(config)
 	return
 }
 
@@ -149,8 +150,8 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 	}
 
 	if wanted.Config != nil {
-		currentKeys := mapset.NewSetFromMapKeys(*r.Config)
-		wantedKeys := mapset.NewSetFromMapKeys(*wanted.Config)
+		currentKeys := mapset.NewSetFromMapKeys(r.Config)
+		wantedKeys := mapset.NewSetFromMapKeys(wanted.Config)
 		missingKeys := wantedKeys.Clone()
 		for k := range currentKeys.Iter() {
 			if !wantedKeys.Contains(k) {
@@ -168,8 +169,8 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 
 			missingKeys.Remove(k)
 
-			currentValue := (*r.Config)[k]
-			wantedValue := (*wanted.Config)[k]
+			currentValue := r.Config[k]
+			wantedValue := wanted.Config[k]
 			if wantedValue == currentValue {
 				continue
 			}
@@ -187,7 +188,7 @@ func (r *Role) Alter(wanted Role) (out []postgres.SyncQuery) {
 		}
 
 		for k := range missingKeys.Iter() {
-			v := (*wanted.Config)[k]
+			v := wanted.Config[k]
 			out = append(out, postgres.SyncQuery{
 				Description: "Set role config.",
 				LogArgs: []any{
@@ -245,7 +246,7 @@ func (r *Role) Create() (out []postgres.SyncQuery) {
 	})
 
 	if r.Config != nil {
-		for k, v := range *r.Config {
+		for k, v := range r.Config {
 			out = append(out, postgres.SyncQuery{
 				Description: "Set role config.",
 				LogArgs:     []any{"role", r.Name, "config", k, "value", v},
@@ -334,5 +335,10 @@ func (r *Role) Merge(o Role) {
 			continue
 		}
 		r.Parents = append(r.Parents, membership)
+	}
+	if r.Config == nil {
+		r.Config = o.Config
+	} else if o.Config != nil {
+		maps.Copy(r.Config, o.Config)
 	}
 }

@@ -12,7 +12,7 @@ type RoleRule struct {
 	Options      role.Options
 	Comment      pyfmt.Format
 	Parents      []MembershipRule
-	Config       *role.Config
+	Config       role.Config
 	BeforeCreate pyfmt.Format `mapstructure:"before_create"`
 	AfterCreate  pyfmt.Format `mapstructure:"after_create"`
 }
@@ -66,6 +66,7 @@ func (r RoleRule) Generate(results *ldap.Result) <-chan role.Role {
 				role.Comment = r.Comment.Format(values)
 				role.Options = r.Options
 				role.Parents = append(parents[0:0], parents...) // copy
+				role.Config = r.Config
 				role.BeforeCreate = r.BeforeCreate.Format(values)
 				role.AfterCreate = r.AfterCreate.Format(values)
 				ch <- role

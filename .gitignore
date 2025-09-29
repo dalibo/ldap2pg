@@ -1,5 +1,5 @@
 # Delve binary.
-__debug_bin
+__debug_bin*
 dist/
 docker-compose.override.yml
 # test/conftest.py creates .env files

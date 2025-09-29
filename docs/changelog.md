@@ -13,7 +13,9 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 # UNRELEASED
 
+- Fix role config not applied to dynamic role rule. Thanks @astentx1.
 - Configure default privileges on self.
+- Merge multiple role config definition.
 
 
 # ldap2pg 6.4.2
