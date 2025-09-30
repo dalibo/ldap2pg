@@ -61,7 +61,7 @@ jobs:
         command: |
           go test -v ./...
     - save_cache:
-        key: go-build-{{ epoch }}
+        key: go-build-{{ checksum "go.mod" }}
         paths:
         - /go/pkg/mod
         - /root/.cache/go-build
@@ -84,7 +84,7 @@ jobs:
         command: |
           golangci-lint run
     - save_cache:
-        key: go-lint-{{ epoch }}
+        key: go-lint-{{ checksum "go.mod" }}
         paths:
         - /root/.cache/golangci-lint
         - /root/.cache/go-build
