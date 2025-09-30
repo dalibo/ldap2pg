@@ -72,6 +72,6 @@ func CloseConn(ctx context.Context) {
 	c := globalConn.Config()
 	slog.Debug("Closing Postgres global connection.", "database", c.Database)
 
-	globalConn.Close(ctx)
+	_ = globalConn.Close(ctx)
 	globalConn = nil
 }

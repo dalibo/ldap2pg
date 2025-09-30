@@ -52,7 +52,7 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 		if err != nil {
 			return nil, nil, err
 		}
-		defer ldapc.Conn.Close()
+		defer ldapc.Conn.Close() //nolint:errcheck
 	}
 
 	roles = make(map[string]role.Role)
