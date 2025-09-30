@@ -18,7 +18,7 @@ ldap2pg can grant and revoke privileges too.
 
 # Features
 
-- Support PostgreSQL 17 down to 9.5.
+- Support PostgreSQL 18 down to 9.5.
 - Reads settings from an expressive YAML config file.
 - Creates, alters and drops PostgreSQL roles from LDAP searches.
 - Creates static roles from YAML to complete LDAP entries.
