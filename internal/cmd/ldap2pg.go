@@ -331,13 +331,13 @@ func startProfiling() (stop func(), err error) {
 	}
 	err = pprof.StartCPUProfile(f)
 	if err != nil {
-		f.Close()
+		_ = f.Close()
 		return
 	}
 	stop = func() {
 		slog.Debug("Stopping profiling.")
 		pprof.StopCPUProfile()
-		f.Close()
+		_ = f.Close()
 	}
 	return
 }

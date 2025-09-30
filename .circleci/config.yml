@@ -44,7 +44,7 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
-    - image: goreleaser/goreleaser:v2.8.2
+    - image: goreleaser/goreleaser:v2.12.2
     steps:
     - checkout
     - restore_cache:
@@ -61,7 +61,7 @@ jobs:
         command: |
           go test -v ./...
     - save_cache:
-        key: go-build-{{ epoch }}
+        key: go-build-{{ checksum "go.mod" }}
         paths:
         - /go/pkg/mod
         - /root/.cache/go-build
@@ -74,7 +74,7 @@ jobs:
   lint:
     working_directory: *workspace
     docker:
-    - image: golangci/golangci-lint:v2.0.2
+    - image: golangci/golangci-lint:v2.5.0
     steps:
     - checkout
     - restore_cache:
@@ -84,7 +84,7 @@ jobs:
         command: |
           golangci-lint run
     - save_cache:
-        key: go-lint-{{ epoch }}
+        key: go-lint-{{ checksum "go.mod" }}
         paths:
         - /root/.cache/golangci-lint
         - /root/.cache/go-build
@@ -116,7 +116,7 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
-    docker: [{image: goreleaser/goreleaser:v2.9.0}]
+    docker: [{image: goreleaser/goreleaser:v2.12.2}]
     working_directory: *workspace
     steps:
     - checkout

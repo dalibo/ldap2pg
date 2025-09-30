@@ -30,7 +30,7 @@ func ReadYaml(path string) (values any, err error) {
 			return
 		}
 	}
-	defer fo.Close()
+	defer fo.Close() //nolint:errcheck
 	dec := yaml.NewDecoder(fo)
 	err = dec.Decode(&values)
 	return
@@ -64,15 +64,15 @@ func Dump(root any) {
 	encoder := yaml.NewEncoder(&buf)
 	encoder.SetIndent(2)
 	_ = encoder.Encode(root)
-	encoder.Close()
+	_ = encoder.Close()
 	color := isatty.IsTerminal(os.Stderr.Fd())
 	slog.Debug("Dumping normalized YAML to stderr.")
 	if color {
-		os.Stderr.WriteString("\033[0;2m")
+		_, _ = os.Stderr.WriteString("\033[0;2m")
 	}
-	os.Stderr.WriteString(buf.String())
+	_, _ = os.Stderr.WriteString(buf.String())
 	if color {
-		os.Stderr.WriteString("\033[0m")
+		_, _ = os.Stderr.WriteString("\033[0m")
 	}
 }
 

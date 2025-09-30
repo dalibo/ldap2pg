@@ -27,7 +27,7 @@ func init() {
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s [OPTIONS] [dbname]\n\n", os.Args[0])
 		pflag.PrintDefaults()
-		os.Stderr.Write([]byte(dedent.Dedent(`
+		_, _ = os.Stderr.Write([]byte(dedent.Dedent(`
 
 		Optional argument dbname is alternatively the database name or a conninfo string or an URI.
 		See man psql(1) for more information.

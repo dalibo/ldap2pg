@@ -15,7 +15,7 @@ func ReadVMPeak() int {
 		slog.Debug("Failed to read /proc/self/status.", "err", err)
 		return 0
 	}
-	defer fo.Close()
+	defer fo.Close() //nolint:errcheck
 
 	scanner := bufio.NewScanner(fo)
 	for scanner.Scan() {
