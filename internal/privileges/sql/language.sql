@@ -1,10 +1,11 @@
 WITH grants AS (
 	SELECT
 		lanname,
-		(aclexplode(COALESCE(lanacl, acldefault('T', lanowner)))).grantor AS grantor,
-		(aclexplode(COALESCE(lanacl, acldefault('T', lanowner)))).grantee AS grantee,
-		(aclexplode(COALESCE(lanacl, acldefault('T', lanowner)))).privilege_type AS priv
-	FROM pg_catalog.pg_language
+		grt.grantor AS grantor,
+		grt.grantee AS grantee,
+		grt.privilege_type AS priv
+	FROM pg_catalog.pg_language AS lang
+  NATURAL JOIN aclexplode(COALESCE(lang.lanacl, acldefault('T', lang.lanowner))) AS grt
 )
 SELECT
 	grants.priv AS "privilege",

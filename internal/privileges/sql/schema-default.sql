@@ -8,9 +8,10 @@ WITH grants AS (
 		WHEN 'f' THEN 'ROUTINES'
 		END AS "object",
 		defaclobjtype AS objtype,
-		(aclexplode(defaclacl)).grantee AS grantee,
-		(aclexplode(defaclacl)).privilege_type AS priv
-	FROM pg_catalog.pg_default_acl
+		grt.grantee AS grantee,
+		grt.privilege_type AS priv
+	FROM pg_catalog.pg_default_acl AS defacl
+  NATURAL JOIN aclexplode(defacl.defaclacl) AS grt
 )
 SELECT
 	COALESCE(owner.rolname, 'public') AS owner,

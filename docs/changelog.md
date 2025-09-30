@@ -19,6 +19,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Configure default privileges on self.
 - Merge multiple role config definition.
 - Manage privileges on routines.
+- PostgreSQL 18 support.
 
 
 # ldap2pg 6.4.2

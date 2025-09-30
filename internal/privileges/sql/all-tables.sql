@@ -14,10 +14,11 @@ namespace_rels AS (
 grants AS (
 	SELECT
 		relnamespace,
-		(aclexplode(relacl)).privilege_type,
-		(aclexplode(relacl)).grantee,
+		grt.privilege_type,
+		grt.grantee,
 		array_agg(relname ORDER BY relname) AS rels
-	FROM pg_catalog.pg_class
+	FROM pg_catalog.pg_class AS rel
+  NATURAL JOIN  aclexplode(rel.relacl) AS grt
 	WHERE relkind IN ('r', 'v', 'f', 'm')
 	GROUP BY 1, 2, 3
 )
