@@ -133,6 +133,14 @@ func (controller Controller) Finalize(errs *errorlist.List, start time.Time, rol
 		slog.Info(finalMessage, logAttrs...)
 	}
 
+	if elapsed > time.Second*10 {
+		title := "ldap2pg succeeded"
+		if errs.Len() > 0 {
+			title = "ldap2pg failed"
+		}
+		notify(title, finalMessage)
+	}
+
 	if errs.Len() > 0 {
 		return errs
 	}
@@ -178,4 +186,15 @@ func unmarshalController() (controller Controller, err error) {
 		controller.Dsn = args[0]
 	}
 	return controller, err
+}
+
+func notify(title, message string) {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		return
+	}
+	_, _ = fmt.Fprintf(
+		os.Stdout,
+		"\033]777;notify;%s;%s\a",
+		title, message,
+	)
 }

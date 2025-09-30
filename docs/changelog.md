@@ -21,6 +21,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 - Configure default privileges on self. Thanks @mhagander.
 - Merge multiple role config definition.
 - Manage privileges on routines.
+- Notify long running command end.
 
 
 # ldap2pg 6.4.2
