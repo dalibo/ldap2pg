@@ -175,21 +175,17 @@ func ldap2pg() (err error) {
 		slog.Debug("Not synchronizing privileges.")
 	}
 
-	if syncErrors.Len() > 0 {
-		return syncErrors
-	}
-
 	grantCount := 0
 	for _, grants := range wantedGrants {
 		grantCount += len(grants)
 	}
-	exitCode := controller.Finalize(
+	return controller.Finalize(
+		syncErrors,
 		start,
 		len(wantedRoles),
 		grantCount,
 		queryCount,
 	)
-	return errorCode{code: exitCode}
 }
 
 func changeDirectory(directory string) (err error) {

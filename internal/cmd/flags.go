@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dalibo/ldap2pg/v6/internal"
+	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
 	"github.com/dalibo/ldap2pg/v6/internal/inspect"
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/dalibo/ldap2pg/v6/internal/perf"
@@ -96,7 +97,7 @@ type Controller struct {
 }
 
 // Finalize logs the end of ldap2pg execution and determine exit code.
-func (controller Controller) Finalize(start time.Time, roles, grants, queries int) int {
+func (controller Controller) Finalize(errs *errorlist.List, start time.Time, roles, grants, queries int) error {
 	logAttrs := []any{
 		"searches", ldap.Watch.Count,
 		"roles", roles,
@@ -107,19 +108,9 @@ func (controller Controller) Finalize(start time.Time, roles, grants, queries in
 			"grants", grants,
 		)
 	}
-	if queries > 0 {
-		slog.Info("Comparison complete.", logAttrs...)
-		if !controller.Real {
-			slog.Info("Use --real option to apply changes.")
-		}
-	} else {
-		slog.Info("Nothing to do.", logAttrs...)
-	}
-
 	vmPeak := perf.ReadVMPeak()
 	elapsed := time.Since(start)
-	slog.Info(
-		"Done.",
+	logAttrs = append(logAttrs,
 		"elapsed", elapsed,
 		"mempeak", perf.FormatBytes(vmPeak),
 		"ldap", ldap.Watch.Total,
@@ -127,10 +118,38 @@ func (controller Controller) Finalize(start time.Time, roles, grants, queries in
 		"sync", postgres.Watch.Total,
 	)
 
-	if controller.Check && queries > 0 {
-		return 1
+	finalMessage := "Nothing to do."
+	if queries > 0 {
+		if controller.Real {
+			finalMessage = "Synchronisation complete."
+		} else {
+			finalMessage = "Comparison complete."
+		}
+		slog.Info(finalMessage, logAttrs...)
+		if !controller.Real {
+			slog.Info("Use --real option to apply changes.")
+		}
+	} else {
+		slog.Info(finalMessage, logAttrs...)
 	}
-	return 0
+
+	if elapsed > time.Second*10 {
+		title := "ldap2pg succeeded"
+		if errs.Len() > 0 {
+			title = "ldap2pg failed"
+		}
+		notify(title, finalMessage)
+	}
+
+	if errs.Len() > 0 {
+		return errs
+	}
+
+	if controller.Check && queries > 0 {
+		return errorCode{code: 1}
+	}
+
+	return nil
 }
 
 var levels = []slog.Level{
@@ -167,4 +186,15 @@ func unmarshalController() (controller Controller, err error) {
 		controller.Dsn = args[0]
 	}
 	return controller, err
+}
+
+func notify(title, message string) {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		return
+	}
+	_, _ = fmt.Fprintf(
+		os.Stdout,
+		"\033]777;notify;%s;%s\a",
+		title, message,
+	)
 }
