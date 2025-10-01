@@ -14,6 +14,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # UNRELEASED
 
 - Fix inspection of grants on functions. Thanks @dani.
+- Fix conflict between routines and functions ACL.
 
 
 # ldap2pg 6.5.0
