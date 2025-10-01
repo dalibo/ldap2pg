@@ -32,39 +32,43 @@ postgres:
         OR ldap_roles.oid IS NOT NULL
     ORDER BY 1;
   databases_query: [extra0, extra1]
+  # Include pg_catalog.
+  schemas_query: |
+    SELECT nspname, rolname
+      FROM pg_catalog.pg_namespace
+      JOIN pg_catalog.pg_roles ON pg_catalog.pg_roles.oid = nspowner
+     WHERE has_schema_privilege(CURRENT_USER, nspname, 'USAGE')
+       AND nspname <> 'information_schema'
+     ORDER BY 1;
   fallback_owner: extra
 
 acls:
-  FUNCTION get_random:
+  # dumb custom privilege to read/grant/revoke privileges on pg_statistic
+  # Incompatible with ALL TABLES IN SCHEMA ACL.
+  pg_statistic:
     scope: database
     inspect: |
-      WITH acls AS (
-        SELECT pronamespace::regnamespace::text AS schema, proname,
-               coalesce(proacl, acldefault('f', proowner)) AS proacl
-          FROM pg_catalog.pg_proc
-         WHERE proname = 'get_random'
-           AND pronamespace::regnamespace NOT IN ('pg_catalog', 'information_schema')
-         ORDER BY 1, 2
-      ), grants AS (
-       	SELECT schema, proname,
-               (aclexplode(proacl)).privilege_type,
-       				 (aclexplode(proacl)).grantee::regrole::text AS grantee
-       	  FROM acls
-      )
-      SELECT privilege_type,
-             schema,
-             CASE grantee WHEN '-' THEN 'public' ELSE grantee END AS grantee,
-             FALSE AS partial
-        FROM grants
-       WHERE privilege_type = ANY ($1)
-      ;
-    grant: GRANT <privilege> ON FUNCTION <schema>.get_random() TO <grantee>;
-    revoke: REVOKE <privilege> ON FUNCTION <schema>.get_random() FROM <grantee>;
+      SELECT grt.privilege_type,
+            relnamespace::regnamespace::text AS schema,
+            CASE grt.grantee
+            WHEN 0 THEN 'public'
+            ELSE grt.grantee::regrole::text
+            END AS grantee,
+            FALSE AS partial
+        FROM pg_catalog.pg_class
+            NATURAL JOIN aclexplode(COALESCE(relacl, acldefault('r', relowner))) AS grt
+      WHERE relname = 'pg_statistic'
+        AND privilege_type = ANY($1)
+      ORDER BY 1, 2;
+    grant: GRANT <privilege> ON TABLE <schema>.pg_statistic TO <grantee>;
+    revoke: REVOKE <privilege> ON TABLE <schema>.pg_statistic FROM <grantee>;
 
 privileges:
-  random:
-    - type: EXECUTE
-      on: FUNCTION get_random
+  stats:
+    - type: SELECT
+      on: pg_statistic
+  # testing functions privileges. because master YAML uses routines.
+  x: [__execute_on_functions__]
 
 rules:
 - description: "Static groups"
@@ -124,9 +128,13 @@ rules:
     before_create: "CREATE SCHEMA {cn.identifier()};"
     after_create: "CREATE TABLE {cn.identifier()}.username AS SELECT {cn.string()}::regrole AS username;"
 
-- description: "Custom ACL"
+- description: "Custom ACL."
   grant:
-    - privilege: random
+    - privilege: stats
       role: nicolas
+      database: extra0
+      schema: pg_catalog
+    - privilege: corinne
+      role: x
       database: extra0
       schema: public
