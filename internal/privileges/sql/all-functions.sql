@@ -9,6 +9,7 @@ grants AS (SELECT
 			grt.grantee,
 			grt.privilege_type
 		FROM pg_catalog.pg_proc AS pro
+    JOIN pg_catalog.pg_type AS rettype ON rettype.oid = pro.prorettype
     NATURAL JOIN aclexplode(COALESCE(pro.proacl, acldefault('f', pro.proowner))) AS grt
     WHERE rettype.typname <> 'void'  -- skip procedures
 	) AS grants
