@@ -104,7 +104,6 @@ func init() {
 	// profiles
 	registerRelationBuiltinProfile("sequences", "select", "update", "usage")
 	registerRelationBuiltinProfile("tables", "delete", "insert", "select", "truncate", "update", "references", "trigger")
-	registerRelationBuiltinProfile("functions", "execute")
 	registerRelationBuiltinProfile("routines", "execute")
 }
 
@@ -131,6 +130,21 @@ var BuiltinsProfiles = map[string]any{
 	"__all_on_schemas__": []any{
 		"__create_on_schemas__",
 		"__usage_on_schemas__",
+	},
+	// Privileges on functions has change in 6.5.0.
+	// Default on functions is now void.
+	// Manage only a EXECUTE ON ALL FUNCTIONS.
+	"__execute_on_all_functions__": []any{map[string]any{
+		"type": "EXECUTE",
+		"on":   "ALL FUNCTIONS IN SCHEMA",
+	}},
+	"__execute_on_functions__": []any{
+		"__execute_on_all_functions__",
+	},
+	// For backward compatibility.
+	"__default_execute_on_functions__": []any{},
+	"__all_on_functions__": []any{ // pretty useless.
+		"__execute_on_functions__",
 	},
 }
 
