@@ -65,6 +65,8 @@ privileges:
   random:
     - type: EXECUTE
       on: FUNCTION get_random
+  # testing functions privileges. because master YAML uses routines.
+  x: [__execute_on_functions__]
 
 rules:
 - description: "Static groups"
@@ -128,5 +130,9 @@ rules:
   grant:
     - privilege: random
       role: nicolas
+      database: extra0
+      schema: public
+    - privilege: x
+      role: corinne
       database: extra0
       schema: public
