@@ -6,9 +6,10 @@ grants AS (SELECT
 		SELECT
 			pronamespace,
 			proname,
-			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).grantee,
-			(aclexplode(COALESCE(proacl, acldefault('f', proowner)))).privilege_type
-		FROM pg_catalog.pg_proc
+			grt.grantee,
+			grt.privilege_type
+		FROM pg_catalog.pg_proc AS pro
+    NATURAL JOIN aclexplode(COALESCE(pro.proacl, acldefault('f', pro.proowner))) AS grt
 	) AS grants
 	GROUP BY 1, 2, 3
 ),
