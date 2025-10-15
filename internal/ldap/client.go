@@ -119,6 +119,10 @@ func Connect() (client Client, err error) {
 			return client, err
 		}
 		spn := "ldap/" + strings.Split(parsedURI.Host, ":")[0]
+		if strings.Contains(client.SaslAuthCID, "@") {
+			realm := strings.Split(client.SaslAuthCID, "@")[1]
+			spn = spn + "@" + realm
+		}
 		slog.Debug("LDAP SASL/GSSAPI bind.", "principal", client.SaslAuthCID, "spn", spn)
 		err = client.Conn.GSSAPIBind(sspiClient, spn, client.SaslAuthCID)
 		if err != nil {
