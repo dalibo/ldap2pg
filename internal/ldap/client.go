@@ -70,6 +70,12 @@ func Connect() (client Client, err error) {
 	slog.Debug("LDAP set timeout.", "timeout", client.Timeout)
 	client.Conn.SetTimeout(client.Timeout)
 
+	var parsedURI *url.URL
+	parsedURI, err = url.Parse(client.URI)
+	if err != nil {
+		return client, err
+	}
+
 	client.SaslMech = k.String("SASL_MECH")
 	switch client.SaslMech {
 	case "":
@@ -85,11 +91,6 @@ func Connect() (client Client, err error) {
 	case "DIGEST-MD5":
 		client.SaslAuthCID = k.String("SASL_AUTHCID")
 		password := k.String("PASSWORD")
-		var parsedURI *url.URL
-		parsedURI, err = url.Parse(client.URI)
-		if err != nil {
-			return client, err
-		}
 		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
 		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
 	case "GSSAPI":
@@ -106,23 +107,13 @@ func Connect() (client Client, err error) {
 		if !ok {
 			krb5confPath = "/etc/krb5.conf"
 		}
-		slog.Debug("Initial SSPI client.", "ccache", ccache, "krb5conf", krb5confPath)
+		slog.Debug("Initialize SSPI client.", "ccache", ccache, "krb5conf", krb5confPath)
 		sspiClient, err := gssapi.NewClientFromCCache(ccache, krb5confPath)
 		if err != nil {
 			return client, err
 		}
 		defer sspiClient.Close()
-		// Build service Principal from URI.
-		var parsedURI *url.URL
-		parsedURI, err = url.Parse(client.URI)
-		if err != nil {
-			return client, err
-		}
-		spn := "ldap/" + strings.Split(parsedURI.Host, ":")[0]
-		if strings.Contains(client.SaslAuthCID, "@") {
-			realm := strings.Split(client.SaslAuthCID, "@")[1]
-			spn = spn + "@" + realm
-		}
+		spn := buildServicePrincipalName(parsedURI)
 		slog.Debug("LDAP SASL/GSSAPI bind.", "principal", client.SaslAuthCID, "spn", spn)
 		err = client.Conn.GSSAPIBind(sspiClient, spn, client.SaslAuthCID)
 		if err != nil {
@@ -176,4 +167,9 @@ func IsErrorRecoverable(err error) bool {
 // Implements retry.OnRetryFunc
 func LogRetryError(n uint, err error) {
 	slog.Debug("Retrying.", "err", err.Error(), "attempt", n)
+}
+
+// Build service Principal from URI.
+func buildServicePrincipalName(uri *url.URL) string {
+	return "ldap/" + strings.Split(uri.Host, ":")[0]
 }
