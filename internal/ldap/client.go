@@ -115,7 +115,7 @@ func Connect() (client Client, err error) {
 		defer sspiClient.Close()
 		spn := buildServicePrincipalName(parsedURI)
 		slog.Debug("LDAP SASL/GSSAPI bind.", "principal", client.SaslAuthCID, "spn", spn)
-		err = client.Conn.GSSAPIBind(sspiClient, spn, client.SaslAuthCID)
+		err = client.Conn.GSSAPIBind(sspiClient, spn, "")
 		if err != nil {
 			return client, err
 		}
