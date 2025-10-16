@@ -6,12 +6,14 @@ import (
 	"log/slog"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
+	"github.com/go-ldap/ldap/v3/gssapi"
 )
 
 type Client struct {
@@ -68,6 +70,12 @@ func Connect() (client Client, err error) {
 	slog.Debug("LDAP set timeout.", "timeout", client.Timeout)
 	client.Conn.SetTimeout(client.Timeout)
 
+	var parsedURI *url.URL
+	parsedURI, err = url.Parse(client.URI)
+	if err != nil {
+		return client, err
+	}
+
 	client.SaslMech = k.String("SASL_MECH")
 	switch client.SaslMech {
 	case "":
@@ -83,13 +91,34 @@ func Connect() (client Client, err error) {
 	case "DIGEST-MD5":
 		client.SaslAuthCID = k.String("SASL_AUTHCID")
 		password := k.String("PASSWORD")
-		var parsedURI *url.URL
-		parsedURI, err = url.Parse(client.URI)
+		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
+		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+	case "GSSAPI":
+		// Get the principal
+		client.SaslAuthCID = k.String("SASL_AUTHCID")
+		ccache, ok := os.LookupEnv("KRB5CCNAME")
+		if ok {
+			ccache = strings.TrimPrefix(ccache, "FILE:")
+		} else {
+			uid := os.Getuid()
+			ccache = fmt.Sprintf("/tmp/krb5cc_%d", uid)
+		}
+		krb5confPath, ok := os.LookupEnv("KRB5_CONFIG")
+		if !ok {
+			krb5confPath = "/etc/krb5.conf"
+		}
+		slog.Debug("Initialize SSPI client.", "ccache", ccache, "krb5conf", krb5confPath)
+		sspiClient, err := gssapi.NewClientFromCCache(ccache, krb5confPath)
 		if err != nil {
 			return client, err
 		}
-		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
-		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+		defer sspiClient.Close()
+		spn := buildServicePrincipalName(parsedURI)
+		slog.Debug("LDAP SASL/GSSAPI bind.", "principal", client.SaslAuthCID, "spn", spn)
+		err = client.Conn.GSSAPIBind(sspiClient, spn, "")
+		if err != nil {
+			return client, err
+		}
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
 	}
@@ -138,4 +167,9 @@ func IsErrorRecoverable(err error) bool {
 // Implements retry.OnRetryFunc
 func LogRetryError(n uint, err error) {
 	slog.Debug("Retrying.", "err", err.Error(), "attempt", n)
+}
+
+// Build service Principal from URI.
+func buildServicePrincipalName(uri *url.URL) string {
+	return "ldap/" + strings.Split(uri.Host, ":")[0]
 }
