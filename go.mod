@@ -52,3 +52,8 @@ require (
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 )
+
+replace (
+	github.com/go-ldap/ldap/v3 => ./partialvendor/go-ldap
+	github.com/jcmturner/gokrb5/v8 => ./partialvendor/gokrb5
+)
