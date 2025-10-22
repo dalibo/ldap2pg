@@ -4,3 +4,5 @@ dist/
 docker-compose.override.yml
 # test/conftest.py creates .env files
 .env
+trace.out
+*.pprof
