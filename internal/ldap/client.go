@@ -15,13 +15,14 @@ import (
 )
 
 type Client struct {
-	URI         string
-	BindDN      string
-	SaslMech    string
-	SaslAuthCID string
-	Timeout     time.Duration
-	Password    string
-	Conn        *ldap3.Conn
+	URI             string
+	BindDN          string
+	SaslMech        string
+	SaslAuthCID     string
+	Timeout         time.Duration
+	Password        string
+	Conn            *ldap3.Conn
+	UseNativeGSSAPI bool
 }
 
 var Watch perf.StopWatch
@@ -90,6 +91,12 @@ func Connect() (client Client, err error) {
 		}
 		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
 		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+	case "GSSAPI":
+		// Use native ldapsearch command instead of pure Go GSSAPI implementation
+		// The pure Go implementation (jcmturner/gokrb5) has checksum mismatch issues with MIT Kerberos
+		client.UseNativeGSSAPI = true
+		slog.Debug("LDAP SASL/GSSAPI configured.", "mode", "native ldapsearch wrapper")
+		// No bind needed - authentication will happen per search via ldapsearch command
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
 	}
@@ -102,6 +109,22 @@ func Connect() (client Client, err error) {
 }
 
 func (c *Client) Search(base string, scope Scope, filter string, attributes []string) (*ldap3.SearchResult, error) {
+	// Use native ldapsearch for GSSAPI to avoid pure Go implementation bugs
+	if c.UseNativeGSSAPI {
+		var res *ldap3.SearchResult
+		var err error
+		duration := Watch.TimeIt(func() {
+			res, err = c.NativeGSSAPISearch(base, scope, filter, attributes)
+		})
+		if err != nil {
+			slog.Debug("Native GSSAPI search failed.", "duration", duration, "err", err)
+			return nil, err
+		}
+		slog.Debug("Native GSSAPI search done.", "duration", duration, "entries", len(res.Entries))
+		return res, nil
+	}
+
+	// Standard LDAP library search for non-GSSAPI
 	search := ldap3.SearchRequest{
 		BaseDN:     base,
 		Scope:      int(scope),
