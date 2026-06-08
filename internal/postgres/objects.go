@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/maps"
 )
 
 type Database struct {
@@ -20,8 +20,7 @@ var Databases = make(DBMap)
 
 func SyncOrder(defaultName string, defaultFirst bool) (out []string) {
 	m := Databases
-	names := maps.Keys(m)
-	slices.Sort(names)
+	names := slices.Sorted(maps.Keys(m))
 	_, ok := m[defaultName]
 	if defaultFirst && ok {
 		out = append(out, defaultName)

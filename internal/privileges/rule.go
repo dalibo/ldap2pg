@@ -2,13 +2,13 @@ package privileges
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/dalibo/ldap2pg/v6/internal/lists"
 	"github.com/dalibo/ldap2pg/v6/internal/normalize"
 	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
-	"golang.org/x/exp/maps"
 )
 
 // NormalizeGrantRule from loose YAML

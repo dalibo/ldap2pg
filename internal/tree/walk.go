@@ -1,10 +1,10 @@
 package tree
 
 import (
+	"maps"
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/maps"
 )
 
 // Walk returns the list of string in topological order.
@@ -12,8 +12,7 @@ import (
 // heritance maps entity -> list of parents.
 func Walk(heritance map[string][]string) (out []string) {
 	seen := mapset.NewSet[string]()
-	keys := maps.Keys(heritance)
-	slices.Sort(keys)
+	keys := slices.Sorted(maps.Keys(heritance))
 	for _, key := range keys {
 		out = append(out, walkOne(key, heritance, &seen)...)
 	}

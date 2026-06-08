@@ -4,13 +4,13 @@ package ldap
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/v6/internal/lists"
 	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
 	ldap3 "github.com/go-ldap/ldap/v3"
-	"golang.org/x/exp/maps"
 )
 
 // Holds a consistent set of entry and sub-search entries.
@@ -40,7 +40,7 @@ func (r *Result) GenerateValues(fmts ...pyfmt.Format) <-chan map[string]string {
 	ch := make(chan map[string]string)
 	go func() {
 		defer close(ch)
-		for values := range r.GenerateCombinations(attributes, maps.Keys(subMap)) {
+		for values := range r.GenerateCombinations(attributes, slices.Collect(maps.Keys(subMap))) {
 			ch <- r.ResolveExpressions(expressions, values, subMap)
 		}
 	}()

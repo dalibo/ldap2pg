@@ -1,6 +1,9 @@
 package ldap
 
-import "golang.org/x/exp/maps"
+import (
+	"maps"
+	"slices"
+)
 
 type Search struct {
 	Base        string
@@ -11,7 +14,7 @@ type Search struct {
 }
 
 func (s Search) SubsearchAttribute() string {
-	keys := maps.Keys(s.Subsearches)
+	keys := slices.Collect(maps.Keys(s.Subsearches))
 	if len(keys) == 0 {
 		return ""
 	}

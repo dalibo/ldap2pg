@@ -23,7 +23,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/exp v0.0.0-20260603202125-055de637280b
 	gopkg.in/yaml.v3 v3.0.1
 )
 

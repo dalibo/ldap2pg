@@ -3,6 +3,7 @@ package privileges
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/maps"
 )
 
 // Grant holds privilege informations from Postgres inspection or Grant rule.
@@ -180,7 +180,7 @@ func (g Grant) ExpandOwners(database postgres.Database) (out []Grant) {
 	// Yield default privilege for database owner.
 	var schemas []postgres.Schema
 	if g.Schema == "" {
-		schemas = maps.Values(database.Schemas)
+		schemas = slices.Collect(maps.Values(database.Schemas))
 	} else {
 		schemas = []postgres.Schema{database.Schemas[g.Schema]}
 	}
@@ -227,7 +227,7 @@ func Expand(in []Grant, database postgres.Database) (out []Grant) {
 
 	in = out
 	out = nil
-	schemas := maps.Keys(database.Schemas)
+	schemas := slices.Collect(maps.Keys(database.Schemas))
 	for _, grant := range in {
 		out = append(out, grant.ExpandSchemas(schemas)...)
 	}

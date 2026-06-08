@@ -3,10 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/v6/internal/normalize"
-	"golang.org/x/exp/maps"
 )
 
 func NormalizeRoleRule(yaml any) (rule map[string]any, err error) {
@@ -86,7 +87,7 @@ func NormalizeRoleOptions(yaml any) (value map[string]any, err error) {
 		"BYPASSRLS":        false,
 		"CONNECTION LIMIT": -1,
 	}
-	knownKeys := maps.Keys(value)
+	knownKeys := slices.Collect(maps.Keys(value))
 
 	switch yaml := yaml.(type) {
 	case string:
