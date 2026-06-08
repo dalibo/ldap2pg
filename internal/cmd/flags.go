@@ -108,11 +108,11 @@ func (controller Controller) Finalize(errs *errorlist.List, start time.Time, rol
 			"grants", grants,
 		)
 	}
-	vmPeak := perf.ReadVMPeak()
+	memUsed := perf.ReadMemoryWatermark()
 	elapsed := time.Since(start)
 	logAttrs = append(logAttrs,
 		"elapsed", elapsed,
-		"mempeak", perf.FormatBytes(vmPeak),
+		"mempeak", perf.FormatBytes(memUsed),
 		"ldap", ldap.Watch.Total,
 		"inspect", inspect.Watch.Total,
 		"sync", postgres.Watch.Total,

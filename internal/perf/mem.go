@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-func ReadVMPeak() int {
+// ReadMemoryWatermark returns the memory watermark in bytes.
+func ReadMemoryWatermark() int {
 	fo, err := os.Open("/proc/self/status")
 	if err != nil {
 		slog.Debug("Failed to read /proc/self/status.", "err", err)
@@ -20,17 +21,17 @@ func ReadVMPeak() int {
 	scanner := bufio.NewScanner(fo)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "VmPeak:") {
+		if !strings.HasPrefix(line, "VmHWM:") {
 			continue
 		}
 
 		fields := strings.Fields(line)
 		value, err := strconv.Atoi(fields[1])
 		if err != nil {
-			slog.Debug("Failed to parse VmPeak.", "err", err)
+			slog.Debug("Failed to parse VmHWM.", "err", err)
 			return 0
 		}
-		return value
+		return value * 1024
 	}
 
 	if err := scanner.Err(); err != nil {
