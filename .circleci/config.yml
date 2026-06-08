@@ -9,6 +9,11 @@ workflows:
     - lint:
         name: "stage0-lint"
     - e2e:
+        name: "stage1-e2e-rockylinux10-pg19"
+        dist: rockylinux10
+        requires: [stage0-build]
+        pgversion: "19beta1"
+    - e2e:
         name: "stage1-e2e-rockylinux9-pg18"
         dist: rockylinux9
         requires: [stage0-build]
