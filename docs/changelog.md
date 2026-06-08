@@ -15,6 +15,7 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 
 - Fix memory usage value.
 - Run CI on rockylinux 10 with PostgreSQL19 beta1
+- Bump PostgreSQL developpement version to 18
 
 
 # ldap2pg 6.5.1
