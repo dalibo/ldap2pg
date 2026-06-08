@@ -1,6 +1,6 @@
 module github.com/dalibo/ldap2pg/v6
 
-go 1.25
+go 1.26.3
 
 // https://pkg.go.dev/crypto/x509#ParseCertificate
 godebug x509negativeserial=1
