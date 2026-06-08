@@ -229,7 +229,7 @@ $ test/genbigconfig.sh | PGDATABASE=big0 go run . -c -
 
 ## Documenting
 
-Building documentation requires Python 3.7.
+Building documentation requires Python 3.14.
 [mkdocs](http://www.mkdocs.org) is in charge of building the documentation.
 To edit the doc, install `docs/requirements.txt` and run `mkdocs serve` at the toplevel directory.
 See [mkdocs documentation](http://www.mkdocs.org/user-guide/writing-your-docs/) for further information.
