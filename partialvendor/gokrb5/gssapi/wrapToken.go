@@ -163,8 +163,22 @@ func (wt *WrapToken) Unmarshal(b []byte, expectFromAcceptor bool) error {
 	wt.EC = checksumL
 	wt.RRC = binary.BigEndian.Uint16(b[6:8])
 	wt.SndSeqNum = binary.BigEndian.Uint64(b[8:16])
-	wt.Payload = b[16 : len(b)-int(checksumL)]
-	wt.CheckSum = b[len(b)-int(checksumL):]
+
+	// Handle RRC (Right Rotation Count) per RFC 4121 section 4.2.6.2.
+	// The data after the header may have been rotated to the right by RRC bytes.
+	// We need to undo this rotation before separating payload and checksum.
+	data := make([]byte, len(b)-HdrLen)
+	copy(data, b[HdrLen:])
+	if rrc := int(wt.RRC); rrc > 0 && rrc < len(data) {
+		// Rotate left by RRC bytes to undo the right rotation
+		rotated := make([]byte, len(data))
+		copy(rotated, data[rrc:])
+		copy(rotated[len(data)-rrc:], data[:rrc])
+		data = rotated
+	}
+
+	wt.Payload = data[:len(data)-int(checksumL)]
+	wt.CheckSum = data[len(data)-int(checksumL):]
 	return nil
 }
 
