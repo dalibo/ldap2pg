@@ -1,25 +1,19 @@
 package gssapi
 
 import (
-	"bytes"
-	"encoding/binary"
-	"encoding/hex"
-	"errors"
 	"fmt"
 
 	"github.com/jcmturner/gokrb5/v8/client"
 	"github.com/jcmturner/gokrb5/v8/config"
-	"github.com/jcmturner/gokrb5/v8/keytab"
-	"github.com/jcmturner/gokrb5/v8/types"
-
-	"github.com/jcmturner/gokrb5/v8/gssapi"
-	"github.com/jcmturner/gokrb5/v8/spnego"
-
-	"github.com/jcmturner/gokrb5/v8/crypto"
-	"github.com/jcmturner/gokrb5/v8/iana/keyusage"
-	"github.com/jcmturner/gokrb5/v8/messages"
-
 	"github.com/jcmturner/gokrb5/v8/credentials"
+	"github.com/jcmturner/gokrb5/v8/crypto"
+	"github.com/jcmturner/gokrb5/v8/gssapi"
+	"github.com/jcmturner/gokrb5/v8/iana/flags"
+	"github.com/jcmturner/gokrb5/v8/iana/keyusage"
+	"github.com/jcmturner/gokrb5/v8/keytab"
+	"github.com/jcmturner/gokrb5/v8/messages"
+	"github.com/jcmturner/gokrb5/v8/spnego"
+	"github.com/jcmturner/gokrb5/v8/types"
 )
 
 // Client implements ldap.GSSAPIClient interface.
@@ -113,6 +107,9 @@ func (client *Client) InitSecContext(target string, input []byte) ([]byte, bool,
 func (client *Client) InitSecContextWithOptions(target string, input []byte, APOptions []int) ([]byte, bool, error) {
 	gssapiFlags := []int{gssapi.ContextFlagInteg, gssapi.ContextFlagConf, gssapi.ContextFlagMutual}
 
+	// Ensure mutual-required AP-Option is set when mutual GSSAPI flag is requested
+	APOptions = append(APOptions, flags.APOptionMutualRequired)
+
 	switch input {
 	case nil:
 		tkt, ekey, err := client.Client.GetServiceTicket(target)
@@ -171,7 +168,7 @@ func (client *Client) InitSecContextWithOptions(target string, input []byte, APO
 // See RFC 4752 section 3.1.
 func (client *Client) NegotiateSaslAuth(input []byte, authzid string) ([]byte, error) {
 	token := &gssapi.WrapToken{}
-	err := UnmarshalWrapToken(token, input, true)
+	err := token.Unmarshal(input, true)
 	if err != nil {
 		return nil, err
 	}
@@ -224,48 +221,3 @@ func (client *Client) NegotiateSaslAuth(input []byte, authzid string) ([]byte, e
 	return output, nil
 }
 
-func getGssWrapTokenId() *[2]byte {
-	return &[2]byte{0x05, 0x04}
-}
-
-func UnmarshalWrapToken(wt *gssapi.WrapToken, b []byte, expectFromAcceptor bool) error {
-	// Check if we can read a whole header
-	if len(b) < 16 {
-		return errors.New("bytes shorter than header length")
-	}
-	// Is the Token ID correct?
-	if !bytes.Equal(getGssWrapTokenId()[:], b[0:2]) {
-		return fmt.Errorf("wrong Token ID. Expected %s, was %s",
-			hex.EncodeToString(getGssWrapTokenId()[:]),
-			hex.EncodeToString(b[0:2]))
-	}
-	// Check the acceptor flag
-	flags := b[2]
-	isFromAcceptor := flags&0x01 == 1
-	if isFromAcceptor && !expectFromAcceptor {
-		return errors.New("unexpected acceptor flag is set: not expecting a token from the acceptor")
-	}
-	if !isFromAcceptor && expectFromAcceptor {
-		return errors.New("expected acceptor flag is not set: expecting a token from the acceptor, not the initiator")
-	}
-	// Check the filler byte
-	if b[3] != gssapi.FillerByte {
-		return fmt.Errorf("unexpected filler byte: expecting 0xFF, was %s ", hex.EncodeToString(b[3:4]))
-	}
-	checksumL := binary.BigEndian.Uint16(b[4:6])
-	// Sanity check on the checksum length
-	if int(checksumL) > len(b)-gssapi.HdrLen {
-		return fmt.Errorf("inconsistent checksum length: %d bytes to parse, checksum length is %d", len(b), checksumL)
-	}
-
-	payloadStart := 16 + checksumL
-
-	wt.Flags = flags
-	wt.EC = checksumL
-	wt.RRC = binary.BigEndian.Uint16(b[6:8])
-	wt.SndSeqNum = binary.BigEndian.Uint64(b[8:16])
-	wt.CheckSum = b[16:payloadStart]
-	wt.Payload = b[payloadStart:]
-
-	return nil
-}
