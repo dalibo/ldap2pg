@@ -44,6 +44,7 @@ jobs:
   build:
     working_directory: &workspace /workspace
     docker:
+    # Keep synced with Dockerfile build stage
     - image: goreleaser/goreleaser:v2.16.0
     steps:
     - checkout

@@ -1,3 +1,4 @@
+# Keep synced with .circle/config.yml
 FROM goreleaser/goreleaser:v2.16.0 AS builder
 
 WORKDIR /workspace
