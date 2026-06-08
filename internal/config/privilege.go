@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"log/slog"
-
-	"golang.org/x/exp/maps"
 )
 
 func (c Config) RegisterPrivileges() error {
@@ -27,7 +25,7 @@ func (c Config) RegisterPrivileges() error {
 
 func (c *Config) DropPrivileges() {
 	slog.Debug("Dropping privilege configuration.")
-	maps.Clear(c.Privileges)
+	clear(c.Privileges)
 	c.Rules = c.Rules.DropGrants()
 }
 

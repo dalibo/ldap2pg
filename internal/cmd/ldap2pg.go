@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"slices"
 	"strings"
 	"time"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal"
 	"github.com/dalibo/ldap2pg/v6/internal/config"
@@ -119,7 +118,7 @@ func ldap2pg() (err error) {
 	if conf.ArePrivilegesManaged() {
 		slog.Debug("Synchronizing privileges.")
 		// Get the effective list of managed roles.
-		managedRoles := mapset.NewSet(maps.Keys(wantedRoles)...)
+		managedRoles := mapset.NewSet(slices.Collect(maps.Keys(wantedRoles))...)
 		_, ok := instance.ManagedRoles["public"]
 		if ok {
 			managedRoles.Add("public")

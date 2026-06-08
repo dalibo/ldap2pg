@@ -5,9 +5,9 @@ import (
 	_ "embed"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
-	"golang.org/x/exp/slices"
 )
 
 //go:embed sql/schemas.sql

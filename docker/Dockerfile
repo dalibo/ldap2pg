@@ -1,4 +1,5 @@
-FROM goreleaser/goreleaser:v2.15.2 AS builder
+# Keep synced with .circle/config.yml
+FROM goreleaser/goreleaser:v2.16.0 AS builder
 
 WORKDIR /workspace
 COPY . .
@@ -9,7 +10,7 @@ RUN goreleaser build --clean --single-target --auto-snapshot ;
 FROM alpine:3.18
 
 # Set LANG for execution order of entrypoint.d run parts.
-ENV LANG en_US.utf8
+ENV LANG=en_US.utf8
 WORKDIR /workspace
 
 COPY --from=builder /workspace/dist/ldap2pg_linux_amd64_v1/ldap2pg /usr/bin/ldap2pg

@@ -2,8 +2,7 @@ package normalize
 
 import (
 	"fmt"
-
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // SpuriousKeys checks for unknown keys in a YAML map.

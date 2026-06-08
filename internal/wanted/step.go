@@ -2,6 +2,7 @@ package wanted
 
 import (
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
@@ -10,7 +11,6 @@ import (
 	"github.com/dalibo/ldap2pg/v6/internal/role"
 	mapset "github.com/deckarep/golang-set/v2"
 	ldap3 "github.com/go-ldap/ldap/v3"
-	"golang.org/x/exp/slices"
 )
 
 type Step struct {

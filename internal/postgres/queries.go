@@ -64,7 +64,7 @@ func formatArg(conn *pgx.Conn, arg any) (newArg any, err error) {
 			if b.Len() > 0 {
 				b.WriteString(", ")
 			}
-			b.WriteString(fmt.Sprintf("%s", item))
+			fmt.Fprintf(&b, "%s", item)
 		}
 		newArg = b.String()
 	default:
