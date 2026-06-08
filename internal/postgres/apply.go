@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal"
 	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
 	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	"github.com/jackc/pgx/v5/pgconn"
-	"golang.org/x/exp/slices"
 )
 
 var (

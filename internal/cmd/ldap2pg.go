@@ -9,11 +9,11 @@ import (
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"slices"
 	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/dalibo/ldap2pg/v6/internal"
 	"github.com/dalibo/ldap2pg/v6/internal/config"

@@ -1,9 +1,10 @@
 package tree
 
 import (
+	"slices"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 // Walk returns the list of string in topological order.
