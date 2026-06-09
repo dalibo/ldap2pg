@@ -15,7 +15,7 @@ services:
     command: [-d=1]
 
   postgres:
-    image: postgres:${PGVERSION-17}-alpine
+    image: postgres:${PGVERSION-18}-alpine
     hostname: postgres
     domainname: ldap2pg.docker
     environment:
