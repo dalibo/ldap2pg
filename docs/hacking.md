@@ -27,15 +27,12 @@ Creating ldap2pg_postgres_1
 Creating ldap2pg_samba_1 ... done
 ```
 
-It's up to you to define how to access Postgres and LDAP containers from your host:
-either use DNS resolution or a `docker-compose.override.yml` to expose port on your host.
-Provided `docker-compose.yml` comes with `postgres.ldap2pg.docker` and `samba.ldap2pg.docker` [dnsdock](https://github.com/aacebedo/dnsdock) aliases.
-
 Setup your environment with regular `PG*` envvars so that `psql` can just connect to your PostgreSQL instance.
+Root ldap2pg.yml requires to connect to `nominal` database.
 Check with a simple `psql` invocation.
 
 ``` console
-$ export PGHOST=postgres.ldap2pg.docker PGUSER=postgres PGPASSWORD=postgres
+$ export PGHOST=localhost PGUSER=postgres PGDATABASE=nominal
 $ psql -c 'SELECT version()';
 ```
 
@@ -45,7 +42,7 @@ ldap2pg supports `LDAPPASSWORD` to set password from env.
 Check it with `ldapsearch`:
 
 ``` console
-$ export LDAPURI=ldaps://samba.ldap2pg.docker LDAPPASSWORD=1Ntegral
+$ export LDAPURI=ldaps://localhost LDAPPASSWORD=1Ntegral
 $ ldapsearch -vxw $LDAPPASSWORD -s base cn
 ldap_initialize( <DEFAULT> )
 filter: (objectclass=*)
@@ -71,29 +68,6 @@ result: 0 Success
 $
 ```
 
-### Environement without DNS resolution
-
-To access Samba Directory and PostgreSQL without dnsdock,
-exposes containers ports to your host with the following override:
-
-``` yaml
-# contents docker-compose.override.yml
-version: '3'
-
-services:
-  samba:
-    ports:
-      # HOST:CONTAINER
-      - 389:389
-      - 636:636
-
-  postgres:
-    ports:
-      - 5432:5432
-```
-
-Use `PGHOST=localhost` and `LDAPURI=ldaps://localhost`.
-
 
 ### Running ldap2pg with Changes
 
@@ -105,7 +79,8 @@ $ go run .
 09:54:27 WARN   Running a prerelease! Use at your own risks!
 09:54:27 INFO   Using YAML configuration file.                   path=./ldap2pg.yml
 ...
-09:54:27 INFO   Nothing to do.                                   elapsed=78.470278ms mempeak=1.2MiB postgres=0s queries=0 ldap=486.921µs searches=1
+09:54:27 INFO   Comparison complete.                             searches=1 roles=9 queries=114 grants=40 elapsed=72.393947ms mempeak=18.9MiB ldap=1.058028ms inspect=17.702561ms sync=0s
+09:54:27 INFO   Use --real option to apply changes.
 $
 ```
 
