@@ -39,9 +39,9 @@ func (m Map) flattenRole(r Role, seen *mapset.Set[string]) []string {
 			continue
 		}
 		names = append(names, m.flattenRole(parent, seen)...)
-
-		(*seen).Add(r.Name)
 	}
 	names = append(names, r.Name)
+	(*seen).Add(r.Name)
+
 	return names
 }
