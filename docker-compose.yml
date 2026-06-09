@@ -1,6 +1,9 @@
 services:
   samba:
     image: dalibo/samba:4.19.6@sha256:bbcc439041e8741885924b5e999c036ef4bb22dd0bda715e71c64f2f59547b68
+    ports:
+      - 389:389
+      - 636:636
     environment:
       REALM: bridoulou.fr
       ADMIN_PASS: 1Ntegral
@@ -10,14 +13,14 @@ services:
       - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
     hostname: samba
     domainname: ldap2pg.docker
-    labels:
-      com.dnsdock.alias: samba.ldap2pg.docker
     command: [-d=1]
 
   postgres:
     image: postgres:${PGVERSION-18}-alpine
     hostname: postgres
     domainname: ldap2pg.docker
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -25,8 +28,6 @@ services:
       - ./test/fixtures/postgres/reset.sh:/docker-entrypoint-initdb.d/00-reset.sh
       - ./test/fixtures/postgres/nominal.sh:/docker-entrypoint-initdb.d/10-nominal.sh
       - ./test/fixtures/postgres/extra.sh:/docker-entrypoint-initdb.d/20-extra.sh
-    labels:
-      com.dnsdock.alias: postgres.ldap2pg.docker
     command: [
       postgres,
       -c, log_statement=all,

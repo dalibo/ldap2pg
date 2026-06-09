@@ -7,7 +7,7 @@ version: 2
 charset: UTF-8
 EOF
 
-for i in {0..1023} ; do
+for i in {0..10000} ; do
 	printf -v u "u%04d" "$i"
 	cat <<-EOF
 
@@ -23,7 +23,7 @@ for i in {0..1023} ; do
 	EOF
 done
 
-for i in {0..255} ; do
+for i in {0..512} ; do
 	printf -v base "big%03d_" "$i"
 	for g in r w d ; do
 		g="${base}$g"
