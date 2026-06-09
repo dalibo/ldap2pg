@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/dalibo/ldap2pg/v6/internal/config"
+	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
 	"github.com/lithammer/dedent"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -30,4 +31,27 @@ func TestLoadPrivilege(t *testing.T) {
 	r.Len(p, 1)
 	r.Equal("CONNECT", p[0].Type)
 	r.Equal("DATABASE", p[0].On)
+}
+
+func TestStrictYaml(t *testing.T) {
+	r := require.New(t)
+
+	rawYaml := dedent.Dedent(`
+	postgres:
+	  uri: "postgres://user:xx@localhost"
+	  roles_blacklist_query: [postgres]
+	  databases_query: [nominal]
+	ldap:
+	  password: "secret"
+	`)
+	var value map[string]any
+	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
+
+	c := config.New()
+	err := c.DecodeYaml(value)
+	r.EqualError(err, "invalid configuration file")
+	errs := errorlist.Unwrap(err)
+	r.Len(errs, 2)
+	r.EqualError(errs[0], "'ldap' has invalid keys: password")
+	r.EqualError(errs[1], "'postgres' has invalid keys: uri")
 }
