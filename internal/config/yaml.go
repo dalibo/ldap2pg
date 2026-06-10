@@ -12,9 +12,9 @@ import (
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/mattn/go-isatty"
-	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 )
 

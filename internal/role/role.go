@@ -7,8 +7,8 @@ import (
 
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/jackc/pgx/v5"
-	"github.com/mitchellh/mapstructure"
 )
 
 type Role struct {
