@@ -12,7 +12,7 @@ import (
 )
 
 // Rules holds a set of rules to generate wanted state.
-type Rules []Step
+type Rules []RulesItem
 
 func (m Rules) HasLDAPSearches() bool {
 	for _, item := range m {
@@ -23,10 +23,10 @@ func (m Rules) HasLDAPSearches() bool {
 	return false
 }
 
-func (m Rules) SplitStaticRules() (newMap Rules) {
-	newMap = make(Rules, 0)
+func (m Rules) SplitStaticRules() (newRules Rules) {
+	newRules = make(Rules, 0)
 	for _, item := range m {
-		newMap = append(newMap, item.SplitStaticItems()...)
+		newRules = append(newRules, item.SplitStaticItems()...)
 	}
 	return
 }
@@ -58,10 +58,11 @@ func (m Rules) Run(blacklist lists.Blacklist) (roles role.Map, grants map[string
 	roles = make(map[string]role.Role)
 	grants = make(map[string][]privileges.Grant)
 	for i, item := range m {
+		item.pos = i
 		if item.Description != "" {
 			slog.Info(item.Description)
 		} else {
-			slog.Debug("Processing sync map item.", "item", i)
+			slog.Debug("Processing sync map step.", "item", item)
 		}
 
 		for res := range item.search(ldapc) {

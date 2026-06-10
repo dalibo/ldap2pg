@@ -26,6 +26,7 @@ privileges:
   - __usage_on_schemas__
   - __select_on_tables__
   - __select_on_sequences__
+  - __default_select_on_tables__
 
   write:
   - __temporary__
@@ -49,7 +50,7 @@ rules:
     comment: All roles managed by ldap2pg
 EOF
 
-for n in {0..255} ; do
+for n in {0..512} ; do
 	printf -v n "%03d" "$n"
 	cat <<-EOF
 
@@ -75,18 +76,15 @@ for n in {0..255} ; do
 	  - privilege: define
 	    role: big${n}_d
 	    schemas: nsp$n
+
+	- description: "Define roles from directory for group big${n}."
+	  ldapsearch:
+	    base: cn=users,dc=bridoulou,dc=fr
+	    filter: (cn=big${n}*)
+	  roles:
+	    name: "{member.cn}"
+	    parents:
+	    - ldap_roles
+	    - "{cn}"
 	EOF
 done
-
-cat <<-EOF
-
-- description: "Define roles from directory."
-  ldapsearch:
-    base: cn=users,dc=bridoulou,dc=fr
-    filter: (cn=big*)
-  roles:
-    name: "{member.cn}"
-    parents:
-    - ldap_roles
-    - "{cn}"
-EOF

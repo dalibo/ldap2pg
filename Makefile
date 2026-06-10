@@ -4,12 +4,11 @@ YUM_LABS?=$(wildcard ../yum-labs)
 default:
 	@echo ldap2pg $(VERSION)
 
-big:
+big-directory:
 	test/fixtures/genbigldif.sh | ldapmodify -xw $$LDAPPASSWORD
 	$(MAKE) reset-big
 
-reset-big: reset-postgres
-	while ! bash -c "echo -n > /dev/tcp/$${PGHOST}/5432" ; do sleep 1; done
+big-postgres:
 	test/fixtures/big.sh
 
 reset-%:

@@ -1,6 +1,7 @@
 package wanted
 
 import (
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -13,26 +14,34 @@ import (
 	ldap3 "github.com/go-ldap/ldap/v3"
 )
 
-type Step struct {
+type RulesItem struct {
+	pos         int
 	Description string
 	LdapSearch  ldap.Search
 	RoleRules   []RoleRule             `mapstructure:"roles"`
 	GrantRules  []privileges.GrantRule `mapstructure:"grants"`
 }
 
-func (s Step) HasLDAPSearch() bool {
-	return len(s.LdapSearch.Attributes) > 0
+func (item RulesItem) String() string {
+	if item.Description == "" {
+		return fmt.Sprintf("%d", item.pos)
+	}
+	return item.Description
 }
 
-func (s Step) HasSubsearch() bool {
-	return len(s.LdapSearch.Subsearches) > 0
+func (item RulesItem) HasLDAPSearch() bool {
+	return len(item.LdapSearch.Attributes) > 0
 }
 
-func (s *Step) InferAttributes() {
+func (item RulesItem) HasSubsearch() bool {
+	return len(item.LdapSearch.Subsearches) > 0
+}
+
+func (item *RulesItem) InferAttributes() {
 	attributes := mapset.NewSet[string]()
 	subsearchAttributes := make(map[string]mapset.Set[string])
 
-	for field := range s.IterFields() {
+	for field := range item.IterFields() {
 		attribute, field, found := strings.Cut(field.FieldName, ".")
 		// dn is the primary key of the entry, not a real attribute.
 		if attribute == "dn" {
@@ -58,19 +67,19 @@ func (s *Step) InferAttributes() {
 		return
 	}
 
-	s.LdapSearch.Attributes = attributes.ToSlice()
+	item.LdapSearch.Attributes = attributes.ToSlice()
 	slog.Debug("Collected LDAP search attributes.",
-		"item", s.Description, "base", s.LdapSearch.Base, "attributes", s.LdapSearch.Attributes)
+		"item", item, "base", item.LdapSearch.Base, "attributes", item.LdapSearch.Attributes)
 
 	if len(subsearchAttributes) == 0 {
 		return
 	}
 
-	if s.LdapSearch.Subsearches == nil {
-		s.LdapSearch.Subsearches = make(map[string]ldap.Subsearch)
+	if item.LdapSearch.Subsearches == nil {
+		item.LdapSearch.Subsearches = make(map[string]ldap.Subsearch)
 	}
 	for attribute, subAttributes := range subsearchAttributes {
-		subsearch, ok := s.LdapSearch.Subsearches[attribute]
+		subsearch, ok := item.LdapSearch.Subsearches[attribute]
 		if !ok {
 			subsearch = ldap.Subsearch{
 				Filter: "(objectClass=*)",
@@ -79,15 +88,15 @@ func (s *Step) InferAttributes() {
 		}
 		subsearch.Attributes = subAttributes.ToSlice()
 		slog.Debug("Collected LDAP sub-search attributes.",
-			"item", s.Description, "base", s.LdapSearch.Base,
+			"item", item, "base", item.LdapSearch.Base,
 			"fkey", attribute, "attributes", subsearch.Attributes)
-		s.LdapSearch.Subsearches[attribute] = subsearch
+		item.LdapSearch.Subsearches[attribute] = subsearch
 	}
 }
 
-func (s *Step) ReplaceAttributeAsSubentryField() {
-	subsearchAttr := s.LdapSearch.SubsearchAttribute()
-	for field := range s.IterFields() {
+func (item *RulesItem) ReplaceAttributeAsSubentryField() {
+	subsearchAttr := item.LdapSearch.SubsearchAttribute()
+	for field := range item.IterFields() {
 		attribute, _, found := strings.Cut(field.FieldName, ".")
 		if attribute != subsearchAttr {
 			continue
@@ -104,18 +113,18 @@ func (s *Step) ReplaceAttributeAsSubentryField() {
 }
 
 // Yields all {attr} from all formats in item.
-func (s Step) IterFields() <-chan *pyfmt.Field {
+func (item RulesItem) IterFields() <-chan *pyfmt.Field {
 	ch := make(chan *pyfmt.Field)
 	go func() {
 		defer close(ch)
-		for _, rule := range s.RoleRules {
+		for _, rule := range item.RoleRules {
 			for _, f := range rule.Formats() {
 				for _, field := range f.Fields {
 					ch <- field
 				}
 			}
 		}
-		for _, rule := range s.GrantRules {
+		for _, rule := range item.GrantRules {
 			for _, f := range rule.Formats() {
 				for _, field := range f.Fields {
 					ch <- field
@@ -126,9 +135,9 @@ func (s Step) IterFields() <-chan *pyfmt.Field {
 	return ch
 }
 
-func (s Step) SplitStaticItems() (items []Step) {
+func (item RulesItem) SplitStaticItems() (items []RulesItem) {
 	var staticRoles, dynamicRoles []RoleRule
-	for _, rule := range s.RoleRules {
+	for _, rule := range item.RoleRules {
 		if rule.IsStatic() {
 			staticRoles = append(staticRoles, rule)
 		} else {
@@ -136,7 +145,7 @@ func (s Step) SplitStaticItems() (items []Step) {
 		}
 	}
 	var staticGrants, dynamicGrants []privileges.GrantRule
-	for _, rule := range s.GrantRules {
+	for _, rule := range item.GrantRules {
 		if rule.IsStatic() {
 			staticGrants = append(staticGrants, rule)
 		} else {
@@ -146,18 +155,18 @@ func (s Step) SplitStaticItems() (items []Step) {
 
 	if (len(staticRoles) == 0 && len(staticGrants) == 0) ||
 		(len(dynamicRoles) == 0 && len(dynamicGrants) == 0) {
-		items = append(items, s)
+		items = append(items, item)
 		return
 	}
 
-	items = append(items, Step{
-		Description: s.Description,
-		LdapSearch:  s.LdapSearch,
+	items = append(items, RulesItem{
+		Description: item.Description,
+		LdapSearch:  item.LdapSearch,
 		RoleRules:   dynamicRoles,
 		GrantRules:  dynamicGrants,
 	})
 
-	items = append(items, Step{
+	items = append(items, RulesItem{
 		// Avoid duplicating log message, use a silent item.
 		Description: "",
 		RoleRules:   staticRoles,
@@ -174,23 +183,23 @@ type SearchResult struct {
 
 // search directory, returning each entry or error. Sub-searches are done
 // concurrently and returned for each sub-key.
-func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
+func (item RulesItem) search(ldapc ldap.Client) <-chan SearchResult {
 	ch := make(chan SearchResult)
 	go func() {
 		defer close(ch)
-		if !s.HasLDAPSearch() {
+		if !item.HasLDAPSearch() {
 			// Use a dumb empty result.
 			ch <- SearchResult{}
 			return
 		}
 
-		search := s.LdapSearch
+		search := item.LdapSearch
 		res, err := ldapc.Search(search.Base, search.Scope, search.Filter, search.Attributes)
 		if err != nil {
 			ch <- SearchResult{err: err}
 			return
 		}
-		subsearchAttr := s.LdapSearch.SubsearchAttribute()
+		subsearchAttr := item.LdapSearch.SubsearchAttribute()
 		for _, entry := range res.Entries {
 			slog.Debug("Got LDAP entry.", "dn", entry.DN)
 			result := ldap.Result{
@@ -203,7 +212,7 @@ func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
 			}
 			bases := entry.GetEqualFoldAttributeValues(subsearchAttr)
 			for _, base := range bases {
-				s := s.LdapSearch.Subsearches[subsearchAttr]
+				s := item.LdapSearch.Subsearches[subsearchAttr]
 				res, err = ldapc.Search(base, s.Scope, s.Filter, s.Attributes)
 				if err != nil {
 					ch <- SearchResult{err: err}
@@ -220,11 +229,11 @@ func (s Step) search(ldapc ldap.Client) <-chan SearchResult {
 	return ch
 }
 
-func (s Step) generateRoles(results *ldap.Result) <-chan role.Role {
+func (item RulesItem) generateRoles(results *ldap.Result) <-chan role.Role {
 	ch := make(chan role.Role)
 	go func() {
 		defer close(ch)
-		for _, rule := range s.RoleRules {
+		for _, rule := range item.RoleRules {
 			for role := range rule.Generate(results) {
 				ch <- role
 			}
@@ -233,11 +242,11 @@ func (s Step) generateRoles(results *ldap.Result) <-chan role.Role {
 	return ch
 }
 
-func (s Step) generateGrants(results *ldap.Result) <-chan privileges.Grant {
+func (item RulesItem) generateGrants(results *ldap.Result) <-chan privileges.Grant {
 	ch := make(chan privileges.Grant)
 	go func() {
 		defer close(ch)
-		for _, rule := range s.GrantRules {
+		for _, rule := range item.GrantRules {
 			for grant := range rule.Generate(results) {
 				ch <- grant
 			}

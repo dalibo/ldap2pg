@@ -16,7 +16,7 @@ CREATE DATABASE "big0" WITH OWNER "bigowner";
 EOSQL
 
 queries=()
-for i in {0..255} ; do
+for i in {0..512} ; do
 	printf -v i "%03d" "$i"
 	queries+=("CREATE SCHEMA nsp$i AUTHORIZATION bigowner")
 	for j in {0..3} ; do
