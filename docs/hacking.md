@@ -172,7 +172,7 @@ test/test_nominal.py::test_nothing_to_do PASSED                              [10
 $
 ```
 
-CI executes func tests in CentOS 6 and 7 and RockyLinux 8 and 9.
+CI executes func tests in CentOS 6 and 7 and RockyLinux 8, 9 and 10.
 
 Tests are written with the great [pytest](https://doc.pytest.org) and [sh](https://amoffat.github.io/sh/) projects.
 `conftest.py` provides various specific fixtures.
@@ -188,7 +188,7 @@ You can execute tests just like in CI with the following commands:
 
 ``` console
 $ goreleaser build --clean --snapshot --single-target
-$ COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
+$ docker compose run --rm test test/entrypoint.sh
 ```
 
 ## Big Case

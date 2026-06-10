@@ -35,3 +35,20 @@ services:
       -c, "log_line_prefix=%m [%p]: [%l-1] app=%a,db=%d,client=%h,user=%u ",
       -c, cluster_name=ldap2pg-dev,
     ]
+
+  test:
+    profiles: [ci]
+    depends_on:
+      - samba
+      - postgres
+    image: dalibo/buildpack-python:${DIST-rockylinux8}
+    volumes:
+    - .:/workspace
+    working_dir: /workspace
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      LDAPURI: ldaps://samba
+      LDAPPASSWORD: 1Ntegral
+      CI: "true"
+    command: [tail, -f, /dev/null]

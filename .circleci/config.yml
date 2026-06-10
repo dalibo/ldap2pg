@@ -118,7 +118,7 @@ jobs:
           PGVERSION: "<< parameters.pgversion >>"
           DIST: "<< parameters.dist >>"
         command: |
-          COMPOSE_FILE=docker-compose.yml:test/docker-compose.yml docker compose up --exit-code-from=test
+          docker compose run --rm test test/entrypoint.sh
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
