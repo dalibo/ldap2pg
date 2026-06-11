@@ -21,7 +21,6 @@ require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/lmittmann/tint v1.1.3
 	github.com/mattn/go-isatty v0.0.22
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1

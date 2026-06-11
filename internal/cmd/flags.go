@@ -10,6 +10,7 @@ import (
 
 	"github.com/dalibo/ldap2pg/v6/internal"
 	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
+	"github.com/dalibo/ldap2pg/v6/internal/homedir"
 	"github.com/dalibo/ldap2pg/v6/internal/inspect"
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/dalibo/ldap2pg/v6/internal/perf"
@@ -162,6 +163,10 @@ var levels = []slog.Level{
 
 func unmarshalController() (controller Controller, err error) {
 	err = k.Unmarshal("", &controller)
+
+	controller.Directory = homedir.Expand(controller.Directory)
+	controller.Config = homedir.Expand(controller.Config)
+
 	verbosity := k.String("verbosity")
 	var level slog.LevelVar
 	switch verbosity {
