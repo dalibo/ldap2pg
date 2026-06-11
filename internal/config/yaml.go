@@ -83,6 +83,7 @@ func (c *Config) DecodeYaml(yaml any) (err error) {
 		Metadata:         &mapstructure.Metadata{},
 		Result:           c,
 		WeaklyTypedInput: true,
+		ErrorUnused:      true,
 	})
 	if err != nil {
 		return

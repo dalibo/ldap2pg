@@ -229,6 +229,22 @@ func configure() (controller Controller, c config.Config, err error) {
 	slog.Info("Using YAML configuration file.", "path", configPath)
 	c, err = config.Load(configPath)
 	if err != nil {
+
+		yamlErrors := errorlist.New("invalid configuration file")
+		currentErr := err
+		for currentErr != nil {
+			var errs interface{ Unwrap() []error }
+
+			if errors.As(currentErr, &errs) {
+				for _, e := range errs.Unwrap() {
+					slog.Error("decode error", "err", strings.ToLower(e.Error()))
+					_ = yamlErrors.Extend(e)
+				}
+				break
+			}
+			currentErr = errors.Unwrap(currentErr)
+		}
+		err = yamlErrors
 		return
 	}
 
