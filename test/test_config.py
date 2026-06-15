@@ -4,8 +4,8 @@ import pytest
 
 
 def test_help(ldap2pg):
-    ldap2pg('-?')
-    ldap2pg('--help')
+    ldap2pg("-?")
+    ldap2pg("--help")
 
 
 def test_version(ldap2pg):
@@ -13,23 +13,19 @@ def test_version(ldap2pg):
 
 
 def ldapfree_env():
-    blacklist = ('LDAPURI', 'LDAPHOST', 'LDAPPORT', 'LDAPPASSWORD')
-    return dict(
-        (k, v)
-        for k, v in os.environ.items()
-        if k not in blacklist
-    )
+    blacklist = ("LDAPURI", "LDAPHOST", "LDAPPORT", "LDAPPASSWORD")
+    return dict((k, v) for k, v in os.environ.items() if k not in blacklist)
 
 
 def test_stdin(ldap2pg, capsys):
     ldap2pg(
-        '--config=-',
+        "--config=-",
         _in="version: 6\nrules:\n- role: stdinuser",
         _env=ldapfree_env(),
     )
 
     _, err = capsys.readouterr()
-    assert 'stdinuser' in err
+    assert "stdinuser" in err
 
 
 @pytest.mark.xfail(reason="Samba does not support SASL DIGEST-MD5.")
@@ -43,7 +39,7 @@ def test_sasl(ldap2pg, capsys):
         LDAPSASL_AUTHCID='testsasl',
         LDAPPASSWORD='voyage',
     )
-    ldap2pg(config='ldap2pg.yml', verbose=True, _env=env)
+    ldap2pg(config="ldap2pg.yml", verbose=True, _env=env)
 
     _, err = capsys.readouterr()
-    assert 'SASL' in err
+    assert "SASL" in err
