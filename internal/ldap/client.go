@@ -90,7 +90,7 @@ func Connect() (client Client, err error) {
 	case "DIGEST-MD5":
 		client.SaslAuthCID = k.String("SASL_AUTHCID")
 		password := k.String("PASSWORD")
-		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
+		slog.Info("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
 		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
 	case "GSSAPI":
 		// Get the principal
@@ -105,7 +105,7 @@ func Connect() (client Client, err error) {
 		}
 		defer sspiClient.Close() //nolint:errcheck
 		spn := buildServicePrincipalName(parsedURI)
-		slog.Debug("LDAP SASL/GSSAPI bind.", "cid", client.SaslAuthCID, "spn", spn)
+		slog.Info("LDAP SASL/GSSAPI bind.", "cid", client.SaslAuthCID, "spn", spn)
 		err = client.Conn.GSSAPIBind(sspiClient, spn, "")
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
