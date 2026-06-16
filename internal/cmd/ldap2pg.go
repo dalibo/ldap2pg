@@ -105,9 +105,8 @@ func ldap2pg() (err error) {
 	queries := role.Diff(instance.AllRoles, instance.ManagedRoles, wantedRoles, instance.FallbackOwner)
 	queries = postgres.GroupByDatabase(instance.DefaultDatabase, queries)
 	stageCount, err := postgres.Apply(ctx, queries, controller.Real)
-	err = syncErrors.Extend(err)
-	if err != nil {
-		return
+	if !syncErrors.Append(err) {
+		return syncErrors.Value()
 	}
 	if stageCount == 0 {
 		slog.Info("All roles synchronized.")
@@ -142,9 +141,8 @@ func ldap2pg() (err error) {
 			acls = append(acls, databaseACLs...)
 
 			stageCount, err := syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, acls)
-			err = syncErrors.Extend(err)
-			if err != nil {
-				return fmt.Errorf("stage 2: %w", err)
+			if !syncErrors.Append(err) {
+				return fmt.Errorf("stage 2: %w", syncErrors.Value())
 			}
 			if stageCount == 0 {
 				slog.Info("All privileges configured.", "database", dbname)
@@ -161,9 +159,8 @@ func ldap2pg() (err error) {
 				return fmt.Errorf("inspect: %w", err)
 			}
 			stageCount, err = syncPrivileges(ctx, &controller, managedRoles, wantedGrants, dbname, defaultACLs)
-			err = syncErrors.Extend(err)
-			if err != nil {
-				return fmt.Errorf("stage 3: %w", err)
+			if !syncErrors.Append(err) {
+				return fmt.Errorf("stage 3: %w", syncErrors.Value())
 			}
 			if stageCount == 0 {
 				slog.Info("All default privileges configured.", "database", dbname)
