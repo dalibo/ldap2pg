@@ -54,8 +54,10 @@ services:
     working_dir: /workspace
     environment:
       KRB5_CONFIG: /workspace/test/krb5.conf
+      HISTFILE: /workspace/test/bash_history
       PGHOST: postgres
       PGUSER: postgres
+      PGDATABASE: nominal
       LDAPURI: ldaps://samba
       LDAPPASSWORD: 1Ntegral
       CI: "true"

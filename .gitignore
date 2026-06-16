@@ -5,3 +5,4 @@ docker-compose.override.yml
 # test/conftest.py creates .env files
 .env
 test/samba.keytab
+test/bash_history
