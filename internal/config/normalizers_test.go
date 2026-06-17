@@ -69,3 +69,27 @@ func TestNormalizeConfig(t *testing.T) {
 	syncMap := config["rules"].([]any)
 	r.Len(syncMap, 2)
 }
+
+func TestNormalizeCommonLdapSearch(t *testing.T) {
+	r := require.New(t)
+	rawYaml := dedent.Dedent(`
+    base: cn=users,dc=bridoulou,dc=fr
+    filter:
+	`)
+	var raw any
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	search, err := config.NormalizeCommonLdapSearch(raw)
+	r.Nil(err)
+	r.Equal(search["filter"], "(objectClass=*)")
+
+	rawYaml = dedent.Dedent(`
+    base: cn=users,dc=bridoulou,dc=fr
+    filter: (cn=test)
+	`)
+	yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+	search, err = config.NormalizeCommonLdapSearch(raw)
+	r.Nil(err)
+	r.Equal(search["filter"], "(cn=test)")
+}
