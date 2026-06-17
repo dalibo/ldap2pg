@@ -35,3 +35,20 @@ func buildErrors(n int) []error {
 	}
 	return errors
 }
+
+func TestErrorListValue(t *testing.T) {
+	r := require.New(t)
+
+	err := errorlist.New("context")
+	err.Append(fmt.Errorf("content"))
+	errs := errorlist.Unwrap(err.Value())
+	r.Equal(1, len(errs))
+	r.Equal("context: content", errs[0].Error())
+
+	err.Append(fmt.Errorf("content 2"))
+	errs = errorlist.Unwrap(err.Value())
+	r.Equal(3, len(errs))
+	r.Equal("context", errs[0].Error())
+	r.Equal("content", errs[1].Error())
+	r.Equal("content 2", errs[2].Error())
+}

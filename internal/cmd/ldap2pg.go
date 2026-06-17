@@ -40,11 +40,8 @@ func Main() {
 	}
 
 	if err != nil {
-		if errs, ok := err.(interface{ Len() int }); ok {
-			// Assume error are already logged before.
-			slog.Error("Some errors occurred. See above for more details.", "err", err, "count", errs.Len())
-		} else {
-			slog.Error("Fatal error.", "err", err)
+		for _, werr := range errorlist.Unwrap(err) {
+			slog.Error(werr.Error())
 		}
 		if internal.CurrentLevel > slog.LevelDebug {
 			slog.Error("Run ldap2pg with --verbose to get more informations.")
