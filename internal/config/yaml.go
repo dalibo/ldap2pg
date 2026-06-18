@@ -91,10 +91,12 @@ func (c *Config) DecodeYaml(yaml any) (err error) {
 		return
 	}
 	err = d.Decode(yaml)
+
+	// Converting joined error into errorlist.
+	// Lower the error message to align it with the LDAP parameters.
 	yamlErrors := errorlist.New("invalid configuration file")
 	for _, werr := range errorlist.Unwrap(err) {
 		lowerErr := strings.ToLower(werr.Error())
-		slog.Error("decode error", "err", lowerErr)
 		if !yamlErrors.Append(fmt.Errorf("%s", lowerErr)) {
 			err = yamlErrors.Value()
 			return

@@ -49,9 +49,9 @@ func TestStrictYaml(t *testing.T) {
 
 	c := config.New()
 	err := c.DecodeYaml(value)
-	r.EqualError(err, "invalid configuration file")
+	r.EqualError(err, "invalid configuration file\n'ldap' has invalid keys: password\n'postgres' has invalid keys: uri")
 	errs := errorlist.Unwrap(err)
-	r.Len(errs, 2)
-	r.EqualError(errs[0], "'ldap' has invalid keys: password")
-	r.EqualError(errs[1], "'postgres' has invalid keys: uri")
+	r.Len(errs, 3)
+	r.EqualError(errs[1], "'ldap' has invalid keys: password")
+	r.EqualError(errs[2], "'postgres' has invalid keys: uri")
 }
