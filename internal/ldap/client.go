@@ -12,6 +12,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/dalibo/ldap2pg/v6/internal/perf"
 	ldap3 "github.com/go-ldap/ldap/v3"
+	"github.com/go-ldap/ldap/v3/gssapi"
 )
 
 type Client struct {
@@ -68,6 +69,12 @@ func Connect() (client Client, err error) {
 	slog.Debug("LDAP set timeout.", "timeout", client.Timeout)
 	client.Conn.SetTimeout(client.Timeout)
 
+	var parsedURI *url.URL
+	parsedURI, err = url.Parse(client.URI)
+	if err != nil {
+		return client, err
+	}
+
 	client.SaslMech = k.String("SASL_MECH")
 	switch client.SaslMech {
 	case "":
@@ -83,13 +90,23 @@ func Connect() (client Client, err error) {
 	case "DIGEST-MD5":
 		client.SaslAuthCID = k.String("SASL_AUTHCID")
 		password := k.String("PASSWORD")
-		var parsedURI *url.URL
-		parsedURI, err = url.Parse(client.URI)
+		slog.Info("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
+		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+	case "GSSAPI":
+		// Get the principal
+		client.SaslAuthCID = k.String("SASL_AUTHCID")
+		ccache := getCCache()
+		krb5confPath := getKrb5Config()
+		slog.Debug("Initialize SSPI client.", "ccache", ccache, "krb5conf", krb5confPath)
+		var sspiClient *gssapi.Client
+		sspiClient, err = gssapi.NewClientFromCCache(ccache, krb5confPath)
 		if err != nil {
 			return client, err
 		}
-		slog.Debug("LDAP SASL/DIGEST-MD5 bind.", "authcid", client.SaslAuthCID, "host", parsedURI.Host)
-		err = client.Conn.MD5Bind(parsedURI.Host, client.SaslAuthCID, password)
+		defer sspiClient.Close() //nolint:errcheck
+		spn := buildServicePrincipalName(parsedURI)
+		slog.Info("LDAP SASL/GSSAPI bind.", "cid", client.SaslAuthCID, "spn", spn)
+		err = client.Conn.GSSAPIBind(sspiClient, spn, "")
 	default:
 		err = fmt.Errorf("unhandled SASL_MECH")
 	}

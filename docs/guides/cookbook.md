@@ -199,3 +199,19 @@ $ docker run --rm -v ${PWD}/ldap2pg.yml:/workspace/ldap2pg.yml -e PGDSN=postgres
 Make sure your container can resolve the hostname your pointing to.
 If you use some internal name resolution be sure to add the **--dns=** option to your command pointing to your internal DNS server.
 More [info](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/configure-dns/)
+
+
+## GSSAPI Authentication
+
+ldap2pg is able to authenticate against directory using GSSAPI/Kerberos v5.
+As usual, configure ldap2pg like OpenLDAP utils:
+
+- set `SASL_MECH` to `GSSAPI` in `ldaprc` or using environment variable.
+- set `SASL_AUTHCID` to principal user.
+
+ldap2pg uses `/etc/krb5.conf` or config file from `KRB5_CONFIG` environment variable.
+ldap2pg uses `/tmp/krb5cc_<uid>` or value from `KRB5CCNAME` environment variable.
+Service principal name is `ldap/<hostname>` where hostname comes from `URI` OpenLDAP parameter.
+
+Then, run ldap2pg as usual.
+Verbose messages will show cid and spn used to authenticate.

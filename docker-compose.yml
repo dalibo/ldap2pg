@@ -1,18 +1,25 @@
 services:
   samba:
     image: dalibo/samba:4.19.6@sha256:bbcc439041e8741885924b5e999c036ef4bb22dd0bda715e71c64f2f59547b68
+    volumes:
+      - ./test:/test  # Use to export keytab in kerberos.sh
+      - ./test/fixtures/samba/gssapi.conf:/docker-entrypoint-init.d/50-gssapi.conf
+      - ./test/fixtures/samba/kerberos.sh:/docker-entrypoint-init.d/00-kerberos.sh
+      - ./test/fixtures/samba/nominal.sh:/docker-entrypoint-init.d/95-nominal.sh
+      - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
+    hostname: samba
+    domainname: ldap2pg.docker
+    networks:
+      default:
+        aliases:
+          # This value is used in test/krb5.conf for KDC.
+          - samba.ldap2pg.docker
     ports:
       - 389:389
       - 636:636
     environment:
       REALM: bridoulou.fr
       ADMIN_PASS: 1Ntegral
-      DNS_BACKEND: "NONE"
-    volumes:
-      - ./test/fixtures/samba/nominal.sh:/docker-entrypoint-init.d/95-nominal.sh
-      - ./test/fixtures/samba/extra.sh:/docker-entrypoint-init.d/96-extra.sh
-    hostname: samba
-    domainname: ldap2pg.docker
     command: [-d=1]
 
   postgres:
@@ -46,8 +53,11 @@ services:
     - .:/workspace
     working_dir: /workspace
     environment:
+      KRB5_CONFIG: /workspace/test/krb5.conf
+      HISTFILE: /workspace/test/bash_history
       PGHOST: postgres
       PGUSER: postgres
+      PGDATABASE: nominal
       LDAPURI: ldaps://samba
       LDAPPASSWORD: 1Ntegral
       CI: "true"
