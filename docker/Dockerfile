@@ -5,7 +5,12 @@ WORKDIR /workspace
 COPY . .
 # Clean directory of untracked files, even those in developer ~/.config/git/ignore
 RUN git clean -df
-RUN goreleaser build --clean --single-target --auto-snapshot ;
+# Implement --auto-snapshot for non-tag commit.
+RUN if git describe --tags --exact-match; then \
+    goreleaser build --clean --single-target; \
+    else \
+    goreleaser build --clean --single-target --snapshot ; \
+    fi
 
 FROM alpine:3.18
 
