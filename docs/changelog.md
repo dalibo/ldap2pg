@@ -14,13 +14,13 @@ pages](https://github.com/dalibo/ldap2pg/pulls?utf8=%E2%9C%93&q=is%3Apr%20is%3Am
 # Unreleased
 
 - Fix memory usage value.
-- Experimental GSSAPI authentication method.
-- Run CI on rockylinux 10 with PostgreSQL19 beta1.
-- Bump PostgreSQL developpement version to 18.
-- Fix duplicate CREATE ROLE.
-- Resolve ~ in path.
+- Fix docker build.
+- Fix duplicated CREATE ROLE.
 - Fix empty filter in configuration file leading to panic.
 - Strict yaml configuration file decoding.
+- Implement GSSAPI authentication method.
+- Tested on PostgreSQL 19 beta.
+- Resolve ~ in path.
 
 
 # ldap2pg 6.5.1
