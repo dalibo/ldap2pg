@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"os"
 	"reflect"
+	"strings"
 
+	"github.com/dalibo/ldap2pg/v6/internal/errorlist"
 	"github.com/dalibo/ldap2pg/v6/internal/ldap"
 	"github.com/dalibo/ldap2pg/v6/internal/postgres"
 	"github.com/dalibo/ldap2pg/v6/internal/pyfmt"
@@ -83,11 +85,24 @@ func (c *Config) DecodeYaml(yaml any) (err error) {
 		Metadata:         &mapstructure.Metadata{},
 		Result:           c,
 		WeaklyTypedInput: true,
+		ErrorUnused:      true,
 	})
 	if err != nil {
 		return
 	}
 	err = d.Decode(yaml)
+
+	// Converting joined error into errorlist.
+	// Lower the error message to align it with the LDAP parameters.
+	yamlErrors := errorlist.New("invalid configuration file")
+	for _, werr := range errorlist.Unwrap(err) {
+		lowerErr := strings.ToLower(werr.Error())
+		if !yamlErrors.Append(fmt.Errorf("%s", lowerErr)) {
+			err = yamlErrors.Value()
+			return
+		}
+	}
+	err = yamlErrors.Value()
 	return
 }
 

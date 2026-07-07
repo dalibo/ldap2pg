@@ -77,8 +77,8 @@ func (errl *List) Value() error {
 	case 0:
 		return nil
 	case 1:
-		return errl.errors[0]
+		return fmt.Errorf("%s: %w", errl.message, errl.errors[0])
 	default:
-		return errl
+		return errors.Join(append([]error{errors.New(errl.message)}, errl.errors...)...)
 	}
 }
