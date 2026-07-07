@@ -122,7 +122,7 @@ jobs:
 
   release:
     # Configure secrets of this job in ldap2pg CircleCI context.
-    docker: [{image: goreleaser/goreleaser:v2.12.2}]
+    docker: [{image: goreleaser/goreleaser:v2.16.0}]  # Keep sync with Dockerfile builder stage
     working_directory: *workspace
     steps:
     - checkout
