@@ -67,12 +67,15 @@ func NormalizeProfiles(value any) (map[string][]any, error) {
 		}
 		m[key] = privileges
 	}
-	out := flattenProfiles(m)
+	out, err := flattenProfiles(m)
+	if err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }
 
-func flattenProfiles(value map[string]any) map[string][]any {
+func flattenProfiles(value map[string]any) (map[string][]any, error) {
 	// Map privilege name -> list of privileges to include.
 	heritance := make(map[string][]string)
 	// Map privilege name -> list of map[type:... on:...] without inclusion.
@@ -98,7 +101,11 @@ func flattenProfiles(value map[string]any) map[string][]any {
 	copyRefs(value)
 
 	// Walk the tree and copy parents refs back to children.
-	for _, priv := range tree.Walk(heritance) {
+	order, err := tree.Walk(heritance)
+	if err != nil {
+		return nil, fmt.Errorf("privilege profile: %w", err)
+	}
+	for _, priv := range order {
 		for _, parent := range heritance[priv] {
 			refMap[priv] = append(refMap[priv], refMap[parent]...)
 		}
@@ -111,7 +118,7 @@ func flattenProfiles(value map[string]any) map[string][]any {
 		}
 	}
 
-	return refMap
+	return refMap, nil
 }
 
 var profiles = make(map[string]Profile)
