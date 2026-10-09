@@ -47,7 +47,7 @@ If you need support
 and you didn't found it in [documentation](https://ldap2pg.readthedocs.io/),
 just drop a question in a [GitHub discussions](https://github.com/dalibo/ldap2pg/discussions)!
 🇫🇷 Possible en français.
-Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/cookbook/) for advanced use cases.
+Don't miss the [cookbook](https://ldap2pg.readthedocs.io/en/latest/guides/cookbook/) for advanced use cases.
 
 
 # Authors
