@@ -17,7 +17,31 @@ func TestWalk(t *testing.T) {
 		"rw":       {"ro"},
 		"ddl":      {"rw"},
 	}
-	order := tree.Walk(groups)
+	order, err := tree.Walk(groups)
+	r.NoError(err)
 	wanted := []string{"__connect__", "__select__", "__usage__", "ro", "rw", "ddl", "subgroup"}
 	r.Equal(wanted, order)
+}
+
+func TestWalkSelfLoop(t *testing.T) {
+	r := require.New(t)
+	groups := map[string][]string{
+		"rw": {"rw", "__select__"},
+	}
+	order, err := tree.Walk(groups)
+	r.Nil(order)
+	r.Error(err)
+	r.ErrorContains(err, "loop involving rw")
+}
+
+func TestWalkMutualLoop(t *testing.T) {
+	r := require.New(t)
+	groups := map[string][]string{
+		"a": {"b"},
+		"b": {"a"},
+	}
+	order, err := tree.Walk(groups)
+	r.Nil(order)
+	r.Error(err)
+	r.ErrorContains(err, "loop involving")
 }
