@@ -43,12 +43,28 @@ func TestStrictYaml(t *testing.T) {
 	  databases_query: [nominal]
 	ldap:
 	  password: "secret"
+	rules:
+	- description: "Readonly"
+	  ldapsearch:
+	    base: "ou=groups,o=test"
+	    scope: one
+	    filter: "(&(objectClass=groupOfNames)(cn=admin)(member=*))"
+	    joins:
+	      member:
+	        scope: base
+	        filter: "(|(objectClass=inetOrgPerson)(objectClass=person))"
+	  roles:
+	    - name: "{member.uid}"
 	`)
 	var value map[string]any
-	yaml.Unmarshal([]byte(rawYaml), &value) //nolint:errcheck
+	err := yaml.Unmarshal([]byte(rawYaml), &value)
+	r.Nil(err)
+
+	value, err = config.NormalizeConfigRoot(value)
+	r.Nil(err)
 
 	c := config.New()
-	err := c.DecodeYaml(value)
+	err = c.DecodeYaml(value)
 	r.EqualError(err, "invalid configuration file\n'ldap' has invalid keys: password\n'postgres' has invalid keys: uri")
 	errs := errorlist.Unwrap(err)
 	r.Len(errs, 3)

@@ -10,7 +10,7 @@ type Search struct {
 	Scope       Scope
 	Filter      string
 	Attributes  []string
-	Subsearches map[string]Subsearch `mapstructure:"joins"`
+	Subsearches map[string]Subsearch
 }
 
 func (s Search) SubsearchAttribute() string {
