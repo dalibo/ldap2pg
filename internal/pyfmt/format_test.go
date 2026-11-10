@@ -32,6 +32,12 @@ func (suite *Suite) TestParseMethod() {
 	r.Equal("lower()", f.Fields[0].Method)
 }
 
+func (suite *Suite) TestParseMethodWithoutField() {
+	r := suite.Require()
+	_, err := pyfmt.Parse("{000000000000000()}")
+	r.ErrorContains(err, "without field name")
+}
+
 func (suite *Suite) TestParseFieldOnly() {
 	r := suite.Require()
 	f, err := pyfmt.Parse("{member.cn}")

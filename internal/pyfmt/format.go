@@ -49,7 +49,10 @@ func (f *Format) Parse(s string) (err error) {
 				i = end // End loop at end of step.
 			} else {
 				i += loc // Move before }
-				field := parseField(s[start:i])
+				field, ferr := parseField(s[start:i])
+				if ferr != nil {
+					return ferr
+				}
 				f.Sections = append(f.Sections, &field)
 				f.Fields = append(f.Fields, &field)
 				i++ // Move after }
@@ -94,7 +97,7 @@ func (f *Format) Parse(s string) (err error) {
 	return
 }
 
-func parseField(s string) (f Field) {
+func parseField(s string) (f Field, err error) {
 	before, after, found := strings.Cut(s, "!")
 	if found {
 		// case {0!r} OR {0!r:>30}
@@ -109,6 +112,10 @@ func parseField(s string) (f Field) {
 	f.FormatSpec = after
 	if strings.HasSuffix(f.FieldName, "()") {
 		lastPoint := strings.LastIndex(f.FieldName, ".")
+		if lastPoint == -1 {
+			err = fmt.Errorf("method call without field name: %q", s)
+			return
+		}
 		f.Method = f.FieldName[lastPoint+1:]
 		f.FieldName = f.FieldName[:lastPoint]
 	}
