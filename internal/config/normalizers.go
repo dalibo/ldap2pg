@@ -196,6 +196,10 @@ func NormalizeCommonLdapSearch(yaml any) (search map[string]any, err error) {
 	}
 
 	maps.Copy(search, yamlMap)
-	search["filter"] = ldap.CleanFilter(search["filter"].(string))
+	filter, ok := search["filter"].(string)
+	if !ok {
+		return nil, fmt.Errorf("bad filter type: %T, must be a string", search["filter"])
+	}
+	search["filter"] = ldap.CleanFilter(filter)
 	return
 }

@@ -93,3 +93,18 @@ func TestNormalizeCommonLdapSearch(t *testing.T) {
 	r.Nil(err)
 	r.Equal(search["filter"], "(cn=test)")
 }
+
+func TestNormalizeCommonLdapSearchBadFilterType(t *testing.T) {
+	r := require.New(t)
+
+	for _, filter := range []string{"00", "true", "1.5", "[a, b]", "{a: b}"} {
+		rawYaml := "base: cn=users,dc=bridoulou,dc=fr\nfilter: " + filter + "\n"
+		var raw any
+		yaml.Unmarshal([]byte(rawYaml), &raw) //nolint:errcheck
+
+		r.NotPanics(func() {
+			_, err := config.NormalizeCommonLdapSearch(raw)
+			r.ErrorContains(err, "bad filter type", "filter: %s", filter)
+		}, "filter: %s", filter)
+	}
+}
